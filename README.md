@@ -118,8 +118,8 @@ const paths = ['']
 
 function require(name) {
     const dir = paths[paths.length - 1]
-    const paht = join(dir, name)
-    const mod = paths[path]
+    const path = join(dir, name)
+    const mod = modules[path]
     
     if (mod) return mod.exports
     else {
