@@ -116,7 +116,7 @@ const global = {}
 const modules = {}
 const paths = ['']
 
-function require(name) {
+window.require = (name) => {
     const dir = paths[paths.length - 1]
     const path = join(dir, name)
     const mod = modules[path]
@@ -130,16 +130,17 @@ function require(name) {
             paths.pop()
             // module not found
         } else {
-            const _M = { exports: {} }
-            const exec = Function('module', 'exports', 'global', source)
-            exec(_M, _M.exports, global)
-            
-            modules[path] = {
-                source,
-                exports: _M.exports
+            const _M = { source, exports: {} }
+            try {
+                Function('module', 'exports', 'global', source)
+                    (_M, _M.exports, global)
+            } catch (err) {
+                paths.pop()
+                // error
             }
             
             paths.pop()
+            modules[path] = _M
             return _M.exports
         }
     }
@@ -151,7 +152,7 @@ we will map the exported for both `/module_name` and `/module_name/index.js`.
 
 So the native `Require()` looks like this:
 ```js
-function Require(path) {
+const Require = (path) => {
     var plugin = PLUGINS[path + '.js']
     if (plugin.isFile()) {
         return [plugin.text(), false]
