@@ -1,6 +1,6 @@
-<img align="left" src="https://i.imgur.com/uM5xPEa.png" width="120px">
+<img align="left" src="https://i.imgur.com/ZhWCav3.png" width="140px">
 
-# Susan
+# League Loader
 A small **plugin loader** for **League Client**, supports **CommonJS** modules.
 
 <br>
