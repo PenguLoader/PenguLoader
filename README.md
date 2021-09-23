@@ -7,7 +7,7 @@ A small **plugin loader** for **League Client**, supports **CommonJS** modules.
 <br>
 
 ## Features
-- Customi League Client
+- Customize League Client
 - Unlock insecure options
 - Support built-in and remote DevTools
 - Support custom plugins
