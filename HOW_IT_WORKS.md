@@ -4,28 +4,28 @@ They used **Image File Execution** to inject the payload into **LeagueClientUx.e
 
 Their injector used MS Detours to start Ux process with flag DEBUG_ONLY_THIS_PROCESS, turning debug mode may affect performance.
 
-> That's against Riot Privacy Policy, so you might get banned.
+> Anything's against Riot Privacy Policy might lead to banned, we've seen a few people get banned from using Mecha.
 
 > Since the patch 11.17, League Client is updated from CEF 74 -> 91, so any previous built of Mecha is not working.
 
 ### Hooking
 
-We use "passive injection" technique and provide d3d9.dll, called D3D9 injection.
-We don't know about the origin of this technique, but you can see it from [ENBSeries](http://enbdev.com/).
+We use different approach, "passive injection" via D3D9 proxying.
+We don't know about the origin of this technique, but you can see it in [ENBSeries](http://enbdev.com/).
 
 Original d3d9.dll is a Direct3D 9 Runtime – a dependency of libcef.dll.
 Our dll is a proxy to load needed D3D9 APIs and hooks back libcef.dll.
 
-Here is our hooking strategies:
+Here is our hooking strategy:
 
 ```
 d3d9.dll
-> LeagueClientUx.exe
+> LeagueClientUx.exe (browser process)
     + Load CEF functions
     + Hook cef_initialize(), cef_browser_host_create_browser()
     + Modify command line/settings
     + Provide DevTools
-> LeagueClientUxRender.exe (only arg --type=renderer)
+> LeagueClientUxRender.exe (rerderer process, arg: --type=renderer)
     + Load CEF functions
     + Hook cef_execute_process()
     + Register extension
