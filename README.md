@@ -93,14 +93,15 @@ When interacting with the DOM, you should add your code to `onload` or `DOMConte
 
 ## Build
 
-This project uses Visual Studio 2017 with
-- Windows SDK 8.1 for C++
-- .Net Framework SDK 4.5 for C#
+This project requires Visual Studio 2017 with components
+- Desktop development with C++
+- .NET desktop development
+- Windows 8.1 SDK & .NET Framework 4.5
 
 You can also use VS2015+ and different SDK version.
 
 Build steps
-  1. Open **league_loader.sln** in VS
+  1. Open **league-loader.sln** in VS
   2. Right click on the solution -> **Restore Nuget Packages**
   3. Set arch to **Any CPU** or **x86**
   4. Right click on each project -> **Build**
