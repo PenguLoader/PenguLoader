@@ -420,6 +420,4 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
-bin/
-!bin/plugins/
 packages/
