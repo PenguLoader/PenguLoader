@@ -81,10 +81,11 @@ bool CefStr::contain(const std::wstring &s) const
 
 void LoadLibCEFAPIs()
 {
-    // libcef.dll is loaded (our module is its dependency).
+    // libcef.dll is already loaded (our module is its dependency).
     HMODULE libcef = GetModuleHandleA("libcef.dll");
 
-    if (libcef != NULL) {
+    if (libcef != NULL)
+    {
         // Get CEF functions.
         (LPVOID &)CefRegisterExtension = GetProcAddress(libcef, "cef_register_extension");
         (LPVOID &)CefDictionaryValue_Create = GetProcAddress(libcef, "cef_dictionary_value_create");

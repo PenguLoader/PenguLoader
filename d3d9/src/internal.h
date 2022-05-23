@@ -1,6 +1,10 @@
 #ifndef LEAGUE_LOADER_H
 #define LEAGUE_LOADER_H
 
+#if _WIN64
+#error "Build 32-bit only."
+#endif
+
 #include <stdint.h>
 #include <string>
 #include <windows.h>
@@ -76,10 +80,6 @@ namespace league_loader
     extern decltype(&cef_initialize) CefInitialize;
     extern decltype(&cef_execute_process) CefExecteProcess;
     extern decltype(&cef_browser_host_create_browser) CefBrowserHost_CreateBrowser;
-
-    // Main hooks.
-    void HookBrowser();
-    void HookRenderer();
 
 #   define IPC_WRITE(process, address, size) \
         WriteProcessMemory(process, address, address, size, NULL)

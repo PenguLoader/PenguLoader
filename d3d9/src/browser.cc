@@ -135,7 +135,7 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     return CefInitialize(args, settings, app, windows_sandbox_info);
 }
 
-void league_loader::HookBrowser()
+void HookBrowserProcess()
 {
     DetourRestoreAfterWith();
 

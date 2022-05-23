@@ -39,17 +39,15 @@ void WINAPI D3DPERF_SetMarker(DWORD col, LPCWSTR wszName)
 void LoadD3D9APIs()
 {
     BOOL wow64 = FALSE;
-    CHAR d3d9Path[MAX_PATH];
+    WCHAR d3d9Path[MAX_PATH];
 
-    if (IsWow64Process(GetCurrentProcess(), &wow64) && wow64) {
-        GetSystemWow64DirectoryA(d3d9Path, MAX_PATH);
-    }
-    else {
-        GetSystemDirectoryA(d3d9Path, MAX_PATH);
-    }
+    if (IsWow64Process(GetCurrentProcess(), &wow64) && wow64)
+        GetSystemWow64DirectoryW(d3d9Path, MAX_PATH);
+    else
+        GetSystemDirectoryW(d3d9Path, MAX_PATH);
 
-    lstrcatA(d3d9Path, "\\d3d9.dll");
-    HMODULE d3d9 = LoadLibraryA(d3d9Path);
+    lstrcatW(d3d9Path, L"\\d3d9.dll");
+    HMODULE d3d9 = LoadLibraryW(d3d9Path);
 
     (LPVOID &)_Direct3DCreate9 = GetProcAddress(d3d9, "Direct3DCreate9");
     (LPVOID &)_Direct3DCreate9Ex = GetProcAddress(d3d9, "Direct3DCreate9Ex");

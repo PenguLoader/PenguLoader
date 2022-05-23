@@ -76,9 +76,12 @@ static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t
 {
     Old_OnWebKitInitialized(self);
 
+    const char *ext_code = ""
 #   include "ext_code.h"
+        ;
+
     // Register our extension.
-    CefRegisterExtension(&CefStr("v8/LeagueLoader"), &CefStr(EXTENSION_CODE), &V8_HANDLER);
+    CefRegisterExtension(&CefStr("v8/LeagueLoader"), &CefStr(ext_code), &V8_HANDLER);
 }
 
 static decltype(cef_render_process_handler_t::on_context_created) Old_OnContextCreated;
@@ -147,7 +150,7 @@ static int Hooked_CefExecteProcess(const cef_main_args_t* args, cef_app_t* app, 
     return CefExecteProcess(args, app, windows_sandbox_info);
 }
 
-void league_loader::HookRenderer()
+void HookRendererProcess()
 {
     DetourRestoreAfterWith();
 
