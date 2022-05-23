@@ -62,7 +62,7 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
-[Bb]in/
+# [Bb]in/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
@@ -420,4 +420,6 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
+bin/*
+!bin/plugins/
 packages/
