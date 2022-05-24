@@ -176,7 +176,7 @@ namespace LeagueLoader
         {
             if (_installed && _lcRunning)
             {
-                DevTools.Open(false);
+                Dll.Open(false);
             }
             else
             {
@@ -189,7 +189,7 @@ namespace LeagueLoader
         {
             if (_installed && _lcRunning)
             {
-                DevTools.Open(true);
+                Dll.Open(true);
             }
             else
             {

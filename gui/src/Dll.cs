@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace LeagueLoader
 {
-    internal class DevTools
+    internal class Dll
     {
         [DllImport("kernel32.dll")]
         private static extern IntPtr CreateRemoteThread(IntPtr hProcess,

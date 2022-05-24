@@ -67,13 +67,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\Ini.cs" />
-    <Compile Include="src\DevTools.cs" />
+    <Compile Include="src\Dll.cs" />
     <Compile Include="src\GUI.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="src\GUI.Designer.cs">
       <DependentUpon>GUI.cs</DependentUpon>
     </Compile>
+    <Compile Include="src\Lcu.cs" />
     <Compile Include="src\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="src\GUI.resx">
