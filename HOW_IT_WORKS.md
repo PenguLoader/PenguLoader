@@ -5,8 +5,7 @@ They used **Image File Execution** to inject the payload into **LeagueClientUx.e
 Their injector used MS Detours to start Ux process with flag DEBUG_ONLY_THIS_PROCESS, turning debug mode may affect performance.
 
 > Anything's against Riot Privacy Policy might lead to banned, we've seen a few people get banned from using Mecha.
-
-> Since the patch 11.17, League Client is updated from CEF 74 -> 91, so any previous built of Mecha is not working.
+> Since the patch 11.17, League Client is updated from CEF 74 -> 91, so any previous built of Mecha was not working.
 
 ### Hooking
 
@@ -34,6 +33,12 @@ d3d9.dll
 
 LeagueClientUx.exe is the browser process for graphics rendering, UI, IO...
 And LeagueClientUxRender.exe is the renderer process for V8 and Blink.
+
+### Configuration
+
+We provide Winforms GUI for setting up the loader and controlling League Client remotely.
+
+In the first version, we just copy our d3d9.dll to League Client folder and set the path of loader folder in env. This approach works too slow when you're opening too many programs. So the next version, we create symlink in League Client folder which points to the loader folder, and in d3d9.dll, we just reference to the final path to get settings and plugins.
 
 ### DevTools
 We support two types of DevTools: `built-in` and `remote`.
@@ -87,8 +92,10 @@ window.require = (name) => {
 If we resolve the module name is a folder which contains index.js,
 we will map the exported for both `/module_name` and `/module_name/index.js`.
 
+#### Source traceability
+
 In Chromium browser based, the `Error` has no `fileName` and `lineNumber`, these are not the standard.
-To make the error output extractly in DevTools, we just add the sourceURL to it.
+To make the error output extractly in DevTools and traceable, we just add the sourceURL to it.
 
 ```js
 Function(source + '\n//# sourceURL=filename.js')
