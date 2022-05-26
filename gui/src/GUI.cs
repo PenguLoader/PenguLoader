@@ -10,110 +10,54 @@ namespace LeagueLoader
 {
     public partial class GUI : MetroForm
     {
-        private const string ENV_DIR = "LEAGUE_LOADER_DIR";
-
-        private string PluginsDir => Directory.GetCurrentDirectory() + @"\plugins";
-
-        private Ini _config = null;
-        private int _port = 0;
-        private string _lcPath = "";
-        private bool _installed = false;
-        private bool _lcRunning = false;
+        static string PluginsDir = Path.Combine(Directory.GetCurrentDirectory(), "plugins");
 
         public GUI()
         {
             InitializeComponent();
+
+            Config.Init();
+
+            chkICE.Checked = Config.IgnoreCertificateErrors;
+            chkDWS.Checked = Config.DisableWebSecurity;
+
+            var port = Config.RemoteDebuggingPort;
+            chkRDP.Checked = port > 0;
+            txtPort.Enabled = port > 0;
+            txtPort.Text = port > 0 ? port.ToString() : "8888";
         }
 
         private void GUI_Load(object sender, EventArgs e)
         {
             if (!Directory.Exists(PluginsDir))
-            {
                 Directory.CreateDirectory(PluginsDir);
-            }
 
-            LoadConfig();
-
-            Invoke(new Action(async () =>
+            if (Lcu.IsValidDir(Config.LeaguePath))
             {
-                while (true)
-                {
-                    var procs = Process.GetProcessesByName("LeagueClientUx");
-                    _lcRunning = procs.Length > 0;
-                    btnOpenDevTools.Enabled = _lcRunning && _installed;
-                    linkRemote.Enabled = _lcRunning && _installed;
-                    panelMain.Enabled = !_lcRunning;
-
-                    if (_lcRunning && string.IsNullOrEmpty(_lcPath))
-                    {
-                        _lcPath = Path.GetDirectoryName(procs[0].MainModule.FileName);
-                        textPath.Text = _lcPath;
-                        _config.Write("GENERAL", "LeagueClientPath", _lcPath);
-                    }
-
-                    btnInstall.Enabled = !_lcRunning;
-                    await Task.Delay(300);
-                }
-            }));
+                SetLeaguePath(Config.LeaguePath);
+            }
+            else if (Lcu.IsOpened())
+            {
+                SetLeaguePath(Lcu.GetDir());
+            }
+            else
+            {
+                Config.LeaguePath = "";
+                txtPath.Text = "[not found]";
+            }
         }
 
-        private void LoadConfig()
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+        [DllImport("user32.dll")]
+        private static extern bool ReleaseCapture();
+
+        private void MouseDownDragMove(object sender, MouseEventArgs e)
         {
-            var configPath = Directory.GetCurrentDirectory() + @"\config.cfg";
-            if (!File.Exists(configPath)) File.CreateText(configPath);
-            var config = new Ini(configPath);
-
-            var port = config.Read("GENERAL", "RemoteDebuggingPort");
-            checkICE.Checked = config.Read("GENERAL", "IgnoreCertificateErrors") == "1";
-            checkDWS.Checked = config.Read("GENERAL", "DisableWebSecurity") == "1";
-            var path = config.Read("GENERAL", "LeagueClientPath");
-
-            if (File.Exists(path + @"\LeagueClient.exe"))
+            if (e.Button == MouseButtons.Left)
             {
-                _lcPath = path;
-                textPath.Text = path;
-            }
-
-            int.TryParse(port, out _port);
-            radioPort.Checked = _port != 0;
-            textPort.Enabled = _port != 0;
-            linkRemote.Visible = _port != 0;
-            textPort.Text = (_port == 0 ? 8888 : _port).ToString();
-
-            _installed = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ENV_DIR))
-            && !string.IsNullOrEmpty(_lcPath) && File.Exists(_lcPath + @"\d3d9.dll");
-            btnInstall.Text = _installed ? "Uninstall" : "Install";
-
-            _config = config;
-        }
-
-        private void btnSelectPath_Click(object sender, EventArgs e)
-        {
-            using (var fbd = new FolderBrowserDialog())
-            {
-                fbd.Description = "Select LoL folder or LeagueClient folder";
-                DialogResult result = fbd.ShowDialog();
-
-                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
-                {
-                    if (File.Exists(fbd.SelectedPath + @"\LeagueClient.exe"))
-                    {
-                        _lcPath = fbd.SelectedPath;
-                    }
-                    else if (File.Exists(fbd.SelectedPath + @"\LeagueClient\LeagueClient.exe"))
-                    {
-                        _lcPath = fbd.SelectedPath + @"\LeagueClient";
-                    }
-                    else
-                    {
-                        MessageBox.Show(this, "Your selected path is invalid.",
-                            "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-
-                    _config.Write("GENERAL", "LeagueClientPath", _lcPath);
-                    textPath.Text = _lcPath;
-                }
+                ReleaseCapture();
+                SendMessage(Handle, 0xA1, (IntPtr)0x2, (IntPtr)0);
             }
         }
 
@@ -132,197 +76,230 @@ namespace LeagueLoader
             });
         }
 
-        private void UpdatePort(int port)
-        {
-            if (_config == null) return;
-
-            _port = port;
-            _config.Write("GENERAL", "RemoteDebuggingPort", port.ToString());
-        }
-
-        private void radioOff_CheckedChanged(object sender, EventArgs e)
-        {
-            if (_config == null) return;
-
-            if (radioOff.Checked)
-            {
-                textPort.Enabled = false;
-                linkRemote.Visible = false;
-                UpdatePort(0);
-            }
-        }
-
-        private void radioPort_CheckedChanged(object sender, EventArgs e)
-        {
-            if (_config == null) return;
-
-            if (radioPort.Checked)
-            {
-                MessageBox.Show(this,
-                    "Using remote debugging port enables remote debug over HTTP on the specified port." +
-                    " You can access the remote DevTools in Chromium browsers and use DevTools protocol via this port." +
-                    " That will modify League Client's arguments, and be recorded in the logs.",
-                    "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-
-                textPort.Enabled = true;
-                linkRemote.Visible = true;
-                int port = 0;
-                int.TryParse(textPort.Text, out port);
-                UpdatePort(port);
-            }
-        }
-
         private void btnOpenDevTools_Click(object sender, EventArgs e)
         {
-            if (_installed && _lcRunning)
+            if (Dll.IsLoaded())
             {
-                Dll.Open(false);
+                Dll.OpenDevTools(remote: false);
             }
             else
             {
-                MessageBox.Show(this, "Please make sure you've installed and League Client is opened.",
+                MessageBox.Show(this, _l.Msg_NotActivated,
                     "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
-        private void linkRemote_Click(object sender, EventArgs e)
+        private void lnkRemoteDevTools_Click(object sender, EventArgs e)
         {
-            if (_installed && _lcRunning)
+            if (Dll.IsLoaded())
             {
-                Dll.Open(true);
+                Dll.OpenDevTools(remote: true);
             }
             else
             {
-                MessageBox.Show(this, "Please make sure you've installed and League Client is opened.",
+                MessageBox.Show(this, _l.Msg_NotActivated,
+                    "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void btnRestartLC_Click(object sender, EventArgs e)
+        {
+            if (Lcu.IsOpened())
+            {
+                Lcu.KillUxAndRestart();
+            }
+            else
+            {
+                MessageBox.Show(this, _l.Msg_LeagueNotOpened,
                     "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
         private void btnInstall_Click(object sender, EventArgs e)
         {
-            if (_lcRunning)
-            {
-                MessageBox.Show(this, "Please make sure League Client is closed.",
-                    "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
+            var lcPath = txtPath.Text;
 
-            if (string.IsNullOrEmpty(_lcPath))
+            if (Lcu.IsValidDir(lcPath))
             {
-                MessageBox.Show(this, "Please select League Client path.",
-                   "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                btnSelectPath_Click(null, null);
-            }
+                if (Dll.IsInstalled(lcPath))
+                {
+                    if (MessageBox.Show(this, _l.Msg_ModuleUninstall,
+                            "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                    {
+                        Dll.Uninstall(lcPath);
+                        btnInstall.Text = _l.Install;
 
-            if (_installed)
-            {
-                Environment.SetEnvironmentVariable(ENV_DIR, null, EnvironmentVariableTarget.User);
-                File.Delete(_lcPath + @"\d3d9.dll");
+                        if (Dll.IsLoaded())
+                        {
+                            if (MessageBox.Show(this, _l.Msg_ModuleUninstalled_Loaded,
+                                "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                            {
+                                Lcu.KillUxAndRestart();
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, _l.Msg_ModuleUninstalled,
+                                "Legue Loader", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                }
+                else
+                {
+                    Dll.Install(lcPath);
+                    btnInstall.Text = _l.Uninstall;
 
-                _installed = false;
-                btnInstall.Text = "Install";
-                MessageBox.Show(this, "Uninstalled successfully.",
-                    "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    if (Lcu.IsOpened())
+                    {
+                        if (MessageBox.Show(this, _l.Msg_ModuleInstalled_Running,
+                            "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                        {
+                            Lcu.KillUxAndRestart();
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show(this, _l.Msg_ModuleInstalled,
+                            "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
             }
             else
             {
-                var cd = Directory.GetCurrentDirectory();
-                var d3d9 = cd + @"\d3d9.dll";
-
-                if (!File.Exists(d3d9))
-                {
-                    MessageBox.Show(this, "League Loader d3d9.dll is not found.",
-                        "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                Environment.SetEnvironmentVariable(ENV_DIR, cd, EnvironmentVariableTarget.User);
-
-                try
-                {
-                    File.Copy(cd + @"\d3d9.dll", _lcPath + @"\d3d9.dll", true);
-                }
-                catch
-                {
-                    MessageBox.Show(this, "Failed to copy d3d9.dll.",
-                        "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                _installed = true;
-                btnInstall.Text = "Uninstall";
-                MessageBox.Show(this, "Installed successfully.",
-                    "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-        }
-
-        private void checkICE_CheckedChanged(object sender, EventArgs e)
-        {
-            if (_config == null) return;
-
-            if (checkICE.Checked)
-            {
-                MessageBox.Show(this,
-                    "Ignoring certificate errors helps you to ignore all SSL errors/invalid certificates." +
-                    " That's against Riot's Privacy Policy, so you might get banned.",
+                MessageBox.Show(this, _l.Msg_InvalidSelectedPath,
                     "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-
-            _config.Write("GENERAL", "IgnoreCertificateErrors", checkICE.Checked ? "1" : "0");
         }
 
-        private void checkDWS_CheckedChanged(object sender, EventArgs e)
+        private void chkICE_CheckedChanged(object sender, EventArgs e)
         {
-            if (_config == null) return;
+            if (!Visible) return;
 
-            if (checkDWS.Checked)
+            if (chkICE.Checked)
             {
-                MessageBox.Show(this,
-                    "Disabling web security helps you to bypass CORS when making request with fetch() and XHR." +
-                    " That's against Riot's Privacy Policy, so you might get banned.",
-                    "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                var ret = MessageBox.Show(this, _l.WarningICE,
+                    "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                if (ret != DialogResult.Yes) chkICE.Checked = false;
             }
 
-            _config.Write("GENERAL", "DisableWebSecurity", checkDWS.Checked ? "1" : "0");
+            Config.IgnoreCertificateErrors = chkICE.Checked;
         }
 
-        private void linkRepo_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void chkDWS_CheckedChanged(object sender, EventArgs e)
         {
-            Process.Start("https://github.com/nomi-san/league-loader");
+            if (!Visible) return;
+
+            if (chkDWS.Checked)
+            {
+                var ret = MessageBox.Show(this, _l.WarningDWS,
+                    "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                if (ret != DialogResult.Yes) chkDWS.Checked = false;
+            }
+
+            Config.DisableWebSecurity = chkDWS.Checked;
         }
 
-        private void textPort_TextChanged(object sender, EventArgs e)
+        private void chkRDP_CheckedChanged(object sender, EventArgs e)
         {
-            if (_config == null) return;
+            if (!Visible) return;
 
-            if (radioPort.Checked)
+            if (chkRDP.Checked)
+            {
+                var ret = MessageBox.Show(this, _l.WarningRDP,
+                    "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                if (ret != DialogResult.Yes) chkRDP.Checked = false;
+            }
+
+            txtPort.Enabled = chkRDP.Checked;
+
+            int port = 0;
+            if (chkRDP.Checked) int.TryParse(txtPort.Text, out port);
+            Config.RemoteDebuggingPort = port;
+        }
+
+        private void txtPort_TextChanged(object sender, EventArgs e)
+        {
+            if (!Visible) return;
+
+            if (chkRDP.Checked)
             {
                 int port = 0;
-                int.TryParse(textPort.Text, out port);
-                UpdatePort(port);
+                int.TryParse(txtPort.Text, out port);
+                Config.RemoteDebuggingPort = port;
             }
         }
 
-        private void textPort_KeyPress(object sender, KeyPressEventArgs e)
+        private void txtPort_KeyPress(object sender, KeyPressEventArgs e)
         {
             e.Handled = !char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar);
         }
 
-        private const int WM_NCLBUTTONDOWN = 0xA1;
-        private const int HT_CAPTION = 0x2;
+        Language _l = Language.English;
 
-        [DllImport("user32.dll")]
-        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
-        [DllImport("user32.dll")]
-        private static extern bool ReleaseCapture();
-
-        private void MouseDownDragMove(object sender, MouseEventArgs e)
+        void SwitchLanguage()
         {
-            if (e.Button == MouseButtons.Left)
+            if (_l == Language.English)
             {
-                ReleaseCapture();
-                SendMessage(Handle, WM_NCLBUTTONDOWN, (IntPtr)HT_CAPTION, IntPtr.Zero);
+                lnkLanguage.Text = "[English]";
+                _l = Language.Vietnamese;
             }
+            else
+            {
+                lnkLanguage.Text = "[Tiếng Việt]";
+                _l = Language.English;
+            }
+
+            lblLeaguePath.Text = _l.LeaguePath;
+            lblInsecureOptions.Text = _l.InsecureOptions;
+            btnOpenDevTools.Text = _l.OpenDevTools;
+            btnOpenPlugins.Text = _l.OpenPlugins;
+            btnRestartLC.Text = _l.RestartClient;
+
+            btnInstall.Text = Dll.IsInstalled(Config.LeaguePath) ? _l.Uninstall : _l.Install;
+        }
+
+        private void lnkLanguage_Click(object sender, EventArgs e)
+        {
+            SwitchLanguage();
+        }
+
+        private void btnSelectPath_Click(object sender, EventArgs e)
+        {
+            using (var fbd = new FolderBrowserDialog())
+            {
+                fbd.Description = _l.Msg_SelectLeaguePath;
+                if (fbd.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+                {
+                    var path = fbd.SelectedPath;
+
+                    if (Lcu.IsValidDir(path)) { }
+                    else if (Lcu.IsValidDir(path = Path.Combine(fbd.SelectedPath, "LeagueClient"))) { }
+                    else if (Lcu.IsValidDir(path = Path.Combine(fbd.SelectedPath, "League of Legends"))) { }
+                    else
+                    {
+                        MessageBox.Show(this, _l.Msg_InvalidSelectedPath,
+                            "League Loader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    SetLeaguePath(path);
+                }
+            }
+        }
+
+        void SetLeaguePath(string path)
+        {
+            txtPath.Text = path;
+            Config.LeaguePath = path;
+            btnInstall.Text = Dll.IsInstalled(path) ? _l.Uninstall : _l.Install;
+        }
+
+        private void lnkGithub_Click(object sender, EventArgs e)
+        {
+            Process.Start("https://github.com/nomi-san/league-loader/");
         }
     }
 }

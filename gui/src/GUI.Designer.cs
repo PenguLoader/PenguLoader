@@ -29,263 +29,103 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GUI));
-            this.btnSelectPath = new MetroFramework.Controls.MetroButton();
-            this.textPath = new MetroFramework.Controls.MetroTextBox();
-            this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
-            this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
-            this.checkDWS = new MetroFramework.Controls.MetroCheckBox();
-            this.checkICE = new MetroFramework.Controls.MetroCheckBox();
-            this.textPort = new MetroFramework.Controls.MetroTextBox();
-            this.metroLabel1 = new MetroFramework.Controls.MetroLabel();
-            this.radioOff = new MetroFramework.Controls.MetroRadioButton();
-            this.radioPort = new MetroFramework.Controls.MetroRadioButton();
-            this.panelMain = new MetroFramework.Controls.MetroPanel();
-            this.linkRemote = new MetroFramework.Controls.MetroLink();
+            this.lblInsecureOptions = new MetroFramework.Controls.MetroLabel();
+            this.chkDWS = new MetroFramework.Controls.MetroCheckBox();
+            this.chkICE = new MetroFramework.Controls.MetroCheckBox();
+            this.lnkRemoteDevtools = new MetroFramework.Controls.MetroLink();
             this.btnOpenDevTools = new MetroFramework.Controls.MetroButton();
-            this.btnPlugins = new MetroFramework.Controls.MetroButton();
+            this.btnOpenPlugins = new MetroFramework.Controls.MetroButton();
             this.btnInstall = new MetroFramework.Controls.MetroButton();
-            this.linkRepo = new System.Windows.Forms.LinkLabel();
             this.label3 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.metroPanel1 = new MetroFramework.Controls.MetroPanel();
-            this.panelMain.SuspendLayout();
+            this.chkRDP = new MetroFramework.Controls.MetroCheckBox();
+            this.txtPort = new MetroFramework.Controls.MetroTextBox();
+            this.lnkLanguage = new MetroFramework.Controls.MetroLink();
+            this.lblLeaguePath = new MetroFramework.Controls.MetroLabel();
+            this.txtPath = new MetroFramework.Controls.MetroTextBox();
+            this.btnSelectPath = new MetroFramework.Controls.MetroButton();
+            this.btnRestartLC = new MetroFramework.Controls.MetroButton();
+            this.lnkGithub = new MetroFramework.Controls.MetroLink();
             this.SuspendLayout();
             // 
-            // btnSelectPath
+            // lblInsecureOptions
             // 
-            this.btnSelectPath.Location = new System.Drawing.Point(415, 33);
-            this.btnSelectPath.Name = "btnSelectPath";
-            this.btnSelectPath.Size = new System.Drawing.Size(34, 23);
-            this.btnSelectPath.TabIndex = 22;
-            this.btnSelectPath.Text = "...";
-            this.btnSelectPath.UseSelectable = true;
-            this.btnSelectPath.Click += new System.EventHandler(this.btnSelectPath_Click);
+            this.lblInsecureOptions.AutoSize = true;
+            this.lblInsecureOptions.Location = new System.Drawing.Point(23, 143);
+            this.lblInsecureOptions.Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
+            this.lblInsecureOptions.Name = "lblInsecureOptions";
+            this.lblInsecureOptions.Size = new System.Drawing.Size(103, 19);
+            this.lblInsecureOptions.TabIndex = 19;
+            this.lblInsecureOptions.Text = "Insecure options";
             // 
-            // textPath
+            // chkDWS
             // 
+            this.chkDWS.AutoSize = true;
+            this.chkDWS.Location = new System.Drawing.Point(37, 191);
+            this.chkDWS.Name = "chkDWS";
+            this.chkDWS.Size = new System.Drawing.Size(130, 15);
+            this.chkDWS.TabIndex = 18;
+            this.chkDWS.TabStop = false;
+            this.chkDWS.Text = "Disable web security";
+            this.chkDWS.UseSelectable = true;
+            this.chkDWS.CheckedChanged += new System.EventHandler(this.chkDWS_CheckedChanged);
             // 
+            // chkICE
             // 
+            this.chkICE.AutoSize = true;
+            this.chkICE.Location = new System.Drawing.Point(37, 170);
+            this.chkICE.Name = "chkICE";
+            this.chkICE.Size = new System.Drawing.Size(145, 15);
+            this.chkICE.TabIndex = 17;
+            this.chkICE.TabStop = false;
+            this.chkICE.Text = "Ignore certificate errors";
+            this.chkICE.UseSelectable = true;
+            this.chkICE.CheckedChanged += new System.EventHandler(this.chkICE_CheckedChanged);
             // 
-            this.textPath.CustomButton.Image = null;
-            this.textPath.CustomButton.Location = new System.Drawing.Point(360, 1);
-            this.textPath.CustomButton.Name = "";
-            this.textPath.CustomButton.Size = new System.Drawing.Size(21, 21);
-            this.textPath.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
-            this.textPath.CustomButton.TabIndex = 1;
-            this.textPath.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
-            this.textPath.CustomButton.UseSelectable = true;
-            this.textPath.CustomButton.Visible = false;
-            this.textPath.Enabled = false;
-            this.textPath.Lines = new string[] {
-        "Not selected"};
-            this.textPath.Location = new System.Drawing.Point(27, 33);
-            this.textPath.MaxLength = 32767;
-            this.textPath.Name = "textPath";
-            this.textPath.PasswordChar = '\0';
-            this.textPath.ReadOnly = true;
-            this.textPath.ScrollBars = System.Windows.Forms.ScrollBars.None;
-            this.textPath.SelectedText = "";
-            this.textPath.SelectionLength = 0;
-            this.textPath.SelectionStart = 0;
-            this.textPath.ShortcutsEnabled = true;
-            this.textPath.Size = new System.Drawing.Size(382, 23);
-            this.textPath.TabIndex = 21;
-            this.textPath.Text = "Not selected";
-            this.textPath.UseSelectable = true;
-            this.textPath.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
-            this.textPath.WaterMarkFont = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Pixel);
+            // lnkRemoteDevtools
             // 
-            // metroLabel3
-            // 
-            this.metroLabel3.AutoSize = true;
-            this.metroLabel3.Location = new System.Drawing.Point(16, 11);
-            this.metroLabel3.Name = "metroLabel3";
-            this.metroLabel3.Size = new System.Drawing.Size(118, 19);
-            this.metroLabel3.TabIndex = 20;
-            this.metroLabel3.Text = "League Client path";
-            // 
-            // metroLabel2
-            // 
-            this.metroLabel2.AutoSize = true;
-            this.metroLabel2.Location = new System.Drawing.Point(237, 69);
-            this.metroLabel2.Name = "metroLabel2";
-            this.metroLabel2.Size = new System.Drawing.Size(103, 19);
-            this.metroLabel2.TabIndex = 19;
-            this.metroLabel2.Text = "Insecure options";
-            // 
-            // checkDWS
-            // 
-            this.checkDWS.AutoSize = true;
-            this.checkDWS.Location = new System.Drawing.Point(251, 113);
-            this.checkDWS.Name = "checkDWS";
-            this.checkDWS.Size = new System.Drawing.Size(130, 15);
-            this.checkDWS.TabIndex = 18;
-            this.checkDWS.TabStop = false;
-            this.checkDWS.Text = "Disable web security";
-            this.checkDWS.UseSelectable = true;
-            this.checkDWS.CheckedChanged += new System.EventHandler(this.checkDWS_CheckedChanged);
-            // 
-            // checkICE
-            // 
-            this.checkICE.AutoSize = true;
-            this.checkICE.Location = new System.Drawing.Point(251, 91);
-            this.checkICE.Name = "checkICE";
-            this.checkICE.Size = new System.Drawing.Size(145, 15);
-            this.checkICE.TabIndex = 17;
-            this.checkICE.TabStop = false;
-            this.checkICE.Text = "Ignore certificate errors";
-            this.checkICE.UseSelectable = true;
-            this.checkICE.CheckedChanged += new System.EventHandler(this.checkICE_CheckedChanged);
-            // 
-            // textPort
-            // 
-            // 
-            // 
-            // 
-            this.textPort.CustomButton.Image = null;
-            this.textPort.CustomButton.Location = new System.Drawing.Point(22, 1);
-            this.textPort.CustomButton.Name = "";
-            this.textPort.CustomButton.Size = new System.Drawing.Size(21, 21);
-            this.textPort.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
-            this.textPort.CustomButton.TabIndex = 1;
-            this.textPort.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
-            this.textPort.CustomButton.UseSelectable = true;
-            this.textPort.CustomButton.Visible = false;
-            this.textPort.Enabled = false;
-            this.textPort.Lines = new string[] {
-        "8888"};
-            this.textPort.Location = new System.Drawing.Point(47, 110);
-            this.textPort.MaxLength = 5;
-            this.textPort.Name = "textPort";
-            this.textPort.PasswordChar = '\0';
-            this.textPort.ScrollBars = System.Windows.Forms.ScrollBars.None;
-            this.textPort.SelectedText = "";
-            this.textPort.SelectionLength = 0;
-            this.textPort.SelectionStart = 0;
-            this.textPort.ShortcutsEnabled = true;
-            this.textPort.Size = new System.Drawing.Size(44, 23);
-            this.textPort.TabIndex = 16;
-            this.textPort.TabStop = false;
-            this.textPort.Text = "8888";
-            this.textPort.UseSelectable = true;
-            this.textPort.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
-            this.textPort.WaterMarkFont = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Pixel);
-            this.textPort.TextChanged += new System.EventHandler(this.textPort_TextChanged);
-            this.textPort.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.textPort_KeyPress);
-            // 
-            // metroLabel1
-            // 
-            this.metroLabel1.AutoSize = true;
-            this.metroLabel1.Location = new System.Drawing.Point(16, 69);
-            this.metroLabel1.Name = "metroLabel1";
-            this.metroLabel1.Size = new System.Drawing.Size(153, 19);
-            this.metroLabel1.TabIndex = 15;
-            this.metroLabel1.Text = "Remote debugging port";
-            // 
-            // radioOff
-            // 
-            this.radioOff.AutoSize = true;
-            this.radioOff.Checked = true;
-            this.radioOff.Location = new System.Drawing.Point(27, 91);
-            this.radioOff.Name = "radioOff";
-            this.radioOff.Size = new System.Drawing.Size(40, 15);
-            this.radioOff.TabIndex = 14;
-            this.radioOff.TabStop = true;
-            this.radioOff.Text = "Off";
-            this.radioOff.UseSelectable = true;
-            this.radioOff.CheckedChanged += new System.EventHandler(this.radioOff_CheckedChanged);
-            // 
-            // radioPort
-            // 
-            this.radioPort.AutoSize = true;
-            this.radioPort.Location = new System.Drawing.Point(27, 113);
-            this.radioPort.Name = "radioPort";
-            this.radioPort.Size = new System.Drawing.Size(26, 15);
-            this.radioPort.TabIndex = 23;
-            this.radioPort.Text = " ";
-            this.radioPort.UseSelectable = true;
-            this.radioPort.CheckedChanged += new System.EventHandler(this.radioPort_CheckedChanged);
-            // 
-            // panelMain
-            // 
-            this.panelMain.Controls.Add(this.textPort);
-            this.panelMain.Controls.Add(this.metroLabel3);
-            this.panelMain.Controls.Add(this.radioPort);
-            this.panelMain.Controls.Add(this.radioOff);
-            this.panelMain.Controls.Add(this.metroLabel1);
-            this.panelMain.Controls.Add(this.btnSelectPath);
-            this.panelMain.Controls.Add(this.checkICE);
-            this.panelMain.Controls.Add(this.textPath);
-            this.panelMain.Controls.Add(this.checkDWS);
-            this.panelMain.Controls.Add(this.metroLabel2);
-            this.panelMain.HorizontalScrollbarBarColor = true;
-            this.panelMain.HorizontalScrollbarHighlightOnWheel = false;
-            this.panelMain.HorizontalScrollbarSize = 10;
-            this.panelMain.Location = new System.Drawing.Point(6, 63);
-            this.panelMain.Name = "panelMain";
-            this.panelMain.Size = new System.Drawing.Size(469, 150);
-            this.panelMain.TabIndex = 29;
-            this.panelMain.VerticalScrollbarBarColor = true;
-            this.panelMain.VerticalScrollbarHighlightOnWheel = false;
-            this.panelMain.VerticalScrollbarSize = 10;
-            // 
-            // linkRemote
-            // 
-            this.linkRemote.Location = new System.Drawing.Point(129, 249);
-            this.linkRemote.Name = "linkRemote";
-            this.linkRemote.Size = new System.Drawing.Size(119, 23);
-            this.linkRemote.TabIndex = 34;
-            this.linkRemote.Text = "Remote DevTools";
-            this.linkRemote.UseSelectable = true;
-            this.linkRemote.Click += new System.EventHandler(this.linkRemote_Click);
+            this.lnkRemoteDevtools.Location = new System.Drawing.Point(161, 267);
+            this.lnkRemoteDevtools.Name = "lnkRemoteDevtools";
+            this.lnkRemoteDevtools.Size = new System.Drawing.Size(131, 23);
+            this.lnkRemoteDevtools.TabIndex = 34;
+            this.lnkRemoteDevtools.Text = "[Remote DevTools ↗]";
+            this.lnkRemoteDevtools.UseSelectable = true;
+            this.lnkRemoteDevtools.Click += new System.EventHandler(this.lnkRemoteDevTools_Click);
             // 
             // btnOpenDevTools
             // 
             this.btnOpenDevTools.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnOpenDevTools.Location = new System.Drawing.Point(23, 249);
+            this.btnOpenDevTools.Location = new System.Drawing.Point(23, 267);
             this.btnOpenDevTools.Name = "btnOpenDevTools";
-            this.btnOpenDevTools.Size = new System.Drawing.Size(100, 23);
+            this.btnOpenDevTools.Size = new System.Drawing.Size(132, 23);
             this.btnOpenDevTools.TabIndex = 33;
             this.btnOpenDevTools.Text = "Open DevTools";
             this.btnOpenDevTools.UseSelectable = true;
             this.btnOpenDevTools.Click += new System.EventHandler(this.btnOpenDevTools_Click);
             // 
-            // btnPlugins
+            // btnOpenPlugins
             // 
-            this.btnPlugins.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnPlugins.Location = new System.Drawing.Point(23, 220);
-            this.btnPlugins.Name = "btnPlugins";
-            this.btnPlugins.Size = new System.Drawing.Size(100, 23);
-            this.btnPlugins.TabIndex = 32;
-            this.btnPlugins.Text = "Open plugins";
-            this.btnPlugins.UseSelectable = true;
-            this.btnPlugins.Click += new System.EventHandler(this.btnPlugins_Click);
+            this.btnOpenPlugins.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnOpenPlugins.Location = new System.Drawing.Point(23, 238);
+            this.btnOpenPlugins.Name = "btnOpenPlugins";
+            this.btnOpenPlugins.Size = new System.Drawing.Size(132, 23);
+            this.btnOpenPlugins.TabIndex = 32;
+            this.btnOpenPlugins.Text = "Open plugins folder";
+            this.btnOpenPlugins.UseSelectable = true;
+            this.btnOpenPlugins.Click += new System.EventHandler(this.btnPlugins_Click);
             // 
             // btnInstall
             // 
             this.btnInstall.FontSize = MetroFramework.MetroButtonSize.Tall;
             this.btnInstall.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnInstall.Location = new System.Drawing.Point(341, 236);
+            this.btnInstall.Location = new System.Drawing.Point(359, 254);
             this.btnInstall.Name = "btnInstall";
-            this.btnInstall.Size = new System.Drawing.Size(115, 36);
+            this.btnInstall.Size = new System.Drawing.Size(131, 36);
             this.btnInstall.TabIndex = 30;
             this.btnInstall.Text = "INSTALL";
             this.btnInstall.UseSelectable = true;
             this.btnInstall.Click += new System.EventHandler(this.btnInstall_Click);
-            // 
-            // linkRepo
-            // 
-            this.linkRepo.AutoSize = true;
-            this.linkRepo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.linkRepo.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
-            this.linkRepo.Location = new System.Drawing.Point(320, 40);
-            this.linkRepo.Name = "linkRepo";
-            this.linkRepo.Size = new System.Drawing.Size(136, 15);
-            this.linkRepo.TabIndex = 35;
-            this.linkRepo.TabStop = true;
-            this.linkRepo.Text = "nomi-san/league-loader";
-            this.linkRepo.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkRepo_LinkClicked);
             // 
             // label3
             // 
@@ -323,34 +163,165 @@
             this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.label2.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MouseDownDragMove);
             // 
-            // metroPanel1
+            // chkRDP
             // 
-            this.metroPanel1.HorizontalScrollbarBarColor = true;
-            this.metroPanel1.HorizontalScrollbarHighlightOnWheel = false;
-            this.metroPanel1.HorizontalScrollbarSize = 10;
-            this.metroPanel1.Location = new System.Drawing.Point(0, 63);
-            this.metroPanel1.Name = "metroPanel1";
-            this.metroPanel1.Size = new System.Drawing.Size(480, 230);
-            this.metroPanel1.TabIndex = 39;
-            this.metroPanel1.VerticalScrollbarBarColor = true;
-            this.metroPanel1.VerticalScrollbarHighlightOnWheel = false;
-            this.metroPanel1.VerticalScrollbarSize = 10;
+            this.chkRDP.AutoSize = true;
+            this.chkRDP.Location = new System.Drawing.Point(223, 170);
+            this.chkRDP.Name = "chkRDP";
+            this.chkRDP.Size = new System.Drawing.Size(150, 15);
+            this.chkRDP.TabIndex = 24;
+            this.chkRDP.TabStop = false;
+            this.chkRDP.Text = "Remote debugging port";
+            this.chkRDP.UseSelectable = true;
+            this.chkRDP.CheckedChanged += new System.EventHandler(this.chkRDP_CheckedChanged);
+            // 
+            // txtPort
+            // 
+            // 
+            // 
+            // 
+            this.txtPort.CustomButton.Image = null;
+            this.txtPort.CustomButton.Location = new System.Drawing.Point(39, 1);
+            this.txtPort.CustomButton.Name = "";
+            this.txtPort.CustomButton.Size = new System.Drawing.Size(21, 21);
+            this.txtPort.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
+            this.txtPort.CustomButton.TabIndex = 1;
+            this.txtPort.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
+            this.txtPort.CustomButton.UseSelectable = true;
+            this.txtPort.CustomButton.Visible = false;
+            this.txtPort.Enabled = false;
+            this.txtPort.Lines = new string[] {
+        "8888"};
+            this.txtPort.Location = new System.Drawing.Point(379, 166);
+            this.txtPort.MaxLength = 32767;
+            this.txtPort.Name = "txtPort";
+            this.txtPort.PasswordChar = '\0';
+            this.txtPort.ScrollBars = System.Windows.Forms.ScrollBars.None;
+            this.txtPort.SelectedText = "";
+            this.txtPort.SelectionLength = 0;
+            this.txtPort.SelectionStart = 0;
+            this.txtPort.ShortcutsEnabled = true;
+            this.txtPort.Size = new System.Drawing.Size(61, 23);
+            this.txtPort.TabIndex = 41;
+            this.txtPort.Text = "8888";
+            this.txtPort.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.txtPort.UseSelectable = true;
+            this.txtPort.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
+            this.txtPort.WaterMarkFont = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Pixel);
+            this.txtPort.TextChanged += new System.EventHandler(this.txtPort_TextChanged);
+            this.txtPort.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtPort_KeyPress);
+            // 
+            // lnkLanguage
+            // 
+            this.lnkLanguage.AutoSize = true;
+            this.lnkLanguage.Location = new System.Drawing.Point(330, 32);
+            this.lnkLanguage.Name = "lnkLanguage";
+            this.lnkLanguage.Size = new System.Drawing.Size(89, 23);
+            this.lnkLanguage.TabIndex = 42;
+            this.lnkLanguage.Text = "[Tiếng Việt]";
+            this.lnkLanguage.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.lnkLanguage.UseSelectable = true;
+            this.lnkLanguage.Click += new System.EventHandler(this.lnkLanguage_Click);
+            // 
+            // lblLeaguePath
+            // 
+            this.lblLeaguePath.AutoSize = true;
+            this.lblLeaguePath.Location = new System.Drawing.Point(23, 78);
+            this.lblLeaguePath.Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
+            this.lblLeaguePath.Name = "lblLeaguePath";
+            this.lblLeaguePath.Size = new System.Drawing.Size(118, 19);
+            this.lblLeaguePath.TabIndex = 20;
+            this.lblLeaguePath.Text = "League Client path";
+            // 
+            // txtPath
+            // 
+            // 
+            // 
+            // 
+            this.txtPath.CustomButton.Image = null;
+            this.txtPath.CustomButton.Location = new System.Drawing.Point(381, 1);
+            this.txtPath.CustomButton.Name = "";
+            this.txtPath.CustomButton.Size = new System.Drawing.Size(21, 21);
+            this.txtPath.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
+            this.txtPath.CustomButton.TabIndex = 1;
+            this.txtPath.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
+            this.txtPath.CustomButton.UseSelectable = true;
+            this.txtPath.CustomButton.Visible = false;
+            this.txtPath.Enabled = false;
+            this.txtPath.Lines = new string[] {
+        "[not found]"};
+            this.txtPath.Location = new System.Drawing.Point(37, 105);
+            this.txtPath.MaxLength = 32767;
+            this.txtPath.Name = "txtPath";
+            this.txtPath.PasswordChar = '\0';
+            this.txtPath.ReadOnly = true;
+            this.txtPath.ScrollBars = System.Windows.Forms.ScrollBars.None;
+            this.txtPath.SelectedText = "";
+            this.txtPath.SelectionLength = 0;
+            this.txtPath.SelectionStart = 0;
+            this.txtPath.ShortcutsEnabled = true;
+            this.txtPath.Size = new System.Drawing.Size(403, 23);
+            this.txtPath.TabIndex = 21;
+            this.txtPath.Text = "[not found]";
+            this.txtPath.UseSelectable = true;
+            this.txtPath.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
+            this.txtPath.WaterMarkFont = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Pixel);
+            // 
+            // btnSelectPath
+            // 
+            this.btnSelectPath.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnSelectPath.Location = new System.Drawing.Point(446, 105);
+            this.btnSelectPath.Name = "btnSelectPath";
+            this.btnSelectPath.Size = new System.Drawing.Size(44, 23);
+            this.btnSelectPath.TabIndex = 43;
+            this.btnSelectPath.Text = "...";
+            this.btnSelectPath.UseSelectable = true;
+            this.btnSelectPath.Click += new System.EventHandler(this.btnSelectPath_Click);
+            // 
+            // btnRestartLC
+            // 
+            this.btnRestartLC.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnRestartLC.Location = new System.Drawing.Point(161, 238);
+            this.btnRestartLC.Name = "btnRestartLC";
+            this.btnRestartLC.Size = new System.Drawing.Size(131, 23);
+            this.btnRestartLC.TabIndex = 44;
+            this.btnRestartLC.Text = "Restart Client";
+            this.btnRestartLC.UseSelectable = true;
+            this.btnRestartLC.Click += new System.EventHandler(this.btnRestartLC_Click);
+            // 
+            // lnkGithub
+            // 
+            this.lnkGithub.Location = new System.Drawing.Point(419, 32);
+            this.lnkGithub.Name = "lnkGithub";
+            this.lnkGithub.Size = new System.Drawing.Size(71, 23);
+            this.lnkGithub.TabIndex = 45;
+            this.lnkGithub.Text = "[Github ↗]";
+            this.lnkGithub.UseSelectable = true;
+            this.lnkGithub.Click += new System.EventHandler(this.lnkGithub_Click);
             // 
             // GUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(479, 295);
+            this.ClientSize = new System.Drawing.Size(513, 317);
+            this.Controls.Add(this.lnkGithub);
+            this.Controls.Add(this.btnRestartLC);
+            this.Controls.Add(this.btnSelectPath);
+            this.Controls.Add(this.lnkLanguage);
+            this.Controls.Add(this.txtPort);
+            this.Controls.Add(this.chkRDP);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.linkRepo);
-            this.Controls.Add(this.linkRemote);
+            this.Controls.Add(this.lblLeaguePath);
+            this.Controls.Add(this.lnkRemoteDevtools);
             this.Controls.Add(this.btnOpenDevTools);
-            this.Controls.Add(this.btnPlugins);
+            this.Controls.Add(this.chkICE);
+            this.Controls.Add(this.btnOpenPlugins);
+            this.Controls.Add(this.txtPath);
+            this.Controls.Add(this.chkDWS);
             this.Controls.Add(this.btnInstall);
-            this.Controls.Add(this.panelMain);
+            this.Controls.Add(this.lblInsecureOptions);
             this.Controls.Add(this.label3);
-            this.Controls.Add(this.metroPanel1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "GUI";
@@ -358,35 +329,30 @@
             this.ShadowType = MetroFramework.Forms.MetroFormShadowType.AeroShadow;
             this.Text = "League Loader";
             this.Load += new System.EventHandler(this.GUI_Load);
-            this.panelMain.ResumeLayout(false);
-            this.panelMain.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
-
-        private MetroFramework.Controls.MetroButton btnSelectPath;
-        private MetroFramework.Controls.MetroTextBox textPath;
-        private MetroFramework.Controls.MetroLabel metroLabel3;
-        private MetroFramework.Controls.MetroLabel metroLabel2;
-        private MetroFramework.Controls.MetroCheckBox checkDWS;
-        private MetroFramework.Controls.MetroCheckBox checkICE;
-        private MetroFramework.Controls.MetroTextBox textPort;
-        private MetroFramework.Controls.MetroLabel metroLabel1;
-        private MetroFramework.Controls.MetroRadioButton radioOff;
-        private MetroFramework.Controls.MetroRadioButton radioPort;
-        private MetroFramework.Controls.MetroPanel panelMain;
-        private MetroFramework.Controls.MetroLink linkRemote;
+        private MetroFramework.Controls.MetroLabel lblInsecureOptions;
+        private MetroFramework.Controls.MetroCheckBox chkDWS;
+        private MetroFramework.Controls.MetroCheckBox chkICE;
+        private MetroFramework.Controls.MetroLink lnkRemoteDevtools;
         private MetroFramework.Controls.MetroButton btnOpenDevTools;
-        private MetroFramework.Controls.MetroButton btnPlugins;
+        private MetroFramework.Controls.MetroButton btnOpenPlugins;
         private MetroFramework.Controls.MetroButton btnInstall;
-        private System.Windows.Forms.LinkLabel linkRepo;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
-        private MetroFramework.Controls.MetroPanel metroPanel1;
+        private MetroFramework.Controls.MetroCheckBox chkRDP;
+        private MetroFramework.Controls.MetroTextBox txtPort;
+        private MetroFramework.Controls.MetroLink lnkLanguage;
+        private MetroFramework.Controls.MetroLabel lblLeaguePath;
+        private MetroFramework.Controls.MetroTextBox txtPath;
+        private MetroFramework.Controls.MetroButton btnSelectPath;
+        private MetroFramework.Controls.MetroButton btnRestartLC;
+        private MetroFramework.Controls.MetroLink lnkGithub;
     }
 }
 

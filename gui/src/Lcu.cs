@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Authentication;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace LeagueLoader
 {
@@ -9,19 +14,46 @@ namespace LeagueLoader
     {
         static HttpClient _client = new HttpClient();
 
-        static string GetBaseUrl()
+        static Lcu()
+        {
+            // Ignore invalid SSL certs.
+            ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
+        }
+
+        public static bool IsOpened()
+        {
+            return Process.GetProcessesByName("LeagueClientUx").Length > 0;
+        }
+
+        public static bool IsValidDir(string path)
+        {
+            return File.Exists(Path.Combine(path, "LeagueClient.exe"));
+        }
+
+        public static string GetDir()
         {
             var procs = Process.GetProcessesByName("LeagueClientUx");
 
             if (procs.Length > 0)
             {
                 var lcux = procs[0];
-                var lcuxDir = Directory.GetParent(lcux.MainModule.FileName).FullName;
-                var lockfilePath = Path.Combine(lcuxDir, "lockfile");
+                return Directory.GetParent(lcux.MainModule.FileName).FullName;
+            }
+
+            return "";
+        }
+
+        public static async Task<string> Request(string api, string method, string body = null)
+        {
+            var dir = GetDir();
+
+            if (!string.IsNullOrEmpty(dir))
+            {
+                var lockfilePath = Path.Combine(dir, "lockfile");
 
                 if (File.Exists(lockfilePath))
                 {
-                    var lockfileData = File.ReadAllText(lockfilePath);
+                    var lockfileData = LoadFile(lockfilePath);
 
                     if (!string.IsNullOrEmpty(lockfileData))
                     {
@@ -31,24 +63,52 @@ namespace LeagueLoader
                         {
                             var port = tokens[2];
                             var auth = tokens[3];
-                            return $"https://riot:{auth}@127.0.0.1:{port}";
+
+                            var uri = $"https://127.0.0.1:{port}{api}";
+                            var authorization = Convert.ToBase64String(Encoding.ASCII.GetBytes("riot:" + auth));
+                            var content = (body != null) ?
+                                new StringContent(body, Encoding.UTF8, "application/json") : null;
+
+                            try
+                            {
+                                var req = new HttpRequestMessage(new HttpMethod(method), uri);
+                                req.Headers.Add("Authorization", $"Basic {authorization}");
+                                req.Content = content;
+
+                                var res = await _client.SendAsync(req);
+                                return await res.Content.ReadAsStringAsync();
+                            }
+                            catch { }
                         }
                     }
                 }
             }
 
-            return "";
-        }
-
-        public static bool IsReady()
-        {
-            return !string.IsNullOrEmpty(GetBaseUrl());
+            return null;
         }
 
         public static void KillUxAndRestart()
         {
-            var uri = GetBaseUrl() + "/riotclient/kill-and-restart-ux";
-            _client.PostAsync(uri, null);
+            Task.Run(() => Request("/riotclient/kill-and-restart-ux", "POST"));
+        }
+
+        static string LoadFile(string path)
+        {
+            try
+            {
+                using (FileStream fileStream = new FileStream(path,
+                    FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    using (StreamReader reader = new StreamReader(fileStream))
+                    {
+                        return reader.ReadToEnd();
+                    }
+                }
+            }
+            catch
+            {
+                return "";
+            }
         }
     }
 }
