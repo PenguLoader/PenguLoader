@@ -88,7 +88,6 @@ namespace league_loader
 #   define IPC_CALL(process, address, param) \
         CreateRemoteThread(process, NULL, 0, (LPTHREAD_START_ROUTINE)address, (LPVOID)param, 0, NULL)
 
-    std::wstring GetConfigDir();
     std::wstring GetPluginsDir();
     std::wstring GetConfigValue(const std::wstring &key);
 }
