@@ -16,14 +16,14 @@ A small **plugin loader** for **League Client**, supports **CommonJS** modules.
 
 ## Getting started
 
-1. Download the [latest release](https://github.com/nomi-san/league-loader/releases) and extract it (or [build from source](#build)).
+1. Download the [latest release](https://github.com/nomi-san/league-loader/releases) and extract it (or [build from source](#build-from-source))).
 2. Run **League Loader.exe**
 3. Select League Client path
 4. Click **Install**
 5. Launch League Client
 
 <p align="center">
-  <img src="https://i.imgur.com/oFA8HKs.png">
+  <img src="https://i.imgur.com/mDihNl7.png">
 </p>
 
 After League is ready, just click "**Open DevTools**" to open **League Client DevTools**.
@@ -79,7 +79,7 @@ To open **DevTools**, just call:
 window.openDevTools()
 ```
 
-We have an example which modifies the settings UI to preppend a DevTools opener, see [dev-tools.js](/plugins/dev-tools.js).
+We have an example which modifies the settings UI to preppend a DevTools opener, see [dev-tools.js](/bin/plugins/dev-tools.js).
 
 ### Development notes
 
@@ -91,7 +91,7 @@ The JS runtime is V8 engine in browser, that means you are writing JS for web br
 
 When interacting with the DOM, you should add your code to `onload` or `DOMContentLoaded` event of `window`.
 
-## Build
+## Build from source
 
 This project requires Visual Studio 2017 with components
 - Desktop development with C++
