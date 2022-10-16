@@ -71,15 +71,15 @@ bool CefStr::equali(const std::wstring &s) const
 
 bool CefStr::contain(const wchar_t *s) const
 {
-    return wcsstr(str, s) != nullptr;
+    return str_contain(str, s);
 }
 
 bool CefStr::contain(const std::wstring &s) const
 {
-    return wcsstr(str, s.c_str()) != nullptr;
+    return str_contain(str, s);
 }
 
-void LoadLibCEFAPIs()
+void LoadLibcefDll()
 {
     // libcef.dll is already loaded (our module is its dependency).
     HMODULE libcef = GetModuleHandleA("libcef.dll");

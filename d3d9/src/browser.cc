@@ -78,7 +78,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
     struct _cef_request_context_t* request_context)
 {
     // Hook main window only.
-    if (wcsstr(url->str, L"riot:") && wcsstr(url->str, L"/bootstrap.html")) {
+    if (str_contain(url->str, L"riot:") && str_contain(url->str, L"/bootstrap.html")) {
         // Create extra info if null.
         if (extra_info == NULL) {
             extra_info = CefDictionaryValue_Create();

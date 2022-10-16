@@ -2,8 +2,8 @@
 
 using namespace league_loader;
 
-void LoadD3D9APIs();
-void LoadLibCEFAPIs();
+void LoadD3d9Dll();
+void LoadLibcefDll();
 
 void HookBrowserProcess();
 void HookRendererProcess();
@@ -11,23 +11,23 @@ void HookRendererProcess();
 static void Attach()
 {
     // Load D3D9.
-    LoadD3D9APIs();
+    LoadD3d9Dll();
 
     // Get exe path.
-    WCHAR path[1024];
-    GetModuleFileNameW(NULL, path, 1024);
+    WCHAR path[2048];
+    GetModuleFileNameW(NULL, path, 2048);
 
     // Determine which process to be hooked.
-    if (wcsstr(path, L"LeagueClientUx.exe"))
+    if (str_contain(path, L"LeagueClientUx.exe"))
     {
         // Browser process.
-        LoadLibCEFAPIs();
+        LoadLibcefDll();
         HookBrowserProcess();
     }
-    else if (wcsstr(path, L"LeagueClientUxRender.exe") && wcsstr(GetCommandLineW(), L"--type=renderer"))
+    else if (str_contain(path, L"LeagueClientUxRender.exe") && str_contain(GetCommandLineW(), L"--type=renderer"))
     {
         // Renderer process.
-        LoadLibCEFAPIs();
+        LoadLibcefDll();
         HookRendererProcess();
     }
 }

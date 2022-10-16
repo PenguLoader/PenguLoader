@@ -1,13 +1,13 @@
 #include <windows.h>
 
-static void *(*_Direct3DCreate9)(UINT);
-void *Direct3DCreate9(UINT SDKVersion)
+static LPVOID (*_Direct3DCreate9)(UINT);
+LPVOID Direct3DCreate9(UINT SDKVersion)
 {
     return _Direct3DCreate9(SDKVersion);
 }
 
-static HRESULT (*_Direct3DCreate9Ex)(UINT, void **);
-HRESULT Direct3DCreate9Ex(UINT SDKVersion, void **ppEx)
+static HRESULT (*_Direct3DCreate9Ex)(UINT, LPVOID);
+HRESULT Direct3DCreate9Ex(UINT SDKVersion, LPVOID ppEx)
 {
     return _Direct3DCreate9Ex(SDKVersion, ppEx);
 }
@@ -36,11 +36,12 @@ void WINAPI D3DPERF_SetMarker(DWORD col, LPCWSTR wszName)
     _D3DPERF_SetMarker(col, wszName);
 }
 
-void LoadD3D9APIs()
+void LoadD3d9Dll()
 {
     BOOL wow64 = FALSE;
     WCHAR d3d9Path[MAX_PATH];
 
+    // Get system32 path.
     if (IsWow64Process(GetCurrentProcess(), &wow64) && wow64)
         GetSystemWow64DirectoryW(d3d9Path, MAX_PATH);
     else

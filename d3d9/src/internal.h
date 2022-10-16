@@ -90,6 +90,20 @@ namespace league_loader
 
     std::wstring GetPluginsDir();
     std::wstring GetConfigValue(const std::wstring &key);
+
+    static bool str_contain(std::wstring str, std::wstring sub)
+    {
+        if (str.empty()) return false;
+        if (str.length() < sub.length()) return false;
+
+        for (size_t i = 0; i < str.length(); i++)
+            str[i] = towlower(str[i]);
+
+        for (size_t i = 0; i < sub.length(); i++)
+            sub[i] = towlower(sub[i]);
+
+        return wcsstr(str.c_str(), sub.c_str()) != NULL;
+    }
 }
 
 #endif
