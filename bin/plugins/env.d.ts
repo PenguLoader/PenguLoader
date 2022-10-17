@@ -1,0 +1,1 @@
+declare function openDevTools(remote?: boolean): void
