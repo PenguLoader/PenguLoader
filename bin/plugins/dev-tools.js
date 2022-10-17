@@ -10,7 +10,7 @@ const observer = new MutationObserver(mutations => {
 
         const btn = document.createElement('lol-uikit-flat-button-secondary')
         btn.style.display = 'flex'
-        btn.textContent = 'Show DevTools'
+        btn.textContent = 'Show DevTools (Ctrl Shift I)'
         btn.onclick = () => { window.openDevTools() }
 
         const link = document.createElement('p')
@@ -26,8 +26,8 @@ const observer = new MutationObserver(mutations => {
         link.append(a)
 
         row.append(label)
-        row.append(btn)
         row.append(link)
+        row.append(btn)
 
         panel.prepend(row)
     }
@@ -46,4 +46,12 @@ window.addEventListener('load', () => {
             })
         }
     }, 500)
+
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.shiftKey && e.code === 'KeyI') {
+            e.preventDefault()
+            window.openDevTools()
+            return false
+        }
+    })
 })
