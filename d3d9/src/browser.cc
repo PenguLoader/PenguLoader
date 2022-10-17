@@ -1,9 +1,9 @@
 #include "internal.h"
 #include "detours.h"
 
-#include "include\capi\cef_app_capi.h"
-#include "include\capi\cef_client_capi.h"
-#include "include\capi\cef_browser_capi.h"
+#include "include/capi/cef_app_capi.h"
+#include "include/capi/cef_client_capi.h"
+#include "include/capi/cef_browser_capi.h"
 
 using namespace league_loader;
 

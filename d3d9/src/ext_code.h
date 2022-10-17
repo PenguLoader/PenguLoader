@@ -4,7 +4,7 @@
         // Open DevTools of League Client.
 
     window.require(name: String) : any
-        // Simple implementation of Common JS "require".
+        // Simple implementation of CommonJS "require".
 */
 
 R"===============(
@@ -19,7 +19,7 @@ var require;
     };
 
     var join = function (a, b) {
-        var parts = a.split("/").concat(b.split("/"))
+        var parts = a.split("/").concat(b.split("/"));
         var newParts = [];
           
         for (var i = 0, l = parts.length; i < l; i++) {

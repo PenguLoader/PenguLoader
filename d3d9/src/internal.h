@@ -1,7 +1,7 @@
 #ifndef LEAGUE_LOADER_H
 #define LEAGUE_LOADER_H
 
-#if _WIN64
+#ifdef _WIN64
 #error "Build 32-bit only."
 #endif
 
