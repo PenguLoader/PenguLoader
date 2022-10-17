@@ -1,6 +1,6 @@
 const observer = new MutationObserver(mutations => {
     const panel = document.querySelector('div.lol-settings-options > lol-uikit-scrollable')
-    if (panel && mutations.find(record => Array.from(record.addedNodes).includes(panel))) {
+    if (panel && mutations.some(record => Array.from(record.addedNodes).includes(panel))) {
         const row = document.createElement('div')
         row.classList.add('lol-settings-general-row')
 
@@ -10,8 +10,14 @@ const observer = new MutationObserver(mutations => {
 
         const btn = document.createElement('lol-uikit-flat-button-secondary')
         btn.style.display = 'flex'
+        btn.style.marginBottom = '12px'
         btn.textContent = 'Show DevTools (Ctrl Shift I)'
         btn.onclick = () => { window.openDevTools() }
+
+        const btn2 = document.createElement('lol-uikit-flat-button-secondary')
+        btn2.style.display = 'flex'
+        btn2.textContent = 'Reload Client'
+        btn2.onclick = () => { window.location.reload() }
 
         const link = document.createElement('p')
         link.classList.add('lol-settings-code-of-conduct-link')
@@ -28,6 +34,7 @@ const observer = new MutationObserver(mutations => {
         row.append(label)
         row.append(link)
         row.append(btn)
+        row.append(btn2)
 
         panel.prepend(row)
     }
