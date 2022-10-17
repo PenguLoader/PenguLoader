@@ -1,7 +1,7 @@
 <img align="left" src="https://i.imgur.com/ZhWCav3.png" width="140px">
 
 # League Loader
-A small **plugin loader** for **League Client**, supports **CommonJS** modules.
+A small **JavaScript plugin loader** for League Client, supports **CommonJS** modules.
 
 <br>
 <br>
@@ -26,7 +26,11 @@ A small **plugin loader** for **League Client**, supports **CommonJS** modules.
   <img src="https://i.imgur.com/mDihNl7.png">
 </p>
 
-After League is ready, just click "**Open DevTools**" to open **League Client DevTools**.
+After League is ready, just click "**Show DevTools**" in settings panel to open **League Client DevTools**.
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/38210249/196092793-54e6e16b-7f02-41b3-84fe-42181acc1c96.png">
+</p>
 
 We also support **insecure options** for plugins, do not use it if you do not want to be banned.
 
@@ -93,7 +97,7 @@ When interacting with the DOM, you should add your code to `onload` or `DOMConte
 
 ## Build from source
 
-This project requires Visual Studio 2017 with components
+This project requires Visual Studio 2017 with these components:
 - Desktop development with C++
 - .NET desktop development
 - Windows 8.1 SDK & .NET Framework 4.5
