@@ -113,3 +113,24 @@ Build steps
 ## How it works?
 
 See [HOW_IT_WORKS](/HOW_IT_WORKS.md) for details.
+
+### CEF notes
+
+Current CEF version: **v91.1.22**
+
+This project use CEF CAPI in C++. If you need sweet C++ OOP, just use libcef wrapper.
+
+Let's download our [pre-built here](https://github.com/nomi-san/league-loader/releases/tag/0.1a) then add the following code.
+
+```cpp
+#pragma comment(lib, "libcef.lib")
+#pragma comment(lib, "libcef_dll_wrapper.lib")
+#define WRAPPING_CEF_SHARED
+#include "libcef_dll/ctocpp/browser_ctocpp.h"
+
+void callback(cef_browser_t *cbrowser) {
+  auto browser = CefBrowserCToCpp::Wrap(cbowser);
+  aut host = browser->GetHost();
+  host->GetMainFrame();
+}
+```
