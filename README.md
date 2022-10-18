@@ -16,7 +16,7 @@ A small **JavaScript plugin loader** for League Client, supports **CommonJS** mo
 
 ## Getting started
 
-1. Download the [latest release](https://github.com/nomi-san/league-loader/releases) and extract it (or [build from source](#build-from-source))).
+1. Download the [latest release](https://github.com/nomi-san/league-loader/releases) and extract it.
 2. Run **League Loader.exe**
 3. Select League Client path
 4. Click **Install**
@@ -26,15 +26,15 @@ A small **JavaScript plugin loader** for League Client, supports **CommonJS** mo
   <img src="https://i.imgur.com/mDihNl7.png">
 </p>
 
-After League is ready, just click "**Show DevTools**" in settings panel to open **League Client DevTools**.
+After the client is ready, just press **Ctrl Shift I** or click "**Show DevTools**" in settings panel to open **League Client DevTools**.
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/38210249/196092793-54e6e16b-7f02-41b3-84fe-42181acc1c96.png">
 </p>
 
-We also support **insecure options** for plugins, do not use it if you do not want to be banned.
+// We also support **insecure options** for plugins, touching them may get banned (`<= 3%`).
 
-## Plugins
+## JavaScript plugins
 
 To add a plugin, just create a `.js` file in the plugins folder.
 
@@ -51,9 +51,9 @@ plugins/
   demo.js       ; will be executed after League starts.
 ```
 
-### CommonJS
+### CommonJS modules
 
-You can use ES6 and CommonJS modules in your plugins.
+We provided a simple implementation to support CommonJS modules. Each plugin file is a module, `require`, `global` and `module` are available variables.
 
 ```js
 // _util.js
@@ -83,17 +83,71 @@ To open **DevTools**, just call:
 window.openDevTools()
 ```
 
+To reload plugins, just reload the Client (or Ctrl + R in DevTools):
+```js
+window.location.reload()
+```
+
 We have an example which modifies the settings UI to preppend a DevTools opener, see [dev-tools.js](/bin/plugins/dev-tools.js).
+
+### Theme the League Client
+
+To change default style, just add your CSS:
+
+```js
+function addCss(filename) {
+  const style = document.createElement('link')
+  style.href = filename
+  style.type = 'text/css'
+  style.rel = 'stylesheet'
+  document.body.append(style)
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  addCss('https://webdevtestbutch.000webhostapp.com/assets/Noxius.css')
+})
+```
+
+To use local CSS file, just require it:
+
+```js
+function insertCss(css) {
+    const style = document.createElement('style')
+    style.textContent = css
+    document.body.append(style)
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  insertCss(require('my.theme.css'))
+})
+```
+
+### Subscribe the Websocket
+
+When the websocket ready, this link tag will appear:
+```html
+<link rel="riot:plugins:websocket" href="wss://riot:hq5DDz5c8uLLc-dMRC1HGQ@127.0.0.1:50302/">
+```
+
+Call this function to subscribe API event:
+```js
+function subscribe() {
+  const uri = document.querySelector('link[rel="riot:plugins:websocket"]').href
+  const ws = new WebSocket(uri, 'wamp')
+  
+  ws.onopen = () => ws.send(JSON.stringify([5, 'JsonApiEvent']))
+  ws.onmessage = async message => {
+    const data = JSON.parse(message.data)
+    console.log(data)
+  }
+}
+```
 
 ### Development notes
 
-You should use Visual Studio Code to develop your plugins,
-it supports intellisense, linter and autocomplete for modules.
-
-League Client uses CEF 91/Chromium 91.
-The JS runtime is V8 engine in browser, that means you are writing JS for web browser.
-
-When interacting with the DOM, you should add your code to `onload` or `DOMContentLoaded` event of `window`.
+- You should use **Visual Studio Code** to develop your plugins, it supports intellisense, linter and autocomplete for modules.
+- League Client runs on **Chromium 91**, so you're writing JS for the web browser like **Chrome**.
+- When interacting with the DOM, you should put the entry to `onload` or `DOMContentLoaded` event of `window`.
 
 ## Build from source
 
@@ -104,7 +158,7 @@ This project requires Visual Studio 2017 with these components:
 
 You can also use VS2015+ and different SDK version.
 
-Build steps
+Build steps:
   1. Open **league-loader.sln** in VS
   2. Right click on the solution -> **Restore Nuget Packages**
   3. Set arch to **Any CPU** or **x86**
@@ -120,7 +174,7 @@ Current CEF version: **v91.1.22**
 
 This project use CEF CAPI in C++. If you need sweet C++ OOP, just use libcef wrapper.
 
-Let's download our [pre-built here](https://github.com/nomi-san/league-loader/releases/tag/0.1a) then add the following code.
+Let's download our [pre-built here](https://github.com/nomi-san/league-loader/releases/tag/0.1a), then add the following code.
 
 ```cpp
 #pragma comment(lib, "libcef.lib")
