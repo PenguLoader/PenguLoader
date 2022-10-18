@@ -18,7 +18,7 @@ decltype(&cef_v8value_create_function) league_loader::CefV8Value_CreateFunction;
 decltype(&cef_v8value_create_array) league_loader::CefV8Value_CreateArray;
 
 decltype(&cef_initialize) league_loader::CefInitialize;
-decltype(&cef_execute_process) league_loader::CefExecteProcess;
+decltype(&cef_execute_process) league_loader::CefExecuteProcess;
 decltype(&cef_browser_host_create_browser) league_loader::CefBrowserHost_CreateBrowser;
 
 CefStr::CefStr(const std::string &s) : cef_string_t{}
@@ -103,7 +103,7 @@ void LoadLibcefDll()
         (LPVOID &)CefV8Value_CreateArray = GetProcAddress(libcef, "cef_v8value_create_array");
 
         (LPVOID &)CefInitialize = GetProcAddress(libcef, "cef_initialize");
-        (LPVOID &)CefExecteProcess = GetProcAddress(libcef, "cef_execute_process");
+        (LPVOID &)CefExecuteProcess = GetProcAddress(libcef, "cef_execute_process");
         (LPVOID &)CefBrowserHost_CreateBrowser = GetProcAddress(libcef, "cef_browser_host_create_browser");
     }
 }

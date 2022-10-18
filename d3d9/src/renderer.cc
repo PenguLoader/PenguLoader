@@ -23,7 +23,8 @@ void OpenDevTools(BOOL remote);
 // Static V8Handler for our extension.
 static struct V8Handler : CefRefCountStatic<cef_v8handler_t>
 {
-    V8Handler() {
+    V8Handler()
+    {
         execute = _Execute;
     }
 
@@ -69,7 +70,7 @@ static struct V8Handler : CefRefCountStatic<cef_v8handler_t>
         return false;
     }
 
-} V8_HANDLER;
+} extension_handler;
 
 static decltype(cef_render_process_handler_t::on_web_kit_initialized) Old_OnWebKitInitialized;
 static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t* self)
@@ -81,7 +82,7 @@ static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t
         ;
 
     // Register our extension.
-    CefRegisterExtension(&CefStr("v8/LeagueLoader"), &CefStr(ext_code), &V8_HANDLER);
+    CefRegisterExtension(&CefStr("v8/LeagueLoader"), &CefStr(ext_code), &extension_handler);
 }
 
 static decltype(cef_render_process_handler_t::on_context_created) Old_OnContextCreated;
@@ -123,7 +124,7 @@ static void CEF_CALLBACK Hooked_OnBrowserCreated(
     Old_OnBrowserCreated(self, browser, extra_info);
 }
 
-static int Hooked_CefExecteProcess(const cef_main_args_t* args, cef_app_t* app, void* windows_sandbox_info)
+static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app, void* windows_sandbox_info)
 {
     // Hook RenderProcessHandler.
     static auto Old_GetRenderProcessHandler = app->get_render_process_handler;
@@ -147,7 +148,7 @@ static int Hooked_CefExecteProcess(const cef_main_args_t* args, cef_app_t* app, 
         return handler;
     };
 
-    return CefExecteProcess(args, app, windows_sandbox_info);
+    return CefExecuteProcess(args, app, windows_sandbox_info);
 }
 
 void HookRendererProcess()
@@ -158,7 +159,7 @@ void HookRendererProcess()
     DetourUpdateThread(GetCurrentThread());
 
     // Hook CefExecuteProcess().
-    DetourAttach(&(PVOID &)CefExecteProcess, Hooked_CefExecteProcess);
+    DetourAttach(&(PVOID &)CefExecuteProcess, Hooked_CefExecuteProcess);
 
     DetourTransactionCommit();
 }

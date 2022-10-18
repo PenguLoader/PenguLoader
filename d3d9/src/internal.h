@@ -78,7 +78,7 @@ namespace league_loader
 
     // Hooking entries.
     extern decltype(&cef_initialize) CefInitialize;
-    extern decltype(&cef_execute_process) CefExecteProcess;
+    extern decltype(&cef_execute_process) CefExecuteProcess;
     extern decltype(&cef_browser_host_create_browser) CefBrowserHost_CreateBrowser;
 
 #   define IPC_WRITE(process, address, size) \
