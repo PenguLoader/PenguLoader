@@ -5,13 +5,13 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("gui")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("League Loader")]
+[assembly: AssemblyDescription("A small JavaScript plugin loader for League Client, supports CommonJS modules.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("gui")]
-[assembly: AssemblyCopyright("Copyright ©  2021")]
-[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCompany("nomi.dev")]
+[assembly: AssemblyProduct("League Loader")]
+[assembly: AssemblyCopyright("Copyright © Nomi. All rights reserved.")]
+[assembly: AssemblyTrademark("Application")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible
