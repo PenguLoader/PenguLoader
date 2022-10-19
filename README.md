@@ -88,7 +88,7 @@ To reload plugins, just reload the Client (or Ctrl + R in DevTools):
 window.location.reload()
 ```
 
-We have an example which modifies the settings UI to preppend a DevTools opener, see [dev-tools.js](/bin/plugins/dev-tools.js).
+We have an example which modifies the settings panel to add some controls, see [league-loader.js](/bin/plugins/league-loader.js).
 
 ### Theme the League Client
 
