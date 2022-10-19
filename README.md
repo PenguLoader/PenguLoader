@@ -122,7 +122,18 @@ window.addEventListener('DOMContentLoaded', () => {
 })
 ```
 
-### Subscribe the Websocket
+### LCU API requests
+
+Use `fetch` to make a request:
+```js
+function acceptMatchFound() {
+  fetch('/lol-matchmaking/v1/ready-check/accept', {
+    method: 'POST'  
+  })
+}
+```
+
+### LCU Websocket
 
 When the websocket ready, this link tag will appear:
 ```html
@@ -148,6 +159,36 @@ function subscribe() {
 - You should use **Visual Studio Code** to develop your plugins, it supports intellisense, linter and autocomplete for modules.
 - League Client runs on **Chromium 91**, so you're writing JS for the web browser like **Chrome**.
 - When interacting with the DOM, you should put the entry to `onload` or `DOMContentLoaded` event of `window`.
+
+### Native ESM supports
+
+Plugin scrips are loaded as classic module, so you cannot use top-level `import`.
+
+Let's wrap your code:
+
+```js
+(() => import('https://your-cdn.com/plugin.js'))();
+```
+
+Then use ESM in your plugin module:
+```js
+// https://your-cdn.com/plugin.js
+import axios from 'https://cdn.skypack.dev/axios'
+axios.get(...)
+```
+
+To import Axios locally, just use `import` function:
+```js
+async function test() {
+  const { default: axios } = await import('https://cdn.skypack.dev/axios')
+  const { data } = await axios.get('/performance/v1/memory')
+  console.log(data)
+}
+```
+
+Recommended ESM CDNs:
+- https://www.skypack.dev/
+- https://esm.sh/
 
 ## Build from source
 
