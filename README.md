@@ -92,7 +92,7 @@ We have an example which modifies the settings panel to add some controls, see [
 
 ### Theme the League Client
 
-To change default style, just add your CSS:
+To change the default style, just add your CSS:
 
 ```js
 function addCss(filename) {
@@ -108,7 +108,7 @@ window.addEventListener('DOMContentLoaded', () => {
 })
 ```
 
-To use local CSS file, just require it:
+To use a local CSS file, just require it:
 
 ```js
 function insertCss(css) {
@@ -124,7 +124,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 ### LCU API requests
 
-Use `fetch` to make a request:
+Use `fetch` to make a LCU request:
 ```js
 function acceptMatchFound() {
   fetch('/lol-matchmaking/v1/ready-check/accept', {
@@ -150,6 +150,7 @@ function subscribe() {
   ws.onmessage = async message => {
     const data = JSON.parse(message.data)
     console.log(data)
+    // ...
   }
 }
 ```
@@ -162,7 +163,7 @@ function subscribe() {
 
 ### Native ESM supports
 
-Plugin scrips are loaded as classic module, so you cannot use top-level `import`.
+Plugin scripts are loaded as classic module, so you cannot use top-level `import`.
 
 Let's wrap your code:
 
@@ -186,9 +187,11 @@ async function test() {
 }
 ```
 
-Recommended ESM CDNs:
+Recommended CDNs:
 - https://www.skypack.dev/
 - https://esm.sh/
+- https://www.jsdelivr.com/esm
+- https://unpkg.com/
 
 ## Build from source
 
