@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Security.Authentication;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,6 +14,9 @@ namespace LeagueLoader
 
         static Lcu()
         {
+            // Enable TLS 1.1/1.2
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
             // Ignore invalid SSL certs.
             ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
         }
@@ -66,19 +67,21 @@ namespace LeagueLoader
 
                             var uri = $"https://127.0.0.1:{port}{api}";
                             var authorization = Convert.ToBase64String(Encoding.ASCII.GetBytes("riot:" + auth));
-                            var content = (body != null) ?
-                                new StringContent(body, Encoding.UTF8, "application/json") : null;
 
                             try
                             {
                                 var req = new HttpRequestMessage(new HttpMethod(method), uri);
                                 req.Headers.Add("Authorization", $"Basic {authorization}");
-                                req.Content = content;
+
+                                if (!string.IsNullOrEmpty(body))
+                                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
                                 var res = await _client.SendAsync(req);
                                 return await res.Content.ReadAsStringAsync();
                             }
-                            catch { }
+                            catch
+                            {
+                            }
                         }
                     }
                 }

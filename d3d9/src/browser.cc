@@ -15,7 +15,7 @@ DWORD RENDERER_PROCESS_ID = 0;
 UINT REMOTE_DEBUGGING_PORT = 0;
 cef_browser_t *CLIENT_BROWSER = nullptr;
 
-void FetchRemoteDevToolsUrl();
+void PrepareDevToolsThread();
 
 static decltype(cef_life_span_handler_t::on_after_created) Old_OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
@@ -29,7 +29,7 @@ static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* 
 
         // Fetch remote DevTools URL.
         CreateThread(NULL, 0,
-            (LPTHREAD_START_ROUTINE)&FetchRemoteDevToolsUrl, NULL, 0, NULL);
+            (LPTHREAD_START_ROUTINE)&PrepareDevToolsThread, NULL, 0, NULL);
     }
     
     Old_OnAfterCreated(self, browser);
