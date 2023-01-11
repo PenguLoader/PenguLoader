@@ -1,6 +1,9 @@
 version = 1
 
 [[analyzers]]
+name = "cxx"
+
+[[analyzers]]
 name = "csharp"
 
 [[analyzers]]
