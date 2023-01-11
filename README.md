@@ -14,25 +14,37 @@ A small **JavaScript plugin loader** for League Client, supports **CommonJS** mo
 - Support CommonJS modules
 - Interacting LCU APIs be easier
 
+<br>
+
 ## Getting started
 
 1. Download the [latest release](https://github.com/nomi-san/league-loader/releases) and extract it.
 2. Run **League Loader.exe**
 3. Select League Client path
-4. Click **Install**
+4. Click **INSTALL**
 5. Launch League Client
 
 <p align="center">
   <img src="https://i.imgur.com/mDihNl7.png">
 </p>
 
-After the client is ready, just press **Ctrl Shift I** or click "**Show DevTools**" in settings panel to open **League Client DevTools**.
+After League ready, just open the settings panel to ensure the default plugin loaded.
 
+<br>
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/38210249/196092793-54e6e16b-7f02-41b3-84fe-42181acc1c96.png">
+  <img src="https://i.imgur.com/E8gnK5W.png">
 </p>
+<br>
 
-// We also support **insecure options** for plugins, touching them may get banned (`<= 3%`).
+Now you'll see like above this, just press:
+- <kbd>F12</kbd> or <kbd>Ctrl Shift I</kbd> to open DevTools
+- <kbd>Ctrl Shift R</kbd> to reload the client instantly
+
+<br>
+
+> Do not touch **insecure options** without knowledge of them, you might get banned (about 3%).
+
+<br>
 
 ## JavaScript plugins
 
