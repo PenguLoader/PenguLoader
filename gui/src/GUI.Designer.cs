@@ -100,6 +100,7 @@
             this.btnOpenDevTools.Name = "btnOpenDevTools";
             this.btnOpenDevTools.Size = new System.Drawing.Size(132, 23);
             this.btnOpenDevTools.TabIndex = 33;
+            this.btnOpenDevTools.TabStop = false;
             this.btnOpenDevTools.Text = "Open DevTools";
             this.btnOpenDevTools.UseSelectable = true;
             this.btnOpenDevTools.Click += new System.EventHandler(this.btnOpenDevTools_Click);
@@ -111,6 +112,7 @@
             this.btnOpenPlugins.Name = "btnOpenPlugins";
             this.btnOpenPlugins.Size = new System.Drawing.Size(132, 23);
             this.btnOpenPlugins.TabIndex = 32;
+            this.btnOpenPlugins.TabStop = false;
             this.btnOpenPlugins.Text = "Open plugins folder";
             this.btnOpenPlugins.UseSelectable = true;
             this.btnOpenPlugins.Click += new System.EventHandler(this.btnPlugins_Click);
@@ -123,6 +125,7 @@
             this.btnInstall.Name = "btnInstall";
             this.btnInstall.Size = new System.Drawing.Size(131, 36);
             this.btnInstall.TabIndex = 30;
+            this.btnInstall.TabStop = false;
             this.btnInstall.Text = "INSTALL";
             this.btnInstall.UseSelectable = true;
             this.btnInstall.Click += new System.EventHandler(this.btnInstall_Click);
@@ -130,9 +133,9 @@
             // label3
             // 
             this.label3.BackColor = System.Drawing.Color.White;
-            this.label3.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Font = new System.Drawing.Font("Segoe UI Semibold", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.label3.Location = new System.Drawing.Point(123, 16);
+            this.label3.Location = new System.Drawing.Point(106, 16);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(97, 39);
             this.label3.TabIndex = 37;
@@ -153,13 +156,13 @@
             // label2
             // 
             this.label2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(174)))), ((int)(((byte)(219)))));
-            this.label2.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.Font = new System.Drawing.Font("Segoe UI Semibold", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label2.ForeColor = System.Drawing.Color.White;
             this.label2.Location = new System.Drawing.Point(0, 16);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(123, 39);
+            this.label2.Size = new System.Drawing.Size(109, 39);
             this.label2.TabIndex = 36;
-            this.label2.Text = "League";
+            this.label2.Text = "eague";
             this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.label2.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MouseDownDragMove);
             // 
@@ -203,6 +206,7 @@
             this.txtPort.ShortcutsEnabled = true;
             this.txtPort.Size = new System.Drawing.Size(61, 23);
             this.txtPort.TabIndex = 41;
+            this.txtPort.TabStop = false;
             this.txtPort.Text = "8888";
             this.txtPort.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.txtPort.UseSelectable = true;
@@ -214,10 +218,11 @@
             // lnkLanguage
             // 
             this.lnkLanguage.AutoSize = true;
-            this.lnkLanguage.Location = new System.Drawing.Point(330, 32);
+            this.lnkLanguage.Location = new System.Drawing.Point(296, 32);
             this.lnkLanguage.Name = "lnkLanguage";
             this.lnkLanguage.Size = new System.Drawing.Size(89, 23);
             this.lnkLanguage.TabIndex = 42;
+            this.lnkLanguage.TabStop = false;
             this.lnkLanguage.Text = "[Tiếng Việt]";
             this.lnkLanguage.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.lnkLanguage.UseSelectable = true;
@@ -274,6 +279,7 @@
             this.btnSelectPath.Name = "btnSelectPath";
             this.btnSelectPath.Size = new System.Drawing.Size(44, 23);
             this.btnSelectPath.TabIndex = 43;
+            this.btnSelectPath.TabStop = false;
             this.btnSelectPath.Text = "...";
             this.btnSelectPath.UseSelectable = true;
             this.btnSelectPath.Click += new System.EventHandler(this.btnSelectPath_Click);
@@ -285,17 +291,20 @@
             this.btnRestartLC.Name = "btnRestartLC";
             this.btnRestartLC.Size = new System.Drawing.Size(131, 23);
             this.btnRestartLC.TabIndex = 44;
+            this.btnRestartLC.TabStop = false;
             this.btnRestartLC.Text = "Restart Client";
             this.btnRestartLC.UseSelectable = true;
             this.btnRestartLC.Click += new System.EventHandler(this.btnRestartLC_Click);
             // 
             // lnkGithub
             // 
-            this.lnkGithub.Location = new System.Drawing.Point(419, 32);
+            this.lnkGithub.Location = new System.Drawing.Point(391, 32);
             this.lnkGithub.Name = "lnkGithub";
-            this.lnkGithub.Size = new System.Drawing.Size(71, 23);
+            this.lnkGithub.Size = new System.Drawing.Size(99, 23);
             this.lnkGithub.TabIndex = 45;
-            this.lnkGithub.Text = "[Github ↗]";
+            this.lnkGithub.TabStop = false;
+            this.lnkGithub.Text = "[Source code ↗]";
+            this.lnkGithub.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.lnkGithub.UseSelectable = true;
             this.lnkGithub.Click += new System.EventHandler(this.lnkGithub_Click);
             // 
