@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("League Loader")]
 [assembly: AssemblyDescription("A small JavaScript plugin loader for League Client, supports CommonJS modules.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("nomi.dev")]
+[assembly: AssemblyCompany("NOMI.DEV")]
 [assembly: AssemblyProduct("League Loader")]
 [assembly: AssemblyCopyright("Copyright © Nomi. All rights reserved.")]
 [assembly: AssemblyTrademark("Application")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("072eae57-2d4e-4d7f-95af-03bf50e53e3e")]
+[assembly: Guid("8f468f9c-0fbd-4f9d-9aa6-259166e5c4c4")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("0.1.0.0")]
+[assembly: AssemblyFileVersion("0.1.0.0")]
