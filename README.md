@@ -205,12 +205,14 @@ Recommended CDNs:
 - https://www.jsdelivr.com/esm
 - https://unpkg.com/
 
+<br>
+
 ## Build from source
 
 This project requires Visual Studio 2017 with these components:
 - Desktop development with C++
 - .NET desktop development
-- Windows 8.1 SDK & .NET Framework 4.5
+- Windows 10 SDK, [version 1809](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive/#windows-10)
 
 You can also use VS2015+ and different SDK version.
 
