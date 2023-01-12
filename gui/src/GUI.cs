@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace LeagueLoader
 {
-    public partial class GUI : MetroForm
+    internal partial class GUI : MetroForm
     {
         static string PluginsDir = Path.Combine(Directory.GetCurrentDirectory(), "plugins");
 

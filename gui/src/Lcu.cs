@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace LeagueLoader
 {
-    class Lcu
+    internal class Lcu
     {
         static HttpClient _client = new HttpClient();
 

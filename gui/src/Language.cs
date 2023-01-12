@@ -2,7 +2,7 @@
 
 namespace LeagueLoader
 {
-    class Language
+    internal class Language
     {
         public string LeaguePath;
         public string Msg_SelectLeaguePath;

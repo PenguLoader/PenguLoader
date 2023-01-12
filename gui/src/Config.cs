@@ -5,7 +5,7 @@ using System.Text;
 
 namespace LeagueLoader
 {
-    class Config
+    internal class Config
     {
         public static string LeaguePath
         {
