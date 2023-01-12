@@ -1,0 +1,44 @@
+on:
+  push:
+    branches: 
+      - main
+
+jobs:
+  build:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: windows-2019
+
+    steps:
+      - uses: actions/checkout@main
+        with:
+          repository: nomi-san/league-loader
+          
+      - uses: TheMrMilchmann/setup-msvc-dev@v2
+        with:
+          arch: x86
+          sdk: 10.0.17763.0
+          toolset: 14.16
+          
+      - uses: microsoft/setup-msbuild@v1.1
+      
+      - uses: nuget/setup-nuget@v1 
+        with:
+          nuget-version: '5.x'
+          
+      - name: Restore NuGet packages
+        run: nuget restore league-loader.sln
+
+      - name: Build app for release
+        run: msbuild league-loader.sln /p:Platform="x86" /p:Configuration=Release
+        
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v3
+        with:
+          name: league-loader
+          path: |
+            bin/*.exe
+            bin/*.dll
+            bin/plugins/
+        
