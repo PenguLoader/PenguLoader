@@ -62,6 +62,7 @@ namespace league_loader
     // CEF functions.
     extern decltype(&cef_register_extension) CefRegisterExtension;
     extern decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
+    extern decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;
 
     // Strings helpers.
     extern decltype(&cef_string_set) CefString_Set;
@@ -90,6 +91,7 @@ namespace league_loader
         CreateRemoteThread(process, NULL, 0, (LPTHREAD_START_ROUTINE)address, (LPVOID)param, 0, NULL)
 
     std::wstring GetPluginsDir();
+    std::wstring GetAssetsDir();
     std::wstring GetConfigValue(const std::wstring &key);
 
     static bool str_contain(std::wstring str, std::wstring sub)
@@ -105,6 +107,8 @@ namespace league_loader
 
         return wcsstr(str.c_str(), sub.c_str()) != NULL;
     }
+
+    cef_resource_handler_t * CreateAssetsHandler(const std::wstring &path);
 }
 
 #endif

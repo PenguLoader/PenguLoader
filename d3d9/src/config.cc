@@ -6,6 +6,9 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 static std::wstring GetLoaderDir()
 {
+    static std::wstring cachedPath{};
+    if (!cachedPath.empty()) return cachedPath;
+
     // Get this dll path.
     WCHAR thisPath[2048];
     GetModuleFileNameW((HINSTANCE)&__ImageBase, thisPath, 2048);
@@ -24,12 +27,17 @@ static std::wstring GetLoaderDir()
         dir.erase(0, 4);
 
     // Get parent folder.
-    return dir.substr(0, dir.find_last_of(L"/\\"));
+    return cachedPath = dir.substr(0, dir.find_last_of(L"/\\"));
 }
 
 std::wstring league_loader::GetPluginsDir()
 {
     return GetLoaderDir() + L"\\plugins";
+}
+
+std::wstring league_loader::GetAssetsDir()
+{
+    return GetLoaderDir() + L"\\assets";
 }
 
 std::wstring league_loader::GetConfigValue(const std::wstring &key)

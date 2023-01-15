@@ -34,6 +34,9 @@
     <ClCompile Include="src\config.cc">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\resource_handler.cc">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\d3d9.def">

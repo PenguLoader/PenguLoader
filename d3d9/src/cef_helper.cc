@@ -4,6 +4,7 @@ using namespace league_loader;
 
 decltype(&cef_register_extension) league_loader::CefRegisterExtension;
 decltype(&cef_dictionary_value_create) league_loader::CefDictionaryValue_Create;
+decltype(&cef_stream_reader_create_for_file) league_loader::CefStreamReader_CreateForFile;
 
 decltype(&cef_string_set) league_loader::CefString_Set;
 decltype(&cef_string_clear) league_loader::CefString_Clear;
@@ -89,6 +90,7 @@ void LoadLibcefDll()
         // Get CEF functions.
         (LPVOID &)CefRegisterExtension = GetProcAddress(libcef, "cef_register_extension");
         (LPVOID &)CefDictionaryValue_Create = GetProcAddress(libcef, "cef_dictionary_value_create");
+        (LPVOID &)CefStreamReader_CreateForFile = GetProcAddress(libcef, "cef_stream_reader_create_for_file");
 
         (LPVOID &)CefString_Set = GetProcAddress(libcef, "cef_string_utf16_set");
         (LPVOID &)CefString_Clear = GetProcAddress(libcef, "cef_string_utf16_clear");

@@ -67,6 +67,54 @@ static void HookClient(cef_client_t *client)
 
         return handler;
     };
+
+    static auto Old_GetRequestHandler = client->get_request_handler;
+    client->get_request_handler = [](struct _cef_client_t* self) -> cef_request_handler_t*
+    {
+        auto handler = Old_GetRequestHandler(self);
+
+        static auto Old_GetResourceRequestHandler = handler->get_resource_request_handler;
+        handler->get_resource_request_handler = [](
+            struct _cef_request_handler_t* self,
+            struct _cef_browser_t* browser,
+            struct _cef_frame_t* frame,
+            struct _cef_request_t* request,
+            int is_navigation,
+            int is_download,
+            const cef_string_t* request_initiator,
+            int* disable_default_handling) -> cef_resource_request_handler_t*
+        {
+            auto handler = Old_GetResourceRequestHandler(self, browser, frame, request,
+                is_navigation, is_download, request_initiator, disable_default_handling);
+
+            static auto Old_GetResourceHandler = handler->get_resource_handler;
+            handler->get_resource_handler = [](
+                struct _cef_resource_request_handler_t* self,
+                struct _cef_browser_t* browser,
+                struct _cef_frame_t* frame,
+                struct _cef_request_t* request) -> cef_resource_handler_t*
+            {
+                auto url = request->get_url(request);
+                cef_resource_handler_t *handler = nullptr;
+
+                if (wcsncmp(url->str, L"https://assets/", 15) == 0)
+                {
+                    return CreateAssetsHandler(url->str + 14);
+                }
+                else
+                {
+                    handler = Old_GetResourceHandler(self, browser, frame, request);
+                }
+
+                CefString_UserFree_Free(url);
+                return handler;
+            };
+
+            return handler;
+        };
+
+        return handler;
+    };
 }
 
 static int Hooked_CefBrowserHost_CreateBrowser(
