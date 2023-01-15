@@ -7,3 +7,4 @@ EXPORTS
     D3DPERF_GetStatus
     D3DPERF_SetMarker
     
+    _GetCefVersion @5000 NONAME

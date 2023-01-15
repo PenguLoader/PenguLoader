@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "include/cef_version.h"
 
 using namespace league_loader;
 
@@ -48,4 +49,9 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
     }
 
     return TRUE;
+}
+
+int APIENTRY _GetCefVersion()
+{
+    return CEF_VERSION_MAJOR;
 }
