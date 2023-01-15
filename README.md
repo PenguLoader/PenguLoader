@@ -115,7 +115,7 @@ function addCss(filename) {
   document.body.append(style)
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', () => {
   addCss('https://webdevtestbutch.000webhostapp.com/assets/Noxius.css')
 })
 ```
@@ -129,8 +129,8 @@ function insertCss(css) {
     document.body.append(style)
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  insertCss(require('my.theme.css'))
+window.addEventListener('load', () => {
+    insertCss(require('./theme.css'))
 })
 ```
 
