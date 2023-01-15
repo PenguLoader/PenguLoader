@@ -17,24 +17,25 @@
 
 namespace league_loader
 {
-    // Simple C wrapper of CefRefCount for static data.
     template <typename T>
-    class CefRefCountStatic : public T
+    class CefRefCount : public T
     {
     public:
-        CefRefCountStatic() {
-            base.size = sizeof(T); \
-                base.add_ref = _Base_AddRef; \
-                base.release = _Base_Release; \
-                base.has_one_ref = _Base_HasOneRef; \
-                base.has_at_least_one_ref = _Base_HasAtLeastOneRef;
+        template <typename U>
+        CefRefCount(const U *) : ref_(1) {
+            base.size = sizeof(U);
+            base.add_ref = (decltype(cef_base_ref_counted_t::add_ref))_Base_AddRef;
+            base.release = (decltype(cef_base_ref_counted_t::release))_Base_Release;
+            base.has_one_ref = (decltype(cef_base_ref_counted_t::has_one_ref))_Base_HasOneRef;
+            base.has_at_least_one_ref = (decltype(cef_base_ref_counted_t::has_at_least_one_ref))_Base_HasAtLeastOneRef;
         }
 
     private:
-        static void CALLBACK _Base_AddRef(cef_base_ref_counted_t *self) {}
-        static int CALLBACK _Base_Release(cef_base_ref_counted_t *self) { return 0; }
-        static int CALLBACK _Base_HasOneRef(cef_base_ref_counted_t *self) { return 1; }
-        static int CALLBACK _Base_HasAtLeastOneRef(cef_base_ref_counted_t *self) { return 1; }
+        size_t ref_;
+        static void CALLBACK _Base_AddRef(CefRefCount *self) { ++self->ref_; }
+        static int CALLBACK _Base_Release(CefRefCount *self) { return (--self->ref_ == 0) ? (delete self, 1) : 0; }
+        static int CALLBACK _Base_HasOneRef(CefRefCount *self) { return self->ref_ == 1; }
+        static int CALLBACK _Base_HasAtLeastOneRef(CefRefCount *self) { return self->ref_ >= 1; }
     };
 
     // cef_string_t wrapper.

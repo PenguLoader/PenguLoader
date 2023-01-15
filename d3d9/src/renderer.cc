@@ -20,14 +20,16 @@ bool NativeRequire(const std::wstring &path, std::wstring &source, int &flag);
 
 void OpenDevTools(BOOL remote);
 
-// Static V8Handler for our extension.
-static struct V8Handler : CefRefCountStatic<cef_v8handler_t>
+// Custom V8 handler for extenstion
+struct ExtensionHandler : CefRefCount<cef_v8handler_t>
 {
-    V8Handler()
+public:
+    ExtensionHandler() : CefRefCount(this)
     {
         execute = _Execute;
     }
 
+private:
     static int CALLBACK _Execute(cef_v8handler_t* self,
         const cef_string_t* _name,
         cef_v8value_t* object,
@@ -69,8 +71,7 @@ static struct V8Handler : CefRefCountStatic<cef_v8handler_t>
 
         return false;
     }
-
-} extension_handler;
+};
 
 static decltype(cef_render_process_handler_t::on_web_kit_initialized) Old_OnWebKitInitialized;
 static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t* self)
@@ -82,7 +83,7 @@ static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t
         ;
 
     // Register our extension.
-    CefRegisterExtension(&CefStr("v8/LeagueLoader"), &CefStr(ext_code), &extension_handler);
+    CefRegisterExtension(&CefStr("v8/LeagueLoader"), &CefStr(ext_code), new ExtensionHandler());
 }
 
 static decltype(cef_render_process_handler_t::on_context_created) Old_OnContextCreated;
