@@ -109,6 +109,8 @@ namespace league_loader
     }
 
     cef_resource_handler_t * CreateAssetsHandler(const std::wstring &path);
+
+    void OpenDevTools(bool remote);
 }
 
 #endif

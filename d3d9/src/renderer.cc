@@ -18,8 +18,6 @@ static HANDLE BROWSER_PROCESS;
 void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context);
 bool NativeRequire(const std::wstring &path, std::wstring &source, int &flag);
 
-void OpenDevTools(BOOL remote);
-
 // Custom V8 handler for extenstion
 struct ExtensionHandler : CefRefCount<cef_v8handler_t>
 {
@@ -40,29 +38,26 @@ private:
     {
         CefStr name(_name);
 
-        if (name == L"OpenDevTools") {
-            if (argc > 0 && args[0]->get_bool_value(args[0])) {
-                // Open remote DevTools.
-                IPC_CALL(BROWSER_PROCESS, &OpenDevTools, TRUE);
-            }
-            else {
-                // Open built-in DevTools.
-                IPC_CALL(BROWSER_PROCESS, &OpenDevTools, FALSE);
-            }
+        if (name == L"OpenDevTools")
+        {
+            OpenDevTools(argc > 0 && args[0]->get_bool_value(args[0]));
             return true;
         }
-        else if (name == L"Require") {
+        else if (name == L"Require")
+        {
             int flag;
             std::wstring source;
             CefStr path(args[0]->get_string_value(args[0]));
 
-            if (NativeRequire(path.str, source, flag)) {
+            if (NativeRequire(path.str, source, flag))
+            {
                 auto data = CefV8Value_CreateArray(2);
                 data->set_value_byindex(data, 0, CefV8Value_CreateString(&CefStr(source)));
                 data->set_value_byindex(data, 1, CefV8Value_CreateInt(flag));
                 *retval = data;
             }
-            else {
+            else
+            {
                 *retval = CefV8Value_CreateNull();
             }
 

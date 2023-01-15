@@ -11,7 +11,37 @@ extern UINT REMOTE_DEBUGGING_PORT;
 extern cef_browser_t *CLIENT_BROWSER;
 static std::string REMOTE_DEVTOOLS_URL;
 
-void OpenDevTools(BOOL remote);
+#define OPEN_DEVTOOLS_EVENT         "Global\\LeagueLoader.OpenDevTools"
+#define OPEN_REMOTE_DEVTOOLS_EVENT  "Global\\LeagueLoader.OpenRemoteDevTools"
+
+static void OpenDevTools_Internal(bool remote)
+{
+    if (remote)
+    {
+        if (REMOTE_DEBUGGING_PORT == 0) return;
+        if (REMOTE_DEVTOOLS_URL.empty()) return;
+
+        ShellExecuteA(NULL, "open",
+            REMOTE_DEVTOOLS_URL.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+    else if (CLIENT_BROWSER != nullptr)
+    {
+        cef_window_info_t wi{};
+        wi.x = CW_USEDEFAULT;
+        wi.y = CW_USEDEFAULT;
+        wi.width = CW_USEDEFAULT;
+        wi.height = CW_USEDEFAULT;
+        wi.style = WS_OVERLAPPEDWINDOW
+            | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
+        wi.window_name = CefStr("DevTools - League Client");
+        wi.parent_window = NULL /*GetDesktopWindow()*/;
+
+        auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);
+        host->show_dev_tools(host, &wi, NULL, NULL, NULL);
+        //                              ^--- We use null for client to keep DevTools
+        //                                   from being scaled by League Client (e.g 0.8, 1.6).
+    }
+}
 
 void PrepareDevToolsThread()
 {
@@ -55,8 +85,8 @@ void PrepareDevToolsThread()
     // Handle remote opener via event signaling.
 
     HANDLE events[2];
-    events[0] = CreateEventW(NULL, TRUE, FALSE, L"Global\\LeagueLoader.OpenDevTools");
-    events[1] = CreateEventW(NULL, TRUE, FALSE, L"Global\\LeagueLoader.OpenRemoteDevTools");
+    events[0] = CreateEventA(NULL, TRUE, FALSE, OPEN_DEVTOOLS_EVENT);
+    events[1] = CreateEventA(NULL, TRUE, FALSE, OPEN_REMOTE_DEVTOOLS_EVENT);
 
     while (CLIENT_BROWSER != nullptr)
     {
@@ -65,13 +95,13 @@ void PrepareDevToolsThread()
 
         if (ret == WAIT_OBJECT_0)
         {
-            OpenDevTools(FALSE);
+            OpenDevTools_Internal(false);
             ResetEvent(events[0]);
             continue;
         }
         else if (ret == WAIT_OBJECT_0 + 1)
         {
-            OpenDevTools(TRUE);
+            OpenDevTools_Internal(true);
             ResetEvent(events[1]);
             continue;
         }
@@ -80,31 +110,15 @@ void PrepareDevToolsThread()
     }
 }
 
-void OpenDevTools(BOOL remote)
+// Cross-process call.
+void league_loader::OpenDevTools(bool remote)
 {
-    if (remote)
-    {
-        if (REMOTE_DEBUGGING_PORT == 0) return;
-        if (REMOTE_DEVTOOLS_URL.empty()) return;
+    auto eventName = remote
+        ? OPEN_REMOTE_DEVTOOLS_EVENT : OPEN_DEVTOOLS_EVENT;
 
-        ShellExecuteA(NULL, "open",
-            REMOTE_DEVTOOLS_URL.c_str(), NULL, NULL, SW_SHOWNORMAL);
-    }
-    else if (CLIENT_BROWSER != nullptr)
+    if (HANDLE event = OpenEventA(EVENT_MODIFY_STATE, FALSE, eventName))
     {
-        cef_window_info_t wi{};
-        wi.x = CW_USEDEFAULT;
-        wi.y = CW_USEDEFAULT;
-        wi.width = CW_USEDEFAULT;
-        wi.height = CW_USEDEFAULT;
-        wi.style = WS_OVERLAPPEDWINDOW
-            | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
-        wi.window_name = CefStr("DevTools - League Client");
-        wi.parent_window = GetDesktopWindow();
-
-        auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);
-        host->show_dev_tools(host, &wi, NULL, NULL, NULL);
-        //                              ^--- We use null for client to keep DevTools
-        //                                   from being scaled by League Client (e.g 0.8, 1.6).
+        SetEvent(event);
+        CloseHandle(event);
     }
 }
