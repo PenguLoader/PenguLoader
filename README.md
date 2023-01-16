@@ -25,7 +25,7 @@ A small **JavaScript plugin loader** for League Client, supports **CommonJS** mo
 5. Launch League Client
 
 <p align="center">
-  <img src="https://i.imgur.com/mDihNl7.png">
+  <img src="https://user-images.githubusercontent.com/38210249/212664643-ba79c89b-0436-40fe-9fd4-32d4b0d475db.png">
 </p>
 
 After League ready, just open the settings panel to ensure the default plugin loaded.
@@ -39,10 +39,6 @@ After League ready, just open the settings panel to ensure the default plugin lo
 Now you'll see like above this, just press:
 - <kbd>F12</kbd> or <kbd>Ctrl Shift I</kbd> to open DevTools
 - <kbd>Ctrl Shift R</kbd> to reload the client instantly
-
-<br>
-
-> Do not touch **insecure options** without knowledge of them, you might get banned (about 3%).
 
 <br>
 
@@ -120,26 +116,32 @@ window.addEventListener('load', () => {
 })
 ```
 
-To use a local CSS file, just require it:
+To use local CSS file (see [Access local resources](#access-local-resources)):
+
+```js
+addCss('//assets/theme.css')
+```
+
+You can also use CSS code by requiring it from plugins folder:
 
 ```js
 function insertCss(css) {
-    const style = document.createElement('style')
-    style.textContent = css
-    document.body.append(style)
+  const style = document.createElement('style')
+  style.textContent = css
+  document.body.append(style)
 }
 
 window.addEventListener('load', () => {
-    insertCss(require('./theme.css'))
+  insertCss(require('./theme.css'))
 })
 ```
 
 ### LCU API requests
 
-Use `fetch` to make a LCU request:
+Just use `fetch` to make a LCU request:
 ```js
-function acceptMatchFound() {
-  fetch('/lol-matchmaking/v1/ready-check/accept', {
+async function acceptMatchFound() {
+  await fetch('/lol-matchmaking/v1/ready-check/accept', {
     method: 'POST'  
   })
 }
@@ -204,6 +206,29 @@ Recommended CDNs:
 - https://esm.sh/
 - https://www.jsdelivr.com/esm
 - https://unpkg.com/
+
+<br>
+
+## Access local resources
+
+You can access the resources in filesystem by using this domain:
+
+```
+//assets/
+```
+
+It is also equivalent to `https://assets/` (HTTPS based scheme).
+
+For example with custom theme.
+
+```
+league-loader/
+  |__assets/
+    |__background.png     ; custom background
+    |__theme.css          ; overrides default background-url: url(//assets/background.png)
+  |__plugins/
+    |__theme.js           ; injects link tag with href="//assets/theme.css"
+```
 
 <br>
 
