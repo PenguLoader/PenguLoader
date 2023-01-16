@@ -18,9 +18,6 @@ namespace LeagueLoader
 
             Config.Init();
 
-            chkICE.Checked = Config.IgnoreCertificateErrors;
-            chkDWS.Checked = Config.DisableWebSecurity;
-
             var port = Config.RemoteDebuggingPort;
             chkRDP.Checked = port > 0;
             txtPort.Enabled = port > 0;
@@ -171,43 +168,13 @@ namespace LeagueLoader
             }
         }
 
-        private void chkICE_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!Visible) return;
-
-            if (chkICE.Checked)
-            {
-                var ret = MessageBox.Show(this, _l.WarningICE,
-                    "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-                if (ret != DialogResult.Yes) chkICE.Checked = false;
-            }
-
-            Config.IgnoreCertificateErrors = chkICE.Checked;
-        }
-
-        private void chkDWS_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!Visible) return;
-
-            if (chkDWS.Checked)
-            {
-                var ret = MessageBox.Show(this, _l.WarningDWS,
-                    "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-                if (ret != DialogResult.Yes) chkDWS.Checked = false;
-            }
-
-            Config.DisableWebSecurity = chkDWS.Checked;
-        }
-
         private void chkRDP_CheckedChanged(object sender, EventArgs e)
         {
             if (!Visible) return;
 
             if (chkRDP.Checked)
             {
-                var ret = MessageBox.Show(this, _l.WarningRDP,
+                var ret = MessageBox.Show(this, _l.WarningRemoteDebugger,
                     "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
                 if (ret != DialogResult.Yes) chkRDP.Checked = false;
@@ -253,7 +220,8 @@ namespace LeagueLoader
             }
 
             lblLeaguePath.Text = _l.LeaguePath;
-            lblInsecureOptions.Text = _l.InsecureOptions;
+            lblRemoteDebugger.Text = _l.RemoteDebugger;
+            chkRDP.Text = _l.EnableWithPort;
             btnOpenDevTools.Text = _l.OpenDevTools;
             btnOpenPlugins.Text = _l.OpenPlugins;
             btnRestartLC.Text = _l.RestartClient;

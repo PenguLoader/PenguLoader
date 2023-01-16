@@ -29,9 +29,7 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GUI));
-            this.lblInsecureOptions = new MetroFramework.Controls.MetroLabel();
-            this.chkDWS = new MetroFramework.Controls.MetroCheckBox();
-            this.chkICE = new MetroFramework.Controls.MetroCheckBox();
+            this.lblRemoteDebugger = new MetroFramework.Controls.MetroLabel();
             this.lnkRemoteDevtools = new MetroFramework.Controls.MetroLink();
             this.btnOpenDevTools = new MetroFramework.Controls.MetroButton();
             this.btnOpenPlugins = new MetroFramework.Controls.MetroButton();
@@ -49,47 +47,24 @@
             this.lnkGithub = new MetroFramework.Controls.MetroLink();
             this.SuspendLayout();
             // 
-            // lblInsecureOptions
+            // lblRemoteDebugger
             // 
-            this.lblInsecureOptions.AutoSize = true;
-            this.lblInsecureOptions.Location = new System.Drawing.Point(23, 143);
-            this.lblInsecureOptions.Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
-            this.lblInsecureOptions.Name = "lblInsecureOptions";
-            this.lblInsecureOptions.Size = new System.Drawing.Size(103, 19);
-            this.lblInsecureOptions.TabIndex = 19;
-            this.lblInsecureOptions.Text = "Insecure options";
-            // 
-            // chkDWS
-            // 
-            this.chkDWS.AutoSize = true;
-            this.chkDWS.Location = new System.Drawing.Point(37, 191);
-            this.chkDWS.Name = "chkDWS";
-            this.chkDWS.Size = new System.Drawing.Size(130, 15);
-            this.chkDWS.TabIndex = 18;
-            this.chkDWS.TabStop = false;
-            this.chkDWS.Text = "Disable web security";
-            this.chkDWS.UseSelectable = true;
-            this.chkDWS.CheckedChanged += new System.EventHandler(this.chkDWS_CheckedChanged);
-            // 
-            // chkICE
-            // 
-            this.chkICE.AutoSize = true;
-            this.chkICE.Location = new System.Drawing.Point(37, 170);
-            this.chkICE.Name = "chkICE";
-            this.chkICE.Size = new System.Drawing.Size(145, 15);
-            this.chkICE.TabIndex = 17;
-            this.chkICE.TabStop = false;
-            this.chkICE.Text = "Ignore certificate errors";
-            this.chkICE.UseSelectable = true;
-            this.chkICE.CheckedChanged += new System.EventHandler(this.chkICE_CheckedChanged);
+            this.lblRemoteDebugger.AutoSize = true;
+            this.lblRemoteDebugger.Location = new System.Drawing.Point(23, 151);
+            this.lblRemoteDebugger.Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
+            this.lblRemoteDebugger.Name = "lblRemoteDebugger";
+            this.lblRemoteDebugger.Size = new System.Drawing.Size(117, 19);
+            this.lblRemoteDebugger.TabIndex = 19;
+            this.lblRemoteDebugger.Text = "Remote debugger";
             // 
             // lnkRemoteDevtools
             // 
-            this.lnkRemoteDevtools.Location = new System.Drawing.Point(161, 267);
+            this.lnkRemoteDevtools.Location = new System.Drawing.Point(349, 174);
             this.lnkRemoteDevtools.Name = "lnkRemoteDevtools";
-            this.lnkRemoteDevtools.Size = new System.Drawing.Size(131, 23);
+            this.lnkRemoteDevtools.Size = new System.Drawing.Size(141, 23);
             this.lnkRemoteDevtools.TabIndex = 34;
             this.lnkRemoteDevtools.Text = "[Remote DevTools ↗]";
+            this.lnkRemoteDevtools.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.lnkRemoteDevtools.UseSelectable = true;
             this.lnkRemoteDevtools.Click += new System.EventHandler(this.lnkRemoteDevTools_Click);
             // 
@@ -169,12 +144,12 @@
             // chkRDP
             // 
             this.chkRDP.AutoSize = true;
-            this.chkRDP.Location = new System.Drawing.Point(223, 170);
+            this.chkRDP.Location = new System.Drawing.Point(37, 182);
             this.chkRDP.Name = "chkRDP";
-            this.chkRDP.Size = new System.Drawing.Size(150, 15);
+            this.chkRDP.Size = new System.Drawing.Size(109, 15);
             this.chkRDP.TabIndex = 24;
             this.chkRDP.TabStop = false;
-            this.chkRDP.Text = "Remote debugging port";
+            this.chkRDP.Text = "Enable with port";
             this.chkRDP.UseSelectable = true;
             this.chkRDP.CheckedChanged += new System.EventHandler(this.chkRDP_CheckedChanged);
             // 
@@ -195,7 +170,7 @@
             this.txtPort.Enabled = false;
             this.txtPort.Lines = new string[] {
         "8888"};
-            this.txtPort.Location = new System.Drawing.Point(379, 166);
+            this.txtPort.Location = new System.Drawing.Point(159, 178);
             this.txtPort.MaxLength = 32767;
             this.txtPort.Name = "txtPort";
             this.txtPort.PasswordChar = '\0';
@@ -255,7 +230,7 @@
             this.txtPath.Enabled = false;
             this.txtPath.Lines = new string[] {
         "[not found]"};
-            this.txtPath.Location = new System.Drawing.Point(37, 105);
+            this.txtPath.Location = new System.Drawing.Point(37, 109);
             this.txtPath.MaxLength = 32767;
             this.txtPath.Name = "txtPath";
             this.txtPath.PasswordChar = '\0';
@@ -275,7 +250,7 @@
             // btnSelectPath
             // 
             this.btnSelectPath.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnSelectPath.Location = new System.Drawing.Point(446, 105);
+            this.btnSelectPath.Location = new System.Drawing.Point(446, 109);
             this.btnSelectPath.Name = "btnSelectPath";
             this.btnSelectPath.Size = new System.Drawing.Size(44, 23);
             this.btnSelectPath.TabIndex = 43;
@@ -287,7 +262,7 @@
             // btnRestartLC
             // 
             this.btnRestartLC.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnRestartLC.Location = new System.Drawing.Point(161, 238);
+            this.btnRestartLC.Location = new System.Drawing.Point(161, 267);
             this.btnRestartLC.Name = "btnRestartLC";
             this.btnRestartLC.Size = new System.Drawing.Size(131, 23);
             this.btnRestartLC.TabIndex = 44;
@@ -324,12 +299,10 @@
             this.Controls.Add(this.lblLeaguePath);
             this.Controls.Add(this.lnkRemoteDevtools);
             this.Controls.Add(this.btnOpenDevTools);
-            this.Controls.Add(this.chkICE);
             this.Controls.Add(this.btnOpenPlugins);
             this.Controls.Add(this.txtPath);
-            this.Controls.Add(this.chkDWS);
             this.Controls.Add(this.btnInstall);
-            this.Controls.Add(this.lblInsecureOptions);
+            this.Controls.Add(this.lblRemoteDebugger);
             this.Controls.Add(this.label3);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
@@ -344,9 +317,7 @@
         }
 
         #endregion
-        private MetroFramework.Controls.MetroLabel lblInsecureOptions;
-        private MetroFramework.Controls.MetroCheckBox chkDWS;
-        private MetroFramework.Controls.MetroCheckBox chkICE;
+        private MetroFramework.Controls.MetroLabel lblRemoteDebugger;
         private MetroFramework.Controls.MetroLink lnkRemoteDevtools;
         private MetroFramework.Controls.MetroButton btnOpenDevTools;
         private MetroFramework.Controls.MetroButton btnOpenPlugins;

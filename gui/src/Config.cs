@@ -13,26 +13,6 @@ namespace LeagueLoader
             set => Set("LeaguePath", value);
         }
 
-        public static bool DisableWebSecurity
-        {
-            get
-            {
-                var value = Get("DisableWebSecurity");
-                return !string.IsNullOrEmpty(value) && value != "0";
-            }
-            set => Set("DisableWebSecurity", value ? "1" : "0");
-        }
-
-        public static bool IgnoreCertificateErrors
-        {
-            get
-            {
-                var value = Get("IgnoreCertificateErrors");
-                return !string.IsNullOrEmpty(value) && value != "0";
-            }
-            set => Set("IgnoreCertificateErrors", value ? "1" : "0");
-        }
-
         public static int RemoteDebuggingPort
         {
             get

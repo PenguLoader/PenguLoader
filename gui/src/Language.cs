@@ -6,16 +6,15 @@ namespace LeagueLoader
     {
         public string LeaguePath;
         public string Msg_SelectLeaguePath;
-        public string InsecureOptions;
+        public string RemoteDebugger;
         public string OpenPlugins;
         public string OpenDevTools;
         public string RestartClient;
         public string Install;
         public string Uninstall;
 
-        public string WarningICE;
-        public string WarningDWS;
-        public string WarningRDP;
+        public string EnableWithPort;
+        public string WarningRemoteDebugger;
 
         public string Msg_InvalidSelectedPath;
         public string Msg_NotActivated;
@@ -31,30 +30,17 @@ namespace LeagueLoader
         {
             LeaguePath = "League Client path",
             Msg_SelectLeaguePath = "Select Riot Games, League of Legends or LeagueClient folder.",
-            InsecureOptions = "Insecure options",
+            RemoteDebugger = "Remote Debugger",
             OpenPlugins = "Open plugins folder",
             OpenDevTools = "Open DevTools",
             RestartClient = "Restart Client",
             Install = "INSTALL",
             Uninstall = "UNINSTALL",
 
-            WarningICE = "Warning about insecure option!\n" +
+            EnableWithPort = "Enable with port",
+            WarningRemoteDebugger = "Warning!\n" +
                 "\n" +
-                "Ignoring certificate errors helps you to ignore all error/invalid SSL certificates. " +
-                "That's against Riot's Privacy Policy, so you might get banned.\n" +
-                "\n" +
-                "Are you sure want to continue?",
-
-            WarningDWS = "Warning about insecure option!\n" +
-                "\n" +
-                "Disabling web security helps you to bypass CORS when making request with fetch() and XHR (in League Client). " +
-                "That's against Riot's Privacy Policy, so you might get banned.\n" +
-                "\n" +
-                "Are you sure want to continue?",
-
-            WarningRDP = "Warning about insecure option!\n" +
-                "\n" +
-                "Using remote debuggin port helps you to control League Client's DevTools remotely through a specified port. " +
+                "Using remote debugger helps you to control League Client's DevTools remotely through a specified port. " +
                 "This can be dangerous if you are using public network.\n" +
                 "\n" +
                 "Are you sure want to continue?",
@@ -77,30 +63,17 @@ namespace LeagueLoader
         {
             LeaguePath = "Đường dẫn Client LMHT",
             Msg_SelectLeaguePath = "Vui lòng chọn đường dẫn đến thư mục Riot Games, League of Legends hoặc LeagueClient.",
-            InsecureOptions = "Các tùy chọn không an toàn",
+            RemoteDebugger = "Gỡ lỗi từ xa",
             OpenPlugins = "Mở thư mục plugins",
             OpenDevTools = "Mở DevTools",
             RestartClient = "Khởi động lại Client",
             Install = "CÀI ĐẶT",
             Uninstall = "GỠ CÀI ĐẶT",
 
-            WarningICE = "Cảnh báo tùy chọn không an toàn!\n" +
+            EnableWithPort = "Dùng với port",
+            WarningRemoteDebugger = "Cảnh báo!\n" +
                 "\n" +
-                "Bật tùy chọn này giúp bỏ qua tất cả các chứng chỉ SSL lỗi/không hợp lệ. " +
-                "Điều này vi phạm chính sách quyền riêng tư của Riot và có thể bị khóa tài khoản.\n" +
-                "\n" +
-                "Bạn có muốn tiếp tục không?",
-
-            WarningDWS = "Cảnh báo tùy chọn không an toàn!\n" +
-                "\n" +
-                "Bật tùy chọn này giúp bypass CORS khi thực hiện request với fetch() và XHR (trong League Client). " +
-                "Điều này vi phạm chính sách quyền riêng tư của Riot và có thể bị khóa tài khoản.\n" +
-                "\n" +
-                "Bạn có muốn tiếp tục không?",
-
-            WarningRDP = "Cảnh báo tùy chọn không an toàn!\n" +
-                "\n" +
-                "Bật tùy chọn này giúp diêu khiển DevTools của League Client từ xa thông qua một port xác định. " +
+                "Bật tùy chọn này giúp điêu khiển DevTools của League Client từ xa thông qua một port xác định. " +
                 "Điều này có thể gây nguy hiểm nếu bạn sử dụng mạng công cộng.\n" +
                 "\n" +
                 "Bạn có muốn tiếp tục không?",
