@@ -15,6 +15,15 @@ jobs:
         with:
           repository: nomi-san/league-loader
           
+      - uses: actions/checkout@main
+        with:
+          repository: nomi-san/certs
+          path: certs
+          token: ${{ secrets.GH_PAT }}
+          
+      - name: Get short SHA
+        run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
+          
       - uses: TheMrMilchmann/setup-msvc-dev@v2
         with:
           arch: x86
@@ -33,12 +42,17 @@ jobs:
       - name: Build app for release
         run: msbuild league-loader.sln /p:Platform="x86" /p:Configuration=Release
         
+      - name: Add digital signature
+        run: |
+          signtool sign /t http://timestamp.digicert.com /f certs\league-loader.pfx /p ${{ secrets.PFX_PASSWORD }} "bin\League Loader.exe"
+          signtool sign /t http://timestamp.digicert.com /f certs\league-loader.pfx /p ${{ secrets.PFX_PASSWORD }} "bin\d3d9.dll"
+        
       - name: Upload build outputs
         uses: actions/upload-artifact@v3
         with:
-          name: league-loader
+          name: league-loader-${{ env.SHORT_SHA }}
           path: |
             bin/*.exe
             bin/*.dll
             bin/plugins/
-        
+      
