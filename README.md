@@ -160,7 +160,7 @@ function subscribe() {
   const uri = document.querySelector('link[rel="riot:plugins:websocket"]').href
   const ws = new WebSocket(uri, 'wamp')
   
-  ws.onopen = () => ws.send(JSON.stringify([5, 'JsonApiEvent']))
+  ws.onopen = () => ws.send(JSON.stringify([5, 'OnJsonApiEvent']))
   ws.onmessage = async message => {
     const data = JSON.parse(message.data)
     console.log(data)
