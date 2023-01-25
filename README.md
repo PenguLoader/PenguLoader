@@ -6,6 +6,10 @@ A small **JavaScript plugin loader** for League Client, supports **CommonJS** mo
 <br>
 <br>
 
+### 👉 [leagueloader.app](https://leagueloader.app/)
+
+<br>
+
 ## Features
 - Customize League Client
 - Unlock insecure options
