@@ -33,7 +33,7 @@ static void OpenDevTools_Internal(bool remote)
         wi.height = CW_USEDEFAULT;
         wi.style = WS_OVERLAPPEDWINDOW
             | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
-        wi.window_name = CefStr("DevTools - League Client");
+        wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME);
         wi.parent_window = NULL /*GetDesktopWindow()*/;
 
         auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);

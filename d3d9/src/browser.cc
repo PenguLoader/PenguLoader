@@ -31,7 +31,7 @@ static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* 
         CreateThread(NULL, 0,
             (LPTHREAD_START_ROUTINE)&PrepareDevToolsThread, NULL, 0, NULL);
     }
-    
+
     Old_OnAfterCreated(self, browser);
 }
 
@@ -176,11 +176,52 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     const struct _cef_settings_t* settings, cef_app_t* app, void* windows_sandbox_info)
 {
+    // Open console window.
+#if _DEBUG
+    //AllocConsole();
+    //freopen("CONOUT$", "w", stdout);
+#endif
+
     // Hook command line.
     Old_OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
     return CefInitialize(args, settings, app, windows_sandbox_info);
+}
+
+static auto Old_CreateWindowExW = &CreateWindowExW;
+static HWND WINAPI Hooked_CreateWindowExW(
+    _In_ DWORD dwExStyle,
+    _In_opt_ LPCWSTR lpClassName,
+    _In_opt_ LPCWSTR lpWindowName,
+    _In_ DWORD dwStyle,
+    _In_ int X,
+    _In_ int Y,
+    _In_ int nWidth,
+    _In_ int nHeight,
+    _In_opt_ HWND hWndParent,
+    _In_opt_ HMENU hMenu,
+    _In_opt_ HINSTANCE hInstance,
+    _In_opt_ LPVOID lpParam)
+{
+    HWND hwnd = Old_CreateWindowExW(dwExStyle, lpClassName,
+        lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+
+    // Detect DevTools window.
+    if ((uintptr_t)lpClassName > UINT16_MAX // Avoid ATOM value
+        && !wcscmp(lpClassName, L"CefBrowserWindow")
+        && !wcscmp(lpWindowName, DEVTOOLS_WINDOW_NAME))
+    {
+        // Get League icon.
+        HWND hClient = FindWindowW(L"RCLIENT", L"League of Legends");
+        HICON icon = (HICON)SendMessageW(hClient, WM_GETICON, ICON_BIG, 0);
+
+        // Set DevTools icon.
+        SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
+        SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
+    }
+
+    return hwnd;
 }
 
 void HookBrowserProcess()
@@ -194,6 +235,9 @@ void HookBrowserProcess()
     DetourAttach(&(PVOID &)CefInitialize, Hooked_CefInitialize);
     // Hook CefBrowserHost::CreateBrowser().
     DetourAttach(&(PVOID &)CefBrowserHost_CreateBrowser, Hooked_CefBrowserHost_CreateBrowser);
+
+    // Hook CreateWindowExW().
+    DetourAttach(&(PVOID &)Old_CreateWindowExW, Hooked_CreateWindowExW);
 
     DetourTransactionCommit();
 }

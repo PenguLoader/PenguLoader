@@ -6,6 +6,7 @@
 #endif
 
 #include <stdint.h>
+#include <stdio.h>
 #include <string>
 #include <windows.h>
 
@@ -14,6 +15,8 @@
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_browser_capi.h"
 #include "include/capi/cef_v8_capi.h"
+
+#define DEVTOOLS_WINDOW_NAME    L"DevTools - League Client"
 
 namespace league_loader
 {
