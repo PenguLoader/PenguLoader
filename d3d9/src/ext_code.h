@@ -10,12 +10,18 @@
 R"===============(
 
 var openDevTools;
+var openPluginsFolder;
 var require;
 
 (function() {
     openDevTools = function (remote = false) {
         native function OpenDevTools();
-        OpenDevTools(!!remote);
+        OpenDevTools(Boolean(remote));
+    };
+
+    openPluginsFolder = function () {
+        native function OpenPluginsFolder();
+        OpenPluginsFolder();
     };
 
     var join = function (a, b) {
