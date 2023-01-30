@@ -42,7 +42,7 @@ const addSettingsUI = async (root) => {
                                         </video>
                                     </div>
                                     <div style="position: relative">
-                                        <div style="margin-bottom: 24px>
+                                        <div style="margin-bottom: 24px">
                                             <h4 style="padding: 6px 0">League Loader</h4>
                                             <p>v0.6.1</p>
                                         </div>
