@@ -31,7 +31,7 @@ const UI = {
         const btn = document.createElement('lol-uikit-flat-button-secondary')
         btn.innerText = text
         btn.onclick = onClick
-        btn.style.display = 'inline-block'
+        btn.style.display = 'flex'
         return btn
     }
 }
@@ -41,9 +41,12 @@ const injectSettings = (panel) => {
     panel.prepend(
         UI.Row([
             UI.Label('League Loader'),
+            UI.Button('Open plugins folder', () => window.openPluginsFolder()),
+            document.createElement('br'),
             UI.Button('Show DevTools (F12)', () => window.openDevTools()),
             UI.Link('Open in browser', `#${Math.random()}`, () => (window.openDevTools(true), false)),
-            UI.Button('Reload Client (Ctrl Shift R)', () => window.location.reload())
+            UI.Button('Reload Client (Ctrl Shift R)', () => window.location.reload()),
+            document.createElement('br'),
         ])
     )
 }
