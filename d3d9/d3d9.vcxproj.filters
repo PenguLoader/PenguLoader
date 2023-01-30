@@ -13,9 +13,6 @@
     <ClCompile Include="src\d3d9.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\cef_helper.cc">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\dllmain.cc">
       <Filter>src</Filter>
     </ClCompile>
@@ -35,6 +32,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\resource_handler.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\libcef.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
