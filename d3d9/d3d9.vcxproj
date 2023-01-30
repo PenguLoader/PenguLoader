@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\cef_helper.cc" />
+    <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\browser.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\dev_tools.cc" />
