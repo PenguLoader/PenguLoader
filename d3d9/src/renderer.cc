@@ -43,6 +43,11 @@ private:
             OpenDevTools(argc > 0 && args[0]->get_bool_value(args[0]));
             return true;
         }
+        else if (name == L"OpenPluginsFolder")
+        {
+            ShellExecuteW(NULL, L"open", GetPluginsDir().c_str(), NULL, NULL, SW_SHOW);
+            return true;
+        }
         else if (name == L"Require")
         {
             int flag;
