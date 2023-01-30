@@ -8,7 +8,7 @@ decltype(&cef_stream_reader_create_for_file) league_loader::CefStreamReader_Crea
 
 decltype(&cef_string_set) league_loader::CefString_Set;
 decltype(&cef_string_clear) league_loader::CefString_Clear;
-decltype(&cef_string_from_ascii) league_loader::CefString_FromAscii;
+decltype(&cef_string_from_utf8) league_loader::CefString_FromUtf8;
 decltype(&cef_string_from_wide) league_loader::CefString_FromWide;
 decltype(&cef_string_userfree_free) league_loader::CefString_UserFree_Free;
 
@@ -24,7 +24,7 @@ decltype(&cef_browser_host_create_browser) league_loader::CefBrowserHost_CreateB
 
 CefStr::CefStr(const std::string &s) : cef_string_t{}
 {
-    CefString_FromAscii(s.c_str(), s.length(), this);
+    CefString_FromUtf8(s.c_str(), s.length(), this);
 }
 
 CefStr::CefStr(const std::wstring &s) : cef_string_t{}
@@ -32,8 +32,10 @@ CefStr::CefStr(const std::wstring &s) : cef_string_t{}
     CefString_FromWide(s.c_str(), s.length(), this);
 }
 
-CefStr::CefStr(const cef_string_t *s) : cef_string_t(*s)
+CefStr::CefStr(const cef_string_t *s) : cef_string_t{}
 {
+    if (s) CefString_Set(s->str, s->length, this, true);
+    else CefStr("");
 }
 
 CefStr::CefStr(cef_string_userfree_t uf) : cef_string_t{}
@@ -94,7 +96,7 @@ void LoadLibcefDll()
 
         (LPVOID &)CefString_Set = GetProcAddress(libcef, "cef_string_utf16_set");
         (LPVOID &)CefString_Clear = GetProcAddress(libcef, "cef_string_utf16_clear");
-        (LPVOID &)CefString_FromAscii = GetProcAddress(libcef, "cef_string_ascii_to_utf16");
+        (LPVOID &)CefString_FromUtf8 = GetProcAddress(libcef, "cef_string_utf8_to_utf16");
         (LPVOID &)CefString_FromWide = GetProcAddress(libcef, "cef_string_wide_to_utf16");
         (LPVOID &)CefString_UserFree_Free = GetProcAddress(libcef, "cef_string_userfree_utf16_free");
 

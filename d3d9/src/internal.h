@@ -70,7 +70,7 @@ namespace league_loader
     // Strings helpers.
     extern decltype(&cef_string_set) CefString_Set;
     extern decltype(&cef_string_clear) CefString_Clear;
-    extern decltype(&cef_string_from_ascii) CefString_FromAscii;
+    extern decltype(&cef_string_from_ascii) CefString_FromUtf8;
     extern decltype(&cef_string_from_wide) CefString_FromWide;
     extern decltype(&cef_string_userfree_free) CefString_UserFree_Free;
 
