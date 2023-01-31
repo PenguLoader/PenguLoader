@@ -9,6 +9,7 @@ using namespace league_loader;
 
 extern UINT REMOTE_DEBUGGING_PORT;
 extern cef_browser_t *CLIENT_BROWSER;
+extern HWND DEVTOOLS_HWND;
 static std::string REMOTE_DEVTOOLS_URL;
 
 #define OPEN_DEVTOOLS_EVENT         "Global\\LeagueLoader.OpenDevTools"
@@ -26,20 +27,31 @@ static void OpenDevTools_Internal(bool remote)
     }
     else if (CLIENT_BROWSER != nullptr)
     {
-        cef_window_info_t wi{};
-        wi.x = CW_USEDEFAULT;
-        wi.y = CW_USEDEFAULT;
-        wi.width = CW_USEDEFAULT;
-        wi.height = CW_USEDEFAULT;
-        wi.style = WS_OVERLAPPEDWINDOW
-            | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
-        wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME);
-        wi.parent_window = NULL /*GetDesktopWindow()*/;
-
         auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);
-        host->show_dev_tools(host, &wi, NULL, NULL, NULL);
-        //                              ^--- We use null for client to keep DevTools
-        //                                   from being scaled by League Client (e.g 0.8, 1.6).
+
+        if (host->has_dev_tools(host))
+        {
+            // Restore if minimized.
+            if (IsIconic(DEVTOOLS_HWND))
+                ShowWindow(DEVTOOLS_HWND, SW_RESTORE);
+
+            ShowWindow(DEVTOOLS_HWND, SW_SHOWNORMAL);
+        }
+        else
+        {
+            cef_window_info_t wi{};
+            wi.x = CW_USEDEFAULT;
+            wi.y = CW_USEDEFAULT;
+            wi.width = CW_USEDEFAULT;
+            wi.height = CW_USEDEFAULT;
+            wi.style = WS_OVERLAPPEDWINDOW
+                | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
+            wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME);
+
+            host->show_dev_tools(host, &wi, NULL, NULL, NULL);
+            //                              ^--- We use null for client to keep DevTools
+            //                                   from being scaled by League Client (e.g 0.8, 1.6).
+        }
     }
 }
 
