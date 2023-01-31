@@ -10,6 +10,10 @@ static const std::unordered_map<std::wstring, std::wstring> KnownMimeTypes
     // text
     { L"css", L"text/css" },
     { L"js", L"text/javascript" },
+    { L"txt", L"text/plain" },
+
+    // json
+    { L"json", L"application/json" },
 
     // images
     { L"bmp", L"image/bmp" },
