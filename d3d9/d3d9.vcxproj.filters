@@ -22,9 +22,6 @@
     <ClCompile Include="src\renderer.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\dev_tools.cc">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\loader.cc">
       <Filter>src</Filter>
     </ClCompile>
@@ -35,6 +32,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\libcef.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\devtools.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
