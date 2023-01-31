@@ -45,16 +45,16 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="res\d3d9.res">
-      <Filter>res</Filter>
-    </Resource>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\ext_code.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\internal.h">
       <Filter>src</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\d3d9.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
