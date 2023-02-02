@@ -27,15 +27,21 @@ static void OpenDevTools_Internal(bool remote)
     }
     else if (CLIENT_BROWSER != nullptr)
     {
-        auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);
+        // This function will be called from non-UI thread,
+        // so CefBrowserHost::HasDevTools has no effect.
 
-        if (host->has_dev_tools(host))
+        DWORD processId;
+        GetWindowThreadProcessId(DEVTOOLS_HWND, &processId);
+
+        if (processId == GetCurrentProcessId())
         {
             // Restore if minimized.
             if (IsIconic(DEVTOOLS_HWND))
                 ShowWindow(DEVTOOLS_HWND, SW_RESTORE);
+            else
+                ShowWindow(DEVTOOLS_HWND, SW_SHOWNORMAL);
 
-            ShowWindow(DEVTOOLS_HWND, SW_SHOWNORMAL);
+            SetForegroundWindow(DEVTOOLS_HWND);
         }
         else
         {
@@ -44,10 +50,12 @@ static void OpenDevTools_Internal(bool remote)
             wi.y = CW_USEDEFAULT;
             wi.width = CW_USEDEFAULT;
             wi.height = CW_USEDEFAULT;
+            wi.ex_style = WS_EX_APPWINDOW;
             wi.style = WS_OVERLAPPEDWINDOW
                 | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
             wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME);
 
+            auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);
             host->show_dev_tools(host, &wi, NULL, NULL, NULL);
             //                              ^--- We use null for client to keep DevTools
             //                                   from being scaled by League Client (e.g 0.8, 1.6).
@@ -63,7 +71,7 @@ void PrepareDevToolsThread()
 
         hInit = InternetOpenA("HTTPGET", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
         hConn = InternetConnectA(hInit, "localhost", REMOTE_DEBUGGING_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
-        hFile = HttpOpenRequestA(hConn, NULL, "/json", "HTTP/1.1", NULL, NULL,
+        hFile = HttpOpenRequestA(hConn, NULL, "/json/list", "HTTP/1.1", NULL, NULL,
             INTERNET_FLAG_NO_COOKIES | INTERNET_FLAG_NO_UI | INTERNET_FLAG_IGNORE_REDIRECT_TO_HTTPS, NULL);
 
         if (HttpSendRequestA(hFile, NULL, 0, NULL, 0)) {
@@ -80,7 +88,7 @@ void PrepareDevToolsThread()
                     auto start = pos + sizeof(pattern) - 1;
                     auto end = strstr(start, "\"");
 
-                    std::string link = "http://localhost:";
+                    std::string link = "http://127.0.0.1:";
                     link.append(std::to_string(REMOTE_DEBUGGING_PORT));
                     link.append(std::string(start, end - start));
 
