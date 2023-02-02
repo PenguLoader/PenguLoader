@@ -40,7 +40,7 @@ private:
 
         if (name == L"OpenDevTools")
         {
-            OpenDevTools(argc > 0 && args[0]->get_bool_value(args[0]));
+            OpenDevTools(false);
             return true;
         }
         else if (name == L"OpenPluginsFolder")
