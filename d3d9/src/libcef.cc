@@ -41,8 +41,12 @@ CefStr::CefStr(const cef_string_t *s) : cef_string_t{}
 
 CefStr::CefStr(cef_string_userfree_t uf) : cef_string_t{}
 {
-    CefString_Set(uf->str, uf->length, this, true);
-    CefString_UserFree_Free(uf);
+    if (uf)
+    {
+        CefString_Set(uf->str, uf->length, this, true);
+        CefString_UserFree_Free(uf);
+    }
+    else CefStr("");
 }
 
 CefStr::CefStr(int32_t i) : CefStr(std::to_string(i))
