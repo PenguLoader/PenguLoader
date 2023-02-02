@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <atomic>
 #include <string>
 #include <windows.h>
 
@@ -27,18 +28,29 @@ namespace league_loader
         template <typename U>
         CefRefCount(const U *) : ref_(1) {
             base.size = sizeof(U);
-            base.add_ref = (decltype(cef_base_ref_counted_t::add_ref))_Base_AddRef;
-            base.release = (decltype(cef_base_ref_counted_t::release))_Base_Release;
-            base.has_one_ref = (decltype(cef_base_ref_counted_t::has_one_ref))_Base_HasOneRef;
-            base.has_at_least_one_ref = (decltype(cef_base_ref_counted_t::has_at_least_one_ref))_Base_HasAtLeastOneRef;
+            base.add_ref = _Base_AddRef;
+            base.release = _Base_Release;
+            base.has_one_ref = _Base_HasOneRef;
+            base.has_at_least_one_ref = _Base_HasAtLeastOneRef;
+            self_delete_ = [](void *self) { delete static_cast<U *>(self); };
         }
 
     private:
-        size_t ref_;
-        static void CALLBACK _Base_AddRef(CefRefCount *self) { ++self->ref_; }
-        static int CALLBACK _Base_Release(CefRefCount *self) { return (--self->ref_ == 0) ? (delete self, 1) : 0; }
-        static int CALLBACK _Base_HasOneRef(CefRefCount *self) { return self->ref_ == 1; }
-        static int CALLBACK _Base_HasAtLeastOneRef(CefRefCount *self) { return self->ref_ >= 1; }
+        void(*self_delete_)(void *);
+        std::atomic<size_t> ref_;
+
+        static void CALLBACK _Base_AddRef(cef_base_ref_counted_t *_)
+        { ++reinterpret_cast<CefRefCount *>(_)->ref_; }
+
+        static int CALLBACK _Base_Release(cef_base_ref_counted_t *_)
+        { return !--reinterpret_cast<CefRefCount *>(_)->ref_ ?
+            (reinterpret_cast<CefRefCount *>(_)->self_delete_(_), 1) : 0; }
+
+        static int CALLBACK _Base_HasOneRef(cef_base_ref_counted_t *_)
+        { return reinterpret_cast<CefRefCount *>(_)->ref_ == 1; }
+
+        static int CALLBACK _Base_HasAtLeastOneRef(cef_base_ref_counted_t *_)
+        { return reinterpret_cast<CefRefCount *>(_)->ref_ != 0; }
     };
 
     // cef_string_t wrapper.

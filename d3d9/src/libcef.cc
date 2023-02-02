@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "include/cef_version.h"
 
 using namespace league_loader;
 
@@ -40,8 +41,12 @@ CefStr::CefStr(const cef_string_t *s) : cef_string_t{}
 
 CefStr::CefStr(cef_string_userfree_t uf) : cef_string_t{}
 {
-    CefString_Set(uf->str, uf->length, this, true);
-    CefString_UserFree_Free(uf);
+    if (uf)
+    {
+        CefString_Set(uf->str, uf->length, this, true);
+        CefString_UserFree_Free(uf);
+    }
+    else CefStr("");
 }
 
 CefStr::CefStr(int32_t i) : CefStr(std::to_string(i))
@@ -82,12 +87,54 @@ bool CefStr::contain(const std::wstring &s) const
     return str_contain(str, s);
 }
 
-void LoadLibcefDll()
+static int GetFileMajorVersion(LPCWSTR file)
 {
-    // libcef.dll is already loaded (our module is its dependency).
-    HMODULE libcef = GetModuleHandleA("libcef.dll");
+    int version = 0;
 
-    if (libcef != NULL)
+    DWORD  verHandle = 0;
+    UINT   size = 0;
+    LPBYTE lpBuffer = NULL;
+
+    if (DWORD verSize = GetFileVersionInfoSize(file, &verHandle))
+    {
+        LPSTR verData = new char[verSize];
+
+        if (GetFileVersionInfo(file, verHandle, verSize, verData)
+            && VerQueryValue(verData, L"\\", (VOID FAR* FAR*)&lpBuffer, &size)
+            && size > 0)
+        {
+            VS_FIXEDFILEINFO *verInfo = (VS_FIXEDFILEINFO *)lpBuffer;
+            if (verInfo->dwSignature == 0xfeef04bd)
+                version = ((verInfo->dwFileVersionMS >> 16) & 0xffff);
+        }
+
+        delete[] verData;
+    }
+
+    return version;
+}
+
+static void WarnInvalidVersion()
+{
+    MessageBox(NULL,
+        L"This League of Legends Client version is not supported.\n"
+        L"Please check existing issues or open new issue about that, and wait for the new update.",
+        L"League Loader", MB_TOPMOST | MB_OK | MB_ICONWARNING);
+    ShellExecute(NULL, L"open", L"https://git.leagueloader.app", NULL, NULL, NULL);
+}
+
+bool LoadLibcefDll()
+{
+    LPCWSTR filename = L"libcef.dll";
+
+    if (GetFileMajorVersion(filename) != CEF_VERSION_MAJOR)
+    {
+        CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&WarnInvalidVersion, NULL, 0, NULL);
+        return false;
+    }
+
+    // libcef.dll is already loaded (our module is its dependency).
+    if (HMODULE libcef = GetModuleHandle(filename))
     {
         // Get CEF functions.
         (LPVOID &)CefRegisterExtension = GetProcAddress(libcef, "cef_register_extension");
@@ -109,5 +156,9 @@ void LoadLibcefDll()
         (LPVOID &)CefInitialize = GetProcAddress(libcef, "cef_initialize");
         (LPVOID &)CefExecuteProcess = GetProcAddress(libcef, "cef_execute_process");
         (LPVOID &)CefBrowserHost_CreateBrowser = GetProcAddress(libcef, "cef_browser_host_create_browser");
+
+        return true;
     }
+
+    return false;
 }

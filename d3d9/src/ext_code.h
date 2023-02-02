@@ -1,10 +1,13 @@
 
 /*
-    window.openDevTools(remote? : Boolean)
+    window.openDevTools()
         // Open DevTools of League Client.
 
     window.require(name: String) : any
         // Simple implementation of CommonJS "require".
+
+    window.openPluginsFolder()
+        // Open the plugins folder.
 */
 
 R"===============(
@@ -14,9 +17,9 @@ var openPluginsFolder;
 var require;
 
 (function() {
-    openDevTools = function (remote = false) {
+    openDevTools = function () {
         native function OpenDevTools();
-        OpenDevTools(Boolean(remote));
+        OpenDevTools();
     };
 
     openPluginsFolder = function () {

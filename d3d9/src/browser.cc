@@ -13,6 +13,7 @@ DWORD BROWSER_PROCESS_ID = 0;
 DWORD RENDERER_PROCESS_ID = 0;
 
 UINT REMOTE_DEBUGGING_PORT = 0;
+HWND DEVTOOLS_HWND = 0;
 cef_browser_t *CLIENT_BROWSER = nullptr;
 
 void PrepareDevToolsThread();
@@ -207,18 +208,22 @@ static HWND WINAPI Hooked_CreateWindowExW(
     HWND hwnd = Old_CreateWindowExW(dwExStyle, lpClassName,
         lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 
+    // Avoid ATOM value.
+    if ((uintptr_t)lpClassName <= UINT16_MAX)
+        return hwnd;
+
     // Detect DevTools window.
-    if ((uintptr_t)lpClassName > UINT16_MAX // Avoid ATOM value
-        && !wcscmp(lpClassName, L"CefBrowserWindow")
-        && !wcscmp(lpWindowName, DEVTOOLS_WINDOW_NAME))
+    if (!wcscmp(lpClassName, L"CefBrowserWindow") && !wcscmp(lpWindowName, DEVTOOLS_WINDOW_NAME))
     {
         // Get League icon.
         HWND hClient = FindWindowW(L"RCLIENT", L"League of Legends");
         HICON icon = (HICON)SendMessageW(hClient, WM_GETICON, ICON_BIG, 0);
 
-        // Set DevTools icon.
+        // Set window icon.
         SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
         SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
+
+        DEVTOOLS_HWND = hwnd;
     }
 
     return hwnd;

@@ -22,9 +22,6 @@
     <ClCompile Include="src\renderer.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\dev_tools.cc">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\loader.cc">
       <Filter>src</Filter>
     </ClCompile>
@@ -37,6 +34,9 @@
     <ClCompile Include="src\libcef.cc">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\devtools.cc">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\d3d9.def">
@@ -45,16 +45,16 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="res\d3d9.res">
-      <Filter>res</Filter>
-    </Resource>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\ext_code.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\internal.h">
       <Filter>src</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\d3d9.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

@@ -22,7 +22,7 @@
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\browser.cc" />
     <ClCompile Include="src\config.cc" />
-    <ClCompile Include="src\dev_tools.cc" />
+    <ClCompile Include="src\devtools.cc" />
     <ClCompile Include="src\loader.cc" />
     <ClCompile Include="src\d3d9.cc" />
     <ClCompile Include="src\dllmain.cc" />
@@ -34,11 +34,11 @@
     <None Include="res\d3d9.def" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="res\d3d9.res" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\ext_code.h" />
     <ClInclude Include="src\internal.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\d3d9.rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

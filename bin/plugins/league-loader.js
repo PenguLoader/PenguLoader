@@ -1,6 +1,6 @@
 // Create UI using nano-jsx
 const addSettingsUI = async (root) => {
-    const { Component, jsx, render } = await import('https://esm.sh/nano-jsx@0.0.36')
+    const { Component, jsx, render } = await import('https://cdn.jsdelivr.net/npm/nano-jsx/+esm')
 
     class Settings extends Component {
         visible = false
