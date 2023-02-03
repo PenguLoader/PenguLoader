@@ -1,24 +1,22 @@
-<img align="left" src="https://i.imgur.com/ZhWCav3.png" width="140px">
+<img align="left" src="https://i.imgur.com/ZhWCav3.png" width="120px">
 
 # League Loader
 A small **JavaScript plugin loader** for League Client, supports **CommonJS** modules.
 
 <br>
-<br>
 
-### 👉 [leagueloader.app](https://leagueloader.app/)
+👉 Homepage: [leagueloader.app](https://leagueloader.app/)
+
+💬 Join Discord: [chat.leagueloader.app](https://chat.leagueloader.app)
 
 <br>
 
 ## Features
-- Customize League Client
-- Unlock insecure options
-- Support built-in and remote DevTools
-- Support custom plugins
+- Customize League Client with JavaScript
+- Theme the League with CSS
 - Support CommonJS modules
-- Interacting LCU APIs be easier
-
-<br>
+- Support built-in and remote DevTools
+- Working with LCU APIs be easier
 
 ## Getting started
 
@@ -151,7 +149,7 @@ async function acceptMatchFound() {
 }
 ```
 
-### LCU Websocket
+### LCU WebSocket
 
 When the websocket ready, this link tag will appear:
 ```html
@@ -175,7 +173,7 @@ function subscribe() {
 
 ### Development notes
 
-- You should use **Visual Studio Code** to develop your plugins, it supports intellisense, linter and autocomplete for modules.
+- You should use **Visual Studio Code** to develop your plugins, it supports intellisense, linter and autocomplete.
 - League Client runs on **Chromium 91**, so you're writing JS for the web browser like **Chrome**.
 - When interacting with the DOM, you should put the entry to `onload` or `DOMContentLoaded` event of `window`.
 
@@ -206,16 +204,24 @@ async function test() {
 ```
 
 Recommended CDNs:
+- https://www.jsdelivr.com/esm
 - https://www.skypack.dev/
 - https://esm.sh/
-- https://www.jsdelivr.com/esm
 - https://unpkg.com/
+
+### Faster UI development
+
+We recommend to use tagged template literals to build large UI components. JSX flavor is the best choice with these libraries:
+- [Nano JSX](https://nanojsx.io/)
+- [Preact + htm](https://preactjs.com/guide/v10/getting-started/#alternatives-to-jsx)
+
+Check out [league-loader.js](./bin/plugins/league-loader.js) to learn more.
 
 <br>
 
 ## Access local resources
 
-You can access the resources in filesystem by using this domain:
+You can access the resources in **assets** folder by using this domain:
 
 ```
 //assets/
@@ -236,7 +242,14 @@ league-loader/
 
 <br>
 
-## Build from source
+## Development
+
+### Knowledges
+
+- Project development requires high experience working with CEF.
+- This project aims to League Client UI/UX. If you want to debug the Client, check out [Mecha](https://github.com/x00bence/Mecha) now.
+
+### Build from source
 
 This project requires Visual Studio 2017 with these components:
 - Desktop development with C++
@@ -251,27 +264,20 @@ Build steps:
   3. Set arch to **Any CPU** or **x86**
   4. Right click on each project -> **Build**
 
-## How it works?
-
-See [HOW_IT_WORKS](/HOW_IT_WORKS.md) for details.
-
 ### CEF notes
-
-Current CEF version: **v91.1.22**
-
-This project use CEF CAPI in C++. If you need sweet C++ OOP, just use libcef wrapper.
-
-Let's download our [pre-built here](https://github.com/nomi-san/league-loader/releases/tag/0.1a), then add the following code.
-
+  
+This project started development under CEF's low-level CAPI. You can convert to C++ OOP using `libcef_dll_wrapper`.
 ```cpp
-#pragma comment(lib, "libcef.lib")
-#pragma comment(lib, "libcef_dll_wrapper.lib")
 #define WRAPPING_CEF_SHARED
 #include "libcef_dll/ctocpp/browser_ctocpp.h"
 
-void callback(cef_browser_t *cbrowser) {
+void test_oop(cef_browser_t *cbrowser) {
   auto browser = CefBrowserCToCpp::Wrap(cbowser);
-  aut host = browser->GetHost();
+  auto host = browser->GetHost();
   host->GetMainFrame();
 }
 ```
+
+### How it works?
+
+See [HOW_IT_WORKS](/HOW_IT_WORKS.md) for details.
