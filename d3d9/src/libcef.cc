@@ -3,6 +3,7 @@
 
 using namespace league_loader;
 
+decltype(&cef_get_mime_type) league_loader::CefGetMimeType;
 decltype(&cef_register_extension) league_loader::CefRegisterExtension;
 decltype(&cef_dictionary_value_create) league_loader::CefDictionaryValue_Create;
 decltype(&cef_stream_reader_create_for_file) league_loader::CefStreamReader_CreateForFile;
@@ -137,6 +138,7 @@ bool LoadLibcefDll()
     if (HMODULE libcef = GetModuleHandle(filename))
     {
         // Get CEF functions.
+        (LPVOID &)CefGetMimeType = GetProcAddress(libcef, "cef_get_mime_type");
         (LPVOID &)CefRegisterExtension = GetProcAddress(libcef, "cef_register_extension");
         (LPVOID &)CefDictionaryValue_Create = GetProcAddress(libcef, "cef_dictionary_value_create");
         (LPVOID &)CefStreamReader_CreateForFile = GetProcAddress(libcef, "cef_stream_reader_create_for_file");

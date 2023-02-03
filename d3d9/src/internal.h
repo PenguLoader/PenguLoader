@@ -12,6 +12,7 @@
 #include <windows.h>
 
 #include "include/internal/cef_string.h"
+#include "include/capi/cef_parser_capi.h"
 #include "include/capi/cef_base_capi.h"
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_browser_capi.h"
@@ -75,6 +76,7 @@ namespace league_loader
     };
 
     // CEF functions.
+    extern decltype(&cef_get_mime_type) CefGetMimeType;
     extern decltype(&cef_register_extension) CefRegisterExtension;
     extern decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
     extern decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;

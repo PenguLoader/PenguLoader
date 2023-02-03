@@ -5,47 +5,6 @@ using namespace league_loader;
 
 // BROWSER PROCESS ONLY.
 
-static const std::unordered_map<std::wstring, std::wstring> KnownMimeTypes
-{
-    // text
-    { L"css", L"text/css" },
-    { L"js", L"text/javascript" },
-    { L"txt", L"text/plain" },
-
-    // json
-    { L"json", L"application/json" },
-
-    // images
-    { L"bmp", L"image/bmp" },
-    { L"png", L"image/png" },
-    { L"jpg", L"image/jpeg" },
-    { L"jpeg", L"image/jpeg" },
-    { L"jfif", L"image/pjpeg" },
-    { L"pjpeg", L"image/pjpeg" },
-    { L"pjp", L"image/jpeg" },
-    { L"gif", L"image/gif" },
-    { L"svg", L"image/svg+xml" },
-    { L"ico", L"image/vnd.microsoft.icon" },
-    { L"webp", L"image/webp" },
-    { L"avif", L"image/avif" },
-
-    // media
-    { L"mp4", L"video/mp4" },
-    { L"webm", L"video/webm" },
-    { L"ogg", L"application/ogg" },
-    { L"mp3", L"audio/mpeg" },
-    { L"wav", L"audio/wav" },
-    { L"flac", L"audio/flac" },
-    { L"aac", L"audio/x-aac" },
-
-    // fonts
-    { L"woff", L"font/woff" },
-    { L"woff2", L"font/woff2" },
-    { L"eot", L"application/vnd.ms-fontobject" },
-    { L"ttf", L"application/x-font-ttf" },
-    { L"otf", L"application/x-font-otf" },
-};
-
 // Custom resource handler for assets
 struct CefResourceHandler : CefRefCount<cef_resource_handler_t>
 {
@@ -83,9 +42,13 @@ private:
         if ((pos = path.find_last_of(L'.')) != std::string::npos)
         {
             auto ext = path.substr(pos + 1);
-            auto found = KnownMimeTypes.find(ext);
-            if (found != KnownMimeTypes.end())
-                self->mime_ = found->second;
+            auto type = CefGetMimeType(&CefStr(ext));
+
+            if (type != nullptr)
+            {
+                self->mime_.assign(type->str, type->length);
+                CefString_UserFree_Free(type);
+            }
         }
 
         path = GetAssetsDir().append(path);
