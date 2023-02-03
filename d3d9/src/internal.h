@@ -5,6 +5,10 @@
 #error "Build 32-bit only."
 #endif
 
+#ifdef _MSC_VER
+#define NOMINMAX
+#endif
+
 #include <stdint.h>
 #include <stdio.h>
 #include <atomic>
@@ -124,8 +128,6 @@ namespace league_loader
 
         return wcsstr(str.c_str(), sub.c_str()) != NULL;
     }
-
-    cef_resource_handler_t * CreateAssetsHandler(const std::wstring &path);
 
     void OpenDevTools(bool remote);
 }

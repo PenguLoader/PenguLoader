@@ -18,6 +18,8 @@ cef_browser_t *CLIENT_BROWSER = nullptr;
 
 void PrepareDevToolsThread();
 
+cef_resource_handler_t *CreateAssetsResourceHandler(const std::wstring &path);
+
 static decltype(cef_life_span_handler_t::on_after_created) Old_OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
@@ -95,20 +97,13 @@ static void HookClient(cef_client_t *client)
                 struct _cef_frame_t* frame,
                 struct _cef_request_t* request) -> cef_resource_handler_t*
             {
-                auto url = request->get_url(request);
+                CefStr url = request->get_url(request);
                 cef_resource_handler_t *handler = nullptr;
 
-                if (wcsncmp(url->str, L"https://assets/", 15) == 0)
-                {
-                    return CreateAssetsHandler(url->str + 14);
-                }
-                else
-                {
-                    handler = Old_GetResourceHandler(self, browser, frame, request);
-                }
+                if (wcsncmp(url.str, L"https://assets/", 15) == 0)
+                    return CreateAssetsResourceHandler(url.str + 14);
 
-                CefString_UserFree_Free(url);
-                return handler;
+                return Old_GetResourceHandler(self, browser, frame, request);
             };
 
             return handler;
@@ -179,8 +174,8 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
 {
     // Open console window.
 #if _DEBUG
-    //AllocConsole();
-    //freopen("CONOUT$", "w", stdout);
+    AllocConsole();
+    freopen("CONOUT$", "w", stdout);
 #endif
 
     // Hook command line.
