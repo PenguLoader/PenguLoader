@@ -45,8 +45,6 @@ static void CEF_CALLBACK Hooked_OnBeforeClose(cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
     if (CLIENT_BROWSER && browser->is_same(browser, CLIENT_BROWSER)) {
-        // Release client browser.
-        CLIENT_BROWSER->base.release(&CLIENT_BROWSER->base);
         CLIENT_BROWSER = nullptr;
     }
 
