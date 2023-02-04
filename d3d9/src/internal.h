@@ -21,6 +21,7 @@
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_browser_capi.h"
 #include "include/capi/cef_v8_capi.h"
+#include "include/capi/cef_request_capi.h"
 
 #define DEVTOOLS_WINDOW_NAME    L"DevTools - League Client"
 
@@ -81,6 +82,9 @@ namespace league_loader
 
     // CEF functions.
     extern decltype(&cef_get_mime_type) CefGetMimeType;
+    extern decltype(&cef_request_create) CefRequest_Create;
+    extern decltype(&cef_string_multimap_alloc) CefStringMultimap_Alloc;
+    extern decltype(&cef_string_multimap_free) CefStringMultimap_Free;
     extern decltype(&cef_register_extension) CefRegisterExtension;
     extern decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
     extern decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;

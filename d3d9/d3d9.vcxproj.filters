@@ -37,6 +37,9 @@
     <ClCompile Include="src\assets.cc">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\riotclient.cc">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\d3d9.def">

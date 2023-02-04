@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\riotclient.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\browser.cc" />
     <ClCompile Include="src\config.cc" />

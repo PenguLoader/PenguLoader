@@ -19,6 +19,8 @@ cef_browser_t *CLIENT_BROWSER = nullptr;
 void PrepareDevToolsThread();
 
 cef_resource_handler_t *CreateAssetsResourceHandler(const std::wstring &path);
+cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, std::wstring path);
+void SetRiotClientCredentials(wchar_t *appPort, wchar_t *authToken);
 
 static decltype(cef_life_span_handler_t::on_after_created) Old_OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
@@ -102,6 +104,8 @@ static void HookClient(cef_client_t *client)
 
                 if (wcsncmp(url.str, L"https://assets/", 15) == 0)
                     return CreateAssetsResourceHandler(url.str + 14);
+                else if (wcsncmp(url.str, L"https://riotclient/", 19) == 0)
+                    return CreateRiotClientResourceHandler(frame, url.str + 18);
 
                 return Old_GetResourceHandler(self, browser, frame, request);
             };
@@ -145,6 +149,10 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     const cef_string_t* process_type,
     struct _cef_command_line_t* command_line)
 {
+    CefStr rc_port = command_line->get_switch_value(command_line, &CefStr("riotclient-app-port"));
+    CefStr rc_token = command_line->get_switch_value(command_line, &CefStr("riotclient-auth-token"));
+    SetRiotClientCredentials(rc_port.str, rc_token.str);
+
     // Keep Riot's command lines.
     Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
 
