@@ -36,7 +36,7 @@ const addSettingsUI = async (root) => {
         }
         render() {
             // Tagged template literal with JSX flavor.
-            // On VSCode, just install 'Comment tagged templates' extenstion to get highlighting.
+            // On VSCode, just install 'Comment tagged templates' extension to get highlighting.
             return jsx/*html*/`
                 <div class="modal" style="position: absolute; inset: 0px; z-index: 8500" hidden=${!this.visible || undefined}>
                     <lol-uikit-full-page-backdrop class="backdrop" style="display: flex; align-items: center; justify-content: center; position: absolute; inset: 0px" />
