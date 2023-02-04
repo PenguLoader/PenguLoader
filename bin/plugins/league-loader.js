@@ -1,7 +1,14 @@
+// This is the default plugin of League Loader.
+
+// Import nano-jsx using ESM import().
+const NanoJSX = import('https://cdn.jsdelivr.net/npm/nano-jsx/+esm')
+
 // Create UI using nano-jsx
 const addSettingsUI = async (root) => {
-    const { Component, jsx, render } = await import('https://cdn.jsdelivr.net/npm/nano-jsx/+esm')
+    // Load async module.
+    const { Component, jsx, render } = await NanoJSX
 
+    // Main component.
     class Settings extends Component {
         visible = false
         frame = null
@@ -28,6 +35,8 @@ const addSettingsUI = async (root) => {
             this.show(false)
         }
         render() {
+            // Tagged template literal with JSX flavor.
+            // On VSCode, just install 'Comment tagged templates' extenstion to get highlighting.
             return jsx/*html*/`
                 <div class="modal" style="position: absolute; inset: 0px; z-index: 8500" hidden=${!this.visible || undefined}>
                     <lol-uikit-full-page-backdrop class="backdrop" style="display: flex; align-items: center; justify-content: center; position: absolute; inset: 0px" />
@@ -76,24 +85,29 @@ const addSettingsUI = async (root) => {
         }
     }
 
+    // Render component to root.
     render(jsx`<${Settings} />`, root)
 }
 
+// Setup on window loaded.
 window.addEventListener('load', async () => {
-    // Wait for manager layer
+    // Wait for manager layer.
     const manager = () => document.getElementById('lol-uikit-layer-manager-wrapper')
     while (!manager()) await new Promise(r => setTimeout(r, 200))
-    // Create UI and mount
+    // Create UI and mount it to manager.
     const root = document.createElement('div')
     await addSettingsUI(root)
     manager().prepend(root)
 })
 
-// Set hotkey, an added iframe can steal focus
+// Set hotkey, added iframes can steal keyboard focus.
 window.addEventListener('keydown', (e) => {
+    // Ctrl+Shift+I or just F12 to open DevTools.
     if ((e.ctrlKey && e.shiftKey && e.code === 'KeyI') || e.code === 'F12') {
         window.openDevTools()
-    } else if (e.ctrlKey && e.shiftKey && e.code === 'KeyR') {
+    }
+    // Ctrl+Shift+R to reload Client.
+    else if (e.ctrlKey && e.shiftKey && e.code === 'KeyR') {
         window.location.reload()
     }
 })
