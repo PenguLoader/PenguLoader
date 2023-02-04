@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\effects.cc" />
     <ClCompile Include="src\riotclient.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\browser.cc" />
@@ -36,7 +37,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ext_code.h" />
-    <ClInclude Include="src\internal.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\d3d9.rc" />
