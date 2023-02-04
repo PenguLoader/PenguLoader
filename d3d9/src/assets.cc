@@ -94,8 +94,8 @@ private:
         response->set_status(response, 200);
         response->set_error(response, ERR_NONE);
 
-        response->set_header_by_name(response, &CefStr("Access-Control-Allow-Origin"), &CefStr("*"), 1);
-        response->set_header_by_name(response, &CefStr("Cache-Control"), &CefStr("public, max-age=86400"), 1);
+        response->set_header_by_name(response, &"Access-Control-Allow-Origin"_s, &"*"_s, 1);
+        response->set_header_by_name(response, &"Cache-Control"_s, &"public, max-age=86400"_s, 1);
 
         *response_length = self->length_;
     }

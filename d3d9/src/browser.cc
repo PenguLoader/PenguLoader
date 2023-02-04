@@ -131,8 +131,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
         }
 
         // Add current process ID (browser process).
-        extra_info->set_int(extra_info,
-            &CefStr("BROWSER_PROCESS_ID"), GetCurrentProcessId());
+        extra_info->set_int(extra_info, &"BROWSER_PROCESS_ID"_s, GetCurrentProcessId());
 
         // Hook client.
         HookClient(client);
@@ -147,8 +146,8 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     const cef_string_t* process_type,
     struct _cef_command_line_t* command_line)
 {
-    CefStr rc_port = command_line->get_switch_value(command_line, &CefStr("riotclient-app-port"));
-    CefStr rc_token = command_line->get_switch_value(command_line, &CefStr("riotclient-auth-token"));
+    CefStr rc_port = command_line->get_switch_value(command_line, &"riotclient-app-port"_s);
+    CefStr rc_token = command_line->get_switch_value(command_line, &"riotclient-auth-token"_s);
     SetRiotClientCredentials(rc_port.str, rc_token.str);
 
     // Keep Riot's command lines.
@@ -158,20 +157,17 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     REMOTE_DEBUGGING_PORT = wcstol(sPort.c_str(), NULL, 10);
     if (REMOTE_DEBUGGING_PORT != 0) {
         // Set remote debugging port.
-        command_line->append_switch_with_value(command_line,
-            &CefStr("remote-debugging-port"), &CefStr(REMOTE_DEBUGGING_PORT));
+        command_line->append_switch_with_value(command_line, &"remote-debugging-port"_s, &CefStr(REMOTE_DEBUGGING_PORT));
     }
 
     if (GetConfigValue(L"DisableWebSecurity") == L"1") {
         // Disable web security.
-        command_line->append_switch(command_line,
-            &CefStr("disable-web-security"));
+        command_line->append_switch(command_line, &"disable-web-security"_s);
     }
 
     if (GetConfigValue(L"IgnoreCertificateErrors") == L"1") {
         // Ignore invalid certs.
-        command_line->append_switch(command_line,
-            &CefStr("ignore-certificate-errors"));
+        command_line->append_switch(command_line, &"ignore-certificate-errors"_s);
     }
 }
 

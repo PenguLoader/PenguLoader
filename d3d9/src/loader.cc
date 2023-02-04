@@ -58,7 +58,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
         script += L"\");";
 
         // Execute.
-        frame->execute_java_script(frame, &CefStr(script), &CefStr(""), 0);
+        frame->execute_java_script(frame, &CefStr(script), &""_s, 0);
     }
 }
 

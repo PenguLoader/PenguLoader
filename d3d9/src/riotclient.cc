@@ -110,7 +110,7 @@ private:
 
         auto request_ = CefRequest_Create();
         request_->set(request_, &url, &method, body, headers);
-        request_->set_header_by_name(request_, &CefStr("Authorization"), &CefStr(m_rcAuthorization), 1);
+        request_->set_header_by_name(request_, &"Authorization"_s, &CefStr(m_rcAuthorization), 1);
 
         self->client_ = new RiotClientURLRequestClient(&self->data_, callback);
         self->url_request_ = self->frame_->create_urlrequest(self->frame_, request_, self->client_);
@@ -137,7 +137,7 @@ private:
             CefStringMultimap_Free(headers);
         }
 
-        response->set_header_by_name(response, &CefStr("Access-Control-Allow-Origin"), &CefStr("*"), 1);
+        response->set_header_by_name(response, &"Access-Control-Allow-Origin"_s, &"*"_s, 1);
         *response_length = self->client_->response_length_;
     }
 

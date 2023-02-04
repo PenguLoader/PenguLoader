@@ -80,6 +80,10 @@ namespace league_loader
         bool operator ==(const std::wstring &s) const { return equal(s); }
     };
 
+    static cef_string_t operator""_s(const char *s, size_t l) {
+        return CefStr(std::string(s, l));
+    }
+
     // CEF functions.
     extern decltype(&cef_get_mime_type) CefGetMimeType;
     extern decltype(&cef_request_create) CefRequest_Create;
