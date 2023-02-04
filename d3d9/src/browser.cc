@@ -18,6 +18,10 @@ cef_browser_t *CLIENT_BROWSER = nullptr;
 
 void PrepareDevToolsThread();
 
+cef_resource_handler_t *CreateAssetsResourceHandler(const std::wstring &path);
+cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, std::wstring path);
+void SetRiotClientCredentials(wchar_t *appPort, wchar_t *authToken);
+
 static decltype(cef_life_span_handler_t::on_after_created) Old_OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
@@ -41,8 +45,6 @@ static void CEF_CALLBACK Hooked_OnBeforeClose(cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
     if (CLIENT_BROWSER && browser->is_same(browser, CLIENT_BROWSER)) {
-        // Release client browser.
-        CLIENT_BROWSER->base.release(&CLIENT_BROWSER->base);
         CLIENT_BROWSER = nullptr;
     }
 
@@ -95,20 +97,15 @@ static void HookClient(cef_client_t *client)
                 struct _cef_frame_t* frame,
                 struct _cef_request_t* request) -> cef_resource_handler_t*
             {
-                auto url = request->get_url(request);
+                CefStr url = request->get_url(request);
                 cef_resource_handler_t *handler = nullptr;
 
-                if (wcsncmp(url->str, L"https://assets/", 15) == 0)
-                {
-                    return CreateAssetsHandler(url->str + 14);
-                }
-                else
-                {
-                    handler = Old_GetResourceHandler(self, browser, frame, request);
-                }
+                if (wcsncmp(url.str, L"https://assets/", 15) == 0)
+                    return CreateAssetsResourceHandler(url.str + 14);
+                else if (wcsncmp(url.str, L"https://riotclient/", 19) == 0)
+                    return CreateRiotClientResourceHandler(frame, url.str + 18);
 
-                CefString_UserFree_Free(url);
-                return handler;
+                return Old_GetResourceHandler(self, browser, frame, request);
             };
 
             return handler;
@@ -134,8 +131,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
         }
 
         // Add current process ID (browser process).
-        extra_info->set_int(extra_info,
-            &CefStr("BROWSER_PROCESS_ID"), GetCurrentProcessId());
+        extra_info->set_int(extra_info, &"BROWSER_PROCESS_ID"_s, GetCurrentProcessId());
 
         // Hook client.
         HookClient(client);
@@ -150,6 +146,10 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     const cef_string_t* process_type,
     struct _cef_command_line_t* command_line)
 {
+    CefStr rc_port = command_line->get_switch_value(command_line, &"riotclient-app-port"_s);
+    CefStr rc_token = command_line->get_switch_value(command_line, &"riotclient-auth-token"_s);
+    SetRiotClientCredentials(rc_port.str, rc_token.str);
+
     // Keep Riot's command lines.
     Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
 
@@ -157,20 +157,17 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     REMOTE_DEBUGGING_PORT = wcstol(sPort.c_str(), NULL, 10);
     if (REMOTE_DEBUGGING_PORT != 0) {
         // Set remote debugging port.
-        command_line->append_switch_with_value(command_line,
-            &CefStr("remote-debugging-port"), &CefStr(REMOTE_DEBUGGING_PORT));
+        command_line->append_switch_with_value(command_line, &"remote-debugging-port"_s, &CefStr(REMOTE_DEBUGGING_PORT));
     }
 
     if (GetConfigValue(L"DisableWebSecurity") == L"1") {
         // Disable web security.
-        command_line->append_switch(command_line,
-            &CefStr("disable-web-security"));
+        command_line->append_switch(command_line, &"disable-web-security"_s);
     }
 
     if (GetConfigValue(L"IgnoreCertificateErrors") == L"1") {
         // Ignore invalid certs.
-        command_line->append_switch(command_line,
-            &CefStr("ignore-certificate-errors"));
+        command_line->append_switch(command_line, &"ignore-certificate-errors"_s);
     }
 }
 
@@ -179,8 +176,8 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
 {
     // Open console window.
 #if _DEBUG
-    //AllocConsole();
-    //freopen("CONOUT$", "w", stdout);
+    AllocConsole();
+    freopen("CONOUT$", "w", stdout);
 #endif
 
     // Hook command line.

@@ -83,7 +83,7 @@ static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t
         ;
 
     // Register our extension.
-    CefRegisterExtension(&CefStr("v8/LeagueLoader"), &CefStr(ext_code), new ExtensionHandler());
+    CefRegisterExtension(&"v8/LeagueLoader"_s, &CefStr(ext_code), new ExtensionHandler());
 }
 
 static decltype(cef_render_process_handler_t::on_context_created) Old_OnContextCreated;
@@ -111,10 +111,10 @@ static void CEF_CALLBACK Hooked_OnBrowserCreated(
     struct _cef_dictionary_value_t* extra_info)
 {
     // Detect hooked client.
-    IS_CLIENT = extra_info && extra_info->has_key(extra_info, &CefStr("BROWSER_PROCESS_ID"));
+    IS_CLIENT = extra_info && extra_info->has_key(extra_info, &"BROWSER_PROCESS_ID"_s);
 
     if (IS_CLIENT) {
-        BROWSER_PROCESS_ID = extra_info->get_int(extra_info, &CefStr("BROWSER_PROCESS_ID"));
+        BROWSER_PROCESS_ID = extra_info->get_int(extra_info, &"BROWSER_PROCESS_ID"_s);
         BROWSER_PROCESS = OpenProcess(PROCESS_ALL_ACCESS, FALSE, BROWSER_PROCESS_ID);
 
         // Write renderer process ID (current process) to browser process.

@@ -5,6 +5,10 @@
 #error "Build 32-bit only."
 #endif
 
+#ifdef _MSC_VER
+#define NOMINMAX
+#endif
+
 #include <stdint.h>
 #include <stdio.h>
 #include <atomic>
@@ -17,6 +21,7 @@
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_browser_capi.h"
 #include "include/capi/cef_v8_capi.h"
+#include "include/capi/cef_request_capi.h"
 
 #define DEVTOOLS_WINDOW_NAME    L"DevTools - League Client"
 
@@ -75,8 +80,15 @@ namespace league_loader
         bool operator ==(const std::wstring &s) const { return equal(s); }
     };
 
+    static cef_string_t operator""_s(const char *s, size_t l) {
+        return CefStr(std::string(s, l));
+    }
+
     // CEF functions.
     extern decltype(&cef_get_mime_type) CefGetMimeType;
+    extern decltype(&cef_request_create) CefRequest_Create;
+    extern decltype(&cef_string_multimap_alloc) CefStringMultimap_Alloc;
+    extern decltype(&cef_string_multimap_free) CefStringMultimap_Free;
     extern decltype(&cef_register_extension) CefRegisterExtension;
     extern decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
     extern decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;
@@ -124,8 +136,6 @@ namespace league_loader
 
         return wcsstr(str.c_str(), sub.c_str()) != NULL;
     }
-
-    cef_resource_handler_t * CreateAssetsHandler(const std::wstring &path);
 
     void OpenDevTools(bool remote);
 }

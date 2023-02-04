@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\riotclient.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\browser.cc" />
     <ClCompile Include="src\config.cc" />
@@ -27,7 +28,7 @@
     <ClCompile Include="src\d3d9.cc" />
     <ClCompile Include="src\dllmain.cc" />
     <ClCompile Include="src\renderer.cc" />
-    <ClCompile Include="src\resource_handler.cc" />
+    <ClCompile Include="src\assets.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

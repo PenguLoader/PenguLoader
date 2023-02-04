@@ -28,13 +28,16 @@
     <ClCompile Include="src\config.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\resource_handler.cc">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\libcef.cc">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\devtools.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\assets.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\riotclient.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
