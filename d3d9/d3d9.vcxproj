@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\effects.cc" />
+    <ClCompile Include="src\pattern_scan.cc" />
     <ClCompile Include="src\riotclient.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\browser.cc" />

@@ -22,6 +22,7 @@ decltype(&cef_v8value_create_int) league_loader::CefV8Value_CreateInt;
 decltype(&cef_v8value_create_string) league_loader::CefV8Value_CreateString;
 decltype(&cef_v8value_create_function) league_loader::CefV8Value_CreateFunction;
 decltype(&cef_v8value_create_array) league_loader::CefV8Value_CreateArray;
+decltype(&cef_v8value_create_bool) league_loader::CefV8Value_CreateBool;
 
 decltype(&cef_initialize) league_loader::CefInitialize;
 decltype(&cef_execute_process) league_loader::CefExecuteProcess;
@@ -160,6 +161,7 @@ bool LoadLibcefDll()
         (LPVOID &)CefV8Value_CreateString = GetProcAddress(libcef, "cef_v8value_create_string");
         (LPVOID &)CefV8Value_CreateFunction = GetProcAddress(libcef, "cef_v8value_create_function");
         (LPVOID &)CefV8Value_CreateArray = GetProcAddress(libcef, "cef_v8value_create_array");
+        (LPVOID &)CefV8Value_CreateBool = GetProcAddress(libcef, "cef_v8value_create_bool");
 
         (LPVOID &)CefInitialize = GetProcAddress(libcef, "cef_initialize");
         (LPVOID &)CefExecuteProcess = GetProcAddress(libcef, "cef_execute_process");

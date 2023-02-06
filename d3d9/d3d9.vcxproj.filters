@@ -40,6 +40,12 @@
     <ClCompile Include="src\riotclient.cc">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\effects.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pattern_scan.cc">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\d3d9.def">

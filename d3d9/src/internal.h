@@ -7,6 +7,11 @@
 
 #ifdef _MSC_VER
 #define NOMINMAX
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#ifndef NOINLINE
+#define NOINLINE __declspec(noinline)
 #endif
 
 #include <stdint.h>
@@ -106,6 +111,7 @@ namespace league_loader
     extern decltype(&cef_v8value_create_string) CefV8Value_CreateString;
     extern decltype(&cef_v8value_create_function) CefV8Value_CreateFunction;
     extern decltype(&cef_v8value_create_array) CefV8Value_CreateArray;
+    extern decltype(&cef_v8value_create_bool) CefV8Value_CreateBool;
 
     // Hooking entries.
     extern decltype(&cef_initialize) CefInitialize;
@@ -138,6 +144,7 @@ namespace league_loader
     }
 
     void OpenDevTools(bool remote);
+    PVOID ScanInternal(PCSTR pMemory, size_t length, std::string pattern);
 }
 
 #endif
