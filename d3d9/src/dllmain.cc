@@ -5,7 +5,6 @@
 
 using namespace league_loader;
 
-void LoadD3d9Dll();
 bool LoadLibcefDll();
 
 void HookBrowserProcess();
@@ -13,9 +12,6 @@ void HookRendererProcess();
 
 static void Initialize()
 {
-    // Load D3D9.
-    LoadD3d9Dll();
-
     // Get exe path.
     WCHAR _path[2048];
     std::wstring name(_path, GetModuleFileNameW(NULL, _path, _countof(_path)));
