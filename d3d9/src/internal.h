@@ -9,6 +9,10 @@
 #define NOMINMAX
 #endif
 
+#ifndef NOINLINE
+#define NOINLINE __declspec(noinline)
+#endif
+
 #include <stdint.h>
 #include <stdio.h>
 #include <atomic>
@@ -138,6 +142,7 @@ namespace league_loader
     }
 
     void OpenDevTools(bool remote);
+    PVOID ScanInternal(PCSTR pMemory, size_t length, std::string pattern);
 }
 
 #endif
