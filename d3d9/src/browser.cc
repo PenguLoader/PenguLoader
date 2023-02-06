@@ -1,5 +1,6 @@
 #include "internal.h"
 #include "detours.h"
+#include <psapi.h>
 
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_client_capi.h"
@@ -51,6 +52,35 @@ static void CEF_CALLBACK Hooked_OnBeforeClose(cef_life_span_handler_t* self,
     Old_OnBeforeClose(self, browser);
 }
 
+static decltype(cef_load_handler_t::on_load_start) Old_OnLoadStart;
+static void CALLBACK Hooked_OnLoadStart(struct _cef_load_handler_t* self,
+    struct _cef_browser_t* browser,
+    struct _cef_frame_t* frame,
+    cef_transition_type_t transition_type)
+{
+    Old_OnLoadStart(self, browser, frame, transition_type);
+    if (!frame->is_main(frame)) return;
+
+    // Patch once.
+    static bool patched = false;
+    if (patched || (patched = true, false)) return;
+
+    auto host = browser->get_host(browser);
+    // Get needed windows.
+    HWND browserWin = host->get_window_handle(host);
+    HWND rclient = GetParent(browserWin);
+    HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
+    HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
+
+    // Hide Chrome_RenderWidgetHostHWND.
+    ShowWindow(widgetHost, SW_HIDE);
+    // Hide CefBrowserWindow.
+    ShowWindow(browserWin, SW_HIDE);
+    // Bring Chrome_WidgetWin_0 into top-level children.
+    SetParent(widgetWin, rclient);
+    SetWindowPos(widgetWin, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+};
+
 static void HookClient(cef_client_t *client)
 {
     // Hook LifeSpanHandler.
@@ -71,6 +101,20 @@ static void HookClient(cef_client_t *client)
         return handler;
     };
 
+    // Hook LoadHandler;
+    static auto Old_GetLoadHandler = client->get_load_handler;
+    client->get_load_handler = [](struct _cef_client_t* self)
+    {
+        auto handler = Old_GetLoadHandler(self);
+
+        // Hook OnLoadStart().
+        Old_OnLoadStart = handler->on_load_start;
+        handler->on_load_start = Hooked_OnLoadStart;
+
+        return handler;
+    };
+
+    // Hook RequestHandler.
     static auto Old_GetRequestHandler = client->get_request_handler;
     client->get_request_handler = [](struct _cef_client_t* self) -> cef_request_handler_t*
     {
@@ -226,9 +270,26 @@ static HWND WINAPI Hooked_CreateWindowExW(
     return hwnd;
 }
 
+static void* Old_GetBackgroundColor = nullptr;
+static NOINLINE cef_color_t __fastcall Hooked_GetBackgroundColor(void* ECX, void* EDX,
+    cef_browser_settings_t *settings, cef_state_t state)
+{
+    return 0; // fully transparent :)
+}
+
 void HookBrowserProcess()
 {
     DetourRestoreAfterWith();
+
+    // Find CefContext::GetBackGroundColor().
+    {
+        MODULEINFO info{ NULL };
+        K32GetModuleInformation(GetCurrentProcess(),
+            GetModuleHandle(L"libcef.dll"), &info, sizeof(info));
+
+        const std::string pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
+        Old_GetBackgroundColor = ScanInternal(static_cast<PCSTR>(info.lpBaseOfDll), info.SizeOfImage, pattern);
+    }
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
@@ -240,6 +301,10 @@ void HookBrowserProcess()
 
     // Hook CreateWindowExW().
     DetourAttach(&(PVOID &)Old_CreateWindowExW, Hooked_CreateWindowExW);
+
+    // Hook CefContext::GetBackGroundColor().
+    if (Old_GetBackgroundColor != nullptr)
+        DetourAttach(&(PVOID &)Old_GetBackgroundColor, Hooked_GetBackgroundColor);
 
     DetourTransactionCommit();
 }
