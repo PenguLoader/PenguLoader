@@ -11,7 +11,6 @@ using namespace league_loader;
 // BROWSER PROCESS ONLY.
 
 DWORD BROWSER_PROCESS_ID = 0;
-DWORD RENDERER_PROCESS_ID = 0;
 HWND RCLIENT_WINDOW = nullptr;
 
 UINT REMOTE_DEBUGGING_PORT = 0;
@@ -24,15 +23,18 @@ cef_resource_handler_t *CreateAssetsResourceHandler(const std::wstring &path);
 cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, std::wstring path);
 void SetRiotClientCredentials(wchar_t *appPort, wchar_t *authToken);
 
+static int64 _mainBrowserId = 0;
 static decltype(cef_life_span_handler_t::on_after_created) Old_OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
-    if (CLIENT_BROWSER == nullptr) {
-        // Save client browser.
-        CLIENT_BROWSER = browser;
+    if (CLIENT_BROWSER == nullptr)
+    {
         // Add ref.
-        CLIENT_BROWSER->base.add_ref(&CLIENT_BROWSER->base);
+        browser->base.add_ref(&CLIENT_BROWSER->base);
+        // Save client browser.
+        _mainBrowserId = browser->get_identifier(browser);
+        CLIENT_BROWSER = browser;
 
         // Fetch remote DevTools URL.
         CreateThread(NULL, 0,
@@ -46,7 +48,9 @@ static decltype(cef_life_span_handler_t::on_before_close) Old_OnBeforeClose;
 static void CEF_CALLBACK Hooked_OnBeforeClose(cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
-    if (CLIENT_BROWSER && browser->is_same(browser, CLIENT_BROWSER)) {
+    // Check main browser.
+    if (browser->get_identifier(browser) == _mainBrowserId)
+    {
         CLIENT_BROWSER = nullptr;
     }
 
