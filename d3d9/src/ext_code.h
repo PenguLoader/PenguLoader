@@ -12,11 +12,28 @@
 
 R"===============(
 
+var Effect;
 var openDevTools;
 var openPluginsFolder;
 var require;
 
 (function() {
+
+    Effect = {
+        get current() {
+            native function GetEffect();
+            return GetEffect() || undefined;
+        },
+        apply(name, options = undefined) {
+            native function ApplyEffect();
+            return ApplyEffect(name, options);
+        },
+        clear() {
+            native function ClearEffect();
+            ClearEffect();
+        }
+    };
+
     openDevTools = function () {
         native function OpenDevTools();
         OpenDevTools();

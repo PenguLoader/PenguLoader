@@ -12,6 +12,7 @@ using namespace league_loader;
 
 DWORD BROWSER_PROCESS_ID = 0;
 DWORD RENDERER_PROCESS_ID = 0;
+HWND RCLIENT_WINDOW = nullptr;
 
 UINT REMOTE_DEBUGGING_PORT = 0;
 HWND DEVTOOLS_HWND = 0;
@@ -79,6 +80,8 @@ static void CALLBACK Hooked_OnLoadStart(struct _cef_load_handler_t* self,
     // Bring Chrome_WidgetWin_0 into top-level children.
     SetParent(widgetWin, rclient);
     SetWindowPos(widgetWin, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+    RCLIENT_WINDOW = rclient;
 };
 
 static void HookClient(cef_client_t *client)
@@ -218,12 +221,6 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     const struct _cef_settings_t* settings, cef_app_t* app, void* windows_sandbox_info)
 {
-    // Open console window.
-#if _DEBUG
-    AllocConsole();
-    freopen("CONOUT$", "w", stdout);
-#endif
-
     // Hook command line.
     Old_OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
@@ -279,6 +276,13 @@ static NOINLINE cef_color_t __fastcall Hooked_GetBackgroundColor(void* ECX, void
 
 void HookBrowserProcess()
 {
+    // Open console window.
+#if _DEBUG
+    AllocConsole();
+    SetConsoleTitleA("League Client (browser process)");
+    freopen("CONOUT$", "w", stdout);
+#endif
+
     DetourRestoreAfterWith();
 
     // Find CefContext::GetBackGroundColor().

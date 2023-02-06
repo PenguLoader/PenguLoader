@@ -13,10 +13,12 @@ extern DWORD BROWSER_PROCESS_ID;
 extern DWORD RENDERER_PROCESS_ID;
 
 static bool IS_CLIENT = false;
-static HANDLE BROWSER_PROCESS;
+HANDLE BROWSER_PROCESS;
 
 void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context);
 bool NativeRequire(const std::wstring &path, std::wstring &source, int &flag);
+
+bool HandleWindowEffect(const CefStr &fn, int argc, cef_v8value_t * const *args, cef_v8value_t **retval);
 
 // Custom V8 handler for extenstion
 struct ExtensionHandler : CefRefCount<cef_v8handler_t>
@@ -68,6 +70,10 @@ private:
 
             return true;
         }
+        else if (HandleWindowEffect(name, argc, args, retval))
+        {
+            return true;
+        }
 
         return false;
     }
@@ -114,6 +120,13 @@ static void CEF_CALLBACK Hooked_OnBrowserCreated(
     IS_CLIENT = extra_info && extra_info->has_key(extra_info, &"BROWSER_PROCESS_ID"_s);
 
     if (IS_CLIENT) {
+        // Open console window.
+#if _DEBUG
+        AllocConsole();
+        SetConsoleTitleA("League Client (renderer process)");
+        freopen("CONOUT$", "w", stdout);
+#endif
+
         BROWSER_PROCESS_ID = extra_info->get_int(extra_info, &"BROWSER_PROCESS_ID"_s);
         BROWSER_PROCESS = OpenProcess(PROCESS_ALL_ACCESS, FALSE, BROWSER_PROCESS_ID);
 

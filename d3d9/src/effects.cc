@@ -1,6 +1,19 @@
-#include <windows.h>
+#include "internal.h"
+
 #include <dwmapi.h>
 #pragma comment(lib, "dwmapi.lib")
+
+using namespace league_loader;
+
+extern HWND RCLIENT_WINDOW;
+extern HANDLE BROWSER_PROCESS;
+
+static HWND GetMainWindow()
+{
+    if (RCLIENT_WINDOW == nullptr)
+        IPC_READ(BROWSER_PROCESS, &RCLIENT_WINDOW, sizeof(HWND));
+    return RCLIENT_WINDOW;
+}
 
 // This is C++ version of vibe
 // https://github.com/pykeio/vibe
@@ -129,25 +142,25 @@ void SetAccentPolicy(HWND hwnd, ACCENT_STATE accent_state, COLORREF option_color
     fn_SetWindowCompositionAttribute(hwnd, &data);
 }
 
-void ApplyAcrylic(HWND hwnd, bool unified, bool acrylic_blurbehind, COLORREF option_color)
+bool ApplyAcrylic(HWND hwnd, bool unified, bool acrylic_blurbehind, COLORREF option_color)
 {
     if (!unified && IsWin11_22H2())
     {
         DWORD value = DWMSBT_TRANSIENTWINDOW;
         ExtendClientArea(hwnd);
         DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &value, sizeof(value));
+        return true;
     }
     else if (IsWin7Plus())
     {
         auto accent_state = acrylic_blurbehind ? ACCENT_ENABLE_ACRYLICBLURBEHIND : ACCENT_ENABLE_BLURBEHIND;
         option_color = option_color != 0 ? option_color : RGB(40, 40, 40);
         SetAccentPolicy(hwnd, accent_state, option_color);
+        return true;
     }
-    else
-    {
-        // not reachable
-        //return Err(VibeError::UnsupportedPlatform("\"apply_acrylic()\" is only available on Windows 7+"));
-    }
+
+    //return Err(VibeError::UnsupportedPlatform("\"apply_acrylic()\" is only available on Windows 7+"));
+    return false;
 }
 
 void ClearAcrylic(HWND hwnd, bool unified)
@@ -162,11 +175,8 @@ void ClearAcrylic(HWND hwnd, bool unified)
     {
         SetAccentPolicy(hwnd, ACCENT_DISABLED, 0);
     }
-    else
-    {
-        // not reachable
-        //return Err(VibeError::UnsupportedPlatform("\"clear_acrylic()\" is only available on Windows 7+"));
-    }
+
+    //return Err(VibeError::UnsupportedPlatform("\"clear_acrylic()\" is only available on Windows 7+"));
 }
 
 void ForceDarkTheme(HWND hwnd)
@@ -205,25 +215,25 @@ void ForceLightTheme(HWND hwnd)
     }
 }
 
-
-void ApplyMica(HWND hwnd)
+bool ApplyMica(HWND hwnd)
 {
     if (IsWin11_22H2())
     {
         DWORD value = DWMSBT_MAINWINDOW;
         ExtendClientArea(hwnd);
         DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &value, sizeof(value));
+        return true;
     }
     else if (IsWin11())
     {
         DWORD value = DWMSBT_MAINWINDOW;
         ExtendClientArea(hwnd);
         DwmSetWindowAttribute(hwnd, DWMWA_MICA_EFFECT, &value, sizeof(value));
+        return true;
     }
-    else
-    {
-        throw "Mica effect is only available on Windows 11.";
-    }
+
+    //throw "Mica effect is only available on Windows 11.";
+    return false;
 }
 
 void ClearMica(HWND hwnd)
@@ -239,72 +249,147 @@ void ClearMica(HWND hwnd)
         ResetClientArea(hwnd);
         DwmSetWindowAttribute(hwnd, DWMWA_MICA_EFFECT, &value, sizeof(value));
     }
-    else
-    {
-        throw "Mica effect is only available on Windows 11.";
-    }
+
+    //throw "Mica effect is only available on Windows 11.";
 }
 
-enum Effects
+
+bool ApplyEffect(std::wstring name, uint32_t option_color)
 {
-    MICA,
-    ACRYLIC,
-    UNIFIED_ACRYLIC,
-    BLURBEHIND
-};
+    if (name == L"mica")
+        return ApplyMica(GetMainWindow());
+    else if (name == L"acrylic")
+        return ApplyAcrylic(GetMainWindow(), false, true, option_color);
+    else if (name == L"unified")
+        return ApplyAcrylic(GetMainWindow(), true, true, option_color);
+    else if (name == L"blurbehind")
+        return ApplyAcrylic(GetMainWindow(), true, false, option_color);
 
-const char *ApplyEffects(HWND hwnd, Effects effect, COLORREF option_color)
-{
-    try
-    {
-        switch (effect)
-        {
-            case MICA:
-                ApplyMica(hwnd);
-                break;
-
-            case ACRYLIC:
-                ApplyAcrylic(hwnd, false, true, option_color);
-                break;
-
-            case UNIFIED_ACRYLIC:
-                ApplyAcrylic(hwnd, true, true, option_color);
-                break;
-
-            case BLURBEHIND:
-                ApplyAcrylic(hwnd, true, false, option_color);
-                break;
-        }
-
-        return nullptr;
-    }
-    catch (const char *err)
-    {
-        return err;
-    }
+    return false;
 }
 
-const char *ClearEffects(HWND hwnd, Effects effect)
+bool ClearEffect(const std::wstring &name)
 {
-    try
+    if (name == L"mica")
     {
-        switch (effect)
+        ClearMica(GetMainWindow());
+        return true;
+    }
+    else if (name == L"acrylic")
+    {
+        ClearAcrylic(GetMainWindow(), false);
+        return true;
+    }
+    else if (name == L"unified" || name == L"blurbehind")
+    {
+        ClearAcrylic(GetMainWindow(), true);
+        return true;
+    }
+
+    return false;
+}
+
+// Low-level hex color parser.
+uint32_t ParseHexColor(std::wstring value)
+{
+    unsigned a = 0, r = 0, g = 0, b = 0;
+
+    if (value.empty())
+        goto _done;
+    if (value.length() == 1 && value[0] == '#')
+        goto _done;
+    if (value.length() > 1 && value[0] == '#')
+        value.erase(0, 1);
+
+    if (value.length() == 6 || value.length() == 8)
+    {
+        wchar_t tmp[3]{ 0 };
+
+        wcsncpy(tmp, value.c_str(), 2);
+        r = wcstol(tmp, nullptr, 16);
+
+        wcsncpy(tmp, value.c_str() + 2, 2);
+        g = wcstol(tmp, nullptr, 16);
+
+        wcsncpy(tmp, value.c_str() + 4, 2);
+        b = wcstol(tmp, nullptr, 16);
+
+        if (value.length() == 8)
         {
-            case MICA:
-                ClearMica(hwnd);
-                break;
-
-            case ACRYLIC:
-            case UNIFIED_ACRYLIC:
-            case BLURBEHIND:
-                ClearAcrylic(hwnd, effect != ACRYLIC);
-                break;
+            wcsncpy(tmp, value.c_str() + 6, 2);
+            a = wcstol(tmp, nullptr, 16);
         }
-
-        return nullptr;
+        else
+            a = 0xFF;
     }
-    catch (const char *err)
+    else if (value.length() == 3 || value.length() == 4)
     {
-        return err;
+        static const auto ParseHexChar = [](int chr)
+            { return (chr >= 'A') ? (chr - 'A' + 10) : (chr - '0'); };
+
+        unsigned n;
+        r = ((n = ParseHexChar(toupper(value[0]))) << 4) | n;
+        g = ((n = ParseHexChar(toupper(value[1]))) << 4) | n;
+        b = ((n = ParseHexChar(toupper(value[2]))) << 4) | n;
+
+        if (value.length() == 4)
+            a = ParseHexChar(toupper(value[3])) << 4;
+        else
+            a = 0xFF;
     }
+
+_done:
+    return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
+}
+
+bool HandleWindowEffect(const CefStr &fn, int argc, cef_v8value_t *const *args, cef_v8value_t **retval)
+{
+    static std::wstring current = L"";
+
+    if (fn == L"GetEffect")
+    {
+        *retval = CefV8Value_CreateString(&CefStr(current));
+        return true;
+    }
+    else if (fn == L"ApplyEffect")
+    {
+        bool success = false;
+
+        if (argc >= 1 && args[0]->is_string(args[0]))
+        {
+            CefStr name = args[0]->get_string_value(args[0]);
+            uint32_t tintColor = 0;
+
+            if (argc >= 2 && args[1]->is_object(args[1]))
+            {
+                if (args[1]->has_value_bykey(args[1], &"color"_s))
+                {
+                    auto color = args[1]->get_value_bykey(args[1], &"color"_s);
+                    if (color->is_string(color))
+                    {
+                        CefStr value = color->get_string_value(color);
+                        tintColor = ParseHexColor(value.str);
+                    }
+                }
+            }
+
+            if (ClearEffect(current))
+                current = L"";
+
+            if (success = ApplyEffect(name.str, tintColor))
+                current.assign(name.str, name.length);
+        }
+        
+        *retval = CefV8Value_CreateBool(success);
+        return true;
+    }
+    else if (fn == L"ClearEffect")
+    {
+        if (!current.empty())
+            ClearEffect(current);
+        current.clear();
+        return true;
+    }
+
+    return false;
 }
