@@ -10,7 +10,6 @@ using namespace league_loader;
 // RENDERER PROCESS ONLY.
 
 extern DWORD BROWSER_PROCESS_ID;
-extern DWORD RENDERER_PROCESS_ID;
 
 static bool IS_CLIENT = false;
 HANDLE BROWSER_PROCESS;
@@ -101,9 +100,18 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
 {
     Old_OnContextCreated(self, browser, frame, context);
 
-    if (IS_CLIENT) {
+    if (IS_CLIENT)
+    {
         CefStr url(frame->get_url(frame));
-        if (url.contain(L"riot:") && url.contain(L"index.html")) {
+        if (url.contain(L"riot:") && url.contain(L"index.html"))
+        {
+            // Open console window.
+#if _DEBUG
+            AllocConsole();
+            SetConsoleTitleA("League Client (renderer process)");
+            freopen("CONOUT$", "w", stdout);
+#endif
+
             // Load plugins.
             LoadPlugins(frame, context);
         }
@@ -119,20 +127,10 @@ static void CEF_CALLBACK Hooked_OnBrowserCreated(
     // Detect hooked client.
     IS_CLIENT = extra_info && extra_info->has_key(extra_info, &"BROWSER_PROCESS_ID"_s);
 
-    if (IS_CLIENT) {
-        // Open console window.
-#if _DEBUG
-        AllocConsole();
-        SetConsoleTitleA("League Client (renderer process)");
-        freopen("CONOUT$", "w", stdout);
-#endif
-
+    if (IS_CLIENT)
+    {
         BROWSER_PROCESS_ID = extra_info->get_int(extra_info, &"BROWSER_PROCESS_ID"_s);
         BROWSER_PROCESS = OpenProcess(PROCESS_ALL_ACCESS, FALSE, BROWSER_PROCESS_ID);
-
-        // Write renderer process ID (current process) to browser process.
-        RENDERER_PROCESS_ID = GetCurrentProcessId();
-        IPC_WRITE(BROWSER_PROCESS, &RENDERER_PROCESS_ID, sizeof(DWORD));
     }
 
     Old_OnBrowserCreated(self, browser, extra_info);
