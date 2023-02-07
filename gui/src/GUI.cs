@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.IO;
@@ -12,7 +11,10 @@ namespace LeagueLoader
     {
         public static GUI Instance { get; private set; } = null;
 
+        static string AssetsDir = Path.Combine(Directory.GetCurrentDirectory(), "assets");
         static string PluginsDir = Path.Combine(Directory.GetCurrentDirectory(), "plugins");
+
+        Language _l;
 
         public GUI()
         {
@@ -20,6 +22,10 @@ namespace LeagueLoader
             InitializeComponent();
 
             Config.Init();
+            if (string.IsNullOrEmpty(Config.Language))
+                Config.Language = "en";
+
+            ChangeLanguage();
 
             var port = Config.RemoteDebuggingPort;
             chkRDP.Checked = port > 0;
@@ -31,8 +37,14 @@ namespace LeagueLoader
 
         private void GUI_Load(object sender, EventArgs e)
         {
+            if (!Directory.Exists(AssetsDir))
+                Directory.CreateDirectory(AssetsDir);
+
             if (!Directory.Exists(PluginsDir))
                 Directory.CreateDirectory(PluginsDir);
+
+            RemoveAdminPerm(AssetsDir);
+            RemoveAdminPerm(PluginsDir);
 
             if (Lcu.IsValidDir(Config.LeaguePath))
             {
@@ -63,13 +75,18 @@ namespace LeagueLoader
             }
         }
 
+        private void btnOpenAssets_Click(object sender, EventArgs e)
+        {
+            Process.Start(new ProcessStartInfo()
+            {
+                FileName = "explorer.exe",
+                Arguments = $"\"{AssetsDir}\"",
+                UseShellExecute = true
+            });
+        }
+
         private void btnPlugins_Click(object sender, EventArgs e)
         {
-            if (!Directory.Exists(PluginsDir))
-            {
-                Directory.CreateDirectory(PluginsDir);
-            }
-
             Process.Start(new ProcessStartInfo()
             {
                 FileName = "explorer.exe",
@@ -209,19 +226,17 @@ namespace LeagueLoader
             e.Handled = !char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar);
         }
 
-        Language _l = Language.English;
-
-        void SwitchLanguage()
+        void ChangeLanguage()
         {
-            if (_l == Language.English)
-            {
-                lnkLanguage.Text = "[English]";
-                _l = Language.Vietnamese;
-            }
-            else
+            if (Config.Language == "en")
             {
                 lnkLanguage.Text = "[Tiếng Việt]";
                 _l = Language.English;
+            }
+            else
+            {
+                lnkLanguage.Text = "[English]";
+                _l = Language.Vietnamese;
             }
 
             lblLeaguePath.Text = _l.LeaguePath;
@@ -236,7 +251,12 @@ namespace LeagueLoader
 
         private void lnkLanguage_Click(object sender, EventArgs e)
         {
-            SwitchLanguage();
+            if (Config.Language == "en")
+                Config.Language = "vi";
+            else
+                Config.Language = "en";
+
+            ChangeLanguage();
         }
 
         private void btnSelectPath_Click(object sender, EventArgs e)
@@ -247,10 +267,12 @@ namespace LeagueLoader
                 if (fbd.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
                     var path = fbd.SelectedPath;
+                    var selected = fbd.SelectedPath;
 
                     if (Lcu.IsValidDir(path)) { }
-                    else if (Lcu.IsValidDir(path = Path.Combine(fbd.SelectedPath, "LeagueClient"))) { }
-                    else if (Lcu.IsValidDir(path = Path.Combine(fbd.SelectedPath, "League of Legends"))) { }
+                    else if (Lcu.IsValidDir(path = Path.Combine(selected, "LeagueClient"))) { }
+                    else if (Lcu.IsValidDir(path = Path.Combine(selected, "League of Legends"))) { }
+                    else if (Lcu.IsValidDir(path = Path.Combine(selected, "Riot Games", "League of Legends"))) { }
                     else
                     {
                         MessageBox.Show(this, _l.Msg_InvalidSelectedPath,
@@ -273,6 +295,28 @@ namespace LeagueLoader
         private void lnkGithub_Click(object sender, EventArgs e)
         {
             Process.Start("https://github.com/nomi-san/league-loader/");
+        }
+
+        private void lnkHomepage_Click(object sender, EventArgs e)
+        {
+            Process.Start("https://leagueloader.app/");
+        }
+
+        static void RemoveAdminPerm(string path)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c echo Y| cacls \"{path}\" /grant \"{Environment.UserName}\":f",
+                    UseShellExecute = true,
+                    CreateNoWindow = true,
+                    Verb = "runas",
+                    WindowStyle = ProcessWindowStyle.Hidden
+                });
+            }
+            catch { }
         }
     }
 }
