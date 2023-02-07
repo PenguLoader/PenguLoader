@@ -46,6 +46,7 @@
             this.lnkGithub = new MetroFramework.Controls.MetroLink();
             this.lblVersion = new MetroFramework.Controls.MetroLabel();
             this.lnkHomepage = new MetroFramework.Controls.MetroLink();
+            this.btnOpenAssets = new MetroFramework.Controls.MetroButton();
             this.SuspendLayout();
             // 
             // lblRemoteDebugger
@@ -72,7 +73,7 @@
             // btnOpenDevTools
             // 
             this.btnOpenDevTools.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnOpenDevTools.Location = new System.Drawing.Point(23, 267);
+            this.btnOpenDevTools.Location = new System.Drawing.Point(161, 238);
             this.btnOpenDevTools.Name = "btnOpenDevTools";
             this.btnOpenDevTools.Size = new System.Drawing.Size(132, 23);
             this.btnOpenDevTools.TabIndex = 33;
@@ -84,12 +85,12 @@
             // btnOpenPlugins
             // 
             this.btnOpenPlugins.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnOpenPlugins.Location = new System.Drawing.Point(23, 238);
+            this.btnOpenPlugins.Location = new System.Drawing.Point(23, 267);
             this.btnOpenPlugins.Name = "btnOpenPlugins";
             this.btnOpenPlugins.Size = new System.Drawing.Size(132, 23);
             this.btnOpenPlugins.TabIndex = 32;
             this.btnOpenPlugins.TabStop = false;
-            this.btnOpenPlugins.Text = "Open plugins folder";
+            this.btnOpenPlugins.Text = "Open Plugins folder";
             this.btnOpenPlugins.UseSelectable = true;
             this.btnOpenPlugins.Click += new System.EventHandler(this.btnPlugins_Click);
             // 
@@ -97,9 +98,9 @@
             // 
             this.btnInstall.FontSize = MetroFramework.MetroButtonSize.Tall;
             this.btnInstall.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnInstall.Location = new System.Drawing.Point(359, 254);
+            this.btnInstall.Location = new System.Drawing.Point(349, 250);
             this.btnInstall.Name = "btnInstall";
-            this.btnInstall.Size = new System.Drawing.Size(131, 36);
+            this.btnInstall.Size = new System.Drawing.Size(141, 40);
             this.btnInstall.TabIndex = 30;
             this.btnInstall.TabStop = false;
             this.btnInstall.Text = "INSTALL";
@@ -181,7 +182,7 @@
             // lnkLanguage
             // 
             this.lnkLanguage.AutoSize = true;
-            this.lnkLanguage.Location = new System.Drawing.Point(401, 61);
+            this.lnkLanguage.Location = new System.Drawing.Point(401, 32);
             this.lnkLanguage.Name = "lnkLanguage";
             this.lnkLanguage.Size = new System.Drawing.Size(89, 23);
             this.lnkLanguage.TabIndex = 42;
@@ -261,12 +262,12 @@
             // 
             // lnkGithub
             // 
-            this.lnkGithub.Location = new System.Drawing.Point(300, 32);
+            this.lnkGithub.Location = new System.Drawing.Point(296, 5);
             this.lnkGithub.Name = "lnkGithub";
-            this.lnkGithub.Size = new System.Drawing.Size(99, 23);
+            this.lnkGithub.Size = new System.Drawing.Size(64, 23);
             this.lnkGithub.TabIndex = 45;
             this.lnkGithub.TabStop = false;
-            this.lnkGithub.Text = "[Source code ↗]";
+            this.lnkGithub.Text = "GitHub ↗";
             this.lnkGithub.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.lnkGithub.UseSelectable = true;
             this.lnkGithub.Click += new System.EventHandler(this.lnkGithub_Click);
@@ -284,21 +285,34 @@
             // 
             // lnkHomepage
             // 
-            this.lnkHomepage.Location = new System.Drawing.Point(391, 32);
+            this.lnkHomepage.Location = new System.Drawing.Point(366, 5);
             this.lnkHomepage.Name = "lnkHomepage";
-            this.lnkHomepage.Size = new System.Drawing.Size(99, 23);
+            this.lnkHomepage.Size = new System.Drawing.Size(83, 23);
             this.lnkHomepage.TabIndex = 47;
             this.lnkHomepage.TabStop = false;
-            this.lnkHomepage.Text = "[Homepage ↗]";
+            this.lnkHomepage.Text = "Homepage ↗";
             this.lnkHomepage.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.lnkHomepage.UseSelectable = true;
             this.lnkHomepage.Click += new System.EventHandler(this.lnkHomepage_Click);
+            // 
+            // btnOpenAssets
+            // 
+            this.btnOpenAssets.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnOpenAssets.Location = new System.Drawing.Point(23, 238);
+            this.btnOpenAssets.Name = "btnOpenAssets";
+            this.btnOpenAssets.Size = new System.Drawing.Size(132, 23);
+            this.btnOpenAssets.TabIndex = 48;
+            this.btnOpenAssets.TabStop = false;
+            this.btnOpenAssets.Text = "Open Assets folder";
+            this.btnOpenAssets.UseSelectable = true;
+            this.btnOpenAssets.Click += new System.EventHandler(this.btnOpenAssets_Click);
             // 
             // GUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(513, 317);
+            this.Controls.Add(this.btnOpenAssets);
             this.Controls.Add(this.lnkGithub);
             this.Controls.Add(this.lnkHomepage);
             this.Controls.Add(this.lblVersion);
@@ -346,6 +360,7 @@
         private MetroFramework.Controls.MetroLink lnkGithub;
         private MetroFramework.Controls.MetroLabel lblVersion;
         private MetroFramework.Controls.MetroLink lnkHomepage;
+        private MetroFramework.Controls.MetroButton btnOpenAssets;
     }
 }
 

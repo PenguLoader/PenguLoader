@@ -13,6 +13,12 @@ namespace LeagueLoader
             set => Set("LeaguePath", value);
         }
 
+        public static string Language
+        {
+            get => Get("Language");
+            set => Set("Language", value);
+        }
+
         public static int RemoteDebuggingPort
         {
             get

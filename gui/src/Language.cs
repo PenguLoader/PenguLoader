@@ -46,7 +46,7 @@ namespace LeagueLoader
                 "Are you sure want to continue?",
 
             Msg_InvalidSelectedPath = "Your selected path is invalid.",
-            Msg_NotActivated = "League Loader is not activated.",
+            Msg_NotActivated = "League Loader is not activated. Be sure it's installed and League Client is running.",
             Msg_LeagueNotOpened = "League Client is not opened.",
 
             Msg_ModuleInstalled = "League Loader module has been added to League Client.\n" +
@@ -79,7 +79,7 @@ namespace LeagueLoader
                 "Bạn có muốn tiếp tục không?",
 
             Msg_InvalidSelectedPath = "Đường dẫn mà bạn chọn không hợp lệ.",
-            Msg_NotActivated = "League Loader chưa được kích hoạt.",
+            Msg_NotActivated = "League Loader chưa được kích hoạt. Hãy đảm bảo rằng nó đã được cài đặt và League Client đang chạy.",
             Msg_LeagueNotOpened = "League Client chưa được mở.",
 
             Msg_ModuleInstalled = "Module League Loader đã được thêm vào League Client.\n" +
