@@ -11,6 +11,11 @@ const addSettingsUI = async (root) => {
     // Load async module.
     const { Component, jsx, render } = await NanoJSX
 
+    // Get translation (i18n).
+    const lang = document.body.dataset['lang']
+    /** @type {TRANSLATIONS['en']} */
+    const _t = TRANSLATIONS[lang] || TRANSLATIONS['en']
+
     // Main component.
     class Settings extends Component {
         visible = false
@@ -61,13 +66,13 @@ const addSettingsUI = async (root) => {
                                         <hr class="heading-spacer" />
                                         <div style="display: flex; flex-direction: column; align-items: center; gap: 12px">
                                             <lol-uikit-flat-button-secondary style="display:inline-block; width: 180px" onClick=${() => window.openDevTools()}>
-                                                Open DevTools (F12)
+                                                ${_t['l.open_devtools']} (F12)
                                             </lol-uikit-flat-button-secondary>
                                             <lol-uikit-flat-button-secondary style="display:inline-block; width: 180px" onClick=${() => window.location.reload()}>
-                                                Reload Client (Ctrl Shift R)
+                                                ${_t['l.reload_client']} (Ctrl Shift R)
                                             </lol-uikit-flat-button-secondary>
                                             <lol-uikit-flat-button-secondary style="display:inline-block; width: 180px" onClick=${() => window.openPluginsFolder()}>
-                                                Open plugins folder
+                                                ${_t['l.open_plugins']}
                                             </lol-uikit-flat-button-secondary>
                                         </div>
                                         <hr class="heading-spacer" />
@@ -78,8 +83,8 @@ const addSettingsUI = async (root) => {
                                 </lol-uikit-content-block>
                             </div>
                             <lol-uikit-flat-button-group type="dialog-frame">
-                                <lol-uikit-flat-button tabindex="1" class="button-accept" onClick=${() => this.showDefaultSettings()}>Open Settings</lol-uikit-flat-button>
-                                <lol-uikit-flat-button tabindex="2" class="button-decline" onClick=${() => this.show(false)}>CLOSE</lol-uikit-flat-button>
+                                <lol-uikit-flat-button tabindex="1" class="button-accept" onClick=${() => this.showDefaultSettings()}>${_t['l.open_settings']}</lol-uikit-flat-button>
+                                <lol-uikit-flat-button tabindex="2" class="button-decline" onClick=${() => this.show(false)}>${_t['l.close']}</lol-uikit-flat-button>
                             </lol-uikit-flat-button-group>
                         </lol-uikit-dialog-frame>
                     </div>
@@ -114,3 +119,20 @@ window.addEventListener('keydown', (e) => {
         window.location.reload()
     }
 })
+
+const TRANSLATIONS = {
+    ['en']: {
+        'l.open_settings': 'Open Settings',
+        'l.close': 'Close',
+        'l.open_devtools': 'Open DevTools',
+        'l.reload_client': 'Reload Client',
+        'l.open_plugins': 'Open Plugins folder',
+    },
+    ['vn']: {
+        'l.open_settings': 'Mở Cài đặt',
+        'l.close': 'Đóng',
+        'l.open_devtools': 'Mở DevTools',
+        'l.reload_client': 'Tải lại Client',
+        'l.open_plugins': 'Mở thư mục Plugins',
+    },
+}
