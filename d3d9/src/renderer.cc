@@ -83,9 +83,17 @@ static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t
 {
     Old_OnWebKitInitialized(self);
 
-    const char *ext_code = ""
+    std::string ext_code = u8""
 #   include "ext_code.h"
         ;
+
+    const char *version =
+#   include "../gui/Version.cs"
+        ;
+
+    ext_code.append("\nvar __llver = \"");
+    ext_code.append(version);
+    ext_code.append("\"");
 
     // Register our extension.
     CefRegisterExtension(&"v8/LeagueLoader"_s, &CefStr(ext_code), new ExtensionHandler());

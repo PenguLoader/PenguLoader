@@ -10,7 +10,7 @@
         // Open the plugins folder.
 */
 
-R"===============(
+u8R"===============(
 
 var Effect;
 var openDevTools;

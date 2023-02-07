@@ -10,10 +10,13 @@ namespace LeagueLoader
 {
     internal partial class GUI : MetroForm
     {
+        public static GUI Instance { get; private set; } = null;
+
         static string PluginsDir = Path.Combine(Directory.GetCurrentDirectory(), "plugins");
 
         public GUI()
         {
+            Instance = this;
             InitializeComponent();
 
             Config.Init();
@@ -22,6 +25,8 @@ namespace LeagueLoader
             chkRDP.Checked = port > 0;
             txtPort.Enabled = port > 0;
             txtPort.Text = port > 0 ? port.ToString() : "8888";
+
+            lblVersion.Text = $"v{Updater.CurrentVersion.ToString(3)}";
         }
 
         private void GUI_Load(object sender, EventArgs e)
