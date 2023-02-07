@@ -41,11 +41,16 @@ namespace LeagueLoader
                     Application.Run(new GUI());
                     return 0;
                 }
-                else if (isUninstall && (!createdNew || Dll.IsLoaded()))
+                else if (isUninstall)
                 {
-                    MessageBox.Show("Please close running League Client and League Loader before uninstalling it.",
-                        NAME, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return -1;
+                    if (!createdNew || Dll.IsLoaded())
+                    {
+                        MessageBox.Show("Please close running League Client and League Loader before uninstalling it.",
+                            NAME, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return -1;
+                    }
+
+                    Dll.Uninstall(Config.LeaguePath);
                 }
 
                 return 0;

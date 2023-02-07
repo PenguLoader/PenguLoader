@@ -265,10 +265,12 @@ namespace LeagueLoader
                 if (fbd.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
                     var path = fbd.SelectedPath;
+                    var selected = fbd.SelectedPath;
 
                     if (Lcu.IsValidDir(path)) { }
-                    else if (Lcu.IsValidDir(path = Path.Combine(fbd.SelectedPath, "LeagueClient"))) { }
-                    else if (Lcu.IsValidDir(path = Path.Combine(fbd.SelectedPath, "League of Legends"))) { }
+                    else if (Lcu.IsValidDir(path = Path.Combine(selected, "LeagueClient"))) { }
+                    else if (Lcu.IsValidDir(path = Path.Combine(selected, "League of Legends"))) { }
+                    else if (Lcu.IsValidDir(path = Path.Combine(selected, "Riot Games", "League of Legends"))) { }
                     else
                     {
                         MessageBox.Show(this, _l.Msg_InvalidSelectedPath,
