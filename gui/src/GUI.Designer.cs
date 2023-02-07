@@ -45,6 +45,7 @@
             this.btnRestartLC = new MetroFramework.Controls.MetroButton();
             this.lnkGithub = new MetroFramework.Controls.MetroLink();
             this.lblVersion = new MetroFramework.Controls.MetroLabel();
+            this.lnkHomepage = new MetroFramework.Controls.MetroLink();
             this.SuspendLayout();
             // 
             // lblRemoteDebugger
@@ -180,7 +181,7 @@
             // lnkLanguage
             // 
             this.lnkLanguage.AutoSize = true;
-            this.lnkLanguage.Location = new System.Drawing.Point(296, 32);
+            this.lnkLanguage.Location = new System.Drawing.Point(401, 61);
             this.lnkLanguage.Name = "lnkLanguage";
             this.lnkLanguage.Size = new System.Drawing.Size(89, 23);
             this.lnkLanguage.TabIndex = 42;
@@ -260,7 +261,7 @@
             // 
             // lnkGithub
             // 
-            this.lnkGithub.Location = new System.Drawing.Point(391, 32);
+            this.lnkGithub.Location = new System.Drawing.Point(300, 32);
             this.lnkGithub.Name = "lnkGithub";
             this.lnkGithub.Size = new System.Drawing.Size(99, 23);
             this.lnkGithub.TabIndex = 45;
@@ -272,21 +273,35 @@
             // 
             // lblVersion
             // 
+            this.lblVersion.Enabled = false;
             this.lblVersion.FontWeight = MetroFramework.MetroLabelWeight.Regular;
             this.lblVersion.Location = new System.Drawing.Point(218, 25);
             this.lblVersion.Name = "lblVersion";
             this.lblVersion.Size = new System.Drawing.Size(57, 22);
             this.lblVersion.TabIndex = 46;
-            this.lblVersion.Text = "v0.6.0";
+            this.lblVersion.Text = "v0.0.0";
             this.lblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // lnkHomepage
+            // 
+            this.lnkHomepage.Location = new System.Drawing.Point(391, 32);
+            this.lnkHomepage.Name = "lnkHomepage";
+            this.lnkHomepage.Size = new System.Drawing.Size(99, 23);
+            this.lnkHomepage.TabIndex = 47;
+            this.lnkHomepage.TabStop = false;
+            this.lnkHomepage.Text = "[Homepage ↗]";
+            this.lnkHomepage.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.lnkHomepage.UseSelectable = true;
+            this.lnkHomepage.Click += new System.EventHandler(this.lnkHomepage_Click);
             // 
             // GUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(513, 317);
-            this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.lnkGithub);
+            this.Controls.Add(this.lnkHomepage);
+            this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.btnRestartLC);
             this.Controls.Add(this.btnSelectPath);
             this.Controls.Add(this.lnkLanguage);
@@ -330,6 +345,7 @@
         private MetroFramework.Controls.MetroButton btnRestartLC;
         private MetroFramework.Controls.MetroLink lnkGithub;
         private MetroFramework.Controls.MetroLabel lblVersion;
+        private MetroFramework.Controls.MetroLink lnkHomepage;
     }
 }
 

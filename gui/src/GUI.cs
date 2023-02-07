@@ -274,5 +274,10 @@ namespace LeagueLoader
         {
             Process.Start("https://github.com/nomi-san/league-loader/");
         }
+
+        private void lnkHomepage_Click(object sender, EventArgs e)
+        {
+            Process.Start("https://leagueloader.app/");
+        }
     }
 }
