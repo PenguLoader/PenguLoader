@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.IO;
@@ -43,6 +42,9 @@ namespace LeagueLoader
 
             if (!Directory.Exists(PluginsDir))
                 Directory.CreateDirectory(PluginsDir);
+
+            RemoveAdminPerm(AssetsDir);
+            RemoveAdminPerm(PluginsDir);
 
             if (Lcu.IsValidDir(Config.LeaguePath))
             {
@@ -298,6 +300,23 @@ namespace LeagueLoader
         private void lnkHomepage_Click(object sender, EventArgs e)
         {
             Process.Start("https://leagueloader.app/");
+        }
+
+        static void RemoveAdminPerm(string path)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c echo Y| cacls \"{path}\" /grant \"{Environment.UserName}\":f",
+                    UseShellExecute = true,
+                    CreateNoWindow = true,
+                    Verb = "runas",
+                    WindowStyle = ProcessWindowStyle.Hidden
+                });
+            }
+            catch { }
         }
     }
 }
