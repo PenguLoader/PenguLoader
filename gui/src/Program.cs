@@ -16,6 +16,23 @@ namespace LeagueLoader
                 {
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
+
+                    Updater.CheckUpdate().ContinueWith(async res =>
+                    {
+                        var update = await res;
+                        if (update != null)
+                        {
+                            var ret = MessageBox.Show(
+                                $"New version available, v{update.Version}!\n\n" +
+                                "Update changes:\n\n" + (string.IsNullOrEmpty(update.Changes) ? "- None" : update.Changes) +
+                                "\n\nDo you want to download it now?",
+                                "League Loader Update", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+
+                            if (ret == DialogResult.Yes)
+                                Updater.OpenDownload();
+                        }
+                    });
+
                     Application.Run(new GUI());
                 }
             }

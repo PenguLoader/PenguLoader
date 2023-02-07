@@ -3,6 +3,9 @@
 // Import nano-jsx using ESM import().
 const NanoJSX = import('https://cdn.jsdelivr.net/npm/nano-jsx/+esm')
 
+// Get League Loader version.
+const VERSION = window['__llver']
+
 // Create UI using nano-jsx
 const addSettingsUI = async (root) => {
     // Load async module.
@@ -53,7 +56,7 @@ const addSettingsUI = async (root) => {
                                     <div style="position: relative">
                                         <div style="margin-bottom: 24px">
                                             <h4 style="padding: 6px 0">League Loader</h4>
-                                            <p>v0.6.0</p>
+                                            <p>v${VERSION}</p>
                                         </div>
                                         <hr class="heading-spacer" />
                                         <div style="display: flex; flex-direction: column; align-items: center; gap: 12px">

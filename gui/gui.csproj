@@ -77,6 +77,8 @@
     <Compile Include="src\Lcu.cs" />
     <Compile Include="src\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\Updater.cs" />
+    <Compile Include="Version.cs" />
     <EmbeddedResource Include="src\GUI.resx">
       <DependentUpon>GUI.cs</DependentUpon>
     </EmbeddedResource>
