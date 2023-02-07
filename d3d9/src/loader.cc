@@ -1,6 +1,5 @@
 #include <vector>
 #include <fstream>
-#include <sstream>
 #include "internal.h"
 
 using namespace league_loader;
@@ -47,7 +46,8 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
         return;
 
     // Iterate through plugins folder.
-    for (const auto &file : GetFiles(pluginsPath, L"*.js")) {
+    for (const auto &file : GetFiles(pluginsPath, L"*.js"))
+    {
         // Skip file name starts with underscore.
         if (file[0] == L'_') continue;
 
@@ -62,44 +62,48 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
     }
 }
 
-static void ReadFile(const std::wstring &path, std::wstring &out)
+static void ReadFile(const std::wstring &path, std::string &out)
 {
-    std::wifstream file(path);
-    std::wstringstream buf;
-    buf << file.rdbuf();
-    out = buf.str();
+    std::ifstream input(path, std::ios::binary);
+    out.assign((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
+    input.close();
 }
 
-enum RequireType : int {
+enum RequireType
+{
     JS_MODULE = 0,
     INDEX_MODULE,
-    TEXTUAL_CONTENT
+    TEXT_CONTENT
 };
 
-bool NativeRequire(const std::wstring &genericPath, std::wstring &source, int &type)
+bool NativeRequire(const std::wstring &genericPath, std::string &source, int &type)
 {
     auto path = GetPluginsDir() + genericPath;
     auto filePath = path + L".js";
 
     // Check .js file.
-    if (FileExist(filePath)) {
+    if (FileExist(filePath))
+    {
         ReadFile(filePath, source);
         type = JS_MODULE;
         return true;
     }
     // Check if the given path is folder.
-    else if (FileExist(path, true)) {
+    else if (FileExist(path, true))
+    {
         filePath = path + L"/index.js";
         // And it contains index.js.
-        if (FileExist(filePath)) {
+        if (FileExist(filePath))
+        {
             ReadFile(filePath, source);
             type = INDEX_MODULE;
             return true;
         }
     }
-    else if (FileExist(path, false)) {
+    else if (FileExist(path, false))
+    {
         ReadFile(path, source);
-        type = TEXTUAL_CONTENT;
+        type = TEXT_CONTENT;
         return true;
     }
 
