@@ -15,7 +15,7 @@ static bool IS_CLIENT = false;
 HANDLE BROWSER_PROCESS;
 
 void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context);
-bool NativeRequire(const std::wstring &path, std::wstring &source, int &flag);
+bool NativeRequire(const std::wstring &path, std::string &source, int &flag);
 
 bool HandleWindowEffect(const CefStr &fn, int argc, cef_v8value_t * const *args, cef_v8value_t **retval);
 
@@ -52,7 +52,7 @@ private:
         else if (name == L"Require")
         {
             int flag;
-            std::wstring source;
+            std::string source;
             CefStr path(args[0]->get_string_value(args[0]));
 
             if (NativeRequire(path.str, source, flag))
