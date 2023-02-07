@@ -7,10 +7,8 @@ namespace LeagueLoader
 {
     internal class Dll
     {
-        static string D3d9DllPath => Path.Combine(Directory.GetCurrentDirectory(), "d3d9.dll");
-
-        [DllImport("kernel32.dll", EntryPoint = "CreateSymbolicLinkW", CharSet = CharSet.Unicode)]
-        static extern int CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, uint dwFlags = 0);
+        const string NAME = "d3d9.dll";
+        static string ThisPath => Path.Combine(Directory.GetCurrentDirectory(), NAME);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         static extern IntPtr OpenEvent(uint dwDesiredAccess, [MarshalAs(UnmanagedType.I1)] bool bInheritHandle, string lpName);
@@ -38,11 +36,6 @@ namespace LeagueLoader
             }
         }
 
-        public static bool Exist()
-        {
-            return File.Exists(D3d9DllPath);
-        }
-
         public static bool IsLoaded()
         {
             var procs = Process.GetProcessesByName("LeagueClientUx");
@@ -50,7 +43,7 @@ namespace LeagueLoader
             {
                 var lcux = procs[0];
                 var lcuxDir = Directory.GetParent(lcux.MainModule.FileName).FullName;
-                var dllPath = Path.Combine(lcuxDir, "d3d9.dll");
+                var dllPath = Path.Combine(lcuxDir, NAME);
 
                 foreach (ProcessModule module in lcux.Modules)
                 {
@@ -66,31 +59,46 @@ namespace LeagueLoader
 
         public static bool IsInstalled(string lcDir)
         {
-            if (string.IsNullOrEmpty(lcDir)) return false;
+            if (string.IsNullOrEmpty(lcDir))
+                return false;
 
-            var linkPath = Path.Combine(lcDir, "d3d9.dll");
-            if (!File.Exists(linkPath)) return false;
+            if (!File.Exists(ThisPath))
+                return false;
 
-            var info = new FileInfo(linkPath);
-            return info.Attributes.HasFlag(FileAttributes.ReparsePoint);
+            var linkPath = Path.Combine(lcDir, NAME);
+            if (!File.Exists(linkPath))
+                return false;
+
+            linkPath = Symlink.Resolve(linkPath);
+            if (!File.Exists(linkPath))
+                return false;
+
+            return NormalizePath(linkPath) == NormalizePath(ThisPath);
         }
 
         public static void Install(string lcDir)
         {
-            if (!IsInstalled(lcDir))
-            {
-                var linkPath = Path.Combine(lcDir, "d3d9.dll");
-                CreateSymbolicLink(linkPath, D3d9DllPath);
-            }
+            var linkPath = Path.Combine(lcDir, NAME);
+            if (File.Exists(linkPath))
+                File.Delete(linkPath);
+
+            Symlink.Create(linkPath, ThisPath);
         }
 
         public static void Uninstall(string lcDir)
         {
             if (IsInstalled(lcDir))
             {
-                var linkPath = Path.Combine(lcDir, "d3d9.dll");
+                var linkPath = Path.Combine(lcDir, NAME);
                 File.Delete(linkPath);
             }
+        }
+
+        static string NormalizePath(string path)
+        {
+            return Path.GetFullPath(new Uri(path).LocalPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                .ToUpperInvariant();
         }
     }
 }
