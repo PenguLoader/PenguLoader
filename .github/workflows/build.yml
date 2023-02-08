@@ -11,8 +11,6 @@ jobs:
     runs-on: windows-2019
 
     steps:
-      - run: Set-ItemProperty 'HKLM:\System\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -value 1
-    
       - uses: actions/checkout@main
         with:
           repository: nomi-san/league-loader
@@ -26,9 +24,8 @@ jobs:
       - name: Get short SHA
         run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
         
-      - run: Invoke-WebRequest https://github.com/nomi-san/league-loader/releases/download/0.1a/innosetup-6.2.1.exe -OutFile inno-setup.exe
-      - run: ./inno-setup.exe /verysilent /allusers /dir=inst
-      - run: Invoke-WebRequest https://github.com/nomi-san/league-loader/releases/download/0.1a/ISCrypt.dll -OutFile inst/ISCrypt.dll
+      - run: ./certs/innosetup-6.2.1.exe /verysilent /allusers /dir=inst
+      - run: copy .\certs\ISCrypt.dll .\inst\ISCrypt.dll
           
       - uses: TheMrMilchmann/setup-msvc-dev@v2
         with:
