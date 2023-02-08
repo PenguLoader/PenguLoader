@@ -24,9 +24,11 @@ jobs:
       - name: Get short SHA
         run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
         
-      - run: curl -L -o inno-setup.exe http://files.jrsoftware.org/is/6/innosetup-6.2.1.exe
-      - run: ./inno-setup.exe /verysilent /allusers /dir=inst
-      - run: curl -L -o inst/ISCrypt.dll https://jrsoftware.org/download.php/iscrypt.dll
+      - name: Install Inno Setup
+        run: |
+          curl -L -o inno-setup.exe http://files.jrsoftware.org/is/6/innosetup-6.2.1.exe
+          ./inno-setup.exe /verysilent /allusers /dir=inst
+          curl -L -o inst/ISCrypt.dll https://mlaan2.home.xs4all.nl/iscrypt/ISCrypt.dll
           
       - uses: TheMrMilchmann/setup-msvc-dev@v2
         with:
