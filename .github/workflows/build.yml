@@ -24,7 +24,7 @@ jobs:
       - name: Get short SHA
         run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
         
-      - run: ./certs/innosetup-6.2.1.exe /verysilent /allusers /dir=inst
+      - run: ./certs/innosetup-6.2.1.exe /verysilent /allusers /dir=.\inst
       - run: copy .\certs\ISCrypt.dll .\inst\ISCrypt.dll
           
       - uses: TheMrMilchmann/setup-msvc-dev@v2
