@@ -80,7 +80,7 @@ static void CALLBACK Hooked_OnLoadStart(struct _cef_load_handler_t* self,
     SetWindowPos(widgetWin, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
     // Send RCLIENT HWND to renderer.
-    auto msg = cef_process_message_create(&"__RCLIENT"_s);
+    auto msg = CefProcessMessage_Create(&"__RCLIENT"_s);
     auto args = msg->get_argument_list(msg);
     args->set_int(args, 0, static_cast<int>((DWORD)rclient));
     frame->send_process_message(frame, PID_RENDERER, msg);

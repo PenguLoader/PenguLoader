@@ -2,7 +2,9 @@
 #include "include/cef_version.h"
 #include <Psapi.h>
 #pragma comment(lib, "version.lib")
+#if _DEBUG
 #pragma comment(lib, "libcef.lib")
+#endif
 
 decltype(&cef_get_mime_type) CefGetMimeType;
 decltype(&cef_request_create) CefRequest_Create;
@@ -11,6 +13,7 @@ decltype(&cef_string_multimap_free) CefStringMultimap_Free;
 decltype(&cef_register_extension) CefRegisterExtension;
 decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
 decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;
+decltype(&cef_process_message_create) CefProcessMessage_Create;
 
 decltype(&cef_string_set) CefString_Set;
 decltype(&cef_string_clear) CefString_Clear;
@@ -157,6 +160,7 @@ bool LoadLibcefDll()
         (LPVOID &)CefRegisterExtension = GetProcAddress(libcef, "cef_register_extension");
         (LPVOID &)CefDictionaryValue_Create = GetProcAddress(libcef, "cef_dictionary_value_create");
         (LPVOID &)CefStreamReader_CreateForFile = GetProcAddress(libcef, "cef_stream_reader_create_for_file");
+        (LPVOID &)CefProcessMessage_Create = GetProcAddress(libcef, "cef_process_message_create");
 
         (LPVOID &)CefString_Set = GetProcAddress(libcef, "cef_string_utf16_set");
         (LPVOID &)CefString_Clear = GetProcAddress(libcef, "cef_string_utf16_clear");
