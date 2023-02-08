@@ -32,12 +32,12 @@ static T _Forward(T, const char* funcName)
 
 #define Forward(F) _Forward(F, #F)
 
-LPVOID Direct3DCreate9(UINT SDKVersion)
+LPVOID WINAPI Direct3DCreate9(UINT SDKVersion)
 {
     return Forward(Direct3DCreate9)(SDKVersion);
 }
 
-HRESULT Direct3DCreate9Ex(UINT SDKVersion, LPVOID ppEx)
+HRESULT WINAPI Direct3DCreate9Ex(UINT SDKVersion, LPVOID ppEx)
 {
     return Forward(Direct3DCreate9Ex)(SDKVersion, ppEx);
 }
@@ -57,7 +57,22 @@ DWORD WINAPI D3DPERF_GetStatus()
     return Forward(D3DPERF_GetStatus)();
 }
 
+BOOL WINAPI D3DPERF_QueryRepeatFrame()
+{
+    return Forward(D3DPERF_QueryRepeatFrame)();
+}
+
 void WINAPI D3DPERF_SetMarker(DWORD col, LPCWSTR wszName)
 {
-    return Forward(D3DPERF_SetMarker)(col, wszName);
+    Forward(D3DPERF_SetMarker)(col, wszName);
+}
+
+int WINAPI D3DPERF_SetOptions(DWORD dwOptions)
+{
+    return Forward(D3DPERF_SetOptions)(dwOptions);
+}
+
+void WINAPI D3DPERF_SetRegion(DWORD col, LPCWSTR wszName)
+{
+    Forward(D3DPERF_SetRegion)(col, wszName);
 }
