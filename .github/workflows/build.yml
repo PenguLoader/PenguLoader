@@ -11,6 +11,8 @@ jobs:
     runs-on: windows-2019
 
     steps:
+      - run: Set-ItemProperty 'HKLM:\System\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -value 1
+    
       - uses: actions/checkout@main
         with:
           repository: nomi-san/league-loader
