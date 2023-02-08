@@ -23,9 +23,6 @@ jobs:
           
       - name: Get short SHA
         run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
-        
-      - run: ./certs/innosetup-6.2.1.exe /verysilent /allusers /dir=.\inst
-      - run: copy .\certs\ISCrypt.dll .\inst\ISCrypt.dll
           
       - uses: TheMrMilchmann/setup-msvc-dev@v2
         with:
@@ -50,9 +47,6 @@ jobs:
           signtool sign /t http://timestamp.digicert.com /f certs\league-loader.pfx /p ${{ secrets.PFX_PASSWORD }} "bin\League Loader.exe"
           signtool sign /t http://timestamp.digicert.com /f certs\league-loader.pfx /p ${{ secrets.PFX_PASSWORD }} "bin\d3d9.dll"
         
-      - name: Create setup installer
-        run: .\inst\iscc.exe setup\setup.iss
-        
       - name: Upload build outputs
         uses: actions/upload-artifact@v3
         with:
@@ -62,8 +56,3 @@ jobs:
             bin/*.dll
             bin/plugins/
             
-      - name: Upload setup installer
-        uses: actions/upload-artifact@v3
-        with:
-          name: league-loader-setup
-          path: setup/*.exe
