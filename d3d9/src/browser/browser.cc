@@ -1,27 +1,22 @@
-#include "internal.h"
-#include "detours.h"
+#include "../internal.h"
 #include <psapi.h>
 
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_client_capi.h"
 #include "include/capi/cef_browser_capi.h"
 
-using namespace league_loader;
-
 // BROWSER PROCESS ONLY.
-
-DWORD BROWSER_PROCESS_ID = 0;
-HWND RCLIENT_WINDOW = nullptr;
 
 UINT REMOTE_DEBUGGING_PORT = 0;
 HWND DEVTOOLS_HWND = 0;
 cef_browser_t *CLIENT_BROWSER = nullptr;
 
-void PrepareDevToolsThread();
+extern LPCWSTR DEVTOOLS_WINDOW_NAME;
 
-cef_resource_handler_t *CreateAssetsResourceHandler(const std::wstring &path);
-cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, std::wstring path);
-void SetRiotClientCredentials(wchar_t *appPort, wchar_t *authToken);
+void PrepareDevTools();
+cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path);
+cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path);
+void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken);
 
 static int64 _mainBrowserId = 0;
 static decltype(cef_life_span_handler_t::on_after_created) Old_OnAfterCreated;
@@ -36,9 +31,8 @@ static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* 
         _mainBrowserId = browser->get_identifier(browser);
         CLIENT_BROWSER = browser;
 
-        // Fetch remote DevTools URL.
-        CreateThread(NULL, 0,
-            (LPTHREAD_START_ROUTINE)&PrepareDevToolsThread, NULL, 0, NULL);
+        // Initialize DevTools opener.
+        PrepareDevTools();
     }
 
     Old_OnAfterCreated(self, browser);
@@ -85,7 +79,11 @@ static void CALLBACK Hooked_OnLoadStart(struct _cef_load_handler_t* self,
     SetParent(widgetWin, rclient);
     SetWindowPos(widgetWin, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
-    RCLIENT_WINDOW = rclient;
+    // Send RCLIENT HWND to renderer.
+    auto msg = cef_process_message_create(&"__RCLIENT"_s);
+    auto args = msg->get_argument_list(msg);
+    args->set_int(args, 0, static_cast<int>((DWORD)rclient));
+    frame->send_process_message(frame, PID_RENDERER, msg);
 };
 
 static void HookClient(cef_client_t *client)
@@ -175,14 +173,14 @@ static int Hooked_CefBrowserHost_CreateBrowser(
     struct _cef_request_context_t* request_context)
 {
     // Hook main window only.
-    if (str_contain(url->str, L"riot:") && str_contain(url->str, L"/bootstrap.html")) {
+    if (utils::strContain(url->str, L"riot:") && utils::strContain(url->str, L"/bootstrap.html"))
+    {
         // Create extra info if null.
-        if (extra_info == NULL) {
+        if (extra_info == NULL)
             extra_info = CefDictionaryValue_Create();
-        }
 
         // Add current process ID (browser process).
-        extra_info->set_int(extra_info, &"BROWSER_PROCESS_ID"_s, GetCurrentProcessId());
+        extra_info->set_null(extra_info, &"IS_MAIN"_s);
 
         // Hook client.
         HookClient(client);
@@ -204,19 +202,19 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     // Keep Riot's command lines.
     Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
 
-    auto sPort = GetConfigValue(L"RemoteDebuggingPort");
+    auto sPort = config::getConfigValue(L"RemoteDebuggingPort");
     REMOTE_DEBUGGING_PORT = wcstol(sPort.c_str(), NULL, 10);
     if (REMOTE_DEBUGGING_PORT != 0) {
         // Set remote debugging port.
         command_line->append_switch_with_value(command_line, &"remote-debugging-port"_s, &CefStr(REMOTE_DEBUGGING_PORT));
     }
 
-    if (GetConfigValue(L"DisableWebSecurity") == L"1") {
+    if (config::getConfigValue(L"DisableWebSecurity") == L"1") {
         // Disable web security.
         command_line->append_switch(command_line, &"disable-web-security"_s);
     }
 
-    if (GetConfigValue(L"IgnoreCertificateErrors") == L"1") {
+    if (config::getConfigValue(L"IgnoreCertificateErrors") == L"1") {
         // Ignore invalid certs.
         command_line->append_switch(command_line, &"ignore-certificate-errors"_s);
     }
@@ -271,13 +269,6 @@ static HWND WINAPI Hooked_CreateWindowExW(
     return hwnd;
 }
 
-static void* Old_GetBackgroundColor = nullptr;
-static NOINLINE cef_color_t __fastcall Hooked_GetBackgroundColor(void* ECX, void* EDX,
-    cef_browser_settings_t *settings, cef_state_t state)
-{
-    return 0; // fully transparent :)
-}
-
 void HookBrowserProcess()
 {
     // Open console window.
@@ -287,32 +278,11 @@ void HookBrowserProcess()
     freopen("CONOUT$", "w", stdout);
 #endif
 
-    DetourRestoreAfterWith();
-
-    // Find CefContext::GetBackGroundColor().
-    {
-        MODULEINFO info{ NULL };
-        K32GetModuleInformation(GetCurrentProcess(),
-            GetModuleHandle(L"libcef.dll"), &info, sizeof(info));
-
-        const std::string pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
-        Old_GetBackgroundColor = ScanInternal(static_cast<PCSTR>(info.lpBaseOfDll), info.SizeOfImage, pattern);
-    }
-
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-
     // Hook CefInitialize().
-    DetourAttach(&(PVOID &)CefInitialize, Hooked_CefInitialize);
+    utils::hookFunc((void **)&CefInitialize, Hooked_CefInitialize);
     // Hook CefBrowserHost::CreateBrowser().
-    DetourAttach(&(PVOID &)CefBrowserHost_CreateBrowser, Hooked_CefBrowserHost_CreateBrowser);
+    utils::hookFunc((void **)&CefBrowserHost_CreateBrowser, Hooked_CefBrowserHost_CreateBrowser);
 
     // Hook CreateWindowExW().
-    DetourAttach(&(PVOID &)Old_CreateWindowExW, Hooked_CreateWindowExW);
-
-    // Hook CefContext::GetBackGroundColor().
-    if (Old_GetBackgroundColor != nullptr)
-        DetourAttach(&(PVOID &)Old_GetBackgroundColor, Hooked_GetBackgroundColor);
-
-    DetourTransactionCommit();
+    utils::hookFunc((void **)&Old_CreateWindowExW, Hooked_CreateWindowExW);
 }

@@ -1,12 +1,7 @@
 #include "internal.h"
 #include "include/cef_version.h"
 
-#pragma comment(lib, "version.lib")
-
-using namespace league_loader;
-
 bool LoadLibcefDll();
-
 void HookBrowserProcess();
 void HookRendererProcess();
 
@@ -14,19 +9,20 @@ static void Initialize()
 {
     // Get exe path.
     WCHAR _path[2048];
-    std::wstring name(_path, GetModuleFileNameW(NULL, _path, _countof(_path)));
+    wstring name(_path, GetModuleFileNameW(NULL, _path, _countof(_path)));
     name = name.substr(name.find_last_of(L"\\/") + 1);
 
     // Determine which process to be hooked.
 
     // Browser process.
-    if (!_wcsicmp(name.c_str(), L"LeagueClientUx.exe"))
+    if (utils::strEqual(name, L"LeagueClientUx.exe", false))
     {
         if (LoadLibcefDll())
             HookBrowserProcess();
     }
     // Renderer process.
-    else if (!_wcsicmp(name.c_str(), L"LeagueClientUxRender.exe") && str_contain(GetCommandLineW(), L"--type=renderer"))
+    else if (utils::strEqual(name, L"LeagueClientUxRender.exe", false)
+        && utils::strContain(GetCommandLineW(), L"--type=renderer", false))
     {
         if (LoadLibcefDll())
             HookRendererProcess();

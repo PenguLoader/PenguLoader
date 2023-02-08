@@ -1,19 +1,9 @@
-#include "internal.h"
+#include "../internal.h"
 
 #include <dwmapi.h>
 #pragma comment(lib, "dwmapi.lib")
 
-using namespace league_loader;
-
-extern HWND RCLIENT_WINDOW;
-extern HANDLE BROWSER_PROCESS;
-
-static HWND GetMainWindow()
-{
-    if (RCLIENT_WINDOW == nullptr)
-        IPC_READ(BROWSER_PROCESS, &RCLIENT_WINDOW, sizeof(HWND));
-    return RCLIENT_WINDOW;
-}
+HWND RCLIENT_WINDOW = nullptr;
 
 // This is C++ version of vibe
 // https://github.com/pykeio/vibe
@@ -256,33 +246,39 @@ void ClearMica(HWND hwnd)
 
 bool ApplyEffect(std::wstring name, uint32_t option_color)
 {
+    if (RCLIENT_WINDOW == nullptr)
+        return false;
+
     if (name == L"mica")
-        return ApplyMica(GetMainWindow());
+        return ApplyMica(RCLIENT_WINDOW);
     else if (name == L"acrylic")
-        return ApplyAcrylic(GetMainWindow(), false, true, option_color);
+        return ApplyAcrylic(RCLIENT_WINDOW, false, true, option_color);
     else if (name == L"unified")
-        return ApplyAcrylic(GetMainWindow(), true, true, option_color);
+        return ApplyAcrylic(RCLIENT_WINDOW, true, true, option_color);
     else if (name == L"blurbehind")
-        return ApplyAcrylic(GetMainWindow(), true, false, option_color);
+        return ApplyAcrylic(RCLIENT_WINDOW, true, false, option_color);
 
     return false;
 }
 
 bool ClearEffect(const std::wstring &name)
 {
+    if (RCLIENT_WINDOW == nullptr)
+        return false;
+
     if (name == L"mica")
     {
-        ClearMica(GetMainWindow());
+        ClearMica(RCLIENT_WINDOW);
         return true;
     }
     else if (name == L"acrylic")
     {
-        ClearAcrylic(GetMainWindow(), false);
+        ClearAcrylic(RCLIENT_WINDOW, false);
         return true;
     }
     else if (name == L"unified" || name == L"blurbehind")
     {
-        ClearAcrylic(GetMainWindow(), true);
+        ClearAcrylic(RCLIENT_WINDOW, true);
         return true;
     }
 
@@ -342,25 +338,25 @@ _done:
     return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
 }
 
-bool HandleWindowEffect(const CefStr &fn, int argc, cef_v8value_t *const *args, cef_v8value_t **retval)
+bool HandleWindowEffect(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval)
 {
     static std::wstring current = L"";
 
     if (fn == L"GetEffect")
     {
-        *retval = CefV8Value_CreateString(&CefStr(current));
+        retval = CefV8Value_CreateString(&CefStr(current));
         return true;
     }
     else if (fn == L"ApplyEffect")
     {
         bool success = false;
 
-        if (argc >= 1 && args[0]->is_string(args[0]))
+        if (args.size() >= 1 && args[0]->is_string(args[0]))
         {
             CefStr name = args[0]->get_string_value(args[0]);
             uint32_t tintColor = 0;
 
-            if (argc >= 2 && args[1]->is_object(args[1]))
+            if (args.size() >= 2 && args[1]->is_object(args[1]))
             {
                 if (args[1]->has_value_bykey(args[1], &"color"_s))
                 {
@@ -380,7 +376,7 @@ bool HandleWindowEffect(const CefStr &fn, int argc, cef_v8value_t *const *args, 
                 current.assign(name.str, name.length);
         }
         
-        *retval = CefV8Value_CreateBool(success);
+        retval = CefV8Value_CreateBool(success);
         return true;
     }
     else if (fn == L"ClearEffect")

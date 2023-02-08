@@ -8,6 +8,15 @@
     <Filter Include="res">
       <UniqueIdentifier>{f7fb3482-8bb9-4289-8727-31c4e42d8158}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\browser">
+      <UniqueIdentifier>{dfeda954-1c41-4771-8da2-c733492503fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\renderer">
+      <UniqueIdentifier>{d97c7ba6-93de-4f95-81f6-e18b2c0ba005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utils">
+      <UniqueIdentifier>{e0b1c27d-cfeb-41e1-87e3-5f64c8ddc7fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\d3d9.cc">
@@ -16,35 +25,44 @@
     <ClCompile Include="src\dllmain.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\browser.cc">
+    <ClCompile Include="src\libcef.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\renderer.cc">
-      <Filter>src</Filter>
+    <ClCompile Include="src\browser\assets.cc">
+      <Filter>src\browser</Filter>
     </ClCompile>
-    <ClCompile Include="src\loader.cc">
-      <Filter>src</Filter>
+    <ClCompile Include="src\browser\browser.cc">
+      <Filter>src\browser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\browser\devtools.cc">
+      <Filter>src\browser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\browser\riotclient.cc">
+      <Filter>src\browser</Filter>
     </ClCompile>
     <ClCompile Include="src\config.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\libcef.cc">
-      <Filter>src</Filter>
+    <ClCompile Include="src\renderer\effects.cc">
+      <Filter>src\renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\devtools.cc">
-      <Filter>src</Filter>
+    <ClCompile Include="src\renderer\loader.cc">
+      <Filter>src\renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\assets.cc">
-      <Filter>src</Filter>
+    <ClCompile Include="src\renderer\renderer.cc">
+      <Filter>src\renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\riotclient.cc">
-      <Filter>src</Filter>
+    <ClCompile Include="src\utils\file.cc">
+      <Filter>src\utils</Filter>
     </ClCompile>
-    <ClCompile Include="src\effects.cc">
-      <Filter>src</Filter>
+    <ClCompile Include="src\utils\string.cc">
+      <Filter>src\utils</Filter>
     </ClCompile>
-    <ClCompile Include="src\pattern_scan.cc">
-      <Filter>src</Filter>
+    <ClCompile Include="src\utils\hook.cc">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\misc.cc">
+      <Filter>src\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -54,16 +72,16 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ext_code.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\internal.h">
-      <Filter>src</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="res\d3d9.rc">
       <Filter>res</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\internal.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\ext_code.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

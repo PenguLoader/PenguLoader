@@ -1,6 +1,8 @@
-#include "internal.h"
+#include "../internal.h"
+
 #include <regex>
 #include <sstream>
+#include <detours.h>
 
 struct PatternMask
 {
@@ -64,16 +66,18 @@ NOINLINE PVOID find(PCSTR pBaseAddress, size_t memLength, PCSTR pattern, PCSTR m
 
 // Credit: Rake
 // Source: https://guidedhacking.com/threads/external-internal-pattern-scanning-guide.14112/
-NOINLINE PVOID league_loader::ScanInternal(PCSTR pMemory, size_t length, std::string pattern)
+NOINLINE void *utils::scanInternal(void *image, size_t length, const string &pattern)
 {
     // logger->debug("DLL Base: {}, Image Size: {:X}", lpBaseOfDll, SizeOfImage);
 
-    PVOID match = nullptr;
+    LPVOID match = nullptr;
     MEMORY_BASIC_INFORMATION mbi{};
 
     auto pm = getPatternAndMask(pattern);
 
+    auto pMemory = static_cast<const char *>(image);
     auto pCurrentRegion = pMemory;
+
     do
     {
         // Skip irrelevant code regions
@@ -83,7 +87,7 @@ NOINLINE PVOID league_loader::ScanInternal(PCSTR pMemory, size_t length, std::st
             // logger->debug("Current Region: {}, Region Size: {:X}", (void*) pCurrentRegion, mbi.RegionSize);
             match = find(pCurrentRegion, mbi.RegionSize, pm.binaryPattern.c_str(), pm.mask.c_str());
 
-            if (match)
+            if (match != nullptr)
                 break;
         }
 
@@ -91,4 +95,34 @@ NOINLINE PVOID league_loader::ScanInternal(PCSTR pMemory, size_t length, std::st
     } while (pCurrentRegion < pMemory + length);
 
     return match;
+}
+
+void utils::hookFunc(void **orig, void *hooked)
+{
+    if (orig == nullptr || *orig == nullptr)
+        return;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+
+    DetourAttach(orig, hooked);
+
+    DetourTransactionCommit();
+}
+
+void utils::hookFuncs(void **funcs[], int count)
+{
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+
+    for (int i = 0; i < count; i++)
+    {
+        auto orig = static_cast<void **>(funcs[i][0]);
+        auto hooked = funcs[i][1];
+
+        if (orig != nullptr && *orig != nullptr)
+            DetourAttach(orig, hooked);
+    }
+
+    DetourTransactionCommit();
 }
