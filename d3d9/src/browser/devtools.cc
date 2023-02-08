@@ -1,9 +1,7 @@
-#include "internal.h"
+#include "../internal.h"
 
 #include <wininet.h>
 #pragma comment(lib, "wininet.lib")
-
-using namespace league_loader;
 
 // BROWSER PROCESS ONLY.
 
@@ -11,6 +9,8 @@ extern UINT REMOTE_DEBUGGING_PORT;
 extern cef_browser_t *CLIENT_BROWSER;
 extern HWND DEVTOOLS_HWND;
 static std::string REMOTE_DEVTOOLS_URL;
+
+LPCWSTR DEVTOOLS_WINDOW_NAME = L"DevTools - League Client";
 
 #define OPEN_DEVTOOLS_EVENT         "Global\\LeagueLoader.OpenDevTools"
 #define OPEN_REMOTE_DEVTOOLS_EVENT  "Global\\LeagueLoader.OpenRemoteDevTools"
@@ -63,7 +63,7 @@ static void OpenDevTools_Internal(bool remote)
     }
 }
 
-void PrepareDevToolsThread()
+static void PrepareDevTools_Thread()
 {
     if (REMOTE_DEBUGGING_PORT != 0)
     {
@@ -130,8 +130,13 @@ void PrepareDevToolsThread()
     }
 }
 
+void PrepareDevTools()
+{
+    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&PrepareDevTools_Thread, NULL, 0, NULL);
+}
+
 // Cross-process call.
-void league_loader::OpenDevTools(bool remote)
+void OpenDevTools(bool remote)
 {
     auto eventName = remote
         ? OPEN_REMOTE_DEVTOOLS_EVENT : OPEN_DEVTOOLS_EVENT;

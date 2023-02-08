@@ -1,14 +1,12 @@
-#include "internal.h"
-#include <algorithm>
-
-using namespace league_loader;
+#include "../internal.h"
 
 // BROWSER PROCESS ONLY.
 
 // Custom resource handler for local assets.
-struct AssetsResourceHandler : CefRefCount<cef_resource_handler_t>
+class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
-    AssetsResourceHandler(const std::wstring &path) : CefRefCount(this),
+public:
+    AssetsResourceHandler(const wstring &path) : CefRefCount(this),
         path_(path), stream_(nullptr), length_(0)
     {
         cef_resource_handler_t::open = _Open;
@@ -21,11 +19,11 @@ struct AssetsResourceHandler : CefRefCount<cef_resource_handler_t>
 
         // Remove query part.
         size_t pos;
-        if ((pos = path_.find_last_of(L'?')) != std::string::npos)
+        if ((pos = path_.find_last_of(L'?')) != string::npos)
             path_ = path_.substr(0, pos);
 
         // Get final path.
-        path_ = GetAssetsDir().append(path_);
+        path_ = config::getAssetsDir().append(path_);
     }
 
     ~AssetsResourceHandler()
@@ -37,7 +35,7 @@ struct AssetsResourceHandler : CefRefCount<cef_resource_handler_t>
 private:
     cef_stream_reader_t *stream_;
     int64 length_;
-    std::wstring path_;
+    wstring path_;
 
     static int CEF_CALLBACK _Open(cef_resource_handler_t* _,
         struct _cef_request_t* request,
@@ -79,7 +77,7 @@ private:
 
         // Extract extension to get MIME type.
         size_t pos;
-        if ((pos = self->path_.find_last_of(L'.')) != std::string::npos)
+        if ((pos = self->path_.find_last_of(L'.')) != string::npos)
         {
             auto ext = self->path_.substr(pos + 1);
             auto type = CefGetMimeType(&CefStr(ext));
@@ -142,7 +140,7 @@ private:
     static void CEF_CALLBACK _Cancel(cef_resource_handler_t* self) { }
 };
 
-cef_resource_handler_t *CreateAssetsResourceHandler(const std::wstring &path)
+cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path)
 {
     return new AssetsResourceHandler(path);
 }

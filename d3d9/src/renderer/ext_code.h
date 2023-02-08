@@ -14,6 +14,7 @@ u8R"===============(
 
 var Effect;
 var openDevTools;
+var openAssetsFolder;
 var openPluginsFolder;
 var require;
 
@@ -37,6 +38,11 @@ var require;
     openDevTools = function () {
         native function OpenDevTools();
         OpenDevTools();
+    };
+
+    openAssetsFolder = function () {
+        native function OpenAssetsFolder();
+        OpenAssetsFolder();
     };
 
     openPluginsFolder = function () {

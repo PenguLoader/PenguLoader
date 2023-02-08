@@ -19,26 +19,29 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\effects.cc" />
-    <ClCompile Include="src\pattern_scan.cc" />
-    <ClCompile Include="src\riotclient.cc" />
-    <ClCompile Include="src\libcef.cc" />
-    <ClCompile Include="src\browser.cc" />
+    <ClCompile Include="src\browser\assets.cc" />
+    <ClCompile Include="src\browser\browser.cc" />
+    <ClCompile Include="src\browser\devtools.cc" />
+    <ClCompile Include="src\browser\riotclient.cc" />
     <ClCompile Include="src\config.cc" />
-    <ClCompile Include="src\devtools.cc" />
-    <ClCompile Include="src\loader.cc" />
+    <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\d3d9.cc" />
     <ClCompile Include="src\dllmain.cc" />
-    <ClCompile Include="src\renderer.cc" />
-    <ClCompile Include="src\assets.cc" />
+    <ClCompile Include="src\renderer\effects.cc" />
+    <ClCompile Include="src\renderer\loader.cc" />
+    <ClCompile Include="src\renderer\renderer.cc" />
+    <ClCompile Include="src\utils\file.cc" />
+    <ClCompile Include="src\utils\hook.cc" />
+    <ClCompile Include="src\utils\misc.cc" />
+    <ClCompile Include="src\utils\string.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="res\d3d9.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ext_code.h" />
     <ClInclude Include="src\internal.h" />
+    <ClInclude Include="src\renderer\ext_code.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\d3d9.rc" />

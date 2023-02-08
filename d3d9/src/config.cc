@@ -1,12 +1,10 @@
 #include "internal.h"
 
-using namespace league_loader;
-
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
-static std::wstring GetLoaderDir()
+wstring config::getLoaderDir()
 {
-    static std::wstring cachedPath{};
+    static wstring cachedPath{};
     if (!cachedPath.empty()) return cachedPath;
 
     // Get this dll path.
@@ -20,7 +18,7 @@ static std::wstring GetLoaderDir()
     DWORD pathLength = GetFinalPathNameByHandleW(file, finalPath, 2048, FILE_NAME_OPENED);
     CloseHandle(file);
 
-    std::wstring dir(finalPath, pathLength);
+    wstring dir(finalPath, pathLength);
 
     // Remove prepended '\\?\' by GetFinalPathNameByHandle()
     if (dir.rfind(L"\\\\?\\", 0) == 0)
@@ -30,23 +28,23 @@ static std::wstring GetLoaderDir()
     return cachedPath = dir.substr(0, dir.find_last_of(L"/\\"));
 }
 
-std::wstring league_loader::GetPluginsDir()
+wstring config::getAssetsDir()
 {
-    return GetLoaderDir() + L"\\plugins";
+    return getLoaderDir() + L"\\assets";
 }
 
-std::wstring league_loader::GetAssetsDir()
+wstring config::getPluginsDir()
 {
-    return GetLoaderDir() + L"\\assets";
+    return getLoaderDir() + L"\\plugins";
 }
 
-std::wstring league_loader::GetConfigValue(const std::wstring &key)
+wstring config::getConfigValue(const wstring &key)
 {
-    auto path = GetLoaderDir() + L"\\config.cfg";
+    auto path = getLoaderDir() + L"\\config.cfg";
 
     WCHAR value[1024]{};
     DWORD length = GetPrivateProfileStringW(L"Main",
         key.c_str(), L"", value, 1024, path.c_str());
 
-    return std::wstring(value, length);
+    return wstring(value, length);
 }

@@ -1,32 +1,33 @@
 #include "internal.h"
 #include "include/cef_version.h"
+#include <Psapi.h>
+#pragma comment(lib, "version.lib")
+#pragma comment(lib, "libcef.lib")
 
-using namespace league_loader;
+decltype(&cef_get_mime_type) CefGetMimeType;
+decltype(&cef_request_create) CefRequest_Create;
+decltype(&cef_string_multimap_alloc) CefStringMultimap_Alloc;
+decltype(&cef_string_multimap_free) CefStringMultimap_Free;
+decltype(&cef_register_extension) CefRegisterExtension;
+decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
+decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;
 
-decltype(&cef_get_mime_type) league_loader::CefGetMimeType;
-decltype(&cef_request_create) league_loader::CefRequest_Create;
-decltype(&cef_string_multimap_alloc) league_loader::CefStringMultimap_Alloc;
-decltype(&cef_string_multimap_free) league_loader::CefStringMultimap_Free;
-decltype(&cef_register_extension) league_loader::CefRegisterExtension;
-decltype(&cef_dictionary_value_create) league_loader::CefDictionaryValue_Create;
-decltype(&cef_stream_reader_create_for_file) league_loader::CefStreamReader_CreateForFile;
+decltype(&cef_string_set) CefString_Set;
+decltype(&cef_string_clear) CefString_Clear;
+decltype(&cef_string_from_utf8) CefString_FromUtf8;
+decltype(&cef_string_from_wide) CefString_FromWide;
+decltype(&cef_string_userfree_free) CefString_UserFree_Free;
 
-decltype(&cef_string_set) league_loader::CefString_Set;
-decltype(&cef_string_clear) league_loader::CefString_Clear;
-decltype(&cef_string_from_utf8) league_loader::CefString_FromUtf8;
-decltype(&cef_string_from_wide) league_loader::CefString_FromWide;
-decltype(&cef_string_userfree_free) league_loader::CefString_UserFree_Free;
+decltype(&cef_v8value_create_null) CefV8Value_CreateNull;
+decltype(&cef_v8value_create_int) CefV8Value_CreateInt;
+decltype(&cef_v8value_create_string) CefV8Value_CreateString;
+decltype(&cef_v8value_create_function) CefV8Value_CreateFunction;
+decltype(&cef_v8value_create_array) CefV8Value_CreateArray;
+decltype(&cef_v8value_create_bool) CefV8Value_CreateBool;
 
-decltype(&cef_v8value_create_null) league_loader::CefV8Value_CreateNull;
-decltype(&cef_v8value_create_int) league_loader::CefV8Value_CreateInt;
-decltype(&cef_v8value_create_string) league_loader::CefV8Value_CreateString;
-decltype(&cef_v8value_create_function) league_loader::CefV8Value_CreateFunction;
-decltype(&cef_v8value_create_array) league_loader::CefV8Value_CreateArray;
-decltype(&cef_v8value_create_bool) league_loader::CefV8Value_CreateBool;
-
-decltype(&cef_initialize) league_loader::CefInitialize;
-decltype(&cef_execute_process) league_loader::CefExecuteProcess;
-decltype(&cef_browser_host_create_browser) league_loader::CefBrowserHost_CreateBrowser;
+decltype(&cef_initialize) CefInitialize;
+decltype(&cef_execute_process) CefExecuteProcess;
+decltype(&cef_browser_host_create_browser) CefBrowserHost_CreateBrowser;
 
 CefStr::CefStr(const std::string &s) : cef_string_t{}
 {
@@ -84,12 +85,12 @@ bool CefStr::equali(const std::wstring &s) const
 
 bool CefStr::contain(const wchar_t *s) const
 {
-    return str_contain(str, s);
+    return utils::strContain(str, s);
 }
 
 bool CefStr::contain(const std::wstring &s) const
 {
-    return str_contain(str, s);
+    return utils::strContain(str, s);
 }
 
 static int GetFileMajorVersion(LPCWSTR file)
@@ -122,10 +123,17 @@ static int GetFileMajorVersion(LPCWSTR file)
 static void WarnInvalidVersion()
 {
     MessageBox(NULL,
-        L"This League of Legends Client version is not supported.\n"
+        L"The version of your League of Legends Client is not supported.\n"
         L"Please check existing issues or open new issue about that, and wait for the new update.",
         L"League Loader", MB_TOPMOST | MB_OK | MB_ICONWARNING);
     ShellExecute(NULL, L"open", L"https://git.leagueloader.app", NULL, NULL, NULL);
+}
+
+static void *Old_GetBackgroundColor = nullptr;
+static NOINLINE cef_color_t HOOK_METHOD(Hooked_GetBackgroundColor,
+    cef_browser_settings_t *settings, cef_state_t state)
+{
+    return 0; // fully transparent :)
 }
 
 bool LoadLibcefDll()
@@ -166,6 +174,18 @@ bool LoadLibcefDll()
         (LPVOID &)CefInitialize = GetProcAddress(libcef, "cef_initialize");
         (LPVOID &)CefExecuteProcess = GetProcAddress(libcef, "cef_execute_process");
         (LPVOID &)CefBrowserHost_CreateBrowser = GetProcAddress(libcef, "cef_browser_host_create_browser");
+
+        // Find CefContext::GetBackGroundColor().
+        {
+            MODULEINFO info{ NULL };
+            K32GetModuleInformation(GetCurrentProcess(), libcef, &info, sizeof(info));
+
+            const string pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
+            Old_GetBackgroundColor = utils::scanInternal(info.lpBaseOfDll, info.SizeOfImage, pattern);
+
+            // Hook CefContext::GetBackGroundColor().
+            utils::hookFunc(&Old_GetBackgroundColor, Hooked_GetBackgroundColor);
+        }
 
         return true;
     }

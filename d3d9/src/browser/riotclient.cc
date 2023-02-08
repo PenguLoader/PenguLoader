@@ -1,18 +1,17 @@
-#include "internal.h"
+#include "../internal.h"
+
 #include <algorithm>
-
 #include "include/capi/cef_urlrequest_capi.h"
-
-using namespace league_loader;
 
 // BROWSER PROCESS ONLY.
 
-static std::wstring m_rcOrigin{};
-static std::wstring m_rcAuthorization{};
+static wstring m_rcOrigin{};
+static wstring m_rcAuthorization{};
 
-struct RiotClientURLRequestClient : CefRefCount<cef_urlrequest_client_t>
+class RiotClientURLRequestClient : public CefRefCount<cef_urlrequest_client_t>
 {
-    RiotClientURLRequestClient(std::string *data, cef_callback_t *response_callback)
+public:
+    RiotClientURLRequestClient(string *data, cef_callback_t *response_callback)
         : CefRefCount(this), data_(data), done_(false), response_length_(-1), response_callback_(response_callback)
     {
         cef_urlrequest_client_t::on_request_complete = on_request_complete;
@@ -23,7 +22,7 @@ struct RiotClientURLRequestClient : CefRefCount<cef_urlrequest_client_t>
     }
 
 private:
-    std::string *data_;
+    string *data_;
     cef_callback_t *response_callback_;
     int64 response_length_;
     bool done_;
@@ -70,7 +69,7 @@ private:
 
 struct RiotClientResourceHandler : CefRefCount<cef_resource_handler_t>
 {
-    RiotClientResourceHandler(cef_frame_t *frame, const std::wstring &path)
+    RiotClientResourceHandler(cef_frame_t *frame, const wstring &path)
         : CefRefCount(this), frame_(frame), path_(path), bytes_read_(0), client_(nullptr), data_{}
     {
         cef_resource_handler_t::open = _open;
@@ -86,8 +85,8 @@ private:
     cef_frame_t *frame_;
     RiotClientURLRequestClient *client_;
     cef_urlrequest_t *url_request_;
-    std::string data_;
-    std::wstring path_;
+    string data_;
+    wstring path_;
     int64 bytes_read_;
 
     static int CEF_CALLBACK _open(cef_resource_handler_t *_,
@@ -181,35 +180,16 @@ private:
     static void CEF_CALLBACK _cancel(struct _cef_resource_handler_t* self) { }
 };
 
-cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, std::wstring path)
+cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path)
 {
     return new RiotClientResourceHandler(frame, path);
 }
 
-static std::wstring EncodeBase64(const std::wstring &in)
-{
-    std::wstring out;
-
-    int val = 0, valb = -6;
-    for (wchar_t c : in) {
-        val = (val << 8) + c;
-        valb += 8;
-        while (valb >= 0) {
-            out.push_back("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[(val >> valb) & 0x3F]);
-            valb -= 6;
-        }
-    }
-    if (valb > -6) out.push_back("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[((val << 8) >> (valb + 8)) & 0x3F]);
-    while (out.size() % 4) out.push_back('=');
-
-    return out;
-}
-
-void SetRiotClientCredentials(wchar_t *appPort, wchar_t *authToken)
+void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken)
 {
     m_rcOrigin.assign(L"https://127.0.0.1:");
     m_rcOrigin.append(appPort);
 
     m_rcAuthorization.assign(L"Basic ");
-    m_rcAuthorization.append(EncodeBase64(std::wstring(L"riot:").append(authToken)));
+    m_rcAuthorization.append(utils::encodeBase64(L"riot:" + authToken));
 }
