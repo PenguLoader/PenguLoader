@@ -24,9 +24,9 @@ jobs:
       - name: Get short SHA
         run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
         
-      - run: curl -JL -o inno-setup.exe https://github.com/nomi-san/league-loader/releases/download/0.1a/innosetup-6.2.1.exe
+      - run: wget -O inno-setup.exe https://github.com/nomi-san/league-loader/releases/download/0.1a/innosetup-6.2.1.exe
       - run: ./inno-setup.exe /verysilent /allusers /dir=inst
-      - run: curl -JL -o inst/ISCrypt.dll https://github.com/nomi-san/league-loader/releases/download/0.1a/ISCrypt.dll
+      - run: wget -O inst/ISCrypt.dll https://github.com/nomi-san/league-loader/releases/download/0.1a/ISCrypt.dll
           
       - uses: TheMrMilchmann/setup-msvc-dev@v2
         with:
