@@ -109,9 +109,11 @@ extern decltype(&cef_process_message_create) CefProcessMessage_Create;
 // Strings helpers.
 extern decltype(&cef_string_set) CefString_Set;
 extern decltype(&cef_string_clear) CefString_Clear;
-extern decltype(&cef_string_from_ascii) CefString_FromUtf8;
+extern decltype(&cef_string_from_utf8) CefString_FromUtf8;
 extern decltype(&cef_string_from_wide) CefString_FromWide;
 extern decltype(&cef_string_userfree_free) CefString_UserFree_Free;
+extern decltype(&cef_string_to_utf8) CefString_ToUtf8;
+extern decltype(&cef_string_utf8_clear) CefString_ClearUtf8;
 
 // V8 values.
 extern decltype(&cef_v8value_create_null) CefV8Value_CreateNull;

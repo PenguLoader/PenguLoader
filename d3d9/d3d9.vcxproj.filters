@@ -64,6 +64,9 @@
     <ClCompile Include="src\utils\misc.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\datastore.cc">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\d3d9.def">

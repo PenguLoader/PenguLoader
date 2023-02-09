@@ -75,6 +75,8 @@ bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v
         std::string source;
         CefStr path(args[0]->get_string_value(args[0]));
 
+        wprintf(L"  | < %s, %d\n", path.str, GetCurrentProcessId());
+
         if (NativeRequire(path.str, source, type))
         {
             auto data = CefV8Value_CreateArray(2);

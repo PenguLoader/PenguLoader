@@ -12,6 +12,7 @@
 
 u8R"===============(
 
+var DataStore;
 var Effect;
 var openDevTools;
 var openAssetsFolder;
@@ -19,6 +20,34 @@ var openPluginsFolder;
 var require;
 
 (function() {
+
+    native function LoadData();
+    native function SaveData();
+
+    let _data;
+    try {
+        const object = JSON.parse(LoadData());
+        _data = new Map(Object.entries(object));
+    } catch {
+        _data = new Map();
+    }
+
+    DataStore = {
+        has(key) {
+            return _data.has(key);
+        },
+        get(key) {
+            return _data.get(key);
+        },
+        async set(key, value) {
+            _data.set(key, value);
+            const object = Object.fromEntries(_data);
+            SaveData(JSON.stringify(object));
+        },
+        remove(key) {
+            return _data.delete(key);
+        }
+    };
 
     Effect = {
         get current() {

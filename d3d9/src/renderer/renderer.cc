@@ -11,6 +11,7 @@ static bool IS_MAIN = false;
 
 void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context);
 bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
+bool HandleDataStore(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
 bool HandleWindowEffect(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
 
 // Cross-process call.
@@ -37,6 +38,8 @@ private:
         wstring fn(name->str, name->length);
         vector<cef_v8value_t *> args(argv, argv + argc);
 
+        wprintf(L">> exec: %s\n", fn.c_str());
+
         if (fn == L"OpenDevTools")
         {
             bool remote = argc > 0 && argv[0]->get_bool_value(argv[0]);
@@ -54,6 +57,8 @@ private:
             return true;
         }
         else if (HandlePlugins(fn, args, *retval))
+            return true;
+        else if (HandleDataStore(fn, args, *retval))
             return true;
         else if (HandleWindowEffect(fn, args, *retval))
             return true;
