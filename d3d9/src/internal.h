@@ -25,6 +25,7 @@
 #include <atomic>
 #include <string>
 #include <vector>
+#include <functional>
 #include <windows.h>
 
 #include "include/internal/cef_string.h"
@@ -147,8 +148,9 @@ namespace utils
     bool strStartWith(const wstring &str, const wstring &sub);
     bool strEndWith(const wstring &str, const wstring &sub);
 
-    bool fileExist(const wstring &path, bool folder);
-    vector<wstring> getFiles(const wstring &dir, const wstring &search);
+    bool dirExist(const wstring &path);
+    bool fileExist(const wstring &path);
+    void readDir(const std::wstring &dir, const std::function<void(const wstring &, bool)> &callback);
     bool readFile(const wstring &path, string &out);
 
     void hookFunc(void **orig, void *hooked);

@@ -4,26 +4,38 @@
 
 void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
 {
-    auto pluginsPath = config::getPluginsDir();
+    auto pluginsDir = config::getPluginsDir();
 
-    if (!utils::fileExist(pluginsPath, true))
+    if (!utils::dirExist(pluginsDir))
         return;
 
     // Iterate through plugins folder.
-    for (const auto &file : utils::getFiles(pluginsPath, L"*.js"))
+    utils::readDir(pluginsDir + L"\\*", [frame, &pluginsDir](const wstring &name, bool isDir)
     {
-        // Skip file name starts with underscore.
-        if (file[0] == L'_') continue;
+        // Skip name starts with underscore and dot.
+        if (name[0] == '_' || name[0] == '.')
+            return;
+
+        // Skip non-JS file.
+        if (!isDir && !utils::strEndWith(name, L".js"))
+            return;
+
+        // Skip folder has no index.
+        if (isDir && !utils::fileExist(pluginsDir + L"\\" + name + L"\\index.js"))
+            return;
 
         // Create require script.
-        std::wstring script;
+        std::wstring script{};
         script += L"__require(\"";
-        script += file.substr(0, file.length() - 3);    // Remove .js extension.
+
+        script += isDir ? name
+            : name.substr(0, name.length() - 3); // Remove .js extension.
+
         script += L"\");";
 
         // Execute.
         frame->execute_java_script(frame, &CefStr(script), &""_s, 0);
-    }
+    });
 }
 
 enum RequireType
@@ -39,25 +51,25 @@ static bool NativeRequire(const std::wstring &genericPath, std::string &source, 
     auto filePath = path + L".js";
 
     // Check .js file.
-    if (utils::fileExist(filePath, false))
+    if (utils::fileExist(filePath))
     {
         utils::readFile(filePath, source);
         type = JS_MODULE;
         return true;
     }
     // Check if the given path is folder.
-    else if (utils::fileExist(path, true))
+    else if (utils::dirExist(path))
     {
         filePath = path + L"/index.js";
         // And it contains index.js.
-        if (utils::fileExist(filePath, false))
+        if (utils::fileExist(filePath))
         {
             utils::readFile(filePath, source);
             type = INDEX_MODULE;
             return true;
         }
     }
-    else if (utils::fileExist(path, false))
+    else if (utils::fileExist(path))
     {
         utils::readFile(path, source);
         type = TEXT_CONTENT;

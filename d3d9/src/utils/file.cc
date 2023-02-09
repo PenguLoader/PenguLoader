@@ -1,15 +1,24 @@
 #include "../internal.h"
 #include <fstream>
 
-bool utils::fileExist(const std::wstring &path, bool folder)
+bool utils::dirExist(const std::wstring &path)
 {
     DWORD attr = GetFileAttributesW(path.c_str());
 
     if (attr == INVALID_FILE_ATTRIBUTES)
         return false;
 
-    bool isDir = (attr & FILE_ATTRIBUTE_DIRECTORY);
-    return folder ? isDir : !isDir;
+    return attr & FILE_ATTRIBUTE_DIRECTORY;
+}
+
+bool utils::fileExist(const std::wstring &path)
+{
+    DWORD attr = GetFileAttributesW(path.c_str());
+
+    if (attr == INVALID_FILE_ATTRIBUTES)
+        return false;
+
+    return !(attr & FILE_ATTRIBUTE_DIRECTORY);
 }
 
 bool utils::readFile(const std::wstring &path, std::string &out)
@@ -27,25 +36,18 @@ bool utils::readFile(const std::wstring &path, std::string &out)
     return result;
 }
 
-vector<std::wstring> utils::getFiles(const std::wstring &dir, const std::wstring &search)
+void utils::readDir(const std::wstring &dir, const std::function<void (const wstring &, bool)> &callback)
 {
-    vector<wstring> files;
-    auto searchPath = dir + L"\\" + search;
-
     WIN32_FIND_DATAW fd;
-    HANDLE hFind = FindFirstFileW(searchPath.c_str(), &fd);
+    HANDLE hFind = FindFirstFileW(dir.c_str(), &fd);
 
     if (hFind != INVALID_HANDLE_VALUE)
     {
         do {
-            if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-            {
-                files.push_back(fd.cFileName);
-            }
+            bool isDir = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+            callback(fd.cFileName, isDir);
         } while (FindNextFileW(hFind, &fd));
 
         FindClose(hFind);
     }
-
-    return files;
 }
