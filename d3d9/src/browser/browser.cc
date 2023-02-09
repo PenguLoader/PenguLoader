@@ -146,7 +146,7 @@ static void HookClient(cef_client_t *client)
                 struct _cef_frame_t* frame,
                 struct _cef_request_t* request) -> cef_resource_handler_t*
             {
-                CefStr url = request->get_url(request);
+                CefScopedStr url{ request->get_url(request) };
                 cef_resource_handler_t *handler = nullptr;
 
                 if (wcsncmp(url.str, L"https://assets/", 15) == 0)
@@ -197,8 +197,8 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     const cef_string_t* process_type,
     struct _cef_command_line_t* command_line)
 {
-    CefStr rc_port = command_line->get_switch_value(command_line, &"riotclient-app-port"_s);
-    CefStr rc_token = command_line->get_switch_value(command_line, &"riotclient-auth-token"_s);
+    CefScopedStr rc_port{ command_line->get_switch_value(command_line, &"riotclient-app-port"_s) };
+    CefScopedStr rc_token{ command_line->get_switch_value(command_line, &"riotclient-auth-token"_s) };
     SetRiotClientCredentials(rc_port.str, rc_token.str);
 
     // Keep Riot's command lines.
@@ -208,7 +208,8 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     REMOTE_DEBUGGING_PORT = wcstol(sPort.c_str(), NULL, 10);
     if (REMOTE_DEBUGGING_PORT != 0) {
         // Set remote debugging port.
-        command_line->append_switch_with_value(command_line, &"remote-debugging-port"_s, &CefStr(REMOTE_DEBUGGING_PORT));
+        command_line->append_switch_with_value(command_line,
+            &"remote-debugging-port"_s, &CefStr(std::to_string(REMOTE_DEBUGGING_PORT)));
     }
 
     if (config::getConfigValue(L"DisableWebSecurity") == L"1") {

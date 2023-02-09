@@ -53,7 +53,7 @@ static void OpenDevTools_Internal(bool remote)
             wi.ex_style = WS_EX_APPWINDOW;
             wi.style = WS_OVERLAPPEDWINDOW
                 | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
-            wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME);
+            wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME).forawrd();
 
             auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);
             host->show_dev_tools(host, &wi, NULL, NULL, NULL);

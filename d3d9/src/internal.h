@@ -72,30 +72,43 @@ private:
     { return reinterpret_cast<CefRefCount *>(_)->ref_ != 0; }
 };
 
-// cef_string_t wrapper.
-class CefStr : public cef_string_t
+struct CefStrBase : cef_string_t
 {
-public:
-    CefStr(const std::string &s);
-    CefStr(const std::wstring &s);
-    CefStr(const cef_string_t *s);
-    CefStr(cef_string_userfree_t uf);
-    CefStr(int32_t i);
-    CefStr(uint32_t u);
+    CefStrBase() { dtor = nullptr; }
 
+    bool empty() const;
     bool equal(const wchar_t *s) const;
-    bool equal(const std::wstring &s) const;
+    bool equal(const wstring &s) const;
     bool equali(const wchar_t *s) const;
-    bool equali(const std::wstring &s) const;
+    bool equali(const wstring &s) const;
     bool contain(const wchar_t *s) const;
-    bool contain(const std::wstring &s) const;
-    bool operator ==(const wchar_t *s) const { return equal(s); }
-    bool operator ==(const std::wstring &s) const { return equal(s); }
+    bool contain(const wstring &s) const;
+    bool operator ==(const wchar_t *s) const;
 };
 
-static cef_string_t operator""_s(const char *s, size_t l) {
-    return CefStr(std::string(s, l));
-}
+// cef_string_t wrapper.
+struct CefStr : CefStrBase
+{
+    CefStr(const char *s, size_t l);
+    CefStr(const wchar_t *s, size_t l);
+    CefStr(const string &s);
+    CefStr(const wstring &s);
+    ~CefStr();
+
+    CefStr &forawrd();
+
+private:
+    bool owner_;
+};
+
+struct CefScopedStr : CefStrBase
+{
+    explicit CefScopedStr(cef_string_userfree_t uf);
+    ~CefScopedStr();
+
+private:
+    cef_string_userfree_t str_;
+};
 
 // CEF functions.
 extern decltype(&cef_get_mime_type) CefGetMimeType;
@@ -128,6 +141,11 @@ extern decltype(&cef_v8value_create_bool) CefV8Value_CreateBool;
 extern decltype(&cef_initialize) CefInitialize;
 extern decltype(&cef_execute_process) CefExecuteProcess;
 extern decltype(&cef_browser_host_create_browser) CefBrowserHost_CreateBrowser;
+
+static CefStr operator""_s(const char *s, size_t l)
+{
+    return CefStr(s, l);
+}
 
 namespace config
 {

@@ -101,8 +101,8 @@ private:
     {
         auto self = static_cast<RiotClientResourceHandler *>(_);
 
-        auto url = CefStr(m_rcOrigin + self->path_);
-        auto method = CefStr(request->get_method(request));
+        CefStr url{ m_rcOrigin + self->path_ };
+        CefScopedStr method{ request->get_method(request) };
         auto body = request->get_post_data(request);
         auto headers = CefStringMultimap_Alloc();
         request->get_header_map(request, headers);

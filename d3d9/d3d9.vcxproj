@@ -31,6 +31,7 @@
     <ClCompile Include="src\renderer\effects.cc" />
     <ClCompile Include="src\renderer\loader.cc" />
     <ClCompile Include="src\renderer\renderer.cc" />
+    <ClCompile Include="src\utils\cefstr.cc" />
     <ClCompile Include="src\utils\file.cc" />
     <ClCompile Include="src\utils\hook.cc" />
     <ClCompile Include="src\utils\misc.cc" />

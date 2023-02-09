@@ -101,7 +101,8 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
 
     if (IS_MAIN)
     {
-        CefStr url(frame->get_url(frame));
+        CefScopedStr url{ frame->get_url(frame) };
+
         if (url.contain(L"riot:") && url.contain(L"index.html"))
         {
             // Open console window.
@@ -139,7 +140,7 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
 {
     if (IS_MAIN && source_process == PID_BROWSER)
     {
-        CefStr msg = message->get_name(message);
+        CefScopedStr msg{ message->get_name(message) };
         if (msg == L"__RCLIENT")
         {
             // Received RCLIENT HWND.

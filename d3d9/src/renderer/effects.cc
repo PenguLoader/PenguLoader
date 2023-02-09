@@ -353,7 +353,7 @@ bool HandleWindowEffect(const wstring &fn, const vector<cef_v8value_t *> &args, 
 
         if (args.size() >= 1 && args[0]->is_string(args[0]))
         {
-            CefStr name = args[0]->get_string_value(args[0]);
+            CefScopedStr name{ args[0]->get_string_value(args[0]) };
             uint32_t tintColor = 0;
 
             if (args.size() >= 2 && args[1]->is_object(args[1]))
@@ -363,7 +363,7 @@ bool HandleWindowEffect(const wstring &fn, const vector<cef_v8value_t *> &args, 
                     auto color = args[1]->get_value_bykey(args[1], &"color"_s);
                     if (color->is_string(color))
                     {
-                        CefStr value = color->get_string_value(color);
+                        CefScopedStr value{ color->get_string_value(color) };
                         tintColor = ParseHexColor(value.str);
                     }
                 }

@@ -85,7 +85,7 @@ bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v
     {
         RequireType type;
         std::string source;
-        CefStr path(args[0]->get_string_value(args[0]));
+        CefScopedStr path{ args[0]->get_string_value(args[0]) };
 
 #if _DEBUG
         wprintf(L"  | < %s\n", path.str);
