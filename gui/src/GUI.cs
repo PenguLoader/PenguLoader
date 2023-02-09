@@ -13,6 +13,7 @@ namespace LeagueLoader
 
         static string AssetsDir = Path.Combine(Directory.GetCurrentDirectory(), "assets");
         static string PluginsDir = Path.Combine(Directory.GetCurrentDirectory(), "plugins");
+        static string DataStorePath = Path.Combine(Directory.GetCurrentDirectory(), "datastore");
 
         Language _l;
 
@@ -43,8 +44,12 @@ namespace LeagueLoader
             if (!Directory.Exists(PluginsDir))
                 Directory.CreateDirectory(PluginsDir);
 
+            if (!File.Exists(DataStorePath))
+                File.WriteAllText(DataStorePath, "");
+
             RemoveAdminPerm(AssetsDir);
             RemoveAdminPerm(PluginsDir);
+            RemoveAdminPerm(DataStorePath);
 
             if (Lcu.IsValidDir(Config.LeaguePath))
             {
