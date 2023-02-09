@@ -38,7 +38,9 @@ private:
         wstring fn(name->str, name->length);
         vector<cef_v8value_t *> args(argv, argv + argc);
 
+#if _DEBUG
         wprintf(L">> exec: %s\n", fn.c_str());
+#endif
 
         if (fn == L"OpenDevTools")
         {

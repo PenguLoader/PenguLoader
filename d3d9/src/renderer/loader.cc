@@ -17,7 +17,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
 
         // Create require script.
         std::wstring script;
-        script += L"require(\"";
+        script += L"__require(\"";
         script += file.substr(0, file.length() - 3);    // Remove .js extension.
         script += L"\");";
 
@@ -75,7 +75,9 @@ bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v
         std::string source;
         CefStr path(args[0]->get_string_value(args[0]));
 
-        wprintf(L"  | < %s, %d\n", path.str, GetCurrentProcessId());
+#if _DEBUG
+        wprintf(L"  | < %s\n", path.str);
+#endif
 
         if (NativeRequire(path.str, source, type))
         {

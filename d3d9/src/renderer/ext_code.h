@@ -17,7 +17,7 @@ var Effect;
 var openDevTools;
 var openAssetsFolder;
 var openPluginsFolder;
-var require;
+var __require;
 
 (function() {
 
@@ -98,7 +98,7 @@ var require;
     var modules = {};   // Modules map.
     var paths = [''];   // Path stack.
 
-    require = function (name) {
+    __require = function (name) {
         native function Require();
             
         // Check invalid name.
@@ -150,7 +150,7 @@ var require;
                         // Push current dir.
                         paths.push(join(path, ".."));
                         // Execute.
-                        exec(_M, _M.exports, require, global);
+                        exec(_M, _M.exports, __require, global);
                     } catch (err) {
                         throw err;
                     } finally {
