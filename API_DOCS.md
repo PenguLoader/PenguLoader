@@ -7,9 +7,11 @@ These APIs are designed to use inside League Client only.
 ## `require(name)` [function]
 
 You must have knowledge about CommonJS module to use this function.<br>
-If you've ever developed software with NodeJS, it shouldn't be hard.
+If you've ever developed something with NodeJS, it shouldn't be hard.
 
 Please refer to [README](./README.md) for examples and [Node docs](https://nodejs.org/api/modules.html) to learn more.
+
+> This function should be called in inside plugins. To test it in console, use `__require()` instead.
 
 <br>
 
@@ -35,7 +37,56 @@ window.openPluginsFolder();
 
 <br>
 
-## `Effect` (object)
+## `DataStore` [namespace]
+
+League Client does not save userdata to disk, as same as incognito mode in web browsers. This namespace helps you to store data locally.
+
+### `DataStore.set(key, value)` [function]
+
+Call this function to store your data with a given key.
+- `key` [required] Keys should be string or number.
+- `value` [require] Value may be string, number, boolean, null or collection like array and object. Actually, it will be stored as JSON format, so any value like function and runtime object is ignored.
+
+Example:
+```js
+let my_num = 10
+let my_str = 'hello'
+DataStore.set('my_num', my_num)
+DataStore.set('my_str', my_str)
+```
+
+### `DataStore.get(key)` [function]
+
+Retrieve your stored data with a given key. If the key does not exist, it will return `undefined`.
+
+Example:
+```js
+console.log(DataStore.get('my_str'))
+console.log(DataStore.get('key-does-not-exist'))
+```
+
+### `DataStore.has(key)` [function]
+
+This function returns a boolean indicating whether data with the specified key exists or not.
+
+```js
+console.log(DataStore.has('my_num'))
+console.log(DataStore.has('key-does-not-exist'))
+```
+
+### `DataStore.remove(key)` [function]
+
+This function removes the specified data from storage by key.
+
+Example:
+```js
+DataStore.remove('some-key')
+DataStore.has('some-key')     // -> false
+```
+
+<br>
+
+## `Effect` [namespace]
 
 This namespace supports changing window effects.<br>
 
