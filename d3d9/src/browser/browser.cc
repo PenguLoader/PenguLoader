@@ -14,7 +14,7 @@ cef_browser_t *CLIENT_BROWSER = nullptr;
 extern LPCWSTR DEVTOOLS_WINDOW_NAME;
 
 void PrepareDevTools();
-cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path);
+cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool isPlugins);
 cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path);
 void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken);
 
@@ -150,8 +150,10 @@ static void HookClient(cef_client_t *client)
                 cef_resource_handler_t *handler = nullptr;
 
                 if (wcsncmp(url.str, L"https://assets/", 15) == 0)
-                    return CreateAssetsResourceHandler(url.str + 14);
-                else if (wcsncmp(url.str, L"https://riotclient/", 19) == 0)
+                    return CreateAssetsResourceHandler(url.str + 14, false);
+                if (wcsncmp(url.str, L"https://plugins/", 16) == 0)
+                    return CreateAssetsResourceHandler(url.str + 15, true);
+                if (wcsncmp(url.str, L"https://riotclient/", 19) == 0)
                     return CreateRiotClientResourceHandler(frame, url.str + 18);
 
                 return Old_GetResourceHandler(self, browser, frame, request);

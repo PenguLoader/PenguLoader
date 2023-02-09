@@ -6,7 +6,7 @@
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
 public:
-    AssetsResourceHandler(const wstring &path) : CefRefCount(this),
+    AssetsResourceHandler(const wstring &path, bool isPlugins) : CefRefCount(this),
         path_(path), stream_(nullptr), length_(0)
     {
         cef_resource_handler_t::open = _Open;
@@ -23,7 +23,10 @@ public:
             path_ = path_.substr(0, pos);
 
         // Get final path.
-        path_ = config::getAssetsDir().append(path_);
+        if (isPlugins)
+            path_ = config::getPluginsDir().append(path_);
+        else
+            path_ = config::getAssetsDir().append(path_);
     }
 
     ~AssetsResourceHandler()
@@ -140,7 +143,7 @@ private:
     static void CEF_CALLBACK _Cancel(cef_resource_handler_t* self) { }
 };
 
-cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path)
+cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool isPlugins)
 {
-    return new AssetsResourceHandler(path);
+    return new AssetsResourceHandler(path, isPlugins);
 }
