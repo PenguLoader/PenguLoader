@@ -10,7 +10,7 @@ static void TransformData(string &data)
 
 static wstring GetDataPath()
 {
-    return config::getLoaderDir() + L"\\data.db";
+    return config::getLoaderDir() + L"\\datastore";
 }
 
 void LoadData(string &data)

@@ -26,10 +26,15 @@ var __require;
 
     let _data;
     try {
-        const object = JSON.parse(LoadData());
+        var object = JSON.parse(LoadData());
         _data = new Map(Object.entries(object));
     } catch {
         _data = new Map();
+    }
+
+    function _saveData() {
+        var object = Object.fromEntries(_data);
+        SaveData(JSON.stringify(object));
     }
 
     DataStore = {
@@ -41,11 +46,12 @@ var __require;
         },
         async set(key, value) {
             _data.set(key, value);
-            const object = Object.fromEntries(_data);
-            SaveData(JSON.stringify(object));
+            _saveData();
         },
         remove(key) {
-            return _data.delete(key);
+            var result = _data.delete(key);
+            _saveData();
+            return result;
         }
     };
 
