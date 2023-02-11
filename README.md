@@ -1,44 +1,53 @@
-<img align="left" src="https://i.imgur.com/ZhWCav3.png" width="120px">
-
-# League Loader
-A small **JavaScript plugin loader** for League Client, supports **CommonJS** modules.
-
-<br>
-
-👉 Homepage: [leagueloader.app](https://leagueloader.app/)
-
-💬 Join Discord: [chat.leagueloader.app](https://chat.leagueloader.app)
+<div align="center">
+  <a href="https://leagueloader.app" target="_blank">
+    <img src="https://i.imgur.com/ZhWCav3.png" width="150"/>
+  </a>
+  <h1 align="center">League Loader</h1>
+  <p align="center">
+    <strong>JavaScript plugin loader</strong> for League of Legends Client
+  </p>
+  <p>
+    <a href="https://chat.leagueloader.app" target="_blank">
+      <img src ="https://img.shields.io/badge/-Join%20Discord-7289da.svg?&style=for-the-badge&logo=Discord&logoColor=white"/>
+    </a>
+    <a href="https://github.com/nomi-san/league-loader/blob/master/LICENSE">
+      <img src ="https://img.shields.io/github/license/nomi-san/league-loader.svg?style=for-the-badge"/>
+    </a>
+  </p>
+</div>
 
 <br>
 
 ## Features
-- Customize League Client with JavaScript
-- Theme the League with CSS
-- Support CommonJS modules
+- Customize League Client with plugins
+- Theme/personalize the League 
+- Support modern JavaScript features
 - Support built-in and remote DevTools
 - Working with LCU APIs be easier
 
+<br>
+
 ## Getting started
 
-1. Download the [latest release](https://github.com/nomi-san/league-loader/releases) and extract it.
+### Installation
+
+1. Download the [latest release](https://github.com/nomi-san/league-loader/releases) and extract it
 2. Run **League Loader.exe**
 3. Select League Client path
 4. Click **INSTALL**
 5. Launch League Client
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/38210249/212664643-ba79c89b-0436-40fe-9fd4-32d4b0d475db.png">
-</p>
+### Usage
 
-After League ready, just open the settings panel to ensure the default plugin loaded.
+After League Client ready, just click the settings button to ensure the default plugin loaded.
 
 <br>
 <p align="center">
-  <img src="https://i.imgur.com/E8gnK5W.png">
+  <img src="https://i.imgur.com/aNsUIQ8.png">
 </p>
 <br>
 
-Now you'll see like above this, just press:
+Now you'll see like above this, press:
 - <kbd>F12</kbd> or <kbd>Ctrl Shift I</kbd> to open DevTools
 - <kbd>Ctrl Shift R</kbd> to reload the client instantly
 
