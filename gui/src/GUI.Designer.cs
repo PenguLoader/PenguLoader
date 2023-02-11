@@ -34,7 +34,6 @@
             this.btnOpenDevTools = new MetroFramework.Controls.MetroButton();
             this.btnOpenPlugins = new MetroFramework.Controls.MetroButton();
             this.btnInstall = new MetroFramework.Controls.MetroButton();
-            this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.chkRDP = new MetroFramework.Controls.MetroCheckBox();
             this.txtPort = new MetroFramework.Controls.MetroTextBox();
@@ -107,16 +106,6 @@
             this.btnInstall.UseSelectable = true;
             this.btnInstall.Click += new System.EventHandler(this.btnInstall_Click);
             // 
-            // label1
-            // 
-            this.label1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(174)))), ((int)(((byte)(219)))));
-            this.label1.Image = ((System.Drawing.Image)(resources.GetObject("label1.Image")));
-            this.label1.Location = new System.Drawing.Point(7, 24);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(24, 24);
-            this.label1.TabIndex = 38;
-            this.label1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MouseDownDragMove);
-            // 
             // label2
             // 
             this.label2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(174)))), ((int)(((byte)(219)))));
@@ -124,9 +113,9 @@
             this.label2.ForeColor = System.Drawing.Color.White;
             this.label2.Location = new System.Drawing.Point(0, 16);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(290, 39);
+            this.label2.Size = new System.Drawing.Size(260, 39);
             this.label2.TabIndex = 36;
-            this.label2.Text = "     League Loader";
+            this.label2.Text = " League Loader";
             this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.label2.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MouseDownDragMove);
             // 
@@ -182,7 +171,7 @@
             // lnkLanguage
             // 
             this.lnkLanguage.AutoSize = true;
-            this.lnkLanguage.Location = new System.Drawing.Point(401, 32);
+            this.lnkLanguage.Location = new System.Drawing.Point(401, 34);
             this.lnkLanguage.Name = "lnkLanguage";
             this.lnkLanguage.Size = new System.Drawing.Size(89, 23);
             this.lnkLanguage.TabIndex = 42;
@@ -262,7 +251,7 @@
             // 
             // lnkGithub
             // 
-            this.lnkGithub.Location = new System.Drawing.Point(296, 5);
+            this.lnkGithub.Location = new System.Drawing.Point(266, 16);
             this.lnkGithub.Name = "lnkGithub";
             this.lnkGithub.Size = new System.Drawing.Size(64, 23);
             this.lnkGithub.TabIndex = 45;
@@ -276,7 +265,7 @@
             // 
             this.lblVersion.Enabled = false;
             this.lblVersion.FontWeight = MetroFramework.MetroLabelWeight.Regular;
-            this.lblVersion.Location = new System.Drawing.Point(218, 25);
+            this.lblVersion.Location = new System.Drawing.Point(191, 25);
             this.lblVersion.Name = "lblVersion";
             this.lblVersion.Size = new System.Drawing.Size(57, 22);
             this.lblVersion.TabIndex = 46;
@@ -285,7 +274,7 @@
             // 
             // lnkHomepage
             // 
-            this.lnkHomepage.Location = new System.Drawing.Point(366, 5);
+            this.lnkHomepage.Location = new System.Drawing.Point(266, 34);
             this.lnkHomepage.Name = "lnkHomepage";
             this.lnkHomepage.Size = new System.Drawing.Size(83, 23);
             this.lnkHomepage.TabIndex = 47;
@@ -321,7 +310,6 @@
             this.Controls.Add(this.lnkLanguage);
             this.Controls.Add(this.txtPort);
             this.Controls.Add(this.chkRDP);
-            this.Controls.Add(this.label1);
             this.Controls.Add(this.lblLeaguePath);
             this.Controls.Add(this.lnkRemoteDevtools);
             this.Controls.Add(this.btnOpenDevTools);
@@ -348,7 +336,6 @@
         private MetroFramework.Controls.MetroButton btnOpenDevTools;
         private MetroFramework.Controls.MetroButton btnOpenPlugins;
         private MetroFramework.Controls.MetroButton btnInstall;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private MetroFramework.Controls.MetroCheckBox chkRDP;
         private MetroFramework.Controls.MetroTextBox txtPort;
