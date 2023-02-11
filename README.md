@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://leagueloader.app">
-    <img src="https://i.imgur.com/ZhWCav3.png" width="150"/>
+    <img src="https://user-images.githubusercontent.com/38210249/218244483-4f6fe136-fa7b-4732-9822-f41493c2f68a.png" width="144"/>
   </a>
   <h1 align="center">League Loader</h1>
   <p align="center">
