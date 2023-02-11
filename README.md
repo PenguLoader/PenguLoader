@@ -16,11 +16,17 @@
   </p>
 </div>
 
-<br>
+## About
+
+League Loader is a plugin loader designed specifically for the League of Legends Client.
+
+The League Client is actually an embedded Chromium web browser, and its interface is based on web technology. With League Loader, users can load JavaScript plugins into the Client as dependencies, allowing them to customize/theme the UI/UX, automate task and build a smarter Client.
+
+League Loader was created to solve the problem caused by the big LoL patch in 2021, revived plugins from the death of Mecha. And now, Mecha has since returned as a debugger, but League Loader continues to thrive as the primary way for players looking to enhance their League Client with custom content, smarter functionality, and a personalized look and feel.
 
 ## Features
 - Customize League Client with plugins
-- Theme/personalize the League 
+- Theme/personalize your Client
 - Support modern JavaScript features
 - Support built-in and remote DevTools
 - Working with LCU APIs be easier
@@ -62,17 +68,21 @@ To add a plugin, just create a `.js` file in the plugins folder.
 console.log('Hello, League Client!')
 ```
 
-All .js files in root of plugins folder will be executed after League ready, except file name starts with underscore.
+All .js files (except filename starts with underscore or dot) in root of plugins folder and index.js in top-level subfolder will be executed after League ready.
 
 ```
 plugins/
-  _util.js      
-  demo.js       ; will be executed after League starts.
+  |__ _util.js      
+  |__ demo.js       ; will be executed
+  |__ my-plugin/
+    |__ index.js    ; will be executed
 ```
+
+We recommend to use modern JavaScript editors like **Visual Studio Code** or **WebStorm** to develop your plugins, they support intellisense, linter and autocomplete. Remember that League Client is a web browser based, your should use front-end web technology only.
 
 ### CommonJS modules
 
-We provided a simple implementation to support CommonJS modules. Each plugin file is a module, `require`, `global` and `module` are available variables.
+We provided a simple implementation to support CommonJS modules. Each plugin file is a module, `require`, `global` and `module` are predefined.
 
 ```js
 // _util.js
@@ -107,7 +117,7 @@ To reload plugins, just reload the Client (or Ctrl + R in DevTools):
 window.location.reload()
 ```
 
-We have an example which modifies the settings panel to add some controls, see [league-loader.js](/bin/plugins/league-loader.js).
+Check out [API_DOCS](./API_DOCS.md) to get more APIs and [league-loader.js](/bin/plugins/league-loader.js) for example plugin.
 
 ### Theme the League Client
 
@@ -179,12 +189,6 @@ function subscribe() {
   }
 }
 ```
-
-### Development notes
-
-- You should use **Visual Studio Code** to develop your plugins, it supports intellisense, linter and autocomplete.
-- League Client runs on **Chromium 91**, so you're writing JS for the web browser like **Chrome**.
-- When interacting with the DOM, you should put the entry to `onload` or `DOMContentLoaded` event of `window`.
 
 ### Native ESM supports
 
