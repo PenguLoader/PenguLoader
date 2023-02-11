@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://leagueloader.app" target="_blank">
+  <a href="https://leagueloader.app">
     <img src="https://i.imgur.com/ZhWCav3.png" width="150"/>
   </a>
   <h1 align="center">League Loader</h1>
@@ -7,10 +7,13 @@
     <strong>JavaScript plugin loader</strong> for League of Legends Client
   </p>
   <p>
-    <a href="https://chat.leagueloader.app" target="_blank">
+    <a href="https://chat.leagueloader.app">
       <img src ="https://img.shields.io/badge/-Join%20Discord-7289da.svg?&style=for-the-badge&logo=Discord&logoColor=white"/>
     </a>
-    <a href="https://github.com/nomi-san/league-loader/blob/master/LICENSE">
+    <a href="https://github.com/nomi-san/league-loader">
+      <img src="https://img.shields.io/github/stars/nomi-san/league-loader.svg?style=for-the-badge" />
+    </a>
+    <a href="./LICENSE">
       <img src ="https://img.shields.io/github/license/nomi-san/league-loader.svg?style=for-the-badge"/>
     </a>
   </p>
