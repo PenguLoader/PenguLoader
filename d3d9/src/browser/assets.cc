@@ -6,8 +6,8 @@
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
 public:
-    AssetsResourceHandler(const wstring &path, bool isPlugins) : CefRefCount(this),
-        path_(path), stream_(nullptr), length_(0)
+    AssetsResourceHandler(const wstring &path, bool plugin) : CefRefCount(this),
+        path_(path), stream_(nullptr), length_(0), is_plugin_(plugin)
     {
         cef_resource_handler_t::open = _Open;
         cef_resource_handler_t::process_request = _ProcessRequest;
@@ -21,12 +21,6 @@ public:
         size_t pos;
         if ((pos = path_.find_last_of(L'?')) != string::npos)
             path_ = path_.substr(0, pos);
-
-        // Get final path.
-        if (isPlugins)
-            path_ = config::getPluginsDir().append(path_);
-        else
-            path_ = config::getAssetsDir().append(path_);
     }
 
     ~AssetsResourceHandler()
@@ -39,6 +33,7 @@ private:
     cef_stream_reader_t *stream_;
     int64 length_;
     wstring path_;
+    bool is_plugin_;
 
     static int CEF_CALLBACK _Open(cef_resource_handler_t* _,
         struct _cef_request_t* request,
@@ -48,9 +43,44 @@ private:
         *handle_request = 1;
 
         auto self = static_cast<AssetsResourceHandler *>(_);
-        self->stream_ = CefStreamReader_CreateForFile(&CefStr(self->path_));
+        auto &path = self->path_;
+        auto &stream = self->stream_;
 
-        if (auto stream = self->stream_)
+        // Get final path.
+        if (self->is_plugin_)
+        {
+            path = config::getPluginsDir().append(path);
+
+            // Trailing slash.
+            if (path[path.length() - 1] == '/' || path[path.length() - 1] == L'\\')
+            {
+                path.append(L"index.js");
+            }
+            else
+            {
+                size_t pos = path.find_last_of(L"//\\");
+                wstring sub = path.substr(pos + 1);
+
+                // No extension.
+                if (sub.find_last_of(L'.') == wstring::npos)
+                {
+                    // peek .js
+                    if (utils::fileExist(path + L".js"))
+                        path.append(L".js");
+                    // peek folder
+                    else if (utils::dirExist(path))
+                        path.append(L"/index.js");
+                }
+            }
+        }
+        else
+        {
+            path = config::getAssetsDir().append(path);
+        }
+
+        stream = CefStreamReader_CreateForFile(&CefStr(path));
+
+        if (stream != nullptr)
         {
             stream->seek(stream, 0, SEEK_END);
             self->length_ = stream->tell(stream);
@@ -143,7 +173,7 @@ private:
     static void CEF_CALLBACK _Cancel(cef_resource_handler_t* self) { }
 };
 
-cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool isPlugins)
+cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool plugin)
 {
-    return new AssetsResourceHandler(path, isPlugins);
+    return new AssetsResourceHandler(path, plugin);
 }
