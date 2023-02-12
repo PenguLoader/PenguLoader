@@ -46,6 +46,8 @@ League Loader was created to solve the problem caused by the big LoL patch in 20
 4. Click **INSTALL**
 5. Launch League Client
 
+> To try preview features, you have to [build this project](#build-from-source) or download the latest auto-build in [Actions](https://github.com/nomi-san/league-loader/actions).
+
 ### Usage
 
 After League Client ready, just click the settings button to ensure the default plugin loaded.
