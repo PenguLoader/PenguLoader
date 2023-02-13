@@ -1,20 +1,17 @@
 // This is the default plugin of League Loader.
 
-// Import nano-jsx using ESM import().
-const NanoJSX = import('https://cdn.jsdelivr.net/npm/nano-jsx/+esm')
-
-// Get League Loader version.
-const VERSION = window['__llver']
-
 // Create UI using nano-jsx
 const addSettingsUI = async (root) => {
-    // Load async module.
-    const { Component, jsx, render } = await NanoJSX
+    // Import nano-jsx from CDN.
+    const { Component, jsx, render } = await import('//esm.run/nano-jsx')
 
     // Get translation (i18n).
     const lang = document.body.dataset['lang']
     /** @type {TRANSLATIONS['en']} */
     const _t = TRANSLATIONS[lang] || TRANSLATIONS['en']
+
+    // Get League Loader version.
+    const version = window['__llver']
 
     // Main component.
     class Settings extends Component {
@@ -61,7 +58,7 @@ const addSettingsUI = async (root) => {
                                     <div style="position: relative">
                                         <div style="margin-bottom: 24px">
                                             <h4 style="padding: 6px 0">League Loader</h4>
-                                            <p>v${VERSION}</p>
+                                            <p>v${version}</p>
                                         </div>
                                         <hr class="heading-spacer" />
                                         <div style="display: flex; flex-direction: column; align-items: center; gap: 12px">

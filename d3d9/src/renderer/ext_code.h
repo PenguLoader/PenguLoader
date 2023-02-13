@@ -148,11 +148,11 @@ var __require;
                     _M.source = source + "\n//# sourceURL=@plugins" + path +
                         (type === 1 ? "/index" : ".js");
 
-                    // Create function.
-                    var code = "\"use strict\";eval(module.source);";
-                    var exec = Function("module", "exports", "require", "global", code);
-
                     try {
+                        // Create function.
+                        var code = "\"use strict\";eval(module.source);";
+                        var exec = Function("module", "exports", "require", "global", code);
+
                         // Push current dir.
                         paths.push(join(path, ".."));
                         // Execute.
