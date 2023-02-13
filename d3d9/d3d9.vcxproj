@@ -43,7 +43,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\internal.h" />
-    <ClInclude Include="src\renderer\extension.js" />
+    <EmbeddedResource Include="src\renderer\extension.js">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </ExcludedFromBuild>
+      <FileType>CppHeader</FileType>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\d3d9.rc" />
