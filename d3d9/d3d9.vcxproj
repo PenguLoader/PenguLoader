@@ -43,7 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\internal.h" />
-    <ClInclude Include="src\renderer\ext_code.h" />
+    <ClInclude Include="src\renderer\extension.js" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\d3d9.rc" />
@@ -138,6 +138,10 @@
       <ModuleDefinitionFile>res/d3d9.def</ModuleDefinitionFile>
       <DelayLoadDLLs>libcef.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
+    <PreBuildEvent>
+      <Command>cl bin2c.c /link /out:$(Configuration)\bin2c.exe
+$(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.h _ext_code</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -181,6 +185,10 @@
       <ModuleDefinitionFile>res/d3d9.def</ModuleDefinitionFile>
       <DelayLoadDLLs>libcef.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
+    <PreBuildEvent>
+      <Command>cl bin2c.c /link /out:$(Configuration)\bin2c.exe
+$(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.h _ext_code</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>

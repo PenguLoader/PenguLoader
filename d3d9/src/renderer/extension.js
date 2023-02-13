@@ -1,94 +1,120 @@
 
-/*
-    window.openDevTools()
-        // Open DevTools of League Client.
+var openDevTools = function (remote) {
+    native function OpenDevTools();
+    OpenDevTools(Boolean(remote));
+};
 
-    window.require(name: String) : any
-        // Simple implementation of CommonJS "require".
+var openAssetsFolder = function () {
+    native function OpenAssetsFolder();
+    OpenAssetsFolder();
+};
 
-    window.openPluginsFolder()
-        // Open the plugins folder.
-*/
+var openPluginsFolder = function () {
+    native function OpenPluginsFolder();
+    OpenPluginsFolder();
+};
 
-u8R"===============(
-
-var DataStore;
-var Effect;
-var openDevTools;
-var openAssetsFolder;
-var openPluginsFolder;
-var __require;
-
-(function() {
-
+var DataStore = new function () {
     native function LoadData();
     native function SaveData();
 
-    let _data;
+    let data;
     try {
         var object = JSON.parse(LoadData());
-        _data = new Map(Object.entries(object));
+        data = new Map(Object.entries(object));
     } catch {
-        _data = new Map();
+        data = new Map();
     }
 
-    function _saveData() {
-        var object = Object.fromEntries(_data);
+    function commitData() {
+        var object = Object.fromEntries(data);
         SaveData(JSON.stringify(object));
     }
 
-    DataStore = {
+    return {
+        [Symbol.toStringTag]: 'DataStore',
         has(key) {
-            return _data.has(key);
+            return data.has(key);
         },
         get(key) {
-            return _data.get(key);
+            return data.get(key);
         },
         async set(key, value) {
-            _data.set(key, value);
-            _saveData();
+            data.set(key, value);
+            commitData();
         },
         remove(key) {
-            var result = _data.delete(key);
-            _saveData();
+            var result = data.delete(key);
+            commitData();
             return result;
         }
     };
+};
 
-    Effect = {
+var Effect = new function () {
+    native function GetEffect();
+    native function ApplyEffect();
+    native function ClearEffect();
+
+    let listeners = {
+        apply: [],
+        clear: [],
+    };
+
+    function triggerCallbacks(name, ...args) {
+        var callbacks = listeners[name];
+        if (Array.isArray(callbacks)) {
+            for (var callback of callbacks) {
+                callback?.apply(null, args);
+            }
+        }
+    }
+
+    return {
+        [Symbol.toStringTag]: 'Effect',
         get current() {
-            native function GetEffect();
-            return GetEffect() || undefined;
+            return GetEffect() || null;
         },
-        apply(name, options = undefined) {
-            native function ApplyEffect();
-            return ApplyEffect(name, options);
+        apply(name, options) {
+            var old = GetEffect();
+            var success = ApplyEffect(name, options);
+            if (success) {
+                triggerCallbacks('apply', { old, name, options });
+            }
+            return success;
         },
         clear() {
-            native function ClearEffect();
             ClearEffect();
+            triggerCallbacks('clear');
+        },
+        on(event, callback) {
+            var callbacks = listeners[event];
+            if (Array.isArray(callbacks)) {
+                var idx = listeners.indexOf(callback);
+                if (idx < 0) {
+                    listeners.push(callback);
+                }
+            }
+        },
+        off(event, callback) {
+            var callbacks = listeners[event];
+            if (Array.isArray(callbacks)) {
+                var idx = callbacks.indexOf(callback);
+                if (idx >= 0) {
+                    listeners.splice(idx, 1);
+                }
+            }
         }
     };
+};
 
-    openDevTools = function () {
-        native function OpenDevTools();
-        OpenDevTools();
-    };
+var __require;
 
-    openAssetsFolder = function () {
-        native function OpenAssetsFolder();
-        OpenAssetsFolder();
-    };
-
-    openPluginsFolder = function () {
-        native function OpenPluginsFolder();
-        OpenPluginsFolder();
-    };
-
+(function () {
     var join = function (a, b) {
         var parts = a.split("/").concat(b.split("/"));
         var newParts = [];
-          
+
         for (var i = 0, l = parts.length; i < l; i++) {
             var part = parts[i];
             if (!part || part === ".") continue;
@@ -106,24 +132,24 @@ var __require;
 
     __require = function (name) {
         native function Require();
-            
+
         // Check invalid name.
         if (typeof name !== "string" || name === "") {
             throw Error("Module name is required.")
         }
-            
+
         // Get current dir.
         var dir = paths[paths.length - 1];
         var path = join(dir, name);
         var mod = modules[path];
-            
+
         if (typeof mod === "object") {
             // Found exported.
             return mod.exports;
         } else {
             // Require path.
             var data = Require(path);
-                
+
             if (data === null) {
                 throw Error("Cannot find module '" + name + "'");
             } else {
@@ -131,7 +157,7 @@ var __require;
                 var type = data[1];
 
                 var _M = {};
-                    
+
                 // Textual
                 if (type === 2) {
                     _M.source = source;
@@ -162,7 +188,7 @@ var __require;
                     } finally {
                         paths.pop();
                     }
-                        
+
                     if (type === 1) {
                         modules[path + "/index"] = _M;
                     }
@@ -174,5 +200,3 @@ var __require;
         }
     };
 })();
-
-)==============="

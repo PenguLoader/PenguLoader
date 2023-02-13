@@ -4,6 +4,8 @@
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_v8_capi.h"
 
+#include "extension.h"
+
 // RENDERER PROCESS ONLY.
 
 extern HWND RCLIENT_WINDOW;
@@ -74,9 +76,7 @@ static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t
 {
     Old_OnWebKitInitialized(self);
 
-    std::string ext_code = u8""
-#   include "ext_code.h"
-        ;
+    std::string ext_code{ _ext_code, (size_t)_ext_code_length };
 
     const char *version =
 #   include "../gui/Version.cs"

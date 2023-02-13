@@ -86,7 +86,7 @@
     <ClInclude Include="src\internal.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\renderer\ext_code.h">
+    <ClInclude Include="src\renderer\extension.js">
       <Filter>src\renderer</Filter>
     </ClInclude>
   </ItemGroup>
