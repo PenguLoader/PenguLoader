@@ -1,7 +1,25 @@
 // This is the default plugin of League Loader.
 
-// Create UI using nano-jsx
-const addSettingsUI = async (root) => {
+// i18n.
+const TRANSLATIONS = {
+    ['en']: {
+        'l.open_settings': 'Open Settings',
+        'l.close': 'Close',
+        'l.open_devtools': 'Open DevTools',
+        'l.reload_client': 'Reload Client',
+        'l.open_plugins': 'Open Plugins folder',
+    },
+    ['vn']: {
+        'l.open_settings': 'Mở Cài đặt',
+        'l.close': 'Đóng',
+        'l.open_devtools': 'Mở DevTools',
+        'l.reload_client': 'Tải lại Client',
+        'l.open_plugins': 'Mở thư mục Plugins',
+    },
+}
+
+// Create loader UI.
+async function createLoaderMenu(root) {
     // Import nano-jsx from CDN.
     const { Component, jsx, render } = await import('//esm.run/nano-jsx')
 
@@ -14,7 +32,7 @@ const addSettingsUI = async (root) => {
     const version = window['__llver']
 
     // Main component.
-    class Settings extends Component {
+    class LoaderMenu extends Component {
         visible = false
         frame = null
         opener = null
@@ -91,7 +109,7 @@ const addSettingsUI = async (root) => {
     }
 
     // Render component to root.
-    render(jsx`<${Settings} />`, root)
+    render(jsx`<${LoaderMenu} />`, root)
 }
 
 // Setup on window loaded.
@@ -99,37 +117,8 @@ window.addEventListener('load', async () => {
     // Wait for manager layer.
     const manager = () => document.getElementById('lol-uikit-layer-manager-wrapper')
     while (!manager()) await new Promise(r => setTimeout(r, 200))
-    // Create UI and mount it to manager.
+    // Create UI and append it to manager.
     const root = document.createElement('div')
-    await addSettingsUI(root)
+    await createLoaderMenu(root)
     manager().prepend(root)
 })
-
-// Set hotkey, added iframes can steal keyboard focus.
-window.addEventListener('keydown', (e) => {
-    // Ctrl+Shift+I or just F12 to open DevTools.
-    if ((e.ctrlKey && e.shiftKey && e.code === 'KeyI') || e.code === 'F12') {
-        window.openDevTools()
-    }
-    // Ctrl+Shift+R to reload Client.
-    else if (e.ctrlKey && e.shiftKey && e.code === 'KeyR') {
-        window.location.reload()
-    }
-})
-
-const TRANSLATIONS = {
-    ['en']: {
-        'l.open_settings': 'Open Settings',
-        'l.close': 'Close',
-        'l.open_devtools': 'Open DevTools',
-        'l.reload_client': 'Reload Client',
-        'l.open_plugins': 'Open Plugins folder',
-    },
-    ['vn']: {
-        'l.open_settings': 'Mở Cài đặt',
-        'l.close': 'Đóng',
-        'l.open_devtools': 'Mở DevTools',
-        'l.reload_client': 'Tải lại Client',
-        'l.open_plugins': 'Mở thư mục Plugins',
-    },
-}
