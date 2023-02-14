@@ -14,6 +14,7 @@ decltype(&cef_register_extension) CefRegisterExtension;
 decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
 decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;
 decltype(&cef_process_message_create) CefProcessMessage_Create;
+decltype(&cef_v8context_get_current_context) CefV8Context_GetCurrentContext;
 
 decltype(&cef_string_set) CefString_Set;
 decltype(&cef_string_clear) CefString_Clear;
@@ -99,14 +100,15 @@ bool LoadLibcefDll()
         (LPVOID &)CefDictionaryValue_Create = GetProcAddress(libcef, "cef_dictionary_value_create");
         (LPVOID &)CefStreamReader_CreateForFile = GetProcAddress(libcef, "cef_stream_reader_create_for_file");
         (LPVOID &)CefProcessMessage_Create = GetProcAddress(libcef, "cef_process_message_create");
-        (LPVOID &)CefString_ToUtf8 = GetProcAddress(libcef, "cef_string_utf16_to_utf8");
-        (LPVOID &)CefString_ClearUtf8 = GetProcAddress(libcef, "cef_string_utf8_clear");
+        (LPVOID &)CefV8Context_GetCurrentContext = GetProcAddress(libcef, "cef_v8context_get_current_context");
 
         (LPVOID &)CefString_Set = GetProcAddress(libcef, "cef_string_utf16_set");
         (LPVOID &)CefString_Clear = GetProcAddress(libcef, "cef_string_utf16_clear");
         (LPVOID &)CefString_FromUtf8 = GetProcAddress(libcef, "cef_string_utf8_to_utf16");
         (LPVOID &)CefString_FromWide = GetProcAddress(libcef, "cef_string_wide_to_utf16");
         (LPVOID &)CefString_UserFree_Free = GetProcAddress(libcef, "cef_string_userfree_utf16_free");
+        (LPVOID &)CefString_ToUtf8 = GetProcAddress(libcef, "cef_string_utf16_to_utf8");
+        (LPVOID &)CefString_ClearUtf8 = GetProcAddress(libcef, "cef_string_utf8_clear");
 
         (LPVOID &)CefV8Value_CreateNull = GetProcAddress(libcef, "cef_v8value_create_null");
         (LPVOID &)CefV8Value_CreateInt = GetProcAddress(libcef, "cef_v8value_create_int");

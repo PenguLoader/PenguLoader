@@ -119,6 +119,7 @@ extern decltype(&cef_register_extension) CefRegisterExtension;
 extern decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
 extern decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;
 extern decltype(&cef_process_message_create) CefProcessMessage_Create;
+extern decltype(&cef_v8context_get_current_context) CefV8Context_GetCurrentContext;
 
 // Strings helpers.
 extern decltype(&cef_string_set) CefString_Set;

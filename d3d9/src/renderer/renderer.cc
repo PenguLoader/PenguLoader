@@ -43,7 +43,7 @@ private:
 
         if (fn == L"OpenDevTools")
         {
-            auto context = cef_v8context_get_current_context();
+            auto context = CefV8Context_GetCurrentContext();
             auto frame = context->get_frame(context);
             // IPC to browser process.
             auto msg = CefProcessMessage_Create(&"__OPEN_DEVTOOLS"_s);
