@@ -65,7 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\Config.cs" />
-    <Compile Include="src\Dll.cs" />
+    <Compile Include="src\Module.cs" />
     <Compile Include="src\Dummy.cs" />
     <Compile Include="src\GUI.cs">
       <SubType>Form</SubType>
@@ -74,7 +74,7 @@
       <DependentUpon>GUI.cs</DependentUpon>
     </Compile>
     <Compile Include="src\Language.cs" />
-    <Compile Include="src\Lcu.cs" />
+    <Compile Include="src\LCU.cs" />
     <Compile Include="src\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\Symlink.cs" />

@@ -43,14 +43,14 @@ namespace LeagueLoader
                 }
                 else if (isUninstall)
                 {
-                    if (!createdNew || Dll.IsLoaded())
+                    if (!createdNew || Module.IsLoaded())
                     {
                         MessageBox.Show("Please close running League Client and League Loader before uninstalling it.",
                             NAME, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return -1;
                     }
 
-                    Dll.Uninstall(Config.LeaguePath);
+                    Module.Uninstall(Config.LeaguePath);
                 }
 
                 return 0;

@@ -5,34 +5,29 @@ using System.Runtime.InteropServices;
 
 namespace LeagueLoader
 {
-    internal class Dll
+    internal class Module
     {
         const string NAME = "d3d9.dll";
         static string ThisPath => Path.Combine(Directory.GetCurrentDirectory(), NAME);
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
-        static extern IntPtr OpenEvent(uint dwDesiredAccess, [MarshalAs(UnmanagedType.I1)] bool bInheritHandle, string lpName);
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        static extern IntPtr FindWindow(string classn, IntPtr name);
 
-        [DllImport("kernel32.dll")]
-        [return: MarshalAs(UnmanagedType.I1)]
-        static extern bool SetEvent(IntPtr hEvent);
-
-        [DllImport("kernel32.dll")]
-        [return: MarshalAs(UnmanagedType.I1)]
-        static extern bool CloseHandle(IntPtr handle);
-
-        const uint EVENT_MODIFY_STATE = 0x0002;
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool PostMessage(IntPtr hwnd, int msg, IntPtr wp, IntPtr lp);
 
         public static void OpenDevTools(bool remote)
         {
-            var eventName = "Global\\LeagueLoader.Open"
-                + (remote ? "RemoteDevTools" : "DevTools");
-
-            var hEvent = OpenEvent(EVENT_MODIFY_STATE, false, eventName);
-            if (hEvent != IntPtr.Zero)
+            var procs = Process.GetProcessesByName("LeagueClientUx");
+            foreach (var proc in procs)
             {
-                SetEvent(hEvent);
-                CloseHandle(hEvent);
+                var msg = FindWindow("LL.MSG." + proc.Id, IntPtr.Zero);
+                if (msg != IntPtr.Zero)
+                {
+                    PostMessage(msg, 0x8000 + 0x101, (IntPtr)(remote ? 1 : 0), IntPtr.Zero);
+                    return;
+                }
             }
         }
 

@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace LeagueLoader
 {
-    internal class Lcu
+    internal class LCU
     {
         static HttpClient _client = new HttpClient();
 
-        static Lcu()
+        static LCU()
         {
             // Enable TLS 1.1/1.2
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;

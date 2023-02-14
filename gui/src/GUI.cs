@@ -51,13 +51,13 @@ namespace LeagueLoader
             RemoveAdminPerm(PluginsDir);
             RemoveAdminPerm(DataStorePath);
 
-            if (Lcu.IsValidDir(Config.LeaguePath))
+            if (LCU.IsValidDir(Config.LeaguePath))
             {
                 SetLeaguePath(Config.LeaguePath);
             }
-            else if (Lcu.IsOpened())
+            else if (LCU.IsOpened())
             {
-                SetLeaguePath(Lcu.GetDir());
+                SetLeaguePath(LCU.GetDir());
             }
             else
             {
@@ -102,9 +102,9 @@ namespace LeagueLoader
 
         private void btnOpenDevTools_Click(object sender, EventArgs e)
         {
-            if (Dll.IsLoaded())
+            if (Module.IsLoaded())
             {
-                Dll.OpenDevTools(remote: false);
+                Module.OpenDevTools(remote: false);
             }
             else
             {
@@ -115,9 +115,9 @@ namespace LeagueLoader
 
         private void lnkRemoteDevTools_Click(object sender, EventArgs e)
         {
-            if (Dll.IsLoaded())
+            if (Module.IsLoaded())
             {
-                Dll.OpenDevTools(remote: true);
+                Module.OpenDevTools(remote: true);
             }
             else
             {
@@ -128,9 +128,9 @@ namespace LeagueLoader
 
         private void btnRestartLC_Click(object sender, EventArgs e)
         {
-            if (Lcu.IsOpened())
+            if (LCU.IsOpened())
             {
-                Lcu.KillUxAndRestart();
+                LCU.KillUxAndRestart();
             }
             else
             {
@@ -143,22 +143,22 @@ namespace LeagueLoader
         {
             var lcPath = txtPath.Text;
 
-            if (Lcu.IsValidDir(lcPath))
+            if (LCU.IsValidDir(lcPath))
             {
-                if (Dll.IsInstalled(lcPath))
+                if (Module.IsInstalled(lcPath))
                 {
                     if (MessageBox.Show(this, _l.Msg_ModuleUninstall,
                             "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                     {
-                        Dll.Uninstall(lcPath);
+                        Module.Uninstall(lcPath);
                         btnInstall.Text = _l.Install;
 
-                        if (Dll.IsLoaded())
+                        if (Module.IsLoaded())
                         {
                             if (MessageBox.Show(this, _l.Msg_ModuleUninstalled_Loaded,
                                 "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                             {
-                                Lcu.KillUxAndRestart();
+                                LCU.KillUxAndRestart();
                             }
                         }
                         else
@@ -170,15 +170,15 @@ namespace LeagueLoader
                 }
                 else
                 {
-                    Dll.Install(lcPath);
+                    Module.Install(lcPath);
                     btnInstall.Text = _l.Uninstall;
 
-                    if (Lcu.IsOpened())
+                    if (LCU.IsOpened())
                     {
                         if (MessageBox.Show(this, _l.Msg_ModuleInstalled_Running,
                             "League Loader", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                         {
-                            Lcu.KillUxAndRestart();
+                            LCU.KillUxAndRestart();
                         }
                     }
                     else
@@ -251,7 +251,7 @@ namespace LeagueLoader
             btnOpenPlugins.Text = _l.OpenPlugins;
             btnRestartLC.Text = _l.RestartClient;
 
-            btnInstall.Text = Dll.IsInstalled(Config.LeaguePath) ? _l.Uninstall : _l.Install;
+            btnInstall.Text = Module.IsInstalled(Config.LeaguePath) ? _l.Uninstall : _l.Install;
         }
 
         private void lnkLanguage_Click(object sender, EventArgs e)
@@ -274,10 +274,10 @@ namespace LeagueLoader
                     var path = fbd.SelectedPath;
                     var selected = fbd.SelectedPath;
 
-                    if (Lcu.IsValidDir(path)) { }
-                    else if (Lcu.IsValidDir(path = Path.Combine(selected, "LeagueClient"))) { }
-                    else if (Lcu.IsValidDir(path = Path.Combine(selected, "League of Legends"))) { }
-                    else if (Lcu.IsValidDir(path = Path.Combine(selected, "Riot Games", "League of Legends"))) { }
+                    if (LCU.IsValidDir(path)) { }
+                    else if (LCU.IsValidDir(path = Path.Combine(selected, "LeagueClient"))) { }
+                    else if (LCU.IsValidDir(path = Path.Combine(selected, "League of Legends"))) { }
+                    else if (LCU.IsValidDir(path = Path.Combine(selected, "Riot Games", "League of Legends"))) { }
                     else
                     {
                         MessageBox.Show(this, _l.Msg_InvalidSelectedPath,
@@ -294,7 +294,7 @@ namespace LeagueLoader
         {
             txtPath.Text = path;
             Config.LeaguePath = path;
-            btnInstall.Text = Dll.IsInstalled(path) ? _l.Uninstall : _l.Install;
+            btnInstall.Text = Module.IsInstalled(path) ? _l.Uninstall : _l.Install;
         }
 
         private void lnkGithub_Click(object sender, EventArgs e)
