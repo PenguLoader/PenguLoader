@@ -15,7 +15,7 @@ LPCWSTR DEVTOOLS_WINDOW_NAME = L"DevTools - League Client";
 #define OPEN_DEVTOOLS_EVENT         "Global\\LeagueLoader.OpenDevTools"
 #define OPEN_REMOTE_DEVTOOLS_EVENT  "Global\\LeagueLoader.OpenRemoteDevTools"
 
-static void OpenDevTools_Internal(bool remote)
+void OpenDevTools_Internal(bool remote)
 {
     if (remote)
     {
@@ -27,7 +27,7 @@ static void OpenDevTools_Internal(bool remote)
     }
     else if (CLIENT_BROWSER != nullptr)
     {
-        // This function will be called from non-UI thread,
+        // This function can be called from non-UI thread,
         // so CefBrowserHost::HasDevTools has no effect.
 
         DWORD processId;
@@ -133,17 +133,4 @@ static void PrepareDevTools_Thread()
 void PrepareDevTools()
 {
     CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&PrepareDevTools_Thread, NULL, 0, NULL);
-}
-
-// Cross-process call.
-void OpenDevTools(bool remote)
-{
-    auto eventName = remote
-        ? OPEN_REMOTE_DEVTOOLS_EVENT : OPEN_DEVTOOLS_EVENT;
-
-    if (HANDLE event = OpenEventA(EVENT_MODIFY_STATE, FALSE, eventName))
-    {
-        SetEvent(event);
-        CloseHandle(event);
-    }
 }

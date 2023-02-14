@@ -16,9 +16,6 @@ bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v
 bool HandleDataStore(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
 bool HandleWindowEffect(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
 
-// Cross-process call.
-void OpenDevTools(bool remote);
-
 // Custom V8 handler for extenstion
 struct ExtensionHandler : CefRefCount<cef_v8handler_t>
 {
@@ -46,8 +43,12 @@ private:
 
         if (fn == L"OpenDevTools")
         {
-            bool remote = argc > 0 && argv[0]->get_bool_value(argv[0]);
-            OpenDevTools(remote);
+            auto context = cef_v8context_get_current_context();
+            auto frame = context->get_frame(context);
+            // IPC to browser process.
+            auto msg = CefProcessMessage_Create(&"__OPEN_DEVTOOLS"_s);
+            frame->send_process_message(frame, PID_BROWSER, msg);
+
             return true;
         }
         else if (fn == L"OpenAssetsFolder")

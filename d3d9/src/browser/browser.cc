@@ -14,6 +14,8 @@ cef_browser_t *CLIENT_BROWSER = nullptr;
 extern LPCWSTR DEVTOOLS_WINDOW_NAME;
 
 void PrepareDevTools();
+void OpenDevTools_Internal(bool remote);
+
 cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool isPlugins);
 cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path);
 void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken);
@@ -163,6 +165,23 @@ static void HookClient(cef_client_t *client)
         };
 
         return handler;
+    };
+
+    static auto OnProcessMessageReceived = client->on_process_message_received;
+    client->on_process_message_received = [](struct _cef_client_t* self,
+        struct _cef_browser_t* browser,
+        struct _cef_frame_t* frame,
+        cef_process_id_t source_process,
+        struct _cef_process_message_t* message)
+    {
+        if (source_process == PID_RENDERER)
+        {
+            CefScopedStr name{ message->get_name(message) };
+            if (name == L"__OPEN_DEVTOOLS")
+                OpenDevTools_Internal(false);
+        }
+
+        return OnProcessMessageReceived(self, browser, frame, source_process, message);
     };
 }
 
