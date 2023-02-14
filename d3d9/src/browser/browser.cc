@@ -15,6 +15,7 @@ extern LPCWSTR DEVTOOLS_WINDOW_NAME;
 
 void PrepareDevTools();
 void OpenDevTools_Internal(bool remote);
+void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame);
 
 cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool isPlugins);
 cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path);
@@ -66,26 +67,7 @@ static void CALLBACK Hooked_OnLoadStart(struct _cef_load_handler_t* self,
     static bool patched = false;
     if (patched || (patched = true, false)) return;
 
-    auto host = browser->get_host(browser);
-    // Get needed windows.
-    HWND browserWin = host->get_window_handle(host);
-    HWND rclient = GetParent(browserWin);
-    HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
-    HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
-
-    // Hide Chrome_RenderWidgetHostHWND.
-    ShowWindow(widgetHost, SW_HIDE);
-    // Hide CefBrowserWindow.
-    ShowWindow(browserWin, SW_HIDE);
-    // Bring Chrome_WidgetWin_0 into top-level children.
-    SetParent(widgetWin, rclient);
-    SetWindowPos(widgetWin, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-
-    // Send RCLIENT HWND to renderer.
-    auto msg = CefProcessMessage_Create(&"__RCLIENT"_s);
-    auto args = msg->get_argument_list(msg);
-    args->set_int(args, 0, static_cast<int>((DWORD)rclient));
-    frame->send_process_message(frame, PID_RENDERER, msg);
+    SetUpBrowserWindow(browser, frame);
 };
 
 static void HookClient(cef_client_t *client)

@@ -12,9 +12,6 @@ static std::string REMOTE_DEVTOOLS_URL;
 
 LPCWSTR DEVTOOLS_WINDOW_NAME = L"DevTools - League Client";
 
-#define OPEN_DEVTOOLS_EVENT         "Global\\LeagueLoader.OpenDevTools"
-#define OPEN_REMOTE_DEVTOOLS_EVENT  "Global\\LeagueLoader.OpenRemoteDevTools"
-
 void OpenDevTools_Internal(bool remote)
 {
     if (remote)
@@ -100,33 +97,6 @@ static void PrepareDevTools_Thread()
         InternetCloseHandle(hInit);
         InternetCloseHandle(hConn);
         InternetCloseHandle(hFile);
-    }
-
-    // Handle remote opener via event signaling.
-
-    HANDLE events[2];
-    events[0] = CreateEventA(NULL, TRUE, FALSE, OPEN_DEVTOOLS_EVENT);
-    events[1] = CreateEventA(NULL, TRUE, FALSE, OPEN_REMOTE_DEVTOOLS_EVENT);
-
-    while (CLIENT_BROWSER != nullptr)
-    {
-        // Wait for events.
-        DWORD ret = WaitForMultipleObjects(2, events, FALSE, 1000);
-
-        if (ret == WAIT_OBJECT_0)
-        {
-            OpenDevTools_Internal(false);
-            ResetEvent(events[0]);
-            continue;
-        }
-        else if (ret == WAIT_OBJECT_0 + 1)
-        {
-            OpenDevTools_Internal(true);
-            ResetEvent(events[1]);
-            continue;
-        }
-
-        Sleep(10);
     }
 }
 

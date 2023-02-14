@@ -23,6 +23,7 @@
     <ClCompile Include="src\browser\browser.cc" />
     <ClCompile Include="src\browser\devtools.cc" />
     <ClCompile Include="src\browser\riotclient.cc" />
+    <ClCompile Include="src\browser\window.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\d3d9.cc" />
@@ -43,13 +44,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\internal.h" />
-    <EmbeddedResource Include="src\renderer\extension.js">
+    <None Include="src\renderer\extension.js">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExcludedFromBuild>
       <FileType>CppHeader</FileType>
-    </EmbeddedResource>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\d3d9.rc" />
