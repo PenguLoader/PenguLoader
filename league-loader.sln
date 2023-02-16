@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "d3d9", "d3d9\d3d9.vcxproj",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gui", "gui\gui.csproj", "{072EAE57-2D4E-4D7F-95AF-03BF50E53E3E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeagueLoader", "LeagueLoader\LeagueLoader.csproj", "{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,18 @@ Global
 		{072EAE57-2D4E-4D7F-95AF-03BF50E53E3E}.Release|x64.Build.0 = Release|Any CPU
 		{072EAE57-2D4E-4D7F-95AF-03BF50E53E3E}.Release|x86.ActiveCfg = Release|Any CPU
 		{072EAE57-2D4E-4D7F-95AF-03BF50E53E3E}.Release|x86.Build.0 = Release|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Debug|x64.Build.0 = Debug|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Debug|x86.Build.0 = Debug|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Release|x64.ActiveCfg = Release|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Release|x64.Build.0 = Release|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Release|x86.ActiveCfg = Release|Any CPU
+		{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
