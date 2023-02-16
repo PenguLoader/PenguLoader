@@ -40,7 +40,7 @@ wstring config::getPluginsDir()
 
 wstring config::getConfigValue(const wstring &key)
 {
-    auto path = getLoaderDir() + L"\\config.cfg";
+    auto path = getLoaderDir() + L"\\config";
 
     WCHAR value[1024]{};
     DWORD length = GetPrivateProfileStringW(L"Main",
