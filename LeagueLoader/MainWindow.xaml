@@ -92,7 +92,7 @@
                 Style="{StaticResource AccentButtonStyle}"
                 Focusable="False" HorizontalAlignment="Left" Margin="25,204,0,0" VerticalAlignment="Top" Width="180"
             />
-            <TextBlock x:Name="txtVersion" Margin="259,156,0,0" TextWrapping="Wrap" Text="v1.0.1 build 1480"
+            <TextBlock x:Name="txtVersion" Margin="259,156,0,0" TextWrapping="Wrap" Text="v0.0.0 build 1000"
                 TextAlignment="Right" FontSize="13" VerticalAlignment="Top" HorizontalAlignment="Left" Width="165" Height="19"/>
         </Grid>
     </Grid>

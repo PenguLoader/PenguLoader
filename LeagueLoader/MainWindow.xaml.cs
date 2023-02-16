@@ -22,6 +22,8 @@ namespace LeagueLoader
 
             SetActiveState(Module.IsActivated());
             btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
+
+            txtVersion.Text = $"v{Version.VERSION} build {Version.BUILD_NUMBER}";
         }
 
         private void BtnTheme_Click(object sender, RoutedEventArgs e)

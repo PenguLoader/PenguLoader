@@ -80,7 +80,7 @@ static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t
     std::string ext_code{ _ext_code, (size_t)_ext_code_length };
 
     const char *version =
-#   include "../gui/Version.cs"
+#   include "../LeagueLoader/Version.cs"
         ;
 
     ext_code.append("\nvar __llver = \"");

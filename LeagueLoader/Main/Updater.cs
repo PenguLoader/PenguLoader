@@ -15,7 +15,7 @@ namespace LeagueLoader.Main
         const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36";
 
-        public static Version CurrentVersion => Assembly.GetExecutingAssembly().GetName().Version;
+        public static System.Version CurrentVersion => Assembly.GetExecutingAssembly().GetName().Version;
 
         class Update
         {
@@ -60,7 +60,7 @@ namespace LeagueLoader.Main
                     if (vtag.StartsWith("v"))
                         vtag = vtag.Substring(1);
 
-                    var remote = new Version(vtag);
+                    var remote = new System.Version(vtag);
                     var local = CurrentVersion;
 
                     if (remote.CompareTo(local) > 0)

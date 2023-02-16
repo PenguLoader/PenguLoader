@@ -1,6 +1,7 @@
 ﻿
 #if !__cplusplus
 namespace LeagueLoader
+{
 static class Version
 {
     public const string VERSION =
@@ -10,6 +11,7 @@ static class Version
 
 #if !__cplusplus
         ;
+    public const int BUILD_NUMBER = 1000;
 }
 }
 #endif

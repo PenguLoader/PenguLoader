@@ -687,14 +687,14 @@ int APIENTRY _BootstrapEntry(HWND hwnd, HINSTANCE instance, LPWSTR commandLine, 
     //Attribute->ValuePtr = &policy;
 
     // Spoof parent process as debugger's parent to keep process hierarchy
-    HANDLE hParent = OpenProcess(PROCESS_ALL_ACCESS, false, GetParentProcessId());
-    if (hParent != INVALID_HANDLE_VALUE)
-    {
-        Attribute = &AttributeList->Attributes[numberOfAttributes++];
-        Attribute->Attribute = PS_ATTRIBUTE_PARENT_PROCESS;
-        Attribute->Size = sizeof(HANDLE);
-        Attribute->ValuePtr = hParent;
-    }
+    //HANDLE hParent = OpenProcess(PROCESS_ALL_ACCESS, false, GetParentProcessId());
+    //if (hParent != INVALID_HANDLE_VALUE)
+    //{
+    //    Attribute = &AttributeList->Attributes[numberOfAttributes++];
+    //    Attribute->Attribute = PS_ATTRIBUTE_PARENT_PROCESS;
+    //    Attribute->Size = sizeof(HANDLE);
+    //    Attribute->ValuePtr = hParent;
+    //}
 
     // Set structure length with set of attributes
     AttributeList->TotalLength = FIELD_OFFSET(PS_ATTRIBUTE_LIST, Attributes) + sizeof(PS_ATTRIBUTE) * numberOfAttributes;
@@ -721,7 +721,7 @@ int APIENTRY _BootstrapEntry(HWND hwnd, HINSTANCE instance, LPWSTR commandLine, 
     }
 
     // Clean up
-    if (hParent) CloseHandle(hParent);
+    //if (hParent) CloseHandle(hParent);
     RtlFreeHeap(RtlProcessHeap(), 0, AttributeList);
     RtlFreeHeap(RtlProcessHeap(), 0, stdHandleInfo);
     RtlFreeHeap(RtlProcessHeap(), 0, clientId);
