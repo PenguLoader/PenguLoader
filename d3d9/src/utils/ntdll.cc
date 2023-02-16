@@ -541,6 +541,51 @@ static DWORD GetParentProcessId() // By Napalm @ NetCore2K
     return -1;
 }
 
+static DWORD64 GetPEVersion(LPCWSTR file)
+{
+    DWORD64 version = 0;
+    DWORD  verHandle = 0;
+    UINT   size = 0;
+    LPBYTE lpBuffer = NULL;
+
+    if (DWORD verSize = GetFileVersionInfoSize(file, &verHandle))
+    {
+        LPSTR verData = new char[verSize];
+
+        if (GetFileVersionInfo(file, verHandle, verSize, verData)
+            && VerQueryValue(verData, L"\\", (VOID FAR* FAR*)&lpBuffer, &size)
+            && size > 0)
+        {
+            VS_FIXEDFILEINFO *verInfo = (VS_FIXEDFILEINFO *)lpBuffer;
+            if (verInfo->dwSignature == 0xfeef04bd)
+                version = verInfo->dwFileVersionMS
+                    | (static_cast<DWORD64>(verInfo->dwFileVersionLS) << 32u);
+        }
+
+        delete[] verData;
+    }
+
+    return version;
+}
+
+static void RemoveOldModule(LPCWSTR exePath)
+{
+    WCHAR path[2048]{};
+    lstrcpyW(path, exePath);
+    path[wcsrchr(path, L'\\') - path] = L'\0';
+    lstrcatW(path, L"\\d3d9.dll");
+
+    DWORD attr = GetFileAttributesW(path);
+    if (attr == INVALID_FILE_ATTRIBUTES)
+        return;
+
+    if ((attr & FILE_ATTRIBUTE_REPARSE_POINT)           // symlink
+        || GetPEVersion(path) == 0x4A610907000A0000ULL) // old module 
+    {
+        DeleteFileW(path);
+    }
+}
+
 void InjectThisDll(HANDLE hProcess)
 {
     WCHAR thisDllPath[2048]{};
@@ -587,6 +632,9 @@ int APIENTRY _BootstrapEntry(HWND hwnd, HINSTANCE instance, LPWSTR commandLine, 
         MessageBoxA(NULL, msg, "League Loader bootstraper", MB_OK | MB_ICONWARNING);
         return 1;
     }
+
+    // Remove old module (DLL proxying)
+    RemoveOldModule(_NtImagePath + 4);
 
     // Initialize the PS_CREATE_INFO structure
     PS_CREATE_INFO CreateInfo;
@@ -682,177 +730,3 @@ int APIENTRY _BootstrapEntry(HWND hwnd, HINSTANCE instance, LPWSTR commandLine, 
 
     return status != 0;
 }
-
-//NTSTATUS FiCreateProcess(
-//    __in PPH_STRING FileName,
-//    __in_opt PPH_STRINGREF CommandLine,
-//    __in_opt PVOID Environment,
-//    __in_opt PPH_STRINGREF CurrentDirectory,
-//    __in_opt PPH_CREATE_PROCESS_INFO Information,
-//    __in ULONG Flags,
-//    __in_opt HANDLE ParentProcessHandle,
-//    __out_opt PCLIENT_ID ClientId,
-//    __out_opt PHANDLE ProcessHandle,
-//    __out_opt PHANDLE ThreadHandle
-//    )
-//{
-//    NTSTATUS status;
-//    _NtCreateUserProcess NtCreateUserProcess_I;
-//    HANDLE processHandle;
-//    HANDLE threadHandle;
-//    CLIENT_ID clientId;
-//    PRTL_USER_PROCESS_PARAMETERS parameters;
-//    PPH_STRING newFileName;
-//    UNICODE_STRING fileName;
-//    PUNICODE_STRING windowTitle;
-//    PUNICODE_STRING desktopInfo;
-//
-//    NtCreateUserProcess_I = PhGetProcAddress(L"ntdll.dll", "NtCreateUserProcess");
-//
-//    if (!NtCreateUserProcess_I)
-//        return STATUS_NOT_SUPPORTED;
-//
-//    newFileName = FiFormatFileName(FileName);
-//    fileName = newFileName->us;
-//
-//    if (Information)
-//    {
-//        windowTitle = (PUNICODE_STRING)Information->WindowTitle;
-//        desktopInfo = (PUNICODE_STRING)Information->DesktopInfo;
-//    }
-//    else
-//    {
-//        windowTitle = NULL;
-//        desktopInfo = NULL;
-//    }
-//
-//    if (!windowTitle)
-//        windowTitle = &fileName;
-//
-//    if (!desktopInfo)
-//        desktopInfo = &NtCurrentPeb()->ProcessParameters->DesktopInfo;
-//
-//    status = RtlCreateProcessParameters(
-//        &parameters,
-//        &fileName,
-//        Information ? (PUNICODE_STRING)Information->DllPath : NULL,
-//        (PUNICODE_STRING)CurrentDirectory,
-//        CommandLine ? &CommandLine->us : &fileName,
-//        Environment,
-//        windowTitle,
-//        desktopInfo,
-//        Information ? (PUNICODE_STRING)Information->ShellInfo : NULL,
-//        Information ? (PUNICODE_STRING)Information->RuntimeData : NULL
-//        );
-//
-//    if (NT_SUCCESS(status))
-//    {
-//        OBJECT_ATTRIBUTES processObjectAttributes;
-//        OBJECT_ATTRIBUTES threadObjectAttributes;
-//        UCHAR attributeListBuffer[FIELD_OFFSET(PS_ATTRIBUTE_LIST, Attributes) + sizeof(PS_ATTRIBUTE) * 4];
-//        PPS_ATTRIBUTE_LIST attributeList;
-//        PPS_ATTRIBUTE attribute;
-//        ULONG numberOfAttributes;
-//        PS_CREATE_INFO createInfo;
-//        PS_STD_HANDLE_INFO stdHandleInfo;
-//
-//        memset(attributeListBuffer, 0, sizeof(attributeListBuffer));
-//        attributeList = (PPS_ATTRIBUTE_LIST)attributeListBuffer;
-//        numberOfAttributes = 0;
-//
-//        // Parent process
-//        attribute = &attributeList->Attributes[numberOfAttributes++];
-//        attribute->Attribute = PS_ATTRIBUTE_PARENT_PROCESS;
-//        attribute->Size = sizeof(HANDLE);
-//        attribute->ValuePtr = NtCurrentProcess();
-//
-//        // Image name
-//        attribute = &attributeList->Attributes[numberOfAttributes++];
-//        attribute->Attribute = PS_ATTRIBUTE_IMAGE_NAME;
-//        attribute->Size = fileName.Length;
-//        attribute->ValuePtr = fileName.Buffer;
-//
-//        // Client ID
-//        attribute = &attributeList->Attributes[numberOfAttributes++];
-//        attribute->Attribute = PS_ATTRIBUTE_CLIENT_ID;
-//        attribute->Size = sizeof(CLIENT_ID);
-//        attribute->ValuePtr = &clientId;
-//
-//        // Standard handles
-//        attribute = &attributeList->Attributes[numberOfAttributes++];
-//        attribute->Attribute = PS_ATTRIBUTE_STD_HANDLE_INFO;
-//        attribute->Size = sizeof(PS_STD_HANDLE_INFO);
-//        attribute->ValuePtr = &stdHandleInfo;
-//
-//        attributeList->TotalLength = FIELD_OFFSET(PS_ATTRIBUTE_LIST, Attributes) + sizeof(PS_ATTRIBUTE) * numberOfAttributes;
-//
-//        if (Flags & PH_CREATE_PROCESS_NEW_CONSOLE)
-//        {
-//            stdHandleInfo.Flags = 0;
-//            stdHandleInfo.StdHandleState = PsNeverDuplicate;
-//            stdHandleInfo.StdHandleSubsystemType = 0;
-//        }
-//        else
-//        {
-//            // Duplicate standard handles if the image subsystem is Win32 command line.
-//            stdHandleInfo.Flags = 0;
-//            stdHandleInfo.StdHandleState = PsRequestDuplicate;
-//            stdHandleInfo.PseudoHandleMask = PS_STD_INPUT_HANDLE | PS_STD_OUTPUT_HANDLE | PS_STD_ERROR_HANDLE;
-//            stdHandleInfo.StdHandleSubsystemType = IMAGE_SUBSYSTEM_WINDOWS_CUI;
-//
-//            parameters->ConsoleHandle = NtCurrentPeb()->ProcessParameters->ConsoleHandle;
-//            parameters->ConsoleFlags = NtCurrentPeb()->ProcessParameters->ConsoleFlags;
-//            parameters->StandardInput = NtCurrentPeb()->ProcessParameters->StandardInput;
-//            parameters->StandardOutput = NtCurrentPeb()->ProcessParameters->StandardOutput;
-//            parameters->StandardError = NtCurrentPeb()->ProcessParameters->StandardError;
-//        }
-//
-//        memset(&createInfo, 0, sizeof(PS_CREATE_INFO));
-//        createInfo.Size = sizeof(PS_CREATE_INFO);
-//        createInfo.State = PsCreateInitialState;
-//        createInfo.InitState.u1.s1.IFEOSkipDebugger = PsSkipIFEODebugger; // ignore Debugger option
-//
-//        InitializeObjectAttributes(&processObjectAttributes, NULL, 0, NULL, NULL);
-//        InitializeObjectAttributes(&threadObjectAttributes, NULL, 0, NULL, NULL);
-//
-//        parameters = RtlNormalizeProcessParams(parameters);
-//        status = NtCreateUserProcess_I(
-//            &processHandle,
-//            &threadHandle,
-//            MAXIMUM_ALLOWED,
-//            MAXIMUM_ALLOWED,
-//            &processObjectAttributes,
-//            &threadObjectAttributes,
-//            ((Flags & PH_CREATE_PROCESS_INHERIT_HANDLES) ? PROCESS_CREATE_FLAGS_INHERIT_HANDLES : 0) |
-//            ((Flags & PH_CREATE_PROCESS_BREAKAWAY_FROM_JOB) ? PROCESS_CREATE_FLAGS_BREAKAWAY : 0),
-//            THREAD_CREATE_FLAGS_CREATE_SUSPENDED,
-//            parameters,
-//            &createInfo,
-//            attributeList
-//            );
-//        RtlDestroyProcessParameters(parameters);
-//    }
-//
-//    PhDereferenceObject(newFileName);
-//
-//    if (NT_SUCCESS(status))
-//    {
-//        if (!(Flags & PH_CREATE_PROCESS_SUSPENDED))
-//            NtResumeThread(threadHandle, NULL);
-//
-//        if (ClientId)
-//            *ClientId = clientId;
-//
-//        if (ProcessHandle)
-//            *ProcessHandle = processHandle;
-//        else
-//            NtClose(processHandle);
-//
-//        if (ThreadHandle)
-//            *ThreadHandle = threadHandle;
-//        else
-//            NtClose(threadHandle);
-//    }
-//
-//    return status;
-//}
