@@ -13,7 +13,10 @@ wstring config::getLoaderDir()
 
     DWORD attr = GetFileAttributesW(thisPath);
     if ((attr & FILE_ATTRIBUTE_REPARSE_POINT) != FILE_ATTRIBUTE_REPARSE_POINT)
-        return cachedPath = thisPath;
+    {
+        cachedPath = thisPath;
+        return cachedPath = cachedPath.substr(0, cachedPath.find_last_of(L"/\\"));
+    }
 
     OFSTRUCT of{};
     WCHAR finalPath[2048];
