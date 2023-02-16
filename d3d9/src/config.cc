@@ -11,6 +11,10 @@ wstring config::getLoaderDir()
     WCHAR thisPath[2048];
     GetModuleFileNameW((HINSTANCE)&__ImageBase, thisPath, 2048);
 
+    DWORD attr = GetFileAttributesW(thisPath);
+    if ((attr & FILE_ATTRIBUTE_REPARSE_POINT) != FILE_ATTRIBUTE_REPARSE_POINT)
+        return cachedPath = thisPath;
+
     OFSTRUCT of{};
     WCHAR finalPath[2048];
     // Get final path.
