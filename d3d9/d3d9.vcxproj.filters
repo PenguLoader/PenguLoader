@@ -73,6 +73,9 @@
     <ClCompile Include="src\browser\window.cc">
       <Filter>src\browser</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\ntdll.cc">
+      <Filter>src\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\d3d9.def">

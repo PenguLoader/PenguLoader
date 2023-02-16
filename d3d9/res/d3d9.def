@@ -10,4 +10,5 @@ EXPORTS
 	D3DPERF_SetOptions
 	D3DPERF_SetRegion
     
-    _GetCefVersion @5000 NONAME
+    _GetCefVersion		@5000 NONAME
+	_BootstrapEntry		@6000 NONAME
