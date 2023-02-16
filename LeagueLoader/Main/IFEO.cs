@@ -56,10 +56,12 @@ namespace LeagueLoader.Main
                     if (oldValue != null && oldValue is string)
                     {
                         image.SetValue(VALUE_NAME, oldValue, RegistryValueKind.String);
+                        image.DeleteValue(BACKUP_NAME);
                     }
                     else
                     {
                         image.DeleteValue(VALUE_NAME);
+                        key.DeleteSubKey(target);
                     }
 
                     image.Dispose();
