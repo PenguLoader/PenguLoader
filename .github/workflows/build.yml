@@ -29,7 +29,7 @@ jobs:
       - name: Patch project files
         run: |
           (Get-Content d3d9\d3d9.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File d3d9\d3d9.vcxproj
-          (Get-Content LeagueLoader\Version.cs) -replace '(BUILD_NUMBER\s*=\s*)\d+', '$1 $(1000 + ${{ env.COMMIT_COUNT }})' | Out-File LeagueLoader\Version.cs
+          (Get-Content LeagueLoader\Version.cs) -replace '(BUILD_NUMBER\s*=\s*)\d+', "$1 $(1000 + ${{ env.COMMIT_COUNT }})" | Out-File LeagueLoader\Version.cs
 
       - uses: microsoft/setup-msbuild@v1.1      
       - uses: nuget/setup-nuget@v1 
