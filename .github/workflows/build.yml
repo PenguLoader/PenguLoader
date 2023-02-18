@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@main
       - run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
       - run: (Get-Content d3d9\d3d9.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File d3d9\d3d9.vcxproj
-      - run: (Get-Content LeagueLoader\Version.cs) -replace 'int(\s*BUILD_NUMBER\s*=\s*)\w+;', "string$1""$(1000 + ${{ env.SHORT_SHA }})"";" | Out-File LeagueLoader\Version.cs
+      - run: (Get-Content LeagueLoader\Version.cs) -replace 'int(\s*BUILD_NUMBER\s*=\s*)\w+;', "string$1""${{ env.SHORT_SHA }}"";" | Out-File LeagueLoader\Version.cs
 
       - uses: TheMrMilchmann/setup-msvc-dev@v2
         with:
