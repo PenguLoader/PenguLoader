@@ -1,5 +1,6 @@
 #include "../internal.h"
 
+#include <shlobj.h>
 #include <wininet.h>
 #pragma comment(lib, "wininet.lib")
 
@@ -11,6 +12,7 @@ extern HWND DEVTOOLS_HWND;
 static std::string REMOTE_DEVTOOLS_URL;
 
 LPCWSTR DEVTOOLS_WINDOW_NAME = L"DevTools - League Client";
+static cef_client_t *CreateDevToolsClient();
 
 void OpenDevTools_Internal(bool remote)
 {
@@ -52,8 +54,9 @@ void OpenDevTools_Internal(bool remote)
                 | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
             wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME).forawrd();
 
+            cef_browser_settings_t settings{};
             auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);
-            host->show_dev_tools(host, &wi, NULL, NULL, NULL);
+            host->show_dev_tools(host, &wi, CreateDevToolsClient(), &settings, nullptr);
             //                              ^--- We use null for client to keep DevTools
             //                                   from being scaled by League Client (e.g 0.8, 1.6).
         }
@@ -103,4 +106,173 @@ static void PrepareDevTools_Thread()
 void PrepareDevTools()
 {
     CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&PrepareDevTools_Thread, NULL, 0, NULL);
+}
+
+class DevToolsDownloadHandler : public CefRefCount<cef_download_handler_t>
+{
+public:
+    DevToolsDownloadHandler() : CefRefCount(this)
+    {
+        cef_download_handler_t::on_before_download = on_before_download;
+        cef_download_handler_t::on_download_updated = on_download_updated;
+    }
+
+    static void CEF_CALLBACK on_before_download(
+        struct _cef_download_handler_t* self,
+        struct _cef_browser_t* browser,
+        struct _cef_download_item_t* download_item,
+        const cef_string_t* suggested_name,
+        struct _cef_before_download_callback_t* callback)
+    {
+        wstring path = L"C:\\";
+
+        WCHAR personalPath[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, 0, personalPath)))
+        {
+            path.append(personalPath);
+            path.append(L"\\Downloads\\");
+        }
+
+        if (suggested_name != nullptr)
+            path.append(suggested_name->str, suggested_name->length);
+
+        callback->cont(callback, &CefStr(path), true);
+    }
+
+    static void CEF_CALLBACK on_download_updated(
+        struct _cef_download_handler_t* self,
+        struct _cef_browser_t* browser,
+        struct _cef_download_item_t* download_item,
+        struct _cef_download_item_callback_t* callback)
+    {
+    }
+};
+
+class DevToolsClient : public CefRefCount<cef_client_t>
+{
+public:
+    DevToolsClient() : CefRefCount(this)
+    {
+        cef_client_t::get_audio_handler = get_audio_handler;
+        cef_client_t::get_context_menu_handler = get_context_menu_handler;
+        cef_client_t::get_dialog_handler = get_dialog_handler;
+        cef_client_t::get_display_handler = get_display_handler;
+        cef_client_t::get_download_handler = get_download_handler;
+        cef_client_t::get_drag_handler = get_drag_handler;
+        cef_client_t::get_find_handler = get_find_handler;
+        cef_client_t::get_focus_handler = get_focus_handler;
+        cef_client_t::get_jsdialog_handler = get_jsdialog_handler;
+        cef_client_t::get_keyboard_handler = get_keyboard_handler;
+        cef_client_t::get_life_span_handler = get_life_span_handler;
+        cef_client_t::get_load_handler = get_load_handler;
+        cef_client_t::get_print_handler = get_print_handler;
+        cef_client_t::get_render_handler = get_render_handler;
+        cef_client_t::get_request_handler = get_request_handler;
+        cef_client_t::on_process_message_received = on_process_message_received;
+    }
+
+private:
+    static struct _cef_audio_handler_t* CEF_CALLBACK get_audio_handler(struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_context_menu_handler_t* CEF_CALLBACK get_context_menu_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_dialog_handler_t* CEF_CALLBACK get_dialog_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_display_handler_t* CEF_CALLBACK get_display_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_download_handler_t* CEF_CALLBACK get_download_handler(
+        struct _cef_client_t* self)
+    {
+        return new DevToolsDownloadHandler();
+    }
+
+    static struct _cef_drag_handler_t* CEF_CALLBACK get_drag_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_find_handler_t* CEF_CALLBACK get_find_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_focus_handler_t* CEF_CALLBACK get_focus_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_jsdialog_handler_t* CEF_CALLBACK get_jsdialog_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_keyboard_handler_t* CEF_CALLBACK get_keyboard_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_life_span_handler_t* CEF_CALLBACK get_life_span_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_load_handler_t* CEF_CALLBACK get_load_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_print_handler_t* CEF_CALLBACK get_print_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_render_handler_t* CEF_CALLBACK get_render_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static struct _cef_request_handler_t* CEF_CALLBACK get_request_handler(
+        struct _cef_client_t* self)
+    {
+        return nullptr;
+    }
+
+    static int CEF_CALLBACK on_process_message_received(
+        struct _cef_client_t* self,
+        struct _cef_browser_t* browser,
+        struct _cef_frame_t* frame,
+        cef_process_id_t source_process,
+        struct _cef_process_message_t* message)
+    {
+        return 0;
+    }
+};
+
+static cef_client_t *CreateDevToolsClient()
+{
+    return new DevToolsClient();
 }
