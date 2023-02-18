@@ -13,25 +13,20 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
-      - run: echo "COMMIT_COUNT=$(git rev-list --all --count)"
+      - run: (Get-Content d3d9\d3d9.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File d3d9\d3d9.vcxproj
+      - run: (Get-Content LeagueLoader\Version.cs) -replace 'int(\s*BUILD_NUMBER\s*=\s*)\w+;', "string$1""$(1000 + ${{ env.SHORT_SHA }})"";" | Out-File LeagueLoader\Version.cs
 
       - uses: TheMrMilchmann/setup-msvc-dev@v2
         with:
           arch: x86
           sdk: 10.0.17763.0
           toolset: 14.16
+      - uses: microsoft/setup-msbuild@v1.1
 
-      - name: Patch project files
-        run: |
-          (Get-Content d3d9\d3d9.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File d3d9\d3d9.vcxproj
-#          (Get-Content LeagueLoader\Version.cs) -replace '(BUILD_NUMBER\s*=\s*)\d+', "$1 $(1000 + ${{ env.COMMIT_COUNT }})" | Out-File LeagueLoader\Version.cs
-
-      - uses: microsoft/setup-msbuild@v1.1      
       - uses: nuget/setup-nuget@v1 
         with:
           nuget-version: '5.x'
-      - name: Restore NuGet packages
-        run: nuget restore league-loader.sln
+      - run: nuget restore league-loader.sln
 
       - name: Build solution
         run: msbuild league-loader.sln /p:Platform="x86" /p:Configuration=Release
