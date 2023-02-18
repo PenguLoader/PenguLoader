@@ -78,22 +78,21 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\d3d9.def">
-      <Filter>res</Filter>
-    </None>
-    <None Include="packages.config" />
     <None Include="src\renderer\extension.js">
       <Filter>src\renderer</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="res\d3d9.rc">
+    <None Include="res\module.def">
       <Filter>res</Filter>
-    </ResourceCompile>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\internal.h">
       <Filter>src</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\resource.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

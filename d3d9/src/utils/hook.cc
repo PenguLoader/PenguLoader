@@ -1,8 +1,8 @@
 #include "../internal.h"
 
 #include <regex>
+#include <memory>
 #include <sstream>
-#include <detours.h>
 
 struct PatternMask
 {
@@ -97,32 +97,50 @@ NOINLINE void *utils::scanInternal(void *image, size_t length, const string &pat
     return match;
 }
 
-void utils::hookFunc(void **orig, void *hooked)
+static bool Detour32(char* src, char* dst, const intptr_t len)
 {
-    if (orig == nullptr || *orig == nullptr)
-        return;
+    if (len < 5) return false;
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    DWORD  curProtection;
+    VirtualProtect(src, len, PAGE_EXECUTE_READWRITE, &curProtection);
 
-    DetourAttach(orig, hooked);
+    intptr_t  relativeAddress = (intptr_t)(dst - (intptr_t)src) - 5;
 
-    DetourTransactionCommit();
+    *src = '\xE9';
+    *(intptr_t*)((intptr_t)src + 1) = relativeAddress;
+
+    VirtualProtect(src, len, curProtection, &curProtection);
+    return true;
 }
 
-void utils::hookFuncs(void **funcs[], int count)
+// Ref: https://guidedhacking.com/threads/simple-x86-c-trampoline-hook.14188/
+static char* TrampHook32(char* src, char* dst, const int len)
 {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    // Create the gateway (len + 5 for the overwritten bytes + the jmp)
+    void* gateway = VirtualAlloc(0, len + 5, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
-    for (int i = 0; i < count; i++)
-    {
-        auto orig = static_cast<void **>(funcs[i][0]);
-        auto hooked = funcs[i][1];
+    //Write the stolen bytes into the gateway
+    memcpy(gateway, src, len);
 
-        if (orig != nullptr && *orig != nullptr)
-            DetourAttach(orig, hooked);
-    }
+    // Get the gateway to destination addy
+    intptr_t  gatewayRelativeAddr = ((intptr_t)src - (intptr_t)gateway) - 5;
 
-    DetourTransactionCommit();
+    // Add the jmp opcode to the end of the gateway
+    *(char*)((intptr_t)gateway + len) = '\xE9';
+
+    // Add the address to the jmp
+    *(intptr_t*)((intptr_t)gateway + len + 1) = gatewayRelativeAddr;
+
+    // Perform the detour
+    Detour32(src, dst, len);
+
+    return (char*)gateway;
+}
+
+void utils::hookFunc(void **orig, void *hooked)
+{
+    if (orig == nullptr || *orig == nullptr || hooked == nullptr)
+        return;
+
+    *orig = TrampHook32(static_cast<char *>(*orig), static_cast<char *>(hooked), 5);
 }
