@@ -90,9 +90,9 @@ var Effect = new function () {
         on(event, callback) {
             var callbacks = listeners[event];
             if (Array.isArray(callbacks)) {
-                var idx = listeners.indexOf(callback);
+                var idx = callbacks.indexOf(callback);
                 if (idx < 0) {
-                    listeners.push(callback);
+                    callbacks.push(callback);
                 }
             }
         },
@@ -101,7 +101,7 @@ var Effect = new function () {
             if (Array.isArray(callbacks)) {
                 var idx = callbacks.indexOf(callback);
                 if (idx >= 0) {
-                    listeners.splice(idx, 1);
+                    callbacks.splice(idx, 1);
                 }
             }
         }
