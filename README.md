@@ -2,7 +2,7 @@
 
 <div align="center">
   <a href="https://leagueloader.app">
-    <img src="https://user-images.githubusercontent.com/38210249/220154358-dde333dd-4847-4fff-9cf3-a56f80f81d29.png" width="144"/>
+    <img src="https://user-images.githubusercontent.com/38210249/220161754-1b555c6f-aee6-49ac-836a-d163527615f7.png" width="144"/>
   </a>
   <h1 align="center">League Loader</h1>
   <p align="center">
