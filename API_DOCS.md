@@ -1,17 +1,6 @@
-# API docs
+# JavaScript API docs
 
-These APIs are designed to use inside League Client only.
-
-<br>
-
-## `require(name)` [function]
-
-You must have knowledge about CommonJS module to use this function.<br>
-If you've ever developed something with NodeJS, it shouldn't be hard.
-
-Please refer to [README](./README.md) for examples and [Node docs](https://nodejs.org/api/modules.html) to learn more.
-
-> This function should be called in inside plugins. To test it in console, use `__require()` instead.
+These APIs are designed to use inside League Client with League Loader plugin runtime.
 
 <br>
 
@@ -24,7 +13,14 @@ Example:
 window.openDevTools();
 ```
 
-<br>
+## `openAssetsFolder()` [function]
+
+Call it to open the assets folder in new File Explorer window.
+
+Example:
+```js
+window.openAssetsFolder();
+```
 
 ## `openPluginsFolder()` [function]
 
@@ -45,7 +41,7 @@ League Client does not save userdata to disk, as same as incognito mode in web b
 
 Call this function to store your data with a given key.
 - `key` [required] Keys should be string or number.
-- `value` [require] Value may be string, number, boolean, null or collection like array and object. Actually, it will be stored as JSON format, so any value like function and runtime object is ignored.
+- `value` [require] Value may be string, number, boolean, null or collection like array and object. Actually, it will be stored as JSON format, so any value like function and runtime object are ignored.
 
 Example:
 ```js
@@ -125,6 +121,13 @@ Effect.apply('unified', { color: '#4446' })
 Effect.apply('mica')
 ```
 
+#### System compatibility
+- These effects are currently supported on Windows only.
+- On Windows 7, only the `blurbehind` is supported.
+- On Windows 10, requires build 1703 or higher to use `acrylic`.
+  - With any build after 2020, enabling it with transparency effects (on Personalize -> Color settings) will cause lagging.
+- `mica` and `unified` are only supported on Windows 11, but `unified` can be enabled on Windows 10 without different from `acrylic`. 
+
 ### `Effect.clear()` [function]
 
 A function that clears any currently applied effect, then the Client background will be black.<br>
@@ -136,12 +139,23 @@ Example:
 Effect.clear();
 ```
 
-### Notes
-- These effects are currently supported on Windows only.
-- On Windows 7, only the `blurbehind` is supported.
-- On Windows 10, requires build 1703 or higher to use `acrylic`.
-  - With any build after 2020, enabling it with transparency effects (on Personalize -> Color settings) will cause lagging.
-- `mica` and `unified` are only supported on Windows 11, but `unified` can be enabled on Windows 10 without different from `acrylic`. 
+### `Effect.on(event, callback)` [function]
+
+Add a listener which will be triggered when effect changed.
+
+```js
+Effect.on('apply', ({ old, name, options }) => {
+  // do something
+});
+
+Effect.on('clear', () => {
+  // do something
+});
+```
+
+### `Effect.off(event, callback)` [function]
+
+Remove your added listener.
 
 <br>
 
@@ -153,4 +167,35 @@ Example:
 ```js
 console.log(window.__llver); // e.g 0.7.0
 console.log('You are using League Loader v' + window.__llver);
+```
+
+## TypeScript declaration
+
+```ts
+namespace globalThis {
+  function openAssetsFolder(): void;
+  function openPluginsFolder(): void;
+  function openDevTools(remote?: boolean): void;
+
+  namespace DataStore {
+    function has(key: string): boolean;
+    function get(key: string): any;
+    function set(key: string, value: any): Promise<void>;
+    function remove(key: string): void;
+  }
+
+  namespace Effect {
+    type EffectName = 'mica' | 'acrylic' | 'unified' | 'blurbehind';
+    const current: EffectName | null;
+    function apply(name: EffectName): boolean;
+    function apply(name: Exclude<EffectName, 'mica'>, options: { color: string }): boolean;
+    function clear(): void;
+    function on(event: 'apply', listener: (name: string, options?: object) => any): void;
+    function on(event: 'clear', listener: () => any): void;
+    function off(event: 'apply', listener): void;
+    function off(event: 'clear', listener): void;
+  }
+  
+  let __llver: string;
+}
 ```
