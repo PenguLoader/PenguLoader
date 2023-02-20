@@ -23,16 +23,17 @@ static const std::unordered_set<wstring> known_assets
 };
 
 static const auto SCRIPT_IMPORT_CSS = u8R"(
-if (document.readyState !== 'complete')
-    await new Promise(res => window.addEventListener('load', res));
+(async function () {
+    if (document.readyState !== 'complete')
+        await new Promise(res => window.addEventListener('load', res));
 
-const url = import.meta.url.replace(/\?.*$/, '');
-const style = document.createElement('style');
-style.setAttribute('type', 'text/css');
-style.setAttribute('data-url', url);
-style.textContent = window.requireFile(url);
+    const url = import.meta.url.replace(/\?.*$/, '');
+    const link = document.createElement('link');
+    link.setAttribute('rel', 'stylesheet');
+    link.setAttribute('href', url);
 
-document.head.appendChild(style);
+    document.head.appendChild(link);
+})();
 )";
 
 static const auto SCRIPT_IMPORT_JSON = u8R"(
