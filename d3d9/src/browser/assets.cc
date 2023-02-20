@@ -1,13 +1,117 @@
 #include "../internal.h"
+#include <regex>
 
 // BROWSER PROCESS ONLY.
+
+static const auto SCRIPT_IMPORT_CSS = u8R"(
+if (document.readyState !== 'complete')
+    await new Promise(res => window.addEventListener('load', res));
+
+const url = import.meta.url.replace(/\?.*$/, '');
+const style = document.createElement('style');
+style.setAttribute('type', 'text/css');
+style.setAttribute('data-url', url);
+style.textContent = window.requireFile(url);
+
+document.head.appendChild(style);
+)";
+
+static const auto SCRIPT_IMPORT_JSON = u8R"(
+const url = import.meta.url.replace(/\?.*$/, '');
+const content = window.requireFile(url);
+export default JSON.parse(content);
+)";
+
+static const auto SCRIPT_IMPORT_RAW = u8R"(
+const url = import.meta.url.replace(/\?.*$/, '');
+const content = window.requireFile(url);
+export default content;
+)";
+
+static const auto SCRIPT_IMPORT_URL = u8R"(
+const url = import.meta.url.replace(/\?.*$/, '');
+export default url;
+)";
+
+enum ImportType
+{
+    IMPORT_DEFAULT = 0,
+    IMPORT_CSS,
+    IMPORT_JSON,
+    IMPORT_RAW,
+    IMPORT_URL
+};
+
+class ModuleStreamReader : public CefRefCount<cef_stream_reader_t>
+{
+public:
+    ModuleStreamReader(ImportType type) : CefRefCount(this), data_{}
+    {
+        cef_stream_reader_t::read = _read;
+        cef_stream_reader_t::seek = _seek;
+        cef_stream_reader_t::tell = _tell;
+
+        switch (type)
+        {
+            case IMPORT_CSS:
+                data_.assign(SCRIPT_IMPORT_CSS);
+                break;
+            case IMPORT_JSON:
+                data_.assign(SCRIPT_IMPORT_JSON);
+                break;
+            case IMPORT_RAW:
+                data_.assign(SCRIPT_IMPORT_RAW);
+                break;
+            case IMPORT_URL:
+                data_.assign(SCRIPT_IMPORT_URL);
+                break;
+        }
+
+        stream_ = CefStreamReader_CreateForData(
+            const_cast<char *>(data_.c_str()), data_.length());
+    }
+
+    ~ModuleStreamReader()
+    {
+        data_.clear();
+        if (stream_ != nullptr)
+            stream_->base.release(&stream_->base);
+    }
+
+private:
+    string data_;
+    cef_stream_reader_t *stream_;
+
+    static size_t CEF_CALLBACK _read(struct _cef_stream_reader_t* _,
+        void* ptr,
+        size_t size,
+        size_t n)
+    {
+        auto self = static_cast<ModuleStreamReader *>(_);
+        return self->stream_->read(self->stream_, ptr, size, n);
+    }
+
+    static int CEF_CALLBACK _seek(struct _cef_stream_reader_t* _,
+        int64 offset,
+        int whence)
+    {
+        auto self = static_cast<ModuleStreamReader *>(_);
+        return self->stream_->seek(self->stream_, offset, whence);
+    }
+
+    static int64 CEF_CALLBACK _tell(struct _cef_stream_reader_t* _)
+    {
+        auto self = static_cast<ModuleStreamReader *>(_);
+        return self->stream_->tell(self->stream_);
+    }
+};
 
 // Custom resource handler for local assets.
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
 public:
     AssetsResourceHandler(const wstring &path, bool plugin) : CefRefCount(this),
-        path_(path), stream_(nullptr), length_(0), is_plugin_(plugin)
+        path_(path), mime_{}, stream_(nullptr), length_(0), is_plugin_(plugin)
     {
         cef_resource_handler_t::open = _Open;
         cef_resource_handler_t::process_request = _ProcessRequest;
@@ -16,11 +120,6 @@ public:
         cef_resource_handler_t::read = _Read;
         cef_resource_handler_t::read_response = _ReadResponse;
         cef_resource_handler_t::cancel = _Cancel;
-
-        // Remove query part.
-        size_t pos;
-        if ((pos = path_.find_last_of(L'?')) != string::npos)
-            path_ = path_.substr(0, pos);
     }
 
     ~AssetsResourceHandler()
@@ -33,62 +132,117 @@ private:
     cef_stream_reader_t *stream_;
     int64 length_;
     wstring path_;
+    wstring mime_;
     bool is_plugin_;
 
-    static int CEF_CALLBACK _Open(cef_resource_handler_t* _,
-        struct _cef_request_t* request,
-        int* handle_request,
-        struct _cef_callback_t* callback)
+    int CEF_CALLBACK Open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
     {
-        *handle_request = 1;
+        size_t pos;
+        wstring query_part{};
+        wstring path_ = this->path_;
+        bool js_mime = false;
 
-        auto self = static_cast<AssetsResourceHandler *>(_);
-        auto &path = self->path_;
-        auto &stream = self->stream_;
+        // Check query part.
+        if ((pos = path_.find(L'?')) != string::npos)
+        {
+            // Extract it.
+            query_part = path_.substr(pos + 1);
+            // Remove it from path.
+            path_ = path_.substr(0, pos);
+        }
 
         // Get final path.
-        if (self->is_plugin_)
+        if (is_plugin_)
         {
-            path = config::getPluginsDir().append(path);
+            path_ = config::getPluginsDir().append(path_);
 
             // Trailing slash.
-            if (path[path.length() - 1] == '/' || path[path.length() - 1] == L'\\')
+            if (path_[path_.length() - 1] == '/' || path_[path_.length() - 1] == L'\\')
             {
-                path.append(L"index.js");
+                js_mime = true;
+                path_.append(L"index.js");
             }
             else
             {
-                size_t pos = path.find_last_of(L"//\\");
-                wstring sub = path.substr(pos + 1);
+                size_t pos = path_.find_last_of(L"//\\");
+                wstring sub = path_.substr(pos + 1);
 
                 // No extension.
                 if (sub.find_last_of(L'.') == wstring::npos)
                 {
                     // peek .js
-                    if (utils::fileExist(path + L".js"))
-                        path.append(L".js");
+                    if (js_mime = utils::fileExist(path_ + L".js"))
+                        path_.append(L".js");
                     // peek folder
-                    else if (utils::dirExist(path))
-                        path.append(L"/index.js");
+                    else if (js_mime = utils::dirExist(path_))
+                        path_.append(L"/index.js");
+                }
+            }
+
+            if (utils::fileExist(path_))
+            {
+                auto import = IMPORT_DEFAULT;
+
+                CefScopedStr referer{ request->get_referrer_url(request) };
+                // Detect relative plugin imports by referer //plugins.
+                if (!referer.empty() && !wcsncmp(referer.str, L"https://plugins/", 16))
+                {
+                    static const std::wregex css_pattern{ L"\\.css$" };
+                    static const std::wregex json_pattern{ L"\\.json$" };
+                    static const std::wregex raw_pattern{ L"\\braw\\b" };
+                    static const std::wregex url_pattern{ L"\\burl\\b" };
+
+                    if (std::regex_search(query_part, url_pattern))
+                        import = IMPORT_URL;
+                    else if (std::regex_search(query_part, raw_pattern))
+                        import = IMPORT_RAW;
+                    else if (std::regex_search(path_, css_pattern))
+                        import = IMPORT_CSS;
+                    else if (std::regex_search(path_, json_pattern))
+                        import = IMPORT_JSON;
+                }
+
+                if (import != IMPORT_DEFAULT)
+                {
+                    js_mime = true;
+                    stream_ = new ModuleStreamReader(import);
+                }
+                else
+                {
+                    stream_ = CefStreamReader_CreateForFile(&CefStr(path_));
                 }
             }
         }
         else
         {
-            path = config::getAssetsDir().append(path);
+            path_ = config::getAssetsDir().append(path_);
+            stream_ = CefStreamReader_CreateForFile(&CefStr(path_));
         }
 
-        stream = CefStreamReader_CreateForFile(&CefStr(path));
-
-        if (stream != nullptr)
+        if (stream_ != nullptr)
         {
-            stream->seek(stream, 0, SEEK_END);
-            self->length_ = stream->tell(stream);
-            stream->seek(stream, 0, SEEK_SET);
+            stream_->seek(stream_, 0, SEEK_END);
+            length_ = stream_->tell(stream_);
+            stream_->seek(stream_, 0, SEEK_SET);
+
+            if (js_mime)
+            {
+                // Already known JavaScript module.
+                mime_.assign(L"text/javascript");
+            }
+            else if ((pos = path_.find_last_of(L'.')) != string::npos)
+            {
+                // Get MIME type from file extension.
+                auto ext = path_.substr(pos + 1);
+                CefScopedStr type{ CefGetMimeType(&CefStr(ext)) };
+                if (!type.empty())
+                    mime_.assign(type.str, type.length);
+            }
         }
 
+        *handle_request = true;
         callback->cont(callback);
-        return 1;
+        return true;
     }
 
     static void CEF_CALLBACK _GetResponseHeaders(cef_resource_handler_t* _,
@@ -105,30 +259,21 @@ private:
             response->set_error(response, ERR_FILE_NOT_FOUND);
 
             *response_length = -1;
-            return;
         }
-
-        // Extract extension to get MIME type.
-        size_t pos;
-        if ((pos = self->path_.find_last_of(L'.')) != string::npos)
+        else
         {
-            auto ext = self->path_.substr(pos + 1);
-            auto type = CefGetMimeType(&CefStr(ext));
+            response->set_status(response, 200);
+            response->set_error(response, ERR_NONE);
 
-            if (type != nullptr)
-            {
-                response->set_mime_type(response, type);
-                CefString_UserFree_Free(type);
-            }
+            // Set MIME type.
+            if (!self->mime_.empty())
+                response->set_mime_type(response, &CefStr(self->mime_));
+
+            response->set_header_by_name(response, &"Access-Control-Allow-Origin"_s, &"*"_s, 1);
+            response->set_header_by_name(response, &"Cache-Control"_s, &"public, max-age=86400"_s, 1);
+
+            *response_length = self->length_;
         }
-
-        response->set_status(response, 200);
-        response->set_error(response, ERR_NONE);
-
-        response->set_header_by_name(response, &"Access-Control-Allow-Origin"_s, &"*"_s, 1);
-        response->set_header_by_name(response, &"Cache-Control"_s, &"public, max-age=86400"_s, 1);
-
-        *response_length = self->length_;
     }
 
     static int CEF_CALLBACK _Read(cef_resource_handler_t* _,
@@ -150,6 +295,14 @@ private:
         } while (read != 0 && *bytes_read < bytes_to_read);
 
         return (*bytes_read > 0);
+    }
+
+    static int CEF_CALLBACK _Open(cef_resource_handler_t* _,
+        struct _cef_request_t* request,
+        int* handle_request,
+        struct _cef_callback_t* callback)
+    {
+        return static_cast<AssetsResourceHandler *>(_)->Open(request, handle_request, callback);
     }
 
     // Deprecated

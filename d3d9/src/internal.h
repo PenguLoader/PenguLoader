@@ -14,8 +14,6 @@
 #define NOINLINE __declspec(noinline)
 #endif
 
-#define HOOK_METHOD(fn, ...) __fastcall fn(void *EDX, void *ECX, __VA_ARGS__)
-
 #ifndef COUNT_OF
 #define COUNT_OF(arr) (sizeof(arr) / sizeof(*arr))
 #endif
@@ -106,6 +104,10 @@ struct CefScopedStr : CefStrBase
     explicit CefScopedStr(cef_string_userfree_t uf);
     ~CefScopedStr();
 
+    const cef_string_t *get() const {
+        return str_;
+    }
+
 private:
     cef_string_userfree_t str_;
 };
@@ -118,6 +120,7 @@ extern decltype(&cef_string_multimap_free) CefStringMultimap_Free;
 extern decltype(&cef_register_extension) CefRegisterExtension;
 extern decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
 extern decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;
+extern decltype(&cef_stream_reader_create_for_data) CefStreamReader_CreateForData;
 extern decltype(&cef_process_message_create) CefProcessMessage_Create;
 extern decltype(&cef_v8context_get_current_context) CefV8Context_GetCurrentContext;
 
@@ -173,7 +176,6 @@ namespace utils
     bool readFile(const wstring &path, string &out);
 
     void hookFunc(void **orig, void *hooked);
-    void hookFuncs(void **funcs[], int count);
     void *scanInternal(void *image, size_t length, const string &pattern);
 
     void openFilesExplorer(const wstring &path);

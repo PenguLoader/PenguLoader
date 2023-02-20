@@ -2,9 +2,6 @@
 #include "include/cef_version.h"
 #include <Psapi.h>
 #pragma comment(lib, "version.lib")
-#if _DEBUG
-#pragma comment(lib, "libcef.lib")
-#endif
 
 decltype(&cef_get_mime_type) CefGetMimeType;
 decltype(&cef_request_create) CefRequest_Create;
@@ -13,6 +10,7 @@ decltype(&cef_string_multimap_free) CefStringMultimap_Free;
 decltype(&cef_register_extension) CefRegisterExtension;
 decltype(&cef_dictionary_value_create) CefDictionaryValue_Create;
 decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFile;
+decltype(&cef_stream_reader_create_for_data) CefStreamReader_CreateForData;
 decltype(&cef_process_message_create) CefProcessMessage_Create;
 decltype(&cef_v8context_get_current_context) CefV8Context_GetCurrentContext;
 
@@ -72,7 +70,7 @@ static void WarnInvalidVersion()
 }
 
 static void *Old_GetBackgroundColor = nullptr;
-static NOINLINE cef_color_t HOOK_METHOD(Hooked_GetBackgroundColor,
+static NOINLINE cef_color_t __fastcall Hooked_GetBackgroundColor(void *, void *,
     cef_browser_settings_t *settings, cef_state_t state)
 {
     return 0; // fully transparent :)
@@ -99,6 +97,7 @@ bool LoadLibcefDll()
         (LPVOID &)CefRegisterExtension = GetProcAddress(libcef, "cef_register_extension");
         (LPVOID &)CefDictionaryValue_Create = GetProcAddress(libcef, "cef_dictionary_value_create");
         (LPVOID &)CefStreamReader_CreateForFile = GetProcAddress(libcef, "cef_stream_reader_create_for_file");
+        (LPVOID &)CefStreamReader_CreateForData = GetProcAddress(libcef, "cef_stream_reader_create_for_data");
         (LPVOID &)CefProcessMessage_Create = GetProcAddress(libcef, "cef_process_message_create");
         (LPVOID &)CefV8Context_GetCurrentContext = GetProcAddress(libcef, "cef_v8context_get_current_context");
 

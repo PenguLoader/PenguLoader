@@ -115,16 +115,18 @@ bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v
 
             size_t pos = _path.find(L"//");
             if (pos != string::npos)
-                _path = _path.substr(pos);
+                _path = _path.substr(pos + 2);
 
             if (_path.length() > 1 && _path[0] == L'/')
                 _path = _path.substr(1);
 
-            _path = config::getLoaderDir().assign(_path);
+            _path = config::getLoaderDir()
+                .append(L"/").append(_path);
 
             if (utils::readFile(_path, content))
             {
                 retval = CefV8Value_CreateString(&CefStr(content));
+                return true;
             }
         }
 

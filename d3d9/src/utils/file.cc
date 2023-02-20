@@ -26,7 +26,7 @@ bool utils::readFile(const std::wstring &path, std::string &out)
     bool result = false;
     std::ifstream input(path, std::ios::binary);
 
-    if (result = input.good())
+    if (result = !input.fail())
     {
         out.assign((std::istreambuf_iterator<char>(input)),
             (std::istreambuf_iterator<char>()));
