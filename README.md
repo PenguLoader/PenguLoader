@@ -1,6 +1,8 @@
+<br>
+
 <div align="center">
   <a href="https://leagueloader.app">
-    <img src="https://user-images.githubusercontent.com/38210249/218244483-4f6fe136-fa7b-4732-9822-f41493c2f68a.png" width="144"/>
+    <img src="https://user-images.githubusercontent.com/38210249/220154358-dde333dd-4847-4fff-9cf3-a56f80f81d29.png" width="144"/>
   </a>
   <h1 align="center">League Loader</h1>
   <p align="center">
@@ -66,37 +68,41 @@ Now you'll see like above this, press:
 
 ## JavaScript plugins
 
-To add a plugin, just create a `.js` file in the plugins folder.
+To add your first plugin, just create a folder e.g `your-plugin` in `plugins` folder. Then create an `index.js` in your plugin folder.
+
+```
+plugins/
+  |__your-plugin/
+    |__index.js
+```
+
+This `index.js` is an entry point of your plugin and will be executed when League Client ready. Put this line to your index, you will see the log in console.
 
 ```js
-// hello.js
 console.log('Hello, League Client!')
 ```
 
-All .js files (except filename starts with underscore or dot) in root of plugins folder and index.js in top-level subfolder will be executed after League ready.
+To load other scripts, just use [`import`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import):
 
 ```
 plugins/
-  |__ _util.js      
-  |__demo.js       ; will be executed
-  |__my-plugin/
-    |__index.js    ; will be executed
+  |__your-plugin/
+    |__index.js
+    |__utils.js
 ```
 
-We recommend to use modern JavaScript editors like **Visual Studio Code** or **WebStorm** to develop your plugins, they support intellisense, linter and autocomplete. Remember that League Client is a web browser based, your should use front-end web technology only.
+```js
+// utils.js
+export default {
+  greet: () => console.log('Hello!')
+}
 
-For plugin which contains resources e.g images, video, fonts, etc, we recommend to put these into subfolder.
-
+// index.js
+import utils from './utils'
+utils.greet();
 ```
-plugins/
-  |__awesome-plugin/
-    |__assets/
-      |__background.png
-      |__avatar.gif
-      ..
-    |__index.js   <-- entry
-    ..
-````
+
+> We recommend to use modern JavaScript editors like **Visual Studio Code** or **WebStorm** to develop your plugins, they support intellisense, linter and autocomplete. Remember that League Client is a web browser based, your should use front-end web technology only.
 
 ### ES Modules
 
