@@ -9,8 +9,10 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
     if (!utils::dirExist(pluginsDir))
         return;
 
+    std::wstring script = L"(() => { ";
+
     // Iterate through plugins folder.
-    utils::readDir(pluginsDir + L"\\*", [frame, &pluginsDir](const wstring &name, bool isDir)
+    utils::readDir(pluginsDir + L"\\*", [&script, &pluginsDir](const wstring &name, bool isDir)
     {
         // Skip name starts with underscore and dot.
         if (name[0] == '_' || name[0] == '.')
@@ -24,18 +26,15 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
         if (isDir && !utils::fileExist(pluginsDir + L"\\" + name + L"\\index.js"))
             return;
 
-        // Create require script.
-        std::wstring script{};
-        script += L"__require(\"";
-
-        script += isDir ? name
-            : name.substr(0, name.length() - 3); // Remove .js extension.
-
-        script += L"\");";
-
-        // Execute.
-        frame->execute_java_script(frame, &CefStr(script), &""_s, 0);
+        script += L"import(\"//plugins/";
+        script += isDir ? (name + L"/index.js") : name;
+        script += L"\"); ";
     });
+
+    script.append(L"})();");
+
+    // Execute.
+    frame->execute_java_script(frame, &CefStr(script), &""_s, 1);
 }
 
 enum RequireType
