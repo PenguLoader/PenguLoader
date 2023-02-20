@@ -105,5 +105,32 @@ bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v
 //        return true;
 //    }
 
+    if (fn == L"RequireFile")
+    {
+        if (args.size() > 0 && args[0]->is_string(args[0]))
+        {
+            string content{};
+            CefScopedStr path{ args[0]->get_string_value(args[0]) };
+            wstring _path{ path.str, path.length };
+
+            size_t pos = _path.find(L"//");
+            if (pos != string::npos)
+                _path = _path.substr(pos);
+
+            if (_path.length() > 1 && _path[0] == L'/')
+                _path = _path.substr(1);
+
+            _path = config::getLoaderDir().assign(_path);
+
+            if (utils::readFile(_path, content))
+            {
+                retval = CefV8Value_CreateString(&CefStr(content));
+            }
+        }
+
+        retval = CefV8Value_CreateNull();
+        return true;
+    }
+
     return false;
 }
