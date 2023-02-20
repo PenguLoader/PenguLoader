@@ -1,7 +1,26 @@
 #include "../internal.h"
 #include <regex>
+#include <unordered_set>
 
 // BROWSER PROCESS ONLY.
+
+static const std::unordered_set<wstring> known_assets
+{
+    // images
+    L"bmp", L"png",
+    L"jpg", L"jpeg", L"jfif",
+    L"pjpeg", L"pjp", L"gif",
+    L"svg", L"ico", L"webp",
+
+    // media
+    L"avif", L"mp4", L"webm",
+    L"ogg", L"mp3", L"wav",
+    L"flac", L"aac",
+
+    // fonts
+    L"woff", L"woff2",
+    L"eot", L"ttf", L"otf",
+};
 
 static const auto SCRIPT_IMPORT_CSS = u8R"(
 if (document.readyState !== 'complete')
@@ -187,8 +206,6 @@ private:
                 // Detect relative plugin imports by referer //plugins.
                 if (!referer.empty() && !wcsncmp(referer.str, L"https://plugins/", 16))
                 {
-                    static const std::wregex css_pattern{ L"\\.css$" };
-                    static const std::wregex json_pattern{ L"\\.json$" };
                     static const std::wregex raw_pattern{ L"\\braw\\b" };
                     static const std::wregex url_pattern{ L"\\burl\\b" };
 
@@ -196,10 +213,16 @@ private:
                         import = IMPORT_URL;
                     else if (std::regex_search(query_part, raw_pattern))
                         import = IMPORT_RAW;
-                    else if (std::regex_search(path_, css_pattern))
-                        import = IMPORT_CSS;
-                    else if (std::regex_search(path_, json_pattern))
-                        import = IMPORT_JSON;
+                    else if ((pos = path_.find_last_of(L'.')) != string::npos)
+                    {
+                        auto ext = path_.substr(pos + 1);
+                        if (ext == L"css")
+                            import = IMPORT_CSS;
+                        else if (ext == L"json")
+                            import = IMPORT_JSON;
+                        else if (known_assets.find(ext) != known_assets.end())
+                            import = IMPORT_URL;
+                    }
                 }
 
                 if (import != IMPORT_DEFAULT)
