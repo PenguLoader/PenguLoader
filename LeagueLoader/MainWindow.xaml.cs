@@ -6,6 +6,7 @@ using System.Windows;
 using ModernWpf;
 using LeagueLoader.Main;
 using System.Windows.Media;
+using System.Windows.Interop;
 
 namespace LeagueLoader
 {
@@ -24,6 +25,17 @@ namespace LeagueLoader
             btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
 
             txtVersion.Text = $"v{Version.VERSION} build {Version.BUILD_NUMBER}";
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            Window window = Window.GetWindow(this);
+            var hwnd = new WindowInteropHelper(window).Handle;
+
+            var oldEx = Native.GetWindowLongPtr(hwnd, -0x14).ToInt32();
+            Native.SetWindowLongPtr(hwnd, -0x14, (IntPtr)(oldEx & ~0x80));
         }
 
         private void BtnTheme_Click(object sender, RoutedEventArgs e)
