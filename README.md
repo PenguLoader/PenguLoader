@@ -8,7 +8,7 @@
   </p>
   <p>
     <a href="https://chat.leagueloader.app">
-      <img src ="https://img.shields.io/badge/-Join%20Discord-7289da.svg?&style=for-the-badge&logo=Discord&logoColor=white"/>
+      <img src ="https://img.shields.io/badge/-Join%20Discord-5c5fff.svg?&style=for-the-badge&logo=Discord&logoColor=white"/>
     </a>
     <a href="https://github.com/nomi-san/league-loader">
       <img src="https://img.shields.io/github/stars/nomi-san/league-loader.svg?style=for-the-badge" />
@@ -78,98 +78,99 @@ All .js files (except filename starts with underscore or dot) in root of plugins
 ```
 plugins/
   |__ _util.js      
-  |__ demo.js       ; will be executed
-  |__ my-plugin/
-    |__ index.js    ; will be executed
+  |__demo.js       ; will be executed
+  |__my-plugin/
+    |__index.js    ; will be executed
 ```
 
 We recommend to use modern JavaScript editors like **Visual Studio Code** or **WebStorm** to develop your plugins, they support intellisense, linter and autocomplete. Remember that League Client is a web browser based, your should use front-end web technology only.
 
-### CommonJS modules
+For plugin which contains resources e.g images, video, fonts, etc, we recommend to put these into subfolder.
 
-We provided a simple implementation to support CommonJS modules. Each plugin file is a module, `require`, `global` and `module` are predefined.
+```
+plugins/
+  |__awesome-plugin/
+    |__assets/
+      |__background.png
+      |__avatar.gif
+      ..
+    |__index.js   <-- entry
+    ..
+````
 
+### ES Modules
+
+Top-level await:
 ```js
-// _util.js
-module.exports = {
-    greet: () => console.log('Hello, world')
-}
-
-// demo.js
-const util = require('./_util')
-util.greet()
+let data = await fetch('https://...').then(res => res.text()); 
 ```
 
-We also support to require JSON and text files.
+Import a ESM library from CDN:
 ```js
-require('data.json') // -> parsed JSON
-require('data.raw')  // -> string
+import axios from 'https://esm.run/axios';
+axios.get('https://...');
 ```
 
-To store data globally, you can use `window` object or `global`.
+Assets import:
+
 ```js
-window.my_str = 'ABC'
-global.my_num = 100
+import './theme.css';
+// auto-inject CSS
+
+import data from './data.json';
+// parsed JSON data
+
+import bgImage from './assets/background.png';
+// path to asset
 ```
 
-To open **DevTools**, just call:
+Explicit import:
 ```js
-window.openDevTools()
+import QuantifyFontUrl from './assets/Quantify.ttf?url';
+// https://plugins/your-plugin/assets/Quantify.ttf
+
+import rawData from './my-data.txt';
+// content of my-data.txt in string
 ```
 
-To reload plugins, just reload the Client (or Ctrl + R in DevTools):
-```js
-window.location.reload()
-```
 
-Check out [API_DOCS](./API_DOCS.md) to get more APIs and [league-loader.js](/bin/plugins/league-loader.js) for example plugin.
 
 ### Theme the League Client
 
-To change the default style, just add your CSS:
+Inject custom CSS to override default League's style.
+
+From your plugin entry, use import to add:
 
 ```js
-function addCss(filename) {
-  const style = document.createElement('link')
-  style.href = filename
-  style.type = 'text/css'
-  style.rel = 'stylesheet'
-  document.body.append(style)
+import './theme.css';
+```
+
+This line will inject CSS code from `theme.css` next to your `index.js`.
+
+To use remote theme, e.g from `https://example.com/theme.css`:
+
+```js
+function addCssLink(url) {
+  const link = document.createElement('link');
+  link.href = url;
+  link.type = 'text/css';
+  link.rel = 'stylesheet';
+  document.head.appendChild(link);
 }
 
 window.addEventListener('load', () => {
-  addCss('https://webdevtestbutch.000webhostapp.com/assets/Noxius.css')
-})
-```
-
-To use local CSS file (see [Access local resources](#access-local-resources)):
-
-```js
-addCss('//assets/theme.css')
-```
-
-You can also use CSS code by requiring it from plugins folder:
-
-```js
-function insertCss(css) {
-  const style = document.createElement('style')
-  style.textContent = css
-  document.body.append(style)
-}
-
-window.addEventListener('load', () => {
-  insertCss(require('./theme.css'))
-})
+  addCssLink('https://example.com/theme.css');
+});
 ```
 
 ### LCU API requests
 
-Just use `fetch` to make a LCU request:
+Just use `fetch` to make LCU requests:
 ```js
 async function acceptMatchFound() {
   await fetch('/lol-matchmaking/v1/ready-check/accept', {
     method: 'POST'  
-  })
+  });
 }
 ```
 
@@ -177,7 +178,7 @@ async function acceptMatchFound() {
 
 When the websocket ready, this link tag will appear:
 ```html
-<link rel="riot:plugins:websocket" href="wss://riot:hq5DDz5c8uLLc-dMRC1HGQ@127.0.0.1:50302/">
+<link rel="riot:plugins:websocket" href="wss://riot:abcDEF0123XYZ@127.0.0.1:12345/">
 ```
 
 Call this function to subscribe API event:
@@ -194,38 +195,6 @@ function subscribe() {
   }
 }
 ```
-
-### Native ESM supports
-
-Plugin scripts are loaded as classic module, so you cannot use top-level `import`.
-
-Let's wrap your code:
-
-```js
-(() => import('https://your-cdn.com/plugin.js'))();
-```
-
-Then use ESM in your plugin module:
-```js
-// https://your-cdn.com/plugin.js
-import axios from 'https://cdn.skypack.dev/axios'
-axios.get(...)
-```
-
-To import Axios locally, just use `import` function:
-```js
-async function test() {
-  const { default: axios } = await import('https://cdn.skypack.dev/axios')
-  const { data } = await axios.get('/performance/v1/memory')
-  console.log(data)
-}
-```
-
-Recommended CDNs:
-- https://www.jsdelivr.com/esm
-- https://www.skypack.dev/
-- https://esm.sh/
-- https://unpkg.com/
 
 ### Faster UI development
 
