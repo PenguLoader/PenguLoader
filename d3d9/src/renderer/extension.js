@@ -108,6 +108,11 @@ var Effect = new function () {
     };
 };
 
+var requireFile = function (path) {
+    native function RequireFile();
+    return RequireFile(path);
+};
+
 //var __require;
 
 //(function () {
