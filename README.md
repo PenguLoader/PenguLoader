@@ -129,11 +129,11 @@ Explicit import:
 import QuantifyFontUrl from './assets/Quantify.ttf?url';
 // https://plugins/your-plugin/assets/Quantify.ttf
 
-import rawData from './my-data.txt';
+import rawData from './my-data.txt?raw';
 // content of my-data.txt in string
 ```
 
-
+> With `?raw`, your text files must be saved with UTF8 encoding.
 
 ### Theme the League Client
 
