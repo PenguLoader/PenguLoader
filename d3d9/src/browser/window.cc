@@ -24,7 +24,7 @@ static LRESULT CALLBACK MsgWin_WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp
                     break;
                 case HK_RELOAD:
                     if (CLIENT_BROWSER != nullptr)
-                        CLIENT_BROWSER->reload(CLIENT_BROWSER);
+                        CLIENT_BROWSER->reload_ignore_cache(CLIENT_BROWSER);
                     break;
             }
 
