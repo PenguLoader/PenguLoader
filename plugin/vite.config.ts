@@ -28,7 +28,7 @@ async function emptyDir(path) {
   await mkdir(path, { recursive: true });
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
@@ -40,7 +40,7 @@ export default defineConfig({
   server: { https: true },
   plugins: [
     preact(),
-    mkcert(),
+    (mode === 'development') && mkcert(),
     cssInjectedByJsPlugin(),
     {
       name: 'll-plugin-1',
@@ -75,4 +75,4 @@ export default defineConfig({
       },
     }
   ]
-});
+}));

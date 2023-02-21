@@ -44,7 +44,7 @@ jobs:
         run: |
           cd plugin
           pnpm install
-          pnpm build --deno
+          pnpm build
           cd ..
         
       - name: Upload build outputs
