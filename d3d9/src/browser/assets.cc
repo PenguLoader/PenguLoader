@@ -32,7 +32,7 @@ static const auto SCRIPT_IMPORT_CSS = u8R"(
     link.setAttribute('rel', 'stylesheet');
     link.setAttribute('href', url);
 
-    document.head.appendChild(link);
+    document.body.appendChild(link);
 })();
 )";
 
