@@ -130,8 +130,13 @@ private:
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
 public:
-    AssetsResourceHandler(const wstring &path, bool plugin) : CefRefCount(this),
-        path_(path), mime_{}, stream_(nullptr), length_(0), is_plugin_(plugin)
+    AssetsResourceHandler(const wstring &path, bool plugin) : CefRefCount(this)
+        , path_(path)
+        , mime_{}
+        , stream_(nullptr)
+        , length_(0)
+        , is_plugin_(plugin)
+        , no_cache_(false)
     {
         cef_resource_handler_t::open = _Open;
         cef_resource_handler_t::process_request = _ProcessRequest;
@@ -154,6 +159,7 @@ private:
     wstring path_;
     wstring mime_;
     bool is_plugin_;
+    bool no_cache_;
 
     int CEF_CALLBACK Open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
     {
@@ -253,6 +259,7 @@ private:
             {
                 // Already known JavaScript module.
                 mime_.assign(L"text/javascript");
+                no_cache_ = true;
             }
             else if ((pos = path_.find_last_of(L'.')) != string::npos)
             {
@@ -294,7 +301,11 @@ private:
                 response->set_mime_type(response, &CefStr(self->mime_));
 
             response->set_header_by_name(response, &"Access-Control-Allow-Origin"_s, &"*"_s, 1);
-            response->set_header_by_name(response, &"Cache-Control"_s, &"public, max-age=86400"_s, 1);
+
+            if (self->no_cache_ || self->mime_ == L"text/javascript")
+                response->set_header_by_name(response, &"Cache-Control"_s, &"no-cache, no-store, must-revalidate"_s, 1);
+            else
+                response->set_header_by_name(response, &"Cache-Control"_s, &"public, max-age=86400"_s, 1);
 
             *response_length = self->length_;
         }

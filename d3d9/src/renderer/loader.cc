@@ -1,4 +1,5 @@
 #include "../internal.h"
+#include <chrono>
 
 // RENDERER PROCESS ONLY.
 
@@ -9,10 +10,14 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
     if (!utils::dirExist(pluginsDir))
         return;
 
+    using namespace std::chrono;
+    auto current_time = system_clock::now();
+    auto current_ms = duration_cast<milliseconds>(current_time.time_since_epoch()).count();
+
     std::wstring script = L"(() => { ";
 
     // Iterate through plugins folder.
-    utils::readDir(pluginsDir + L"\\*", [&script, &pluginsDir](const wstring &name, bool isDir)
+    utils::readDir(pluginsDir + L"\\*", [&script, &pluginsDir, &current_ms](const wstring &name, bool isDir)
     {
         // Skip name starts with underscore and dot.
         if (name[0] == '_' || name[0] == '.')
@@ -26,15 +31,16 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
         if (isDir && !utils::fileExist(pluginsDir + L"\\" + name + L"\\index.js"))
             return;
 
-        script += L"import(\"//plugins/";
-        script += isDir ? (name + L"/index.js") : name;
-        script += L"\"); ";
+        script.append(L"import(\"//plugins/");
+        script.append(isDir ? (name + L"/index.js") : name);
+        script.append(L"?t=" + std::to_wstring(current_ms));
+        script.append(L"&v=2\"); ");
     });
 
     script.append(L"})();");
 
     // Execute.
-    frame->execute_java_script(frame, &CefStr(script), &""_s, 1);
+    frame->execute_java_script(frame, &CefStr(script), &"https://plugins/"_s, 1);
 }
 
 //enum RequireType
