@@ -1,0 +1,238 @@
+#league-loader-plugin {
+
+  .modal {
+    font-size: 96%;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif,
+      "Apple Color Emoji", "Segoe UI Emoji", Segoe UI Symbol, "Noto Color Emoji";
+    -webkit-font-smoothing: subpixel-antialiased;
+
+    &[dark-mode=true] {
+      .modal__container {
+        color: #ccc;
+        background-color: #202020;
+      }
+    }
+  }
+
+  code {
+    background-color: #f7f7f930;
+    border-radius: 0.25rem;
+    color: #007acc;
+    font-family: Source Code Pro, Consolas, monaco, monospace;
+    padding: .2rem .4rem;
+    font-weight: 600;
+  }
+
+  span.version {
+    font-family: Source Code Pro, Consolas, monaco, monospace;
+  }
+
+  a {
+    text-decoration: none;
+    color: #007acc;
+    font-weight: 500;
+  }
+
+  a:hover {
+    color: #2496e2;
+  }
+
+  a[target=_blank]::after {
+    content: '↗';
+    margin-left: .2rem;
+    font-weight: 400;
+  }
+
+  .modal__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .modal__container {
+    background-color: #fff;
+    padding: 30px;
+    width: 500px;
+    border-radius: 4px;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .modal__header,
+  .modal__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal__title {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1.25;
+    color: #007acc;
+    box-sizing: border-box;
+  }
+
+  .modal__close {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .modal__header .modal__close:before {
+    content: "\2715";
+  }
+
+  .modal__content {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+  }
+
+  .modal__btn {
+    font-size: .875rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+    background-color: #e6e6e6;
+    color: rgba(0, 0, 0, .8);
+    border-radius: .25rem;
+    border-style: none;
+    border-width: 0;
+    cursor: pointer;
+    text-transform: none;
+    line-height: 1.15;
+    margin: 0;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    transition: -webkit-transform .25s ease-out;
+    transition: transform .25s ease-out;
+    transition: transform .25s ease-out, -webkit-transform .25s ease-out;
+
+    &:focus,
+    &:hover {
+      background-color: #1e9aec;
+    }
+  }
+
+  .modal__btn-primary {
+    background-color: #007acc;
+    color: #fff;
+  }
+
+  @keyframes mmfadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes mmfadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes mmslideIn {
+    from {
+      transform: translateY(15%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes mmslideOut {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-10%);
+    }
+  }
+
+  .micromodal-slide {
+    display: none;
+  }
+
+  .micromodal-slide.is-open {
+    display: block;
+  }
+
+  .micromodal-slide[aria-hidden="false"] .modal__overlay {
+    animation: mmfadeIn .3s cubic-bezier(0.0, 0.0, 0.2, 1);
+  }
+
+  .micromodal-slide[aria-hidden="false"] .modal__container {
+    animation: mmslideIn .3s cubic-bezier(0, 0, .2, 1);
+  }
+
+  .micromodal-slide[aria-hidden="true"] .modal__overlay {
+    animation: mmfadeOut .3s cubic-bezier(0.0, 0.0, 0.2, 1);
+  }
+
+  .micromodal-slide[aria-hidden="true"] .modal__container {
+    animation: mmslideOut .3s cubic-bezier(0, 0, .2, 1);
+  }
+
+  input[type=checkbox] {
+    font-size: 0;
+    position: relative;
+    cursor: pointer;
+    width: 0;
+    margin-right: 24px;
+
+    &::before,
+    &:checked::before,
+    &:checked::after {
+      content: '';
+      position: absolute;
+      display: block;
+    }
+
+    &::before {
+      width: 16px;
+      height: 16px;
+      top: 0;
+      left: 0;
+      background-color: #e9e9e9;
+      border-radius: 3px;
+    }
+
+    &:checked::before {
+      width: 16px;
+      height: 16px;
+      top: 0;
+      left: 0;
+      background-color: #1E80EF;
+      border-radius: 3px;
+    }
+
+    &:checked::after {
+      width: 4px;
+      height: 8px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      -webkit-transform: rotate(45deg);
+      -ms-transform: rotate(45deg);
+      transform: rotate(45deg);
+      top: 2px;
+      left: 5px;
+    }
+  }
+}
