@@ -8,7 +8,7 @@ import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 
 // @ts-ignore
 import pkg from './package.json';
-const PLUGIN_NAME = '@default'; // pkg.name
+const PLUGIN_NAME = pkg.config.pluginName;
 
 const getIndexCode = (port) => (
   `window.addEventListener('load', async () => {

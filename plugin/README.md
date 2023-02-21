@@ -14,7 +14,7 @@ This plugin replaced **league-loader.js** plugin as @default, you can find the l
 
 ### Setup
 
-You need  **Node 16+** and **Yarn** installed to run and build this plugin. For developing new advanced plugin from this one, you should learn Vite to configure the project. Next, we will guide you basic editting.
+You need  **Node 16+** and **Yarn** installed to run and build this plugin. For developing new advanced plugin from this one, you should learn Vite to configure the project. Next, we will guide you basic editing.
 
 Before you start, let's edit the `package.json`, there are two fields in `config`:
 - `pluginName`: you should change it to avoid overriding the @default plugin.
@@ -34,7 +34,7 @@ Let's install Node modules and start the dev server:
 yarn dev
 ```
 
-After the dev server stared, you can see a new folder in League Loader's plugins. It's your plugin entry.
+After the dev server started, you can see a new folder in League Loader's plugins. It's your plugin entry.
 
 ```
 plugins/

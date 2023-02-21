@@ -41,7 +41,7 @@ export function App() {
       <div class="modal__overlay" tabIndex={-1}>
         <div class="modal__container" role="dialog" aria-modal="true">
           <header class="modal__header">
-            <img src={logo} width="24" height="24" />
+            <img src={logo} width="28" />
             <h2 class="modal__title">League Loader</h2>
             <span class="version">v{version}</span>
           </header>
