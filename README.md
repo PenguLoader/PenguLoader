@@ -82,7 +82,11 @@ This `index.js` is an entry point of your plugin and will be executed when Leagu
 console.log('Hello, League Client!')
 ```
 
-To load other scripts, just use [`import`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import):
+> We recommend to use modern JavaScript editors like **Visual Studio Code** or **WebStorm** to develop your plugins, they support intellisense, linter and autocomplete. Remember that League Client is a web browser based, you should use front-end web technology only.
+
+### ES Modules
+
+To load other scripts, just use `import`:
 
 ```
 plugins/
@@ -102,9 +106,7 @@ import utils from './utils'
 utils.greet();
 ```
 
-> We recommend to use modern JavaScript editors like **Visual Studio Code** or **WebStorm** to develop your plugins, they support intellisense, linter and autocomplete. Remember that League Client is a web browser based, your should use front-end web technology only.
-
-### ES Modules
+> To use `import` and `export` properly, please refer this [MDN docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import).
 
 Top-level await:
 ```js
@@ -210,28 +212,33 @@ We recommend to use tagged template literals to build large UI components. JSX f
 
 Check out [league-loader.js](./bin/plugins/league-loader.js) to learn more.
 
-<br>
+### With front-end build tools/bundlers
 
-## Access local resources
+// TODO
 
-You can access the resources in **assets** folder by using this domain:
+### Accessing local resources
+
+You can access local resources in **assets** and **plugins** folder by using these domain:
 
 ```
 //assets/
+//plugins/
 ```
 
-It is also equivalent to `https://assets/` (HTTPS based scheme).
-
-For example with custom theme.
+They are also equivalent to `https://assets/` and `https://plugins` (HTTPS based scheme).
 
 ```
-league-loader/
+root/
   |__assets/
-    |__background.png     ; custom background
-    |__theme.css          ; overrides default background-url: url(//assets/background.png)
+    |__background.png      ->  //assets/background.png
   |__plugins/
-    |__theme.js           ; injects link tag with href="//assets/theme.css"
+    |__your-plugin/
+      |__assets/
+        |__some-image.jpg  ->  //plugins/your-plugin/assets/some-image.jpg
 ```
+
+- **assets** folder contains common resources.
+- While assets in **plugins** folder are used for plugin itself.
 
 <br>
 
@@ -247,14 +254,14 @@ league-loader/
 This project requires Visual Studio 2017 with these components:
 - Desktop development with C++
 - .NET desktop development
-- Windows 10 SDK, [version 1809](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive/#windows-10)
+- Windows 8.1 SDK
 
-You can also use VS2015+ and different SDK version.
+You can also use VS 2019+ and different SDK version.
 
 Build steps:
-  1. Open **league-loader.sln** in VS
+  1. Open **league-loader.sln**
   2. Right click on the solution -> **Restore Nuget Packages**
-  3. Set arch to **Any CPU** or **x86**
+  3. Set arch to **x86**
   4. Right click on each project -> **Build**
 
 ### CEF notes
@@ -270,7 +277,3 @@ void test_oop(cef_browser_t *cbrowser) {
   host->GetMainFrame();
 }
 ```
-
-### How it works?
-
-See [HOW_IT_WORKS](/HOW_IT_WORKS.md) for details.
