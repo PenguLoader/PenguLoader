@@ -56,6 +56,7 @@ export default defineConfig(({ mode }) => ({
         await unlink(join(outDir, 'index.html'));
         const code = (await readFile(index, 'utf-8'))
           .replace(/url\((\/[^\n"?:*<>|]+\.[A-z0-9]+)\)/g, `url(//plugins/${PLUGIN_NAME}$1)`)
+          .replace(/\"\/assets\//g, `"//plugins/${PLUGIN_NAME}/assets/`)
           .replace(/^/, 'window.addEventListener("load", function () {\n')
           .replace(/$/, '});');
         await writeFile(index, code);

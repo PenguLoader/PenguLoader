@@ -1,12 +1,18 @@
 import { render } from 'preact';
 import { App } from './app';
+import { getSummonerName } from './lib/api';
 import './app.scss';
 
 async function init() {
+
   if (window.__llver) {
     // Wait for manager layer
     while (!document.getElementById('lol-uikit-layer-manager-wrapper')) {
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 300));
+    }
+    // Wait for logged
+    while (!await getSummonerName()) {
+      await new Promise(r => setTimeout(r, 300));
     }
   }
 
