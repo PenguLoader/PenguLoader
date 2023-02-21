@@ -32,6 +32,21 @@ jobs:
       - name: Build solution
         run: msbuild league-loader.sln /p:Platform="x86" /p:Configuration=Release
         
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          
+      - uses: pnpm/action-setup@v2
+        with:
+          version: latest
+          
+      - name: Build @default plugin
+        run: |
+          cd plugin
+          pnpm install
+          pnpm build --deno
+          cd ..
+        
       - name: Upload build outputs
         uses: actions/upload-artifact@v3
         with:
