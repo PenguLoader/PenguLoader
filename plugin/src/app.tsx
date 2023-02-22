@@ -55,7 +55,7 @@ export function App() {
             }}>
             </p>
             <p>
-              <small dangerouslySetInnerHTML={{ __html: t('devtools_tip', { key: '<code>F12</code>' }) }} ></small>
+              <small dangerouslySetInnerHTML={{ __html: t('devtools_tip', { key: '<code>Ctrl Shift I</code>' }) }} ></small>
             </p>
           </div>
           <footer class="modal__footer">

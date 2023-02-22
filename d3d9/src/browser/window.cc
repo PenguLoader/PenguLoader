@@ -54,7 +54,6 @@ static void SetUptHotkeys(HWND rclient)
         NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
     SetWindowLongPtr(msg, GWLP_USERDATA, (LONG_PTR)rclient);
 
-    RegisterHotKey(msg, HK_DEVTOOLS, MOD_NOREPEAT, VK_F12);
     RegisterHotKey(msg, HK_DEVTOOLS, MOD_NOREPEAT | MOD_CONTROL | MOD_SHIFT, 'I');
     RegisterHotKey(msg, HK_RELOAD, MOD_NOREPEAT | MOD_CONTROL | MOD_SHIFT, 'R');
 }
