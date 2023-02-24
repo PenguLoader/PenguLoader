@@ -171,7 +171,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
     const cef_window_info_t* windowInfo,
     struct _cef_client_t* client,
     const cef_string_t* url,
-    struct _cef_browser_settings_t* settings,
+    const struct _cef_browser_settings_t* settings,
     struct _cef_dictionary_value_t* extra_info,
     struct _cef_request_context_t* request_context)
 {
@@ -329,12 +329,12 @@ void HookBrowserProcess()
 #endif
 
     // Hook CefInitialize().
-    utils::hookFunc((void **)&CefInitialize, Hooked_CefInitialize);
+    utils::hookFunc(&CefInitialize, Hooked_CefInitialize);
     // Hook CefBrowserHost::CreateBrowser().
-    utils::hookFunc((void **)&CefBrowserHost_CreateBrowser, Hooked_CefBrowserHost_CreateBrowser);
+    utils::hookFunc(&CefBrowserHost_CreateBrowser, Hooked_CefBrowserHost_CreateBrowser);
 
     // Hook CreateWindowExW().
-    utils::hookFunc((void **)&Old_CreateWindowExW, Hooked_CreateWindowExW);
+    utils::hookFunc(&Old_CreateWindowExW, Hooked_CreateWindowExW);
     // Hook CreateProcessW().
-    utils::hookFunc((void **)&Old_CreateProcessW, Hooked_CreateProcessW);
+    utils::hookFunc(&Old_CreateProcessW, Hooked_CreateProcessW);
 }
