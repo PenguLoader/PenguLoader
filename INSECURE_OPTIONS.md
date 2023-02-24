@@ -12,9 +12,14 @@ To enable them, just edit the `config`:
 ;   e.g CORS request and many unpleasant web policies
 DisableWebSecurity=1
 
-; Allow requests through a proxy
-NoProxyServer=1
+; Ignore all error/invalid SSL certificates
+;	i.e requesting to self-assigned SSL/untrusted HTTPS server
+IgnoreCertificateErrors=1
+
+; Allow requests through a proxy, for debugging purposes only
+NoProxyServer=0
 
 ; Replace default Chromium command line args
-ChromiumArgs="--use-flag" "--use-flag-with-value=some_value"
+ChromiumArgs="--disable-gpu" "--some-flag" "--flag-with-value=some_value"
+
 ```

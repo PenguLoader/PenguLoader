@@ -23,11 +23,13 @@
     <ClCompile Include="src\browser\browser.cc" />
     <ClCompile Include="src\browser\devtools.cc" />
     <ClCompile Include="src\browser\riotclient.cc" />
+    <ClCompile Include="src\browser\server.cc" />
     <ClCompile Include="src\browser\window.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\d3d9.cc" />
     <ClCompile Include="src\dllmain.cc" />
+    <ClCompile Include="src\renderer\auth_callback.cc" />
     <ClCompile Include="src\renderer\datastore.cc" />
     <ClCompile Include="src\renderer\effects.cc" />
     <ClCompile Include="src\renderer\loader.cc" />
