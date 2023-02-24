@@ -205,7 +205,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     // Extract args string.
     auto args = CefScopedStr{ command_line->get_command_line_string(command_line) }.cstr();
 
-    if (config::getConfigValue(L"NoProxyServer") == L"1")
+    if (config::getConfigValue(L"NoProxyServer") == L"0")
     {
         size_t pos = args.find(L"--no-proxy-server");
         if (pos != std::wstring::npos)
