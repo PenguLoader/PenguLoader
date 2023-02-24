@@ -7,7 +7,7 @@
 // BROWSER PROCESS ONLY.
 
 extern UINT REMOTE_DEBUGGING_PORT;
-extern cef_browser_t *CLIENT_BROWSER;
+extern cef_browser_t *browser_;
 extern HWND DEVTOOLS_HWND;
 static std::string REMOTE_DEVTOOLS_URL;
 
@@ -24,7 +24,7 @@ void OpenDevTools_Internal(bool remote)
         ShellExecuteA(NULL, "open",
             REMOTE_DEVTOOLS_URL.c_str(), NULL, NULL, SW_SHOWNORMAL);
     }
-    else if (CLIENT_BROWSER != nullptr)
+    else if (browser_ != nullptr)
     {
         // This function can be called from non-UI thread,
         // so CefBrowserHost::HasDevTools has no effect.
@@ -55,7 +55,7 @@ void OpenDevTools_Internal(bool remote)
             wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME).forawrd();
 
             cef_browser_settings_t settings{};
-            auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);
+            auto host = browser_->get_host(browser_);
             host->show_dev_tools(host, &wi, CreateDevToolsClient(), &settings, nullptr);
             //                              ^--- We use null for client to keep DevTools
             //                                   from being scaled by League Client (e.g 0.8, 1.6).

@@ -76,6 +76,12 @@
     <ClCompile Include="src\utils\ntdll.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\browser\server.cc">
+      <Filter>src\browser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\auth_callback.cc">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\renderer\extension.js">

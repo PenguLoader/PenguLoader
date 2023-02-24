@@ -1,6 +1,6 @@
 #include "../internal.h"
 
-extern cef_browser_t *CLIENT_BROWSER;
+extern cef_browser_t *browser_;
 void OpenDevTools_Internal(bool remote);
 
 #define HK_DEVTOOLS     0x101
@@ -23,8 +23,8 @@ static LRESULT CALLBACK MsgWin_WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp
                     OpenDevTools_Internal(false);
                     break;
                 case HK_RELOAD:
-                    if (CLIENT_BROWSER != nullptr)
-                        CLIENT_BROWSER->reload_ignore_cache(CLIENT_BROWSER);
+                    if (browser_ != nullptr)
+                        browser_->reload_ignore_cache(browser_);
                     break;
             }
 
@@ -75,7 +75,7 @@ void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame)
     SetParent(widgetWin, rclient);
 
     // Send RCLIENT HWND to renderer.
-    auto msg = CefProcessMessage_Create(&"__RCLIENT"_s);
+    auto msg = CefProcessMessage_Create(&"__rclient"_s);
     auto args = msg->get_argument_list(msg);
     args->set_int(args, 0, static_cast<int>((DWORD)rclient));
     frame->send_process_message(frame, PID_RENDERER, msg);

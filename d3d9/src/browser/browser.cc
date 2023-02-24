@@ -9,7 +9,9 @@
 
 UINT REMOTE_DEBUGGING_PORT = 0;
 HWND DEVTOOLS_HWND = 0;
-cef_browser_t *CLIENT_BROWSER = nullptr;
+
+cef_browser_t *browser_ = nullptr;
+static int browser_id_ = -1;
 
 extern LPCWSTR DEVTOOLS_WINDOW_NAME;
 
@@ -21,18 +23,20 @@ cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool is
 cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path);
 void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken);
 
-static int64 _mainBrowserId = 0;
+void OpenInternalServer();
+void CloseInternalServer();
+
 static decltype(cef_life_span_handler_t::on_after_created) Old_OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
-    if (CLIENT_BROWSER == nullptr)
+    if (browser_ == nullptr)
     {
         // Add ref.
-        browser->base.add_ref(&CLIENT_BROWSER->base);
+        browser->base.add_ref(&browser_->base);
         // Save client browser.
-        _mainBrowserId = browser->get_identifier(browser);
-        CLIENT_BROWSER = browser;
+        browser_ = browser;
+        browser_id_ = browser->get_identifier(browser);
 
         // Initialize DevTools opener.
         PrepareDevTools();
@@ -46,9 +50,10 @@ static void CEF_CALLBACK Hooked_OnBeforeClose(cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
     // Check main browser.
-    if (browser->get_identifier(browser) == _mainBrowserId)
+    if (browser->get_identifier(browser) == browser_id_)
     {
-        CLIENT_BROWSER = nullptr;
+        browser_ = nullptr;
+        CloseInternalServer();
     }
 
     Old_OnBeforeClose(self, browser);
@@ -68,6 +73,7 @@ static void CALLBACK Hooked_OnLoadStart(struct _cef_load_handler_t* self,
     if (patched || (patched = true, false)) return;
 
     SetUpBrowserWindow(browser, frame);
+    OpenInternalServer();
 };
 
 static void HookClient(cef_client_t *client)
@@ -183,7 +189,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
             extra_info = CefDictionaryValue_Create();
 
         // Add current process ID (browser process).
-        extra_info->set_null(extra_info, &"IS_MAIN"_s);
+        extra_info->set_null(extra_info, &"is_main"_s);
 
         // Hook client.
         HookClient(client);

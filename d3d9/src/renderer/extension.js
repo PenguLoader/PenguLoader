@@ -112,3 +112,34 @@ var requireFile = function (path) {
     native function RequireFile();
     return RequireFile(path);
 };
+
+var AuthCallback = new function () {
+    native function CreateAuthCallbackURL();
+    native function AddAuthCallback();
+    native function RemoveAuthCallback();
+
+    return {
+        [Symbol.toStringTag]: 'AuthCallback',
+        createURL() {
+            return CreateAuthCallbackURL();
+        },
+        readResponse(url, timeout) {
+            if (typeof timeout !== 'number' || timeout <= 0) {
+                timeout = 180000;
+            }
+            return new Promise(resolve => {
+                let fired = false;
+                AddAuthCallback(url, response => {
+                    fired = true;
+                    resolve(response);
+                });
+                setTimeout(() => {
+                    RemoveAuthCallback(url);
+                    if (!fired) {
+                        resolve(null);
+                    }
+                }, timeout);
+            });
+        }
+    };
+};

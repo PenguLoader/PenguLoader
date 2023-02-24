@@ -11,10 +11,16 @@
 extern HWND RCLIENT_WINDOW;
 static bool is_main_ = false;
 
+int server_port_ = 0;
+
 void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context);
 bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
 bool HandleDataStore(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
 bool HandleWindowEffect(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
+
+void TriggerAuthCallback(const wstring &url, int browser_id, const wstring &response);
+bool HandleAuthCallback(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
+void ClearAuthCallbacks(cef_v8context_t *context);
 
 // Custom V8 handler for extenstion
 struct ExtensionHandler : CefRefCount<cef_v8handler_t>
@@ -66,6 +72,8 @@ private:
         else if (HandleDataStore(fn, args, *retval))
             return true;
         else if (HandleWindowEffect(fn, args, *retval))
+            return true;
+        else if (HandleAuthCallback(fn, args, *retval))
             return true;
 
         return false;
@@ -128,7 +136,7 @@ static void CEF_CALLBACK Hooked_OnContextReleased(
 {
     if (is_main_)
     {
-        // TODO
+        ClearAuthCallbacks(context);
     }
 }
 
@@ -139,7 +147,7 @@ static void CEF_CALLBACK Hooked_OnBrowserCreated(
     struct _cef_dictionary_value_t* extra_info)
 {
     // Detect hooked client.
-    is_main_ = extra_info && extra_info->has_key(extra_info, &"IS_MAIN"_s);
+    is_main_ = extra_info && extra_info->has_key(extra_info, &"is_main"_s);
 
     Old_OnBrowserCreated(self, browser, extra_info);
 }
@@ -155,11 +163,28 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
     if (is_main_ && source_process == PID_BROWSER)
     {
         CefScopedStr msg{ message->get_name(message) };
-        if (msg == L"__RCLIENT")
+        if (msg == L"__rclient")
         {
             // Received RCLIENT HWND.
             auto args = message->get_argument_list(message);
             RCLIENT_WINDOW = reinterpret_cast<HWND>(args->get_int(args, 0));
+            return 1;
+        }
+        else if (msg == L"__server_port")
+        {
+            auto args = message->get_argument_list(message);
+            server_port_ = args->get_int(args, 0);
+            return 1;
+        }
+        else if (msg == L"__auth_response")
+        {
+            auto args = message->get_argument_list(message);
+
+            int id = browser->get_identifier(browser);
+            CefScopedStr url{ args->get_string(args, 0) };
+            CefScopedStr response{ args->get_string(args, 1) };
+
+            TriggerAuthCallback(url.cstr(), id, response.cstr());
             return 1;
         }
     }
