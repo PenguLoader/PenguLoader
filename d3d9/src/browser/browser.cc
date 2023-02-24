@@ -200,7 +200,21 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 {
     CefScopedStr rc_port{ command_line->get_switch_value(command_line, &"riotclient-app-port"_s) };
     CefScopedStr rc_token{ command_line->get_switch_value(command_line, &"riotclient-auth-token"_s) };
-    SetRiotClientCredentials(rc_port.str, rc_token.str);
+    SetRiotClientCredentials(rc_port.cstr(), rc_token.cstr());
+
+    // Extract args string.
+    auto args = CefScopedStr{ command_line->get_command_line_string(command_line) }.cstr();
+
+    if (config::getConfigValue(L"NoProxyServer") == L"1")
+    {
+        size_t pos = args.find(L"--no-proxy-server");
+        if (pos != std::wstring::npos)
+            args.replace(pos, 17, L"");
+    }
+
+    // Rebuild it.
+    command_line->reset(command_line);
+    command_line->init_from_string(command_line, &CefStr(args));
 
     // Keep Riot's command lines.
     Old_OnBeforeCommandLineProcessing(self, process_type, command_line);

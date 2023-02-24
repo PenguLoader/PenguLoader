@@ -82,6 +82,10 @@ struct CefStrBase : cef_string_t
     bool contain(const wchar_t *s) const;
     bool contain(const wstring &s) const;
     bool operator ==(const wchar_t *s) const;
+
+    wstring cstr() const {
+        return wstring{ str, length };
+    }
 };
 
 // cef_string_t wrapper.
