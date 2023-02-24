@@ -8,7 +8,6 @@
 // BROWSER PROCESS ONLY.
 
 UINT REMOTE_DEBUGGING_PORT = 0;
-HWND DEVTOOLS_HWND = 0;
 
 cef_browser_t *browser_ = nullptr;
 static int browser_id_ = -1;
@@ -254,45 +253,6 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     return CefInitialize(args, settings, app, windows_sandbox_info);
 }
 
-static auto Old_CreateWindowExW = &CreateWindowExW;
-static HWND WINAPI Hooked_CreateWindowExW(
-    _In_ DWORD dwExStyle,
-    _In_opt_ LPCWSTR lpClassName,
-    _In_opt_ LPCWSTR lpWindowName,
-    _In_ DWORD dwStyle,
-    _In_ int X,
-    _In_ int Y,
-    _In_ int nWidth,
-    _In_ int nHeight,
-    _In_opt_ HWND hWndParent,
-    _In_opt_ HMENU hMenu,
-    _In_opt_ HINSTANCE hInstance,
-    _In_opt_ LPVOID lpParam)
-{
-    HWND hwnd = Old_CreateWindowExW(dwExStyle, lpClassName,
-        lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
-
-    // Avoid ATOM value.
-    if ((uintptr_t)lpClassName <= UINT16_MAX)
-        return hwnd;
-
-    // Detect DevTools window.
-    if (!wcscmp(lpClassName, L"CefBrowserWindow") && !wcscmp(lpWindowName, DEVTOOLS_WINDOW_NAME))
-    {
-        // Get League icon.
-        HWND hClient = FindWindowW(L"RCLIENT", L"League of Legends");
-        HICON icon = (HICON)SendMessageW(hClient, WM_GETICON, ICON_BIG, 0);
-
-        // Set window icon.
-        SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
-        SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
-
-        DEVTOOLS_HWND = hwnd;
-    }
-
-    return hwnd;
-}
-
 static decltype(&CreateProcessW) Old_CreateProcessW = &CreateProcessW;
 static BOOL WINAPI Hooked_CreateProcessW(
     _In_opt_ LPCWSTR lpApplicationName,
@@ -339,8 +299,6 @@ void HookBrowserProcess()
     // Hook CefBrowserHost::CreateBrowser().
     utils::hookFunc(&CefBrowserHost_CreateBrowser, Hooked_CefBrowserHost_CreateBrowser);
 
-    // Hook CreateWindowExW().
-    utils::hookFunc(&Old_CreateWindowExW, Hooked_CreateWindowExW);
     // Hook CreateProcessW().
     utils::hookFunc(&Old_CreateProcessW, Hooked_CreateProcessW);
 }
