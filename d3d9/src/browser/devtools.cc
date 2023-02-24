@@ -15,6 +15,9 @@ static std::string REMOTE_DEVTOOLS_URL;
 
 static cef_client_t *CreateDevToolsClient();
 
+bool IsWindowsLightTheme();
+void ForceDarkTheme(HWND hwnd);
+
 void OpenDevTools_Internal(bool remote)
 {
     if (remote)
@@ -190,6 +193,17 @@ public:
         // Set window icon.
         SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
         SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
+
+        if (!IsWindowsLightTheme())
+        {
+            // Force dark theme.
+            ForceDarkTheme(hwnd);
+
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+            // Fix titlebar issue.
+            SetWindowPos(hwnd, NULL, 0, 0, rc.right - 5, rc.bottom, SWP_NOMOVE | SWP_FRAMECHANGED);
+        }
 
         devtools_window_ = hwnd;
     }
