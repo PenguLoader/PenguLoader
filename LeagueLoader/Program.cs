@@ -43,5 +43,10 @@ namespace LeagueLoader
                 return 0;
             }
         }
+
+        static Program()
+        {
+            CosturaUtility.Initialize();
+        }
     }
 }
