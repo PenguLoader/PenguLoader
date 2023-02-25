@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.IO;
 
 namespace LeagueLoader.Main
 {
@@ -36,6 +36,24 @@ namespace LeagueLoader.Main
                 });
             }
             catch { }
+        }
+
+        public static bool IsFileInUse(string path)
+        {
+            try
+            {
+                if (!File.Exists(path))
+                    return false;
+
+                using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                return true;
+            }
         }
     }
 }

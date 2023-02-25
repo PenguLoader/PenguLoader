@@ -7,7 +7,7 @@ namespace LeagueLoader.Main
 {
     static class Module
     {
-        const string MODULE_NAME = "d3d9.dll";
+        const string MODULE_NAME = "core.dll";
         const string TARGET_NAME = "LeagueClientUx.exe";
 
         static string ModulePath => Path.Combine(Directory.GetCurrentDirectory(), MODULE_NAME);
@@ -36,18 +36,7 @@ namespace LeagueLoader.Main
 
         public static bool IsLoaded()
         {
-            foreach (var proc in Process.GetProcessesByName("LeagueClientUx"))
-            {
-                foreach (ProcessModule module in proc.Modules)
-                {
-                    if (string.Equals(module.FileName, ModulePath, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+            return Utils.IsFileInUse(ModulePath);
         }
 
         public static bool IsActivated()
@@ -67,13 +56,6 @@ namespace LeagueLoader.Main
         public static void Deactivate()
         {
             IFEO.RemoveDegubber(TARGET_NAME);
-        }
-
-        static string NormalizePath(string path)
-        {
-            return Path.GetFullPath(new Uri(path).LocalPath)
-                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                .ToUpperInvariant();
         }
     }
 }
