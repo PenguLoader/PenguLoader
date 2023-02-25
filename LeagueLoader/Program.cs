@@ -9,7 +9,7 @@ namespace LeagueLoader
     public static class Program
     {
         public const string NAME = "League Loader";
-        public static string HOMEPAGE_URL => "https://leagueloader.app";
+        public static string HOMEPAGE_URL => "https://chat.leagueloader.app";
         public static string GITHUB_URL => "https://github.com/nomi-san/league-loader";
         public static string GITHUB_ISSUES_URL => "https://github.com/nomi-san/league-loader/issues";
 

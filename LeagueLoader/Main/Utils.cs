@@ -55,5 +55,17 @@ namespace LeagueLoader.Main
                 return true;
             }
         }
+
+        public static void DeletePath(string path, bool isDir = false)
+        {
+            try
+            {
+                if (isDir && Directory.Exists(path))
+                    Directory.Delete(path, true);
+                else if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch { }
+        }
     }
 }
