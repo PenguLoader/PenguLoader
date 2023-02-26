@@ -6,7 +6,7 @@
   "type": "module",
   "config": {
     "pluginName": "@default",
-    "leagueLoaderPath": "../bin/"
+    "leagueLoaderPath": "../../bin/"
   },
   "scripts": {
     "dev": "vite",

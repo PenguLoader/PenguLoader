@@ -42,10 +42,10 @@ jobs:
           
       - name: Build @default plugin
         run: |
-          cd plugin
+          cd plugins/@default
           pnpm install
           pnpm build
-          cd ..
+          cd ../..
         
       - name: Upload build outputs
         uses: actions/upload-artifact@v3
