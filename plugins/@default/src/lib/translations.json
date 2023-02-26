@@ -2,18 +2,20 @@
   "fallback": "en",
   "translations": {
     "en": {
-      "welcome": "Hi %summoner%, this popup lets you know the installed plugins have been loaded successfully.",
-      "checkout_links": "Join our %discord% to get more interesting plugins and themes. Visit the %github% repo to learn more about creating plugins.",
-      "devtools_tip": "Try hitting the %key% key to open Developer Tools.",
+      "welcome": "Hi %name%, this popup lets you know the installed plugins have been loaded successfully.",
+      "checkout_links": "Join our %discord% to get more interesting plugins and themes. Visit the %github% repo to learn more about creating plugins 🤘",
+      "devtools_tip": "Try hitting the %key% key to open Developer Tools 😉",
       "donotshowagain": "Do not show again",
-      "update_available": "New version is out, <b>%version%</b> 🔥<br> You can restart your Client to get it."
+      "has_new_ver": "New version is out",
+      "update_tip": "You should close the Client and run League Loader to get it."
     },
     "vi": {
-      "welcome": "Chào %summoner%, thông báo này cho bạn biết các plugin đã được tải thành công.",
-      "checkout_links": "Nhập hội %discord% cùng chúng tôi để tìm thêm các plugin và theme thú vị. Ghé thăm %github% repo để tìm hiểu cách tạo plugin.",
-      "devtools_tip": "Thử nhấn phím %key% để mở Công cụ dành cho Nhà phát triển.",
+      "welcome": "Chào %name%, thông báo này cho bạn biết các plugin đã được tải thành công.",
+      "checkout_links": "Nhập hội %discord% cùng chúng tôi để tìm thêm các plugin và theme thú vị. Ghé thăm %github% repo để tìm hiểu cách tạo plugin nhé 🤘",
+      "devtools_tip": "Thử nhấn %key% để mở Công cụ dành cho Nhà phát triển 😉",
       "donotshowagain": "Không hiển thị lại",
-      "update_available": "Có phiên bản mới, <b>%version%</b> 🔥<br> Bạn có thể khởi động lại Client để cập nhật."
+      "has_new_ver": "Đã có phiên bản mới",
+      "update_tip": "Bạn nên đóng Client và chạy League Loader để cập nhật nó."
     }
   }
 }

@@ -1,7 +1,8 @@
-import { render } from 'preact';
-import { App } from './app';
+/* @refresh reload */
+import { render } from 'solid-js/web';
+import App from './App';
 import { getSummonerName } from './lib/api';
-import './app.scss';
+import './index.scss';
 
 async function init() {
 
@@ -25,7 +26,7 @@ async function init() {
   }
 
   // Render app
-  render(<App />, root);
+  render(() => <App />, root);
 }
 
 init();

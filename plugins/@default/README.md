@@ -3,7 +3,7 @@
 This is a plugin built for League Loader itself with these goals:
 - Show welcome page and update changelog
 - Support i18n
-- Using Preact + SASS + TypeScript
+- Using SolidJS + SASS + TypeScript
 - Vite boilerplate template
 - Fully HMR supports, it's just better than legacy hot-reload
 - Auto-patching assets path, just put assets in dev folder only
@@ -14,16 +14,16 @@ This plugin replaced **league-loader.js** plugin as @default, you can find the l
 
 ### Setup
 
-You need  **Node 16+** and **Yarn** installed to run and build this plugin. For developing new advanced plugin from this one, you should learn Vite to configure the project. Next, we will guide you basic editing.
+You need **Node 16+** and **pnpm** installed to run and build this plugin. For developing new advanced plugin from this one, you should learn Vite to configure the project. Next, we will guide you basic editing.
 
 Before you start, let's edit the `package.json`, there are two fields in `config`:
 - `pluginName`: you should change it to avoid overriding the @default plugin.
-- `leagueLoaderPath`: path to your League Loader folder, the default value `../bin/` points to the directory which is used for binary built output.
+- `loaderPath`: path to your League Loader folder, the default value `../../bin/` points to the directory which is used for binary built output.
 
 ```json
   "config": {
     "pluginName": "@default",
-    "leagueLoaderPath": "../bin/"
+    "loaderPath": "../../bin/"
   },
 ```
 
@@ -31,10 +31,11 @@ Before you start, let's edit the `package.json`, there are two fields in `config
 
 Let's install Node modules and start the dev server:
 ```
-yarn dev
+pnpm i
+pnpm dev
 ```
 
-After the dev server started, you can see a new folder in League Loader's plugins. It's your plugin entry.
+After the dev server started, you can see a new folder in League Loader's plugins. The `index.js` inside is your plugin entry.
 
 ```
 plugins/
@@ -52,7 +53,7 @@ Now you can open League Client and enjoy coding.
 
 To build the plugin for production, please run:
 ```
-yarn build
+pnpm build
 ```
 
 The bundled output will replaced the previous `index.js` file in Development section.
