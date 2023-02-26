@@ -9,12 +9,18 @@
 // RENDERER PROCESS ONLY.
 
 extern HWND RCLIENT_WINDOW;
-static bool IS_MAIN = false;
+static bool is_main_ = false;
+
+int server_port_ = 0;
 
 void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context);
 bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
 bool HandleDataStore(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
 bool HandleWindowEffect(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
+
+void TriggerAuthCallback(const wstring &url, int browser_id, const wstring &response);
+bool HandleAuthCallback(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
+void ClearAuthCallbacks(cef_v8context_t *context);
 
 // Custom V8 handler for extenstion
 struct ExtensionHandler : CefRefCount<cef_v8handler_t>
@@ -67,6 +73,8 @@ private:
             return true;
         else if (HandleWindowEffect(fn, args, *retval))
             return true;
+        else if (HandleAuthCallback(fn, args, *retval))
+            return true;
 
         return false;
     }
@@ -100,7 +108,7 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
 {
     Old_OnContextCreated(self, browser, frame, context);
 
-    if (IS_MAIN)
+    if (is_main_)
     {
         CefScopedStr url{ frame->get_url(frame) };
 
@@ -119,6 +127,19 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
     }
 }
 
+static decltype(cef_render_process_handler_t::on_context_released) Old_OnContextReleased;
+static void CEF_CALLBACK Hooked_OnContextReleased(
+    struct _cef_render_process_handler_t* self,
+    struct _cef_browser_t* browser,
+    struct _cef_frame_t* frame,
+    struct _cef_v8context_t* context)
+{
+    if (is_main_)
+    {
+        ClearAuthCallbacks(context);
+    }
+}
+
 static decltype(cef_render_process_handler_t::on_browser_created) Old_OnBrowserCreated;
 static void CEF_CALLBACK Hooked_OnBrowserCreated(
     struct _cef_render_process_handler_t* self,
@@ -126,7 +147,7 @@ static void CEF_CALLBACK Hooked_OnBrowserCreated(
     struct _cef_dictionary_value_t* extra_info)
 {
     // Detect hooked client.
-    IS_MAIN = extra_info && extra_info->has_key(extra_info, &"IS_MAIN"_s);
+    is_main_ = extra_info && extra_info->has_key(extra_info, &"is_main"_s);
 
     Old_OnBrowserCreated(self, browser, extra_info);
 }
@@ -139,14 +160,31 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
     cef_process_id_t source_process,
     struct _cef_process_message_t* message)
 {
-    if (IS_MAIN && source_process == PID_BROWSER)
+    if (is_main_ && source_process == PID_BROWSER)
     {
         CefScopedStr msg{ message->get_name(message) };
-        if (msg == L"__RCLIENT")
+        if (msg == L"__rclient")
         {
             // Received RCLIENT HWND.
             auto args = message->get_argument_list(message);
             RCLIENT_WINDOW = reinterpret_cast<HWND>(args->get_int(args, 0));
+            return 1;
+        }
+        else if (msg == L"__server_port")
+        {
+            auto args = message->get_argument_list(message);
+            server_port_ = args->get_int(args, 0);
+            return 1;
+        }
+        else if (msg == L"__auth_response")
+        {
+            auto args = message->get_argument_list(message);
+
+            int id = browser->get_identifier(browser);
+            CefScopedStr url{ args->get_string(args, 0) };
+            CefScopedStr response{ args->get_string(args, 1) };
+
+            TriggerAuthCallback(url.cstr(), id, response.cstr());
             return 1;
         }
     }
@@ -171,6 +209,10 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
         Old_OnContextCreated = handler->on_context_created;
         handler->on_context_created = Hooked_OnContextCreated;
 
+        // Hook OnContextReleased().
+        Old_OnContextReleased = handler->on_context_released;
+        handler->on_context_released = Hooked_OnContextReleased;
+
         // Hook OnBrowserCreated().
         Old_OnBrowserCreated = handler->on_browser_created;
         handler->on_browser_created = Hooked_OnBrowserCreated;
@@ -188,5 +230,5 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
 void HookRendererProcess()
 {
     // Hook CefExecuteProcess().
-    utils::hookFunc((void **)&CefExecuteProcess, Hooked_CefExecuteProcess);
+    utils::hookFunc(&CefExecuteProcess, Hooked_CefExecuteProcess);
 }

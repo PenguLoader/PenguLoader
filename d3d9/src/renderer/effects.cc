@@ -78,6 +78,11 @@ bool IsWin7Plus()
     return WinVer(0) > 6 || (WinVer(1) == 6 && WinVer(1) == 1);
 }
 
+bool IsWin10_20H1()
+{
+    return WinVer(2) >= 19041 && WinVer(2) < 22000;
+}
+
 bool IsWin10_1809()
 {
     return WinVer(2) >= 17763 && WinVer(2) < 22000;
@@ -169,9 +174,37 @@ void ClearAcrylic(HWND hwnd, bool unified)
     //return Err(VibeError::UnsupportedPlatform("\"clear_acrylic()\" is only available on Windows 7+"));
 }
 
+bool IsWindowsLightTheme()
+{
+    // based on https://stackoverflow.com/questions/51334674/how-to-detect-windows-10-light-dark-mode-in-win32-application
+
+    // The value is expected to be a REG_DWORD, which is a signed 32-bit little-endian
+    auto buffer = std::vector<char>(4);
+    auto cbData = static_cast<DWORD>(buffer.size() * sizeof(char));
+    auto res = RegGetValueW(
+        HKEY_CURRENT_USER,
+        L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        L"AppsUseLightTheme",
+        RRF_RT_REG_DWORD, // expected value type
+        nullptr,
+        buffer.data(),
+        &cbData);
+
+    if (res != ERROR_SUCCESS)
+        return true;
+
+    // convert bytes written to our buffer to an int, assuming little-endian
+    auto i = int(buffer[3] << 24 |
+        buffer[2] << 16 |
+        buffer[1] << 8 |
+        buffer[0]);
+
+    return i == 1;
+}
+
 void ForceDarkTheme(HWND hwnd)
 {
-    if (IsWin11())
+    if (IsWin11() || IsWin10_20H1())
     {
         DWORD value = 1;
         DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
@@ -183,13 +216,13 @@ void ForceDarkTheme(HWND hwnd)
     }
     else
     {
-        throw "Dark theme is only available on Windows 10 v1809+ or Windows 11.";
+        //throw "Dark theme is only available on Windows 10 v1809+ or Windows 11.";
     }
 }
 
 void ForceLightTheme(HWND hwnd)
 {
-    if (IsWin11())
+    if (IsWin11() || IsWin10_20H1())
     {
         DWORD value = 0;
         DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
@@ -201,7 +234,7 @@ void ForceLightTheme(HWND hwnd)
     }
     else
     {
-        throw "Light theme is only available on Windows 10 v1809+ or Windows 11.";
+        //throw "Light theme is only available on Windows 10 v1809+ or Windows 11.";
     }
 }
 

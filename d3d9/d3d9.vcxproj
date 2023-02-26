@@ -23,11 +23,13 @@
     <ClCompile Include="src\browser\browser.cc" />
     <ClCompile Include="src\browser\devtools.cc" />
     <ClCompile Include="src\browser\riotclient.cc" />
+    <ClCompile Include="src\browser\server.cc" />
     <ClCompile Include="src\browser\window.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\d3d9.cc" />
     <ClCompile Include="src\dllmain.cc" />
+    <ClCompile Include="src\renderer\auth_callback.cc" />
     <ClCompile Include="src\renderer\datastore.cc" />
     <ClCompile Include="src\renderer\effects.cc" />
     <ClCompile Include="src\renderer\loader.cc" />
@@ -110,7 +112,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\</OutDir>
-    <TargetName>d3d9</TargetName>
+    <TargetName>core</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -118,7 +120,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\</OutDir>
-    <TargetName>d3d9</TargetName>
+    <TargetName>core</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>

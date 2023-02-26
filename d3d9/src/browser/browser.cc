@@ -8,8 +8,9 @@
 // BROWSER PROCESS ONLY.
 
 UINT REMOTE_DEBUGGING_PORT = 0;
-HWND DEVTOOLS_HWND = 0;
-cef_browser_t *CLIENT_BROWSER = nullptr;
+
+cef_browser_t *browser_ = nullptr;
+static int browser_id_ = -1;
 
 extern LPCWSTR DEVTOOLS_WINDOW_NAME;
 
@@ -21,18 +22,20 @@ cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool is
 cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path);
 void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken);
 
-static int64 _mainBrowserId = 0;
+void OpenInternalServer();
+void CloseInternalServer();
+
 static decltype(cef_life_span_handler_t::on_after_created) Old_OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
-    if (CLIENT_BROWSER == nullptr)
+    if (browser_ == nullptr)
     {
         // Add ref.
-        browser->base.add_ref(&CLIENT_BROWSER->base);
+        browser->base.add_ref(&browser_->base);
         // Save client browser.
-        _mainBrowserId = browser->get_identifier(browser);
-        CLIENT_BROWSER = browser;
+        browser_ = browser;
+        browser_id_ = browser->get_identifier(browser);
 
         // Initialize DevTools opener.
         PrepareDevTools();
@@ -46,9 +49,10 @@ static void CEF_CALLBACK Hooked_OnBeforeClose(cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
     // Check main browser.
-    if (browser->get_identifier(browser) == _mainBrowserId)
+    if (browser->get_identifier(browser) == browser_id_)
     {
-        CLIENT_BROWSER = nullptr;
+        browser_ = nullptr;
+        CloseInternalServer();
     }
 
     Old_OnBeforeClose(self, browser);
@@ -68,6 +72,7 @@ static void CALLBACK Hooked_OnLoadStart(struct _cef_load_handler_t* self,
     if (patched || (patched = true, false)) return;
 
     SetUpBrowserWindow(browser, frame);
+    OpenInternalServer();
 };
 
 static void HookClient(cef_client_t *client)
@@ -171,7 +176,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
     const cef_window_info_t* windowInfo,
     struct _cef_client_t* client,
     const cef_string_t* url,
-    struct _cef_browser_settings_t* settings,
+    const struct _cef_browser_settings_t* settings,
     struct _cef_dictionary_value_t* extra_info,
     struct _cef_request_context_t* request_context)
 {
@@ -183,7 +188,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
             extra_info = CefDictionaryValue_Create();
 
         // Add current process ID (browser process).
-        extra_info->set_null(extra_info, &"IS_MAIN"_s);
+        extra_info->set_null(extra_info, &"is_main"_s);
 
         // Hook client.
         HookClient(client);
@@ -200,10 +205,28 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 {
     CefScopedStr rc_port{ command_line->get_switch_value(command_line, &"riotclient-app-port"_s) };
     CefScopedStr rc_token{ command_line->get_switch_value(command_line, &"riotclient-auth-token"_s) };
-    SetRiotClientCredentials(rc_port.str, rc_token.str);
+    SetRiotClientCredentials(rc_port.cstr(), rc_token.cstr());
 
     // Keep Riot's command lines.
     Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
+
+    // Extract args string.
+    auto args = CefScopedStr{ command_line->get_command_line_string(command_line) }.cstr();
+
+    auto chromiumArgs = config::getConfigValue(L"ChromiumArgs");
+    if (!chromiumArgs.empty())
+        args += L" " + chromiumArgs;
+
+    if (config::getConfigValue(L"NoProxyServer") == L"0")
+    {
+        size_t pos = args.find(L"--no-proxy-server");
+        if (pos != std::wstring::npos)
+            args.replace(pos, 17, L"");
+    }
+
+    // Rebuild it.
+    command_line->reset(command_line);
+    command_line->init_from_string(command_line, &CefStr(args));
 
     auto sPort = config::getConfigValue(L"RemoteDebuggingPort");
     REMOTE_DEBUGGING_PORT = wcstol(sPort.c_str(), NULL, 10);
@@ -213,12 +236,14 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
             &"remote-debugging-port"_s, &CefStr(std::to_string(REMOTE_DEBUGGING_PORT)));
     }
 
-    if (config::getConfigValue(L"DisableWebSecurity") == L"1") {
+    if (config::getConfigValue(L"DisableWebSecurity") == L"1")
+    {
         // Disable web security.
         command_line->append_switch(command_line, &"disable-web-security"_s);
     }
 
-    if (config::getConfigValue(L"IgnoreCertificateErrors") == L"1") {
+    if (config::getConfigValue(L"IgnoreCertificateErrors") == L"1")
+    {
         // Ignore invalid certs.
         command_line->append_switch(command_line, &"ignore-certificate-errors"_s);
     }
@@ -232,45 +257,6 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
     return CefInitialize(args, settings, app, windows_sandbox_info);
-}
-
-static auto Old_CreateWindowExW = &CreateWindowExW;
-static HWND WINAPI Hooked_CreateWindowExW(
-    _In_ DWORD dwExStyle,
-    _In_opt_ LPCWSTR lpClassName,
-    _In_opt_ LPCWSTR lpWindowName,
-    _In_ DWORD dwStyle,
-    _In_ int X,
-    _In_ int Y,
-    _In_ int nWidth,
-    _In_ int nHeight,
-    _In_opt_ HWND hWndParent,
-    _In_opt_ HMENU hMenu,
-    _In_opt_ HINSTANCE hInstance,
-    _In_opt_ LPVOID lpParam)
-{
-    HWND hwnd = Old_CreateWindowExW(dwExStyle, lpClassName,
-        lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
-
-    // Avoid ATOM value.
-    if ((uintptr_t)lpClassName <= UINT16_MAX)
-        return hwnd;
-
-    // Detect DevTools window.
-    if (!wcscmp(lpClassName, L"CefBrowserWindow") && !wcscmp(lpWindowName, DEVTOOLS_WINDOW_NAME))
-    {
-        // Get League icon.
-        HWND hClient = FindWindowW(L"RCLIENT", L"League of Legends");
-        HICON icon = (HICON)SendMessageW(hClient, WM_GETICON, ICON_BIG, 0);
-
-        // Set window icon.
-        SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
-        SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
-
-        DEVTOOLS_HWND = hwnd;
-    }
-
-    return hwnd;
 }
 
 static decltype(&CreateProcessW) Old_CreateProcessW = &CreateProcessW;
@@ -315,12 +301,10 @@ void HookBrowserProcess()
 #endif
 
     // Hook CefInitialize().
-    utils::hookFunc((void **)&CefInitialize, Hooked_CefInitialize);
+    utils::hookFunc(&CefInitialize, Hooked_CefInitialize);
     // Hook CefBrowserHost::CreateBrowser().
-    utils::hookFunc((void **)&CefBrowserHost_CreateBrowser, Hooked_CefBrowserHost_CreateBrowser);
+    utils::hookFunc(&CefBrowserHost_CreateBrowser, Hooked_CefBrowserHost_CreateBrowser);
 
-    // Hook CreateWindowExW().
-    utils::hookFunc((void **)&Old_CreateWindowExW, Hooked_CreateWindowExW);
     // Hook CreateProcessW().
-    utils::hookFunc((void **)&Old_CreateProcessW, Hooked_CreateProcessW);
+    utils::hookFunc(&Old_CreateProcessW, Hooked_CreateProcessW);
 }

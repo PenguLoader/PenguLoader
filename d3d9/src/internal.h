@@ -33,6 +33,7 @@
 #include "include/capi/cef_browser_capi.h"
 #include "include/capi/cef_v8_capi.h"
 #include "include/capi/cef_request_capi.h"
+#include "include/capi/cef_server_capi.h"
 
 using std::string;
 using std::wstring;
@@ -82,6 +83,10 @@ struct CefStrBase : cef_string_t
     bool contain(const wchar_t *s) const;
     bool contain(const wstring &s) const;
     bool operator ==(const wchar_t *s) const;
+
+    wstring cstr() const {
+        return wstring{ str, length };
+    }
 };
 
 // cef_string_t wrapper.
@@ -123,6 +128,7 @@ extern decltype(&cef_stream_reader_create_for_file) CefStreamReader_CreateForFil
 extern decltype(&cef_stream_reader_create_for_data) CefStreamReader_CreateForData;
 extern decltype(&cef_process_message_create) CefProcessMessage_Create;
 extern decltype(&cef_v8context_get_current_context) CefV8Context_GetCurrentContext;
+extern decltype(&cef_server_create) CefServer_Create;
 
 // Strings helpers.
 extern decltype(&cef_string_set) CefString_Set;
@@ -176,6 +182,10 @@ namespace utils
     bool readFile(const wstring &path, string &out);
 
     void hookFunc(void **orig, void *hooked);
+    template<typename T> void hookFunc(T *orig, T hooked) {
+        hookFunc(reinterpret_cast<void **>(orig), reinterpret_cast<void *>(hooked));
+    }
+
     void *scanInternal(void *image, size_t length, const string &pattern);
 
     void openFilesExplorer(const wstring &path);

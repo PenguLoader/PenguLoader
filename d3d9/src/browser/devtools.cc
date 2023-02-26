@@ -6,13 +6,17 @@
 
 // BROWSER PROCESS ONLY.
 
+extern HWND rclient_window_;
+extern cef_browser_t *browser_;
 extern UINT REMOTE_DEBUGGING_PORT;
-extern cef_browser_t *CLIENT_BROWSER;
-extern HWND DEVTOOLS_HWND;
+
+static HWND devtools_window_;
 static std::string REMOTE_DEVTOOLS_URL;
 
-LPCWSTR DEVTOOLS_WINDOW_NAME = L"DevTools - League Client";
 static cef_client_t *CreateDevToolsClient();
+
+bool IsWindowsLightTheme();
+void ForceDarkTheme(HWND hwnd);
 
 void OpenDevTools_Internal(bool remote)
 {
@@ -24,23 +28,23 @@ void OpenDevTools_Internal(bool remote)
         ShellExecuteA(NULL, "open",
             REMOTE_DEVTOOLS_URL.c_str(), NULL, NULL, SW_SHOWNORMAL);
     }
-    else if (CLIENT_BROWSER != nullptr)
+    else if (browser_ != nullptr)
     {
         // This function can be called from non-UI thread,
         // so CefBrowserHost::HasDevTools has no effect.
 
         DWORD processId;
-        GetWindowThreadProcessId(DEVTOOLS_HWND, &processId);
+        GetWindowThreadProcessId(devtools_window_, &processId);
 
         if (processId == GetCurrentProcessId())
         {
             // Restore if minimized.
-            if (IsIconic(DEVTOOLS_HWND))
-                ShowWindow(DEVTOOLS_HWND, SW_RESTORE);
+            if (IsIconic(devtools_window_))
+                ShowWindow(devtools_window_, SW_RESTORE);
             else
-                ShowWindow(DEVTOOLS_HWND, SW_SHOWNORMAL);
+                ShowWindow(devtools_window_, SW_SHOWNORMAL);
 
-            SetForegroundWindow(DEVTOOLS_HWND);
+            SetForegroundWindow(devtools_window_);
         }
         else
         {
@@ -52,12 +56,12 @@ void OpenDevTools_Internal(bool remote)
             wi.ex_style = WS_EX_APPWINDOW;
             wi.style = WS_OVERLAPPEDWINDOW
                 | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
-            wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME).forawrd();
+            wi.window_name = CefStr(L"DevTools - League Client").forawrd();
 
             cef_browser_settings_t settings{};
-            auto host = CLIENT_BROWSER->get_host(CLIENT_BROWSER);
+            auto host = browser_->get_host(browser_);
             host->show_dev_tools(host, &wi, CreateDevToolsClient(), &settings, nullptr);
-            //                              ^--- We use null for client to keep DevTools
+            //                              ^--- We use new client to keep DevTools
             //                                   from being scaled by League Client (e.g 0.8, 1.6).
         }
     }
@@ -148,6 +152,75 @@ public:
     }
 };
 
+class DevToolsLifeSpanHandler : public CefRefCount<cef_life_span_handler_t>
+{
+public:
+    DevToolsLifeSpanHandler() : CefRefCount(this)
+    {
+        cef_life_span_handler_t::on_before_popup = on_before_popup;
+        cef_life_span_handler_t::on_after_created = on_after_created;
+        cef_life_span_handler_t::do_close = do_close;
+        cef_life_span_handler_t::on_before_close = on_before_close;
+    }
+
+    static int CEF_CALLBACK on_before_popup(
+        struct _cef_life_span_handler_t* self,
+        struct _cef_browser_t* browser,
+        struct _cef_frame_t* frame,
+        const cef_string_t* target_url,
+        const cef_string_t* target_frame_name,
+        cef_window_open_disposition_t target_disposition,
+        int user_gesture,
+        const struct _cef_popup_features_t* popupFeatures,
+        struct _cef_window_info_t* windowInfo,
+        struct _cef_client_t** client,
+        struct _cef_browser_settings_t* settings,
+        struct _cef_dictionary_value_t** extra_info,
+        int* no_javascript_access)
+    {
+        return 0;
+    }
+
+    static void CEF_CALLBACK on_after_created(struct _cef_life_span_handler_t* self,
+        struct _cef_browser_t* browser)
+    {
+        auto host = browser->get_host(browser);
+        auto hwnd = host->get_window_handle(host);
+
+        // Get League icon.
+        HICON icon = (HICON)SendMessageW(rclient_window_, WM_GETICON, ICON_BIG, 0);
+
+        // Set window icon.
+        SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
+        SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
+
+        if (!IsWindowsLightTheme())
+        {
+            // Force dark theme.
+            ForceDarkTheme(hwnd);
+
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+            // Fix titlebar issue.
+            SetWindowPos(hwnd, NULL, 0, 0, rc.right - 5, rc.bottom, SWP_NOMOVE | SWP_FRAMECHANGED);
+        }
+
+        devtools_window_ = hwnd;
+    }
+
+    static int CEF_CALLBACK do_close(struct _cef_life_span_handler_t* self,
+        struct _cef_browser_t* browser)
+    {
+        return 0;
+    }
+
+    static void CEF_CALLBACK on_before_close(struct _cef_life_span_handler_t* self,
+        struct _cef_browser_t* browser)
+    {
+        devtools_window_ = nullptr;
+    }
+};
+
 class DevToolsClient : public CefRefCount<cef_client_t>
 {
 public:
@@ -234,7 +307,7 @@ private:
     static struct _cef_life_span_handler_t* CEF_CALLBACK get_life_span_handler(
         struct _cef_client_t* self)
     {
-        return nullptr;
+        return new DevToolsLifeSpanHandler();
     }
 
     static struct _cef_load_handler_t* CEF_CALLBACK get_load_handler(

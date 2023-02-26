@@ -33,6 +33,47 @@ window.openPluginsFolder();
 
 <br>
 
+## `AuthCallback` [namespace]
+
+This namespace helps you to create callback URL and read its response from an auth flow.
+
+### `AuthCallback.createURL()` [function]
+
+Create an unique URL can be used for auth callback/redirect from external web browsers.
+
+### `AuthCallback.readResponse(url, timeout?)` [function]
+
+This function wait for response from a given callback URL. It returns a Promise for async context, contains string if success or null when timeout.
+
+- `url`: Callback URL created by `createURL()`.
+- `timeout`: Optional timeout in milliseconds, default is 180s.
+
+Callback URL supports **GET** request only, the response of this function could be search params fullfilled by auth flow. 
+
+Example:
+```js
+async function requestUserAuth() {
+  const callbackURL = AuthCallback.createURL();
+  const requestAuth = 'https://.../?redirect_uri=' + encodeURIComponent(callbackURL);
+  // Open in web browser
+  window.open(callbackURL);
+
+  const response = await AuthCallback.readResponse(callbackURL);
+  if (response === null) {
+    console.log('timeout/fail');
+  } else {
+    console.log(response);
+  }
+  
+  // Should show UX to get back focus
+  fetch('/riotclient/ux-show', { method: 'POST' });
+}
+```
+
+See [spotify-gateway](https://github.com/LeagueLoader/spotify-gateway) example to learn more.
+
+<br>
+
 ## `DataStore` [namespace]
 
 League Client does not save userdata to disk, as same as incognito mode in web browsers. This namespace helps you to store data locally.
@@ -176,6 +217,11 @@ namespace globalThis {
   function openAssetsFolder(): void;
   function openPluginsFolder(): void;
   function openDevTools(remote?: boolean): void;
+  
+  namespace AuthCallback {
+    function createURL(): string;
+    function readResponse(url: string, timeout: number): Promise<string | null> 
+  }
 
   namespace DataStore {
     function has(key: string): boolean;
@@ -196,6 +242,6 @@ namespace globalThis {
     function off(event: 'clear', listener): void;
   }
   
-  let __llver: string;
+  var __llver: string;
 }
 ```
