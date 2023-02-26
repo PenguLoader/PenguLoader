@@ -12,8 +12,11 @@ namespace LeagueLoader
 {
     public partial class MainWindow : Window
     {
+        public static MainWindow Instance { get; private set; }
+
         public MainWindow()
         {
+            Instance = this;
             InitializeComponent();
             WindowStyle = WindowStyle.ToolWindow;
 
@@ -25,6 +28,12 @@ namespace LeagueLoader
             btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
 
             txtVersion.Text = $"v{Version.VERSION} build {Version.BUILD_NUMBER}";
+
+            Loaded += delegate
+            {
+                Show();
+                Updater.CheckUpdate();
+            };
         }
 
         protected override void OnSourceInitialized(EventArgs e)

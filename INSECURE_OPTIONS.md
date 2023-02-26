@@ -19,7 +19,7 @@ IgnoreCertificateErrors=1
 ; Allow requests through a proxy, for debugging purposes only
 NoProxyServer=0
 
-; Replace default Chromium command line args
-ChromiumArgs="--disable-gpu" "--some-flag" "--flag-with-value=some_value"
+; Append custom Chromium command line args
+ChromiumArgs=--disable-gpu --some-flag "--flag-with-value=some_value"
 
 ```

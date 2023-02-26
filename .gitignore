@@ -421,6 +421,5 @@ FodyWeavers.xsd
 *.sln.iml
 
 bin/*
-!bin/plugins/
 packages/
 d3d9/src/renderer/extension.h

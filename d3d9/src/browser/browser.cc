@@ -207,8 +207,15 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     CefScopedStr rc_token{ command_line->get_switch_value(command_line, &"riotclient-auth-token"_s) };
     SetRiotClientCredentials(rc_port.cstr(), rc_token.cstr());
 
+    // Keep Riot's command lines.
+    Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
+
     // Extract args string.
     auto args = CefScopedStr{ command_line->get_command_line_string(command_line) }.cstr();
+
+    auto chromiumArgs = config::getConfigValue(L"ChromiumArgs");
+    if (!chromiumArgs.empty())
+        args += L" " + chromiumArgs;
 
     if (config::getConfigValue(L"NoProxyServer") == L"0")
     {
@@ -221,9 +228,6 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     command_line->reset(command_line);
     command_line->init_from_string(command_line, &CefStr(args));
 
-    // Keep Riot's command lines.
-    Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
-
     auto sPort = config::getConfigValue(L"RemoteDebuggingPort");
     REMOTE_DEBUGGING_PORT = wcstol(sPort.c_str(), NULL, 10);
     if (REMOTE_DEBUGGING_PORT != 0) {
@@ -232,12 +236,14 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
             &"remote-debugging-port"_s, &CefStr(std::to_string(REMOTE_DEBUGGING_PORT)));
     }
 
-    if (config::getConfigValue(L"DisableWebSecurity") == L"1") {
+    if (config::getConfigValue(L"DisableWebSecurity") == L"1")
+    {
         // Disable web security.
         command_line->append_switch(command_line, &"disable-web-security"_s);
     }
 
-    if (config::getConfigValue(L"IgnoreCertificateErrors") == L"1") {
+    if (config::getConfigValue(L"IgnoreCertificateErrors") == L"1")
+    {
         // Ignore invalid certs.
         command_line->append_switch(command_line, &"ignore-certificate-errors"_s);
     }

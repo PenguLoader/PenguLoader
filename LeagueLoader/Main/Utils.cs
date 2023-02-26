@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.IO;
 
 namespace LeagueLoader.Main
 {
@@ -34,6 +34,36 @@ namespace LeagueLoader.Main
                     Verb = "runas",
                     WindowStyle = ProcessWindowStyle.Hidden
                 });
+            }
+            catch { }
+        }
+
+        public static bool IsFileInUse(string path)
+        {
+            try
+            {
+                if (!File.Exists(path))
+                    return false;
+
+                using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                return true;
+            }
+        }
+
+        public static void DeletePath(string path, bool isDir = false)
+        {
+            try
+            {
+                if (isDir && Directory.Exists(path))
+                    Directory.Delete(path, true);
+                else if (File.Exists(path))
+                    File.Delete(path);
             }
             catch { }
         }
