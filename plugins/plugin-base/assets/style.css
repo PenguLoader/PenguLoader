@@ -1,0 +1,18 @@
+/* wrapper */
+.test-wrapper {
+  position: fixed;
+  inset: 0px;
+  z-index: 8500;
+  background-color: #0007;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* banner */
+.test-banner {
+  width: 512px;
+  height: 256px;
+  background-image: url(./banner.png);
+  border-radius: 10px;
+}
