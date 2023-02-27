@@ -76,7 +76,7 @@ See [spotify-gateway](https://github.com/LeagueLoader/spotify-gateway) example t
 
 ## `DataStore` [namespace]
 
-League Client does not save userdata to disk, as same as incognito mode in web browsers. This namespace helps you to store data locally.
+League Client does not save userdata to disk, as same as incognito mode in web browsers. This namespace helps you to store userdata to disk.
 
 ### `DataStore.set(key, value)` [function]
 
@@ -113,13 +113,15 @@ console.log(DataStore.has('key-does-not-exist'))
 
 ### `DataStore.remove(key)` [function]
 
-This function removes the specified data from storage by key.
+This function removes the specified data from storage by key, returns true if the existing key-value pair has been removed.
 
 Example:
 ```js
 DataStore.remove('some-key')
 DataStore.has('some-key')     // -> false
 ```
+
+> You should use unique names for keys, do not use common names, e.g `access_token`, `is_logged`, etc. Other plugins can override your data, you can add prefix to your keys. 
 
 <br>
 
@@ -226,8 +228,8 @@ namespace globalThis {
   namespace DataStore {
     function has(key: string): boolean;
     function get(key: string): any;
-    function set(key: string, value: any): Promise<void>;
-    function remove(key: string): void;
+    function set(key: string, value: any): void;
+    function remove(key: string): boolean;
   }
 
   namespace Effect {

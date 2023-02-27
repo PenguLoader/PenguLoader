@@ -39,7 +39,7 @@ var DataStore = new function () {
         get(key) {
             return data.get(key);
         },
-        async set(key, value) {
+        set(key, value) {
             data.set(key, value);
             commitData();
         },
