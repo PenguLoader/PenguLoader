@@ -15,15 +15,11 @@
     <a href="https://github.com/nomi-san/league-loader">
       <img src="https://img.shields.io/github/stars/nomi-san/league-loader.svg?style=for-the-badge" />
     </a>
-<a href="https://app.fossa.com/projects/git%2Bgithub.com%2Fnomi-san%2Fleague-loader?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnomi-san%2Fleague-loader.svg?type=shield"/></a>
     <a href="./LICENSE">
       <img src ="https://img.shields.io/github/license/nomi-san/league-loader.svg?style=for-the-badge"/>
     </a>
   </p>
 </div>
-
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnomi-san%2Fleague-loader.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnomi-san%2Fleague-loader?ref=badge_large)
 
 ## About
 
@@ -287,3 +283,7 @@ Then build it:
 pnpm install
 pnpm build
 ```
+
+## License
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnomi-san%2Fleague-loader.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnomi-san%2Fleague-loader?ref=badge_large)
