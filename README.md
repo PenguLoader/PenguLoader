@@ -196,7 +196,7 @@ function subscribe() {
 We highly recommend you to use npm project for building plugins. With TypeScript or other languages require transpilation, you need a build tool to build them,
 Webpack, Rollup or Vite is the best choice.
 
-You can also use any font-end library to build custom UI, e.g React, Preact, Vue, Svelte, SolidJS, etc. With front-end tooling, its hot-reload/HMR will help you to do faster.
+You can also use any front-end library to build custom UI, e.g React, Preact, Vue, Svelte, SolidJS, etc. With front-end tooling, its hot-reload/HMR will help you to do faster.
 
 Example plugins:
 - [./plugins/@default](./plugins/@default): Vite with SolidJS + SASS + TypeScript
@@ -248,9 +248,9 @@ Follow these steps to contribute to the project:
 ### Ways you can contribute
 
 - **documentation and website** - the documentation always needs some work, if you discover that something is not documented or can be improved you can create a PR for it, check out [LeagueLoader org](https://github.com/LeagueLoader)
-- **more base/starter plugins** - push your plugin with detailed guide to help beginner with ease
+- **more base/starter plugins** - push your plugins with detailed guide to help beginner starts with ease
 - **core features** - make sure you have a much experience with CEF and low-level programming skill
-- **javascript features** - need too much webdev knowledge
+- **javascript features** - you need too much webdev knowledge
 
 ### Project structure
 
