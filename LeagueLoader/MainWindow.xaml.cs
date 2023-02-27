@@ -75,6 +75,11 @@ namespace LeagueLoader
             Utils.OpenFolder(Config.PluginsDir);
         }
 
+        private void BtnDataStore_Click(object sender, RoutedEventArgs e)
+        {
+            DataStore.Dump();
+        }
+
         private async void BtnRestart_Click(object sender, RoutedEventArgs e)
         {
             if (LCU.IsRunning())

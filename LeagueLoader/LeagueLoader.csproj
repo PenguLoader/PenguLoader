@@ -68,6 +68,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Main\DataStore.cs" />
     <Compile Include="Main\Native.cs" />
     <Compile Include="Version.cs" />
     <Page Include="MainWindow.xaml">

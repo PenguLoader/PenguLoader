@@ -73,13 +73,13 @@
                 Content="Open assets" Click="BtnAssets_Click"
                 Background="Transparent" BorderBrush="#6888"
                 Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                Focusable="False" HorizontalAlignment="Stretch" Margin="274,40,25,0" VerticalAlignment="Top"/>
+                Focusable="False" HorizontalAlignment="Stretch" Margin="274,10,25,0" VerticalAlignment="Top"/>
             <Button
                 x:Name="btnPlugins"
                 Content="Open plugins" Click="BtnPlugins_Click"
                 Background="Transparent" BorderBrush="#6888"
                 Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                Focusable="False" HorizontalAlignment="Right" Margin="0,85,25,0" VerticalAlignment="Top" Width="150"
+                Focusable="False" HorizontalAlignment="Right" Margin="0,50,25,0" VerticalAlignment="Top" Width="150"
             />
             <Button x:Name="btnRestartUX" Click="BtnRestart_Click"
                 Focusable="False" HorizontalAlignment="Left" Margin="25,160,0,0" VerticalAlignment="Top" Width="180">
@@ -87,6 +87,13 @@
                     <fa:ImageAwesome x:Name="faRestart" Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" Icon="Refresh" SpinDuration="4" Width="14" Margin="0,0,5,-2" /> Restart UX
                 </TextBlock>
             </Button>
+            <Button
+                x:Name="btnDataStore"
+                Content="Dump DataStore" Click="BtnDataStore_Click"
+                Background="Transparent" BorderBrush="#6888"
+                Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
+                Focusable="False" HorizontalAlignment="Right" Margin="0,90,25,0" VerticalAlignment="Top" Width="150"
+            />
             <Button
                 Content="Open DevTools" Click="BtnDevTools_Click"
                 Style="{StaticResource AccentButtonStyle}"
