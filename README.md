@@ -2,7 +2,7 @@
 
 <div align="center">
   <a href="https://leagueloader.app">
-    <img src="https://user-images.githubusercontent.com/38210249/220348747-2badbbe5-38cd-48cd-8ea5-eae2e8471bd8.png" width="144"/>
+    <img src="https://user-images.githubusercontent.com/38210249/221445985-ef4591a8-c53e-4590-97bc-6bd4c50f3c1f.png" width="144"/>
   </a>
   <h1 align="center">League Loader</h1>
   <p align="center">
@@ -40,31 +40,16 @@ League Loader was created to solve the problem caused by the big LoL patch in 20
 
 ## Getting started
 
-### Installation
-
 1. Download the [latest release](https://github.com/nomi-san/league-loader/releases) and extract it
-2. Run **League Loader.exe**
-3. Select League Client path
-4. Click **INSTALL**
-5. Launch League Client
+2. Run **League Loader**
+4. Click **ACTIVATE**
+5. Launch **League Client** and enjoy
 
-> To try preview features, you have to [build this project](#build-from-source) or download the latest auto-build in [Actions](https://github.com/nomi-san/league-loader/actions).
-
-### Usage
-
-After League Client ready, just click the settings button to ensure the default plugin loaded.
-
-<br>
-<p align="center">
-  <img src="https://i.imgur.com/aNsUIQ8.png">
+<p align=center>
+  <img src="https://user-images.githubusercontent.com/38210249/221457186-94c0fc0d-f062-42fc-bc78-fb1b5b43e9e2.png" />
 </p>
-<br>
 
-Now you'll see like above this, press:
-- <kbd>F12</kbd> or <kbd>Ctrl Shift I</kbd> to open DevTools
-- <kbd>Ctrl Shift R</kbd> to reload the client instantly
-
-<br>
+> To try preview features, you have to [build this project](#build-from-source) or download the newest auto-build in [Actions](https://github.com/nomi-san/league-loader/actions).
 
 ## JavaScript plugins
 
@@ -82,7 +67,9 @@ This `index.js` is an entry point of your plugin and will be executed when Leagu
 console.log('Hello, League Client!')
 ```
 
-> We recommend to use modern JavaScript editors like **Visual Studio Code** or **WebStorm** to develop your plugins, they support intellisense, linter and autocomplete. Remember that League Client is a web browser based, you should use front-end web technology only.
+#### Please check out these [basic plugin templates](./plugins) to start.
+
+> We recommend you to use modern JavaScript editors like **Visual Studio Code** or **WebStorm** to develop your plugins, it supports intellisense, linter and autocomplete.
 
 ### ES Modules
 
@@ -204,17 +191,20 @@ function subscribe() {
 }
 ```
 
-### Faster UI development
+### NodeJS & npm compatibility
 
-We recommend to use tagged template literals to build large UI components. JSX flavor is the best choice with these libraries:
-- [Nano JSX](https://nanojsx.io/)
-- [Preact + htm](https://preactjs.com/guide/v10/getting-started/#alternatives-to-jsx)
+We highly recommend you to use npm project for building plugins. With TypeScript or other languages require transpilation, you need a build tool to build them,
+Webpack, Rollup or Vite is the best choice.
 
-Check out [league-loader.js](./bin/plugins/league-loader.js) to learn more.
+You can also use any font-end library to build custom UI, e.g React, Preact, Vue, Svelte, SolidJS, etc. With front-end tooling, its hot-reload/HMR will help you to do faster.
 
-### With front-end build tools/bundlers
+Example plugins:
+- [./plugins/@default](./plugins/@default): Vite with SolidJS + SASS + TypeScript
+- [douugdev/league-a-better-client](https://github.com/douugdev/league-a-better-client): Webpack with Preact + SASS + TypeScript
 
-// TODO
+> Please note that all packages that are designed to run in NodeJS only could not be used for League Loader plugin.
+
+> With build tool, your bundled assets output may have incorrect path. Please refer to next section to make them right.
 
 ### Accessing local resources
 
@@ -240,14 +230,33 @@ root/
 - **assets** folder contains common resources.
 - While assets in **plugins** folder are used for plugin itself.
 
-<br>
+## Documentation
 
-## Development
+- [API docs](./API_DOCS.md)
+- [Migration to v1](./MIGRATION_TO_V1.md)
+- [Insecure options](./INSECURE_OPTIONS.md)
 
-### Knowledges
+## Contributing
 
-- Project development requires high experience working with CEF.
-- This project aims to League Client UI/UX. If you want to debug the Client, check out [Mecha](https://github.com/x00bence/Mecha) now.
+Follow these steps to contribute to the project:
+1. Fork it (https://github.com/nomi-san/league-loader/fork)
+2. Create your feature branch `feat/<branch-name>`
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
+
+### Ways you can contribute
+
+- **documentation and website** - the documentation always needs some work, if you discover that something is not documented or can be improved you can create a PR for it, check out [LeagueLoader org](https://github.com/LeagueLoader)
+- **more base/starter plugins** - push your plugin with detailed guide to help beginner with ease
+- **core features** - make sure you have a much experience with CEF and low-level programming skill
+- **javascript features** - need too much webdev knowledge
+
+### Project structure
+
+- **LeagueLoader** - main loader menu UI, written in C# and WPF XAML
+- **d3d9** - core module (DLL), it hooks libCEF to make everything magical
+- **plugins** - templates for plugin dev beginner
 
 ### Build from source
 
@@ -264,16 +273,13 @@ Build steps:
   3. Set arch to **x86**
   4. Right click on each project -> **Build**
 
-### CEF notes
-  
-This project started development under CEF's low-level CAPI. You can convert to C++ OOP using `libcef_dll_wrapper`.
-```cpp
-#define WRAPPING_CEF_SHARED
-#include "libcef_dll/ctocpp/browser_ctocpp.h"
+The @default plugin requires:
+- NodeJS 16+
+- pnpm
 
-void test_oop(cef_browser_t *cbrowser) {
-  auto browser = CefBrowserCToCpp::Wrap(cbowser);
-  auto host = browser->GetHost();
-  host->GetMainFrame();
-}
+Then build it:
+
+```
+pnpm install
+pnpm build
 ```
