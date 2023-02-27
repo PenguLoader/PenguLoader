@@ -14,33 +14,36 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
     auto current_time = system_clock::now();
     auto current_ms = duration_cast<milliseconds>(current_time.time_since_epoch()).count();
 
+    int count = 0;
     std::wstring script = L"(() => { ";
 
-    // Iterate through plugins folder.
-    utils::readDir(pluginsDir + L"\\*", [&script, &pluginsDir, &current_ms](const wstring &name, bool isDir)
+    // Scan plugins dir.
+    for (const auto &name : utils::readDir(pluginsDir + L"\\*"))
     {
-        // Skip name starts with underscore and dot.
+        // Skip name starts with underscore or dot.
         if (name[0] == '_' || name[0] == '.')
-            return;
-
-        // Skip non-JS file.
-        if (!isDir && !utils::strEndWith(name, L".js"))
-            return;
+            continue;
 
         // Skip folder has no index.
-        if (isDir && !utils::fileExist(pluginsDir + L"\\" + name + L"\\index.js"))
-            return;
+        if (utils::fileExist(pluginsDir + L"\\" + name + L"\\index.js"))
+        {
+            script.append(L"import(\"https://plugins/");
+            script.append(name + L"/index.js?t=");
+            script.append(std::to_wstring(current_ms));
+            script.append(L"\"); ");
 
-        script.append(L"import(\"//plugins/");
-        script.append(isDir ? (name + L"/index.js") : name);
-        script.append(L"?t=" + std::to_wstring(current_ms));
-        script.append(L"&v=2\"); ");
-    });
+            count++;
+        }
+    }
 
     script.append(L"})();");
 
-    // Execute.
-    frame->execute_java_script(frame, &CefStr(script), &"https://plugins/"_s, 1);
+    // Execute script.
+    if (count > 0)
+    {
+        cef_string_t _script = CefStr(script).forawrd();
+        frame->execute_java_script(frame, &_script, &""_s, 1);
+    }
 }
 
 bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval)

@@ -36,18 +36,21 @@ bool utils::readFile(const std::wstring &path, std::string &out)
     return result;
 }
 
-void utils::readDir(const std::wstring &dir, const std::function<void (const wstring &, bool)> &callback)
+vector<wstring> utils::readDir(const std::wstring &dir)
 {
+    vector<wstring> files{};
+
     WIN32_FIND_DATAW fd;
     HANDLE hFind = FindFirstFileW(dir.c_str(), &fd);
 
     if (hFind != INVALID_HANDLE_VALUE)
     {
         do {
-            bool isDir = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-            callback(fd.cFileName, isDir);
+            files.push_back(fd.cFileName);
         } while (FindNextFileW(hFind, &fd));
 
         FindClose(hFind);
     }
+
+    return files;
 }

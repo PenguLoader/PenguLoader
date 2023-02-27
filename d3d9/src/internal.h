@@ -23,7 +23,6 @@
 #include <atomic>
 #include <string>
 #include <vector>
-#include <functional>
 #include <windows.h>
 
 #include "include/internal/cef_string.h"
@@ -178,8 +177,8 @@ namespace utils
 
     bool dirExist(const wstring &path);
     bool fileExist(const wstring &path);
-    void readDir(const std::wstring &dir, const std::function<void(const wstring &, bool)> &callback);
     bool readFile(const wstring &path, string &out);
+    vector<wstring> readDir(const std::wstring &dir);
 
     void hookFunc(void **orig, void *hooked);
     template<typename T> void hookFunc(T *orig, T hooked) {
