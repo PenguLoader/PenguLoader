@@ -53,7 +53,9 @@ bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v
         if (args.size() > 0 && args[0]->is_string(args[0]))
         {
             string content{};
-            CefScopedStr path{ args[0]->get_string_value(args[0]) };
+            CefScopedStr path_tmp{ args[0]->get_string_value(args[0]) };
+            CefScopedStr path{ CefURIDecode(&path_tmp, true,
+                static_cast<cef_uri_unescape_rule_t>(UU_SPACES | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS)) };
             wstring _path{ path.str, path.length };
 
             size_t pos = _path.find(L"//");

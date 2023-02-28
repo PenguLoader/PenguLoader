@@ -128,6 +128,7 @@ extern decltype(&cef_stream_reader_create_for_data) CefStreamReader_CreateForDat
 extern decltype(&cef_process_message_create) CefProcessMessage_Create;
 extern decltype(&cef_v8context_get_current_context) CefV8Context_GetCurrentContext;
 extern decltype(&cef_server_create) CefServer_Create;
+extern decltype(&cef_uridecode) CefURIDecode;
 
 // Strings helpers.
 extern decltype(&cef_string_set) CefString_Set;

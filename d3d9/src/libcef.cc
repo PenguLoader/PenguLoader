@@ -14,6 +14,7 @@ decltype(&cef_stream_reader_create_for_data) CefStreamReader_CreateForData;
 decltype(&cef_process_message_create) CefProcessMessage_Create;
 decltype(&cef_v8context_get_current_context) CefV8Context_GetCurrentContext;
 decltype(&cef_server_create) CefServer_Create;
+decltype(&cef_uridecode) CefURIDecode;
 
 decltype(&cef_string_set) CefString_Set;
 decltype(&cef_string_clear) CefString_Clear;
@@ -102,6 +103,7 @@ bool LoadLibcefDll()
         (LPVOID &)CefProcessMessage_Create = GetProcAddress(libcef, "cef_process_message_create");
         (LPVOID &)CefV8Context_GetCurrentContext = GetProcAddress(libcef, "cef_v8context_get_current_context");
         (LPVOID &)CefServer_Create = GetProcAddress(libcef, "cef_server_create");
+        (LPVOID &)CefURIDecode = GetProcAddress(libcef, "cef_uridecode");
 
         (LPVOID &)CefString_Set = GetProcAddress(libcef, "cef_string_utf16_set");
         (LPVOID &)CefString_Clear = GetProcAddress(libcef, "cef_string_utf16_clear");

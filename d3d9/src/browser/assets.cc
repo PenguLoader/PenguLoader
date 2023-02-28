@@ -177,6 +177,10 @@ private:
             path_ = path_.substr(0, pos);
         }
 
+        CefScopedStr path_tmp { CefURIDecode(&CefStr(path_), true,
+            static_cast<cef_uri_unescape_rule_t>(UU_SPACES | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS)) };
+        path_ = path_tmp.cstr();
+
         // Get final path.
         if (is_plugin_)
         {
