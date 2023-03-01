@@ -25,24 +25,26 @@
 
 **League Loader** is a **plugin loader** designed specifically for the **League of Legends Client** (League Client).
 
-The League Client is actually an embedded Chromium web browser, and its interface is based on web technology. With League Loader, users can load JavaScript plugins into the Client as dependencies, allowing them to customize/theme the UI/UX, automate task and build a smarter Client.
+The League Client is actually an embedded Chromium web browser, and its interface is based on web technology. With League Loader, users can load JavaScript plugins into the Client as dependencies, allowing them to customize/theme the UI/UX, automate tasks, and build a smarter Client.
 
-League Loader was created to solve the problem caused by the big LoL patch in 2021, revived plugins from the death of Mecha. And now, Mecha has since returned as a debugger, but League Loader continues to thrive as the primary way for players looking to enhance their League Client with custom content, smarter functionality, and a personalized look and feel.
+League Loader was created to solve the problem caused by the big LoL patch in 2021, which resurrected plugins from the death of Mecha. And now, Mecha has since returned as a debugger, but League Loader continues to thrive as the primary way for players looking to enhance their League Client with custom content, smarter functionality, and a personalized look and feel.
 
 ## Features
 - Customize League Client with plugins
 - Theme/personalize your Client
 - Support modern JavaScript features
-- Support built-in and remote DevTools
-- Working with LCU APIs with ease
-
-<br>
+- Support for built-in and remote DevTools
+- Work with LCU APIs with ease
 
 ## Getting started
 
-Follow these steps to install League Loader:
+Follow the steps below to install:
 
-1. Download and install the [latest release](https://github.com/nomi-san/league-loader/releases)
+1. Download the [latest release](https://github.com/nomi-san/league-loader/releases)
+
+    - There are two versions, the setup EXE and the portable ZIP version
+    - With the ZIP version, you should extract it to a fixed location
+
 2. Run **League Loader**
 4. Click **ACTIVATE**
 5. Launch **League Client** and enjoy
@@ -51,19 +53,19 @@ Follow these steps to install League Loader:
   <img src="https://user-images.githubusercontent.com/38210249/221457186-94c0fc0d-f062-42fc-bc78-fb1b5b43e9e2.png" />
 </p>
 
-Notes:
-- Windows 7 is not tested, but it requires .Net Framework 4.5+ installed to run
-- With Windows 8.1/10 clean install, you need to install [VC++ 2013](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
-- Do not put your League Loader folder into 'League of Legends' or 'Riot Client' folder
-- Before remnoving the portable version, you have to deactivate it
+Troubleshooting:
+- Windows 7 is not tested, but requires .Net Framework 4.5+ installed to run
+- For Windows 8.1/10 clean install, you should install [VC++ 2013](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
+- Do not put your League Loader folder in the 'League of Legends' or 'Riot Client' folder
+- Before removing the portable version, you must first deactivate it
 
-> To try preview features, you should [build this project](#build-from-source) or download the newest auto-build in [Actions](https://github.com/nomi-san/league-loader/actions).
+> To try out the preview features, you should [build this project](#build-from-source) or download the latest auto-build in [Actions](https://github.com/nomi-san/league-loader/actions).
 
 ## JavaScript plugins
 
-Plugin development requires basic knowledge of [**JavaScript**](https://developer.mozilla.org/en-US/docs/Web/JavaScript), and [**CSS**](https://developer.mozilla.org/en-US/docs/Web/CSS) if you want to make a theme. That's pretty easy if you already know web programming.
+Plugin development requires basic knowledge of [**JavaScript**](https://developer.mozilla.org/en-US/docs/Web/JavaScript), and [**CSS**](https://developer.mozilla.org/en-US/docs/Web/CSS) if you want to make a theme. It's pretty easy if you're already familiar with web programming.
 
-To make your first plugin, just create a new folder in the `plugins` folder and name it to your plugin name, e.g `your-plugin`. Then create a new file with name `index.js` in your plugin folder.
+To create your first plugin, simply create a new folder in the `plugins` folder and name it with the name of your plugin, e.g. `your-plugin`. Then create a new file called `index.js` in your plugins folder.
 
 ```
 plugins/
@@ -71,15 +73,15 @@ plugins/
     |__index.js
 ```
 
-This `index.js` is an entry point of your plugin and will be executed when League Client ready. Put this line to your index, you will see the log in console.
+This `index.js` is an entry point for your plugin and will be executed when the League Client is ready. Add this line to your `index.js`, you will see the log in console.
 
 ```js
 console.log('Hello, League Client!')
 ```
 
-#### 👉 Please check out these [basic plugin templates](./plugins) to start.
+#### 👉 Please check out these [Basic plugin templates](./plugins) to get started.
 
-> We recommend you to use modern JavaScript editors like **Visual Studio Code** or **WebStorm** to develop your plugins, it supports intellisense, linter and code autocompletion. All your code/text files should be saved as UTF-8 encoding (no BOM).
+> We recommend that you use modern JavaScript editors like Visual Studio Code or WebStorm to develop your plugins, it supports intellisense, linter and code auto-completion. All your code/text files should be saved in UTF-8 encoding (no BOM).
 
 ### Module system
 
@@ -140,19 +142,19 @@ import rawData from './my-data.txt?raw';
 // content of my-data.txt in string
 ```
 
-> With `?raw`, your text files must be saved with UTF8 encoding.
+> With `?raw`, your text files must be saved in UTF8 encoding.
 
 ### Theme the League Client
 
-Inject custom CSS to override default League's style.
+Adding custom CSS helps you to override default the League style.
 
-From your plugin entry, use import to add:
+From your plugin entry, use `import` to add it:
 
 ```js
 import './theme.css';
 ```
 
-This line will inject CSS code from `theme.css` next to your `index.js`.
+This line will append a link tag to body pointing to `theme.css` next to your `index.js`.
 
 To use remote theme, e.g from `https://example.com/theme.css`:
 
@@ -174,10 +176,32 @@ window.addEventListener('load', () => {
 
 Just use `fetch` to make LCU requests:
 ```js
-async function acceptMatchFound() {
-  await fetch('/lol-matchmaking/v1/ready-check/accept', {
+function acceptMatchFound() {
+  fetch('/lol-matchmaking/v1/ready-check/accept', {
     method: 'POST'  
   });
+}
+```
+
+Note that `fetch` returns a Promise for async context, you should wrap it in inside an async function.
+```js
+async function getSummonerName() {
+  const res = await fetch('/lol-summoner/v1/current-summoner');
+  const data = await res.json();
+  return data['displayName'];
+}
+```
+
+For LCDS (RTMP) calls, you can use `URLSearchParams` and `JSON.strigify` to construct call parameters.
+```js
+async function quitLobby() {    // never know why people call it 'dodge'
+  const params = new URLSearchParams({
+    destination: 'lcdsServiceProxy',
+    method: 'call',
+    args: JSON.stringify(['', 'teambuilder-draft', 'quitV2', ''])
+  });
+  const url = '/lol-login/v1/session/invoke?' + params.toString();
+  await fetch(url, { method: 'POST' });
 }
 ```
 
@@ -205,18 +229,18 @@ function subscribe() {
 
 ### NodeJS & npm compatibility
 
-We highly recommend you to use npm project for building plugins. With TypeScript or other languages require transpilation, you need a build tool to build them,
+We strongly recommend that you to use npm project to build plugins. With TypeScript or other languages that require transpilation, you need a build tool to build them,
 Webpack, Rollup or Vite is the best choice.
 
-You can also use any front-end library to build custom UI, e.g React, Preact, Vue, Svelte, SolidJS, etc. With front-end tooling, its hot-reload/HMR will help you to do faster.
+You can also use any front-end library to build custom UI, e.g. React, Preact, Vue, Svelte, SolidJS, etc. With front-end tooling, its hot-reload/HMR will help you to do faster.
 
 Example plugins:
 - [./plugins/@default](./plugins/@default): Vite with SolidJS + SASS + TypeScript
 - [douugdev/league-a-better-client](https://github.com/douugdev/league-a-better-client): Webpack with Preact + SASS + TypeScript
 
-> Please note that all packages that are designed to run in NodeJS only could not be used for League Loader plugin.
+> Please note that all packages that are designed to run only in NodeJS cannot be used for League Loader plugin.
 
-> With build tool, your bundled assets output may have incorrect path. Please refer to next section to make them right.
+> With the build tool, the output of your bundled assets output may have incorrect paths. Please refer to next the section to make correct them.
 
 ### Accessing local resources
 
@@ -260,8 +284,8 @@ Follow these steps to contribute to the project:
 ### Ways you can contribute
 
 - **documentation and website** - the documentation always needs some work, if you discover that something is not documented or can be improved you can create a PR for it, check out [LeagueLoader org](https://github.com/LeagueLoader)
-- **more base/starter plugins** - push your plugins with detailed guide to help beginner starts with ease
-- **core features** - make sure you have a much experience with CEF and low-level programming skill
+- **more base/starter plugins** - push your plugins with a detailed guide to help beginners get started with ease
+- **core features** - make sure you have a lot of experience with CEF and low-level programming skills
 - **javascript features** - you need too much webdev knowledge
 
 ### Project structure
@@ -277,7 +301,7 @@ This project requires Visual Studio 2017 with these components:
 - .NET desktop development
 - Windows 8.1 SDK
 
-You can also use VS 2019+ and different SDK version.
+You can also use VS 2019+ and another SDK version.
 
 Build steps:
   1. Open **league-loader.sln**
