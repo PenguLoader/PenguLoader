@@ -1,6 +1,6 @@
 {
-  "name": "league-loader",
-  "description": "The first League Loader plug-in, built for itself",
+  "name": "@league-loader/vite-theme",
+  "description": "A simple theme with Vite + SASS + TypeScript",
   "private": true,
   "version": "0.0.1",
   "license": "WTFPL",
