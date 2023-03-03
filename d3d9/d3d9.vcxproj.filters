@@ -82,6 +82,9 @@
     <ClCompile Include="src\renderer\auth_callback.cc">
       <Filter>src\renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\browser\jsdialog.cc">
+      <Filter>src\browser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\renderer\extension.js">

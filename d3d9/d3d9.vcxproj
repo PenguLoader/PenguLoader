@@ -22,6 +22,7 @@
     <ClCompile Include="src\browser\assets.cc" />
     <ClCompile Include="src\browser\browser.cc" />
     <ClCompile Include="src\browser\devtools.cc" />
+    <ClCompile Include="src\browser\jsdialog.cc" />
     <ClCompile Include="src\browser\riotclient.cc" />
     <ClCompile Include="src\browser\server.cc" />
     <ClCompile Include="src\browser\window.cc" />
