@@ -10,7 +10,6 @@ specifiers:
   solid-js: ^1.6.10
   typescript: ^4.9.5
   vite: ^4.1.1
-  vite-plugin-css-injected-by-js: ^3.0.0
   vite-plugin-mkcert: ^1.13.0
   vite-plugin-solid: ^2.5.0
 
@@ -26,7 +25,6 @@ devDependencies:
   sass: 1.58.3
   typescript: 4.9.5
   vite: 4.1.4_435aevtanapkguv7m72cl6trbi
-  vite-plugin-css-injected-by-js: 3.0.1_vite@4.1.4
   vite-plugin-mkcert: 1.13.2_vite@4.1.4
   vite-plugin-solid: 2.5.0_solid-js@1.6.11+vite@4.1.4
 
@@ -1251,14 +1249,6 @@ packages:
 
   /validate-html-nesting/1.2.1:
     resolution: {integrity: sha512-T1ab131NkP3BfXB7KUSgV7Rhu81R2id+L6NaJ7NypAAG5iV6gXnPpQE5RK1fvb+3JYsPTL+ihWna5sr5RN9gaQ==}
-    dev: true
-
-  /vite-plugin-css-injected-by-js/3.0.1_vite@4.1.4:
-    resolution: {integrity: sha512-M4Pv/eJnzEk13T06g79ho/qZXnkonkNs16hQZsK/zik4m1BQAVsHFHBvls0BVW8MVrPl8tvf/jWCZLoX6Khgnw==}
-    peerDependencies:
-      vite: '>2.0.0-0'
-    dependencies:
-      vite: 4.1.4_435aevtanapkguv7m72cl6trbi
     dev: true
 
   /vite-plugin-mkcert/1.13.2_vite@4.1.4:
