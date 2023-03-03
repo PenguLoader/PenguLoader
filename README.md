@@ -235,8 +235,9 @@ Webpack, Rollup or Vite is the best choice.
 You can also use any front-end library to build custom UI, e.g. React, Preact, Vue, Svelte, SolidJS, etc. With front-end tooling, its hot-reload/HMR will help you to do faster.
 
 Example plugins:
-- [./plugins/@default](./plugins/@default): Vite with SolidJS + SASS + TypeScript
-- [douugdev/league-a-better-client](https://github.com/douugdev/league-a-better-client): Webpack with Preact + SASS + TypeScript
+- [/plugins/vite-theme](./plugins/vite-theme) - A simple theme with Vite ⚡ HMR + SASS + TypeScript
+- [/plugins/@default](./plugins/@default) - Vite ⚡ HMR + SolidJS + SASS + TypeScript
+- [douugdev/league-a-better-client](https://github.com/douugdev/league-a-better-client) - Webpack ⚡ HMR + ⚛ Preact + SASS + TypeScript
 
 > Please note that all packages that are designed to run only in NodeJS cannot be used for League Loader plugin.
 
