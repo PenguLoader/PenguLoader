@@ -3,52 +3,37 @@ on:
     branches:
       - main
   workflow_dispatch:
-  
 
 jobs:
   build:
-    permissions:
-      id-token: write
-      contents: read
     runs-on: windows-2019
 
     steps:
       - uses: actions/checkout@main
-      - run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
-      - run: echo "BUILD_DATE=$(git show -s --date=format:%Y%m%d-%H%M --format=%cd)" >> $env:GITHUB_ENV
-      - run: (Get-Content d3d9\d3d9.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File d3d9\d3d9.vcxproj
-      - run: (Get-Content LeagueLoader\Version.cs) -replace 'int\s*BUILD_NUMBER.*;', 'string BUILD_NUMBER = "${{ env.BUILD_DATE }}";' | Out-File LeagueLoader\Version.cs
 
-      - uses: TheMrMilchmann/setup-msvc-dev@v2
-        with:
-          arch: x86
-          sdk: 10.0.17763.0
-          toolset: 14.16
+      - run: |
+          echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
+          echo "BUILD_DATE=$(git show -s --date=format:%Y%m%d-%H%M --format=%cd)" >> $env:GITHUB_ENV
+          (Get-Content d3d9\d3d9.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File d3d9\d3d9.vcxproj
+          (Get-Content LeagueLoader\Version.cs) -replace 'int\s*BUILD_NUMBER.*;', 'string BUILD_NUMBER = "${{ env.BUILD_DATE }}";' | Out-File LeagueLoader\Version.cs
+
       - uses: microsoft/setup-msbuild@v1.1
 
-      - uses: nuget/setup-nuget@v1 
-        with:
-          nuget-version: '5.x'
-      - run: nuget restore league-loader.sln
-
-      - name: Build solution
-        run: msbuild league-loader.sln /p:Platform="x86" /p:Configuration=Release
-        
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-          
-      - uses: pnpm/action-setup@v2
-        with:
-          version: latest
-          
+
+      - name: Build solution
+        run: msbuild league-loader.sln -t:restore,build -m /p:Platform="x86" /p:Configuration=Release
+
       - name: Build @default plugin
         run: |
           cd plugins/@default
-          pnpm install
+          npm i -g pnpm@latest
+          pnpm install --no-frozen-lockfile
           pnpm build
           cd ../..
-        
+
       - name: Upload build outputs
         uses: actions/upload-artifact@v3
         with:
@@ -57,4 +42,3 @@ jobs:
             bin/*.exe
             bin/*.dll
             bin/plugins/
-            
