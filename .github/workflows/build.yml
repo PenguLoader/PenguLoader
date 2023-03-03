@@ -18,21 +18,30 @@ jobs:
           (Get-Content LeagueLoader\Version.cs) -replace 'int\s*BUILD_NUMBER.*;', 'string BUILD_NUMBER = "${{ env.BUILD_DATE }}";' | Out-File LeagueLoader\Version.cs
 
       - uses: microsoft/setup-msbuild@v1.1
+      - uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
+      - uses: pnpm/action-setup@v2
+        with:
+          version: latest
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
+          cache: "pnpm"
+          cache-dependency-path: "plugins/@default/pnpm-lock.yaml"
 
       - name: Build solution
-        run: msbuild league-loader.sln -t:restore,build -m /p:Platform="x86" /p:Configuration=Release
+        run: msbuild league-loader.sln /t:restore,build /m /p:Platform="x86" /p:Configuration=Release
 
       - name: Build @default plugin
         run: |
           cd plugins/@default
-          npm i -g pnpm@latest
-          pnpm install --no-frozen-lockfile
+          pnpm install
           pnpm build
-          cd ../..
 
       - name: Upload build outputs
         uses: actions/upload-artifact@v3
