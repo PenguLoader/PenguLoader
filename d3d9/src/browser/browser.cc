@@ -25,6 +25,8 @@ void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken);
 void OpenInternalServer();
 void CloseInternalServer();
 
+cef_jsdialog_handler_t *CreateCustomJSDialogHandler();
+
 static decltype(cef_life_span_handler_t::on_after_created) Old_OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
@@ -152,6 +154,12 @@ static void HookClient(cef_client_t *client)
         };
 
         return handler;
+    };
+
+    static auto GetJSDialogHandler = client->get_jsdialog_handler;
+    client->get_jsdialog_handler = [](struct _cef_client_t* self)
+    {
+        return CreateCustomJSDialogHandler();
     };
 
     static auto OnProcessMessageReceived = client->on_process_message_received;
