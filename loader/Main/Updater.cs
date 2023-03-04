@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Ookii.Dialogs.Wpf;
 
-namespace LeagueLoader.Main
+namespace PenguLoader.Main
 {
     static class Updater
     {

@@ -1,6 +1,6 @@
 ﻿
 #if !__cplusplus
-namespace LeagueLoader
+namespace PenguLoader
 {
 static class Version
 {

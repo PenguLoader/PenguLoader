@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Win32;
 
-namespace LeagueLoader.Main
+namespace PenguLoader.Main
 {
     static class IFEO
     {

@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace LeagueLoader.Main
+namespace PenguLoader.Main
 {
     static class DataStore
     {

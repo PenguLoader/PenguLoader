@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Threading;
 using System.Windows;
-using LeagueLoader.Main;
+using PenguLoader.Main;
 
-namespace LeagueLoader
+namespace PenguLoader
 {
     public static class Program
     {

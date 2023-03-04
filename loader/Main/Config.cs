@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace LeagueLoader.Main
+namespace PenguLoader.Main
 {
     static class Config
     {

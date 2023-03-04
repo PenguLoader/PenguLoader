@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 using System.Windows;
 
 using ModernWpf;
-using LeagueLoader.Main;
+using PenguLoader.Main;
 using System.Windows.Media;
 using System.Windows.Interop;
 
-namespace LeagueLoader
+namespace PenguLoader
 {
     public partial class MainWindow : Window
     {

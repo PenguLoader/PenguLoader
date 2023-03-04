@@ -7,8 +7,8 @@ using System.Windows;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("League Loader")]
-[assembly: AssemblyDescription("JavaScript plugin loader for League of Legends Client")]
+[assembly: AssemblyTitle("Pengu Loader")]
+[assembly: AssemblyDescription("A JavaScript plugin loader for League of Legends Client")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("GitHub, Inc.")]
 [assembly: AssemblyProduct("League Loader")]
@@ -51,5 +51,5 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion(LeagueLoader.Version.VERSION)]
-[assembly: AssemblyFileVersion(LeagueLoader.Version.VERSION)]
+[assembly: AssemblyVersion(PenguLoader.Version.VERSION)]
+[assembly: AssemblyFileVersion(PenguLoader.Version.VERSION)]

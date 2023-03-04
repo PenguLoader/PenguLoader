@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace LeagueLoader.Main
+namespace PenguLoader.Main
 {
     static class Native
     {

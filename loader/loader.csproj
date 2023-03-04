@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{2A113A9D-A110-4C88-9289-9E4E70A7E8D1}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>LeagueLoader</RootNamespace>
-    <AssemblyName>League Loader</AssemblyName>
+    <RootNamespace>PenguLoader</RootNamespace>
+    <AssemblyName>Pengu Loader</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -42,7 +42,7 @@
     <ApplicationManifest>App.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>LeagueLoader.Program</StartupObject>
+    <StartupObject>PenguLoader.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

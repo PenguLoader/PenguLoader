@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 
-namespace LeagueLoader.Main
+namespace PenguLoader.Main
 {
     static class Utils
     {

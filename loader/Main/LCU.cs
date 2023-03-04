@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LeagueLoader.Main
+namespace PenguLoader.Main
 {
     static class LCU
     {
