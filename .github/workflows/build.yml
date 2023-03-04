@@ -14,8 +14,8 @@ jobs:
       - run: |
           echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
           echo "BUILD_DATE=$(git show -s --date=format:%Y%m%d-%H%M --format=%cd)" >> $env:GITHUB_ENV
-          (Get-Content d3d9\d3d9.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File d3d9\d3d9.vcxproj
-          (Get-Content LeagueLoader\Version.cs) -replace 'int\s*BUILD_NUMBER.*;', 'string BUILD_NUMBER = "${{ env.BUILD_DATE }}";' | Out-File LeagueLoader\Version.cs
+          (Get-Content core\core.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File core\core.vcxproj
+          (Get-Content loader\Version.cs) -replace 'int\s*BUILD_NUMBER.*;', 'string BUILD_NUMBER = "${{ env.BUILD_DATE }}";' | Out-File loader\Version.cs
 
       - uses: microsoft/setup-msbuild@v1.1
       - uses: actions/cache@v3
@@ -35,7 +35,7 @@ jobs:
           cache-dependency-path: "plugins/@default/pnpm-lock.yaml"
 
       - name: Build solution
-        run: msbuild league-loader.sln /t:restore,build /m /p:Platform="x86" /p:Configuration=Release
+        run: msbuild pengu-loader.sln /t:restore,build /m /p:Platform="x86" /p:Configuration=Release
 
       - name: Build @default plugin
         run: |
@@ -46,7 +46,7 @@ jobs:
       - name: Upload build outputs
         uses: actions/upload-artifact@v3
         with:
-          name: league-loader-${{ env.SHORT_SHA }}-${{ env.BUILD_DATE }}
+          name: pengu-loader-${{ env.SHORT_SHA }}-${{ env.BUILD_DATE }}
           path: |
             bin/*.exe
             bin/*.dll

@@ -28,7 +28,7 @@
                 Background="{DynamicResource SystemControlBackgroundAltMediumHighBrush}"
                 InactiveBackground="{DynamicResource SystemControlBackgroundAltMediumHighBrush}"
                 IsActive="True"
-                x:Name="titleBar" Icon="icon.ico" IsIconVisible="True" Title="League Loader" />
+                x:Name="titleBar" Icon="icon.ico" IsIconVisible="True" Title="Pengu Loader" />
             <ui:TitleBarButton Click="BtnTheme_Click" Margin="0,0,46,0" ToolTip="Change theme" HorizontalAlignment="Right">
                 <fa:ImageAwesome Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" Icon="MoonOutline" Width="12" />
             </ui:TitleBarButton>
