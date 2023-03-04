@@ -14,12 +14,11 @@ namespace PenguLoader.Main
 {
     static class Updater
     {
-        const string API_URL = "https://api.github.com/repos/nomi-san/league-loader/releases/latest";
-        const string DOWNLOAD_URL = "https://github.com/nomi-san/league-loader/releases/latest";
+        static string API_URL => $"https://api.github.com/repos/{Program.GITHUB_REPO}/releases/latest";
+        static string DOWNLOAD_URL => $"https://github.com/{Program.GITHUB_REPO}/releases/latest";
+
         const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" +
             " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36";
-
-        static System.Version CurrentVersion => Assembly.GetExecutingAssembly().GetName().Version;
 
         class Update
         {
@@ -127,7 +126,7 @@ namespace PenguLoader.Main
                         vtag = vtag.Substring(1);
 
                     var remote = new System.Version(vtag);
-                    var local = CurrentVersion;
+                    var local = new System.Version(Version.VERSION);
 
                     if (remote.CompareTo(local) > 0)
                     {

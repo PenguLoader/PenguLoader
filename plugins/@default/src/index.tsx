@@ -18,10 +18,10 @@ async function init() {
   }
 
   // Get root
-  let root = document.getElementById('league-loader-plugin');
+  let root = document.getElementById('pengu-loader-plugin');
   if (!root) {
     root = document.createElement('div');
-    root.setAttribute('id', 'league-loader-plugin');
+    root.setAttribute('id', 'pengu-loader-plugin');
     document.body.appendChild(root);
   }
 

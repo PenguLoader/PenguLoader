@@ -10,8 +10,9 @@ namespace PenguLoader
     {
         public const string NAME = "Pengu Loader";
         public static string HOMEPAGE_URL => "https://chat.pengu.lol";
-        public static string GITHUB_URL => "https://github.com/PenguLoader/PenguLoader";
-        public static string GITHUB_ISSUES_URL => "https://github.com/PenguLoader/PenguLoader/issues";
+        public static string GITHUB_REPO = "PenguLoader/PenguLoader";
+        public static string GITHUB_URL => $"https://github.com/{GITHUB_REPO}";
+        public static string GITHUB_ISSUES_URL => $"https://github.com/{GITHUB_REPO}/issues";
 
         [STAThread]
         static int Main(string[] args)
@@ -23,8 +24,6 @@ namespace PenguLoader
             {
                 if (createdNew && !isUninstall)
                 {
-                    Updater.CheckUpdate();
-
                     App.Main();
                     return 0;
                 }
