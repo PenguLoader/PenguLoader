@@ -2,7 +2,7 @@
   "fallback": "en",
   "translations": {
     "en": {
-      "welcome": "Hi %name%, this popup lets you know the installed plugins have been loaded successfully.",
+      "welcome": "Hi %name%, this popup lets you know that the installed plugins have been successfully loaded.",
       "checkout_links": "Join our %discord% to get more interesting plugins and themes. Visit the %github% repo to learn more about creating plugins 🤘",
       "devtools_tip": "Try hitting the %key% key to open Developer Tools 😉",
       "donotshowagain": "Do not show again",

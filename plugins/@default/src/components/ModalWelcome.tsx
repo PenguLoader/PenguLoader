@@ -4,7 +4,7 @@ import { DISCORD_URL, GITHUB_REPO_URL } from '../lib/constants';
 import Modal, { ModalContent, ModalHeader, ModalFooter } from './Modal';
 import { t } from '../lib/i18n';
 import { getSummonerName } from '../lib/api';
-import logo from '../assets/logo.png';
+import PenguImg from '../assets/PenguLoader.jpg';
 
 interface Props {
   onClose(): void;
@@ -32,7 +32,7 @@ export default function ModalWelcome(props: Props) {
   return (
     <Modal onClose={props.onClose}>
       <ModalHeader>
-        <img src={logo} width="28" />
+        <img src={PenguImg} width="48" style="border-radius: 4px" />
         <h2 class="modal__title">Pengu Loader</h2>
         <span class="version">v{version}</span>
       </ModalHeader>

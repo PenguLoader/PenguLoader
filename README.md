@@ -23,7 +23,7 @@
 
 ## About
 
-**Pengu Loader** (also known as **League Loader**) is a **plugin loader** designed specifically for the **League of Legends Client** (League Client).
+**Pengu Loader** (renamed from **League Loader**) is a **plugin loader** designed specifically for the **League of Legends Client** (League Client).
 
 The League Client Ux is actually an embedded Chromium web browser, and its interface is based on web technology. With Pengu Loader, you can load **JavaScript** plug-ins into the Client as dependencies, which can help you personalize the look and feel of the Client, load your custom content, add new features, and improve your overall experience. It also allows you to build a smarter Client that fits your needs and preferences.
 
