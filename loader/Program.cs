@@ -8,10 +8,10 @@ namespace PenguLoader
 {
     public static class Program
     {
-        public const string NAME = "League Loader";
-        public static string HOMEPAGE_URL => "https://chat.leagueloader.app";
-        public static string GITHUB_URL => "https://github.com/nomi-san/league-loader";
-        public static string GITHUB_ISSUES_URL => "https://github.com/nomi-san/league-loader/issues";
+        public const string NAME = "Pengu Loader";
+        public static string HOMEPAGE_URL => "https://chat.pengu.lol";
+        public static string GITHUB_URL => "https://github.com/PenguLoader/PenguLoader";
+        public static string GITHUB_ISSUES_URL => "https://github.com/PenguLoader/PenguLoader/issues";
 
         [STAThread]
         static int Main(string[] args)
@@ -32,7 +32,7 @@ namespace PenguLoader
                 {
                     if (!createdNew || Module.IsLoaded())
                     {
-                        MessageBox.Show("Please close running League Client and League Loader before uninstalling it.",
+                        MessageBox.Show("Please close the running League Client and Loader menu before uninstalling it.",
                             NAME, MessageBoxButton.OK, MessageBoxImage.Information);
                         return -1;
                     }

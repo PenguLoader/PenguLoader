@@ -67,8 +67,8 @@ static void WarnInvalidVersion()
     MessageBox(NULL,
         L"The version of your League of Legends Client is not supported.\n"
         L"Please check existing issues or open new issue about that, and wait for the new update.",
-        L"League Loader", MB_TOPMOST | MB_OK | MB_ICONWARNING);
-    ShellExecute(NULL, L"open", L"https://git.leagueloader.app", NULL, NULL, NULL);
+        L"Pengu Loader", MB_TOPMOST | MB_OK | MB_ICONWARNING);
+    ShellExecute(NULL, L"open", L"https://git.pengu.lol", NULL, NULL, NULL);
 }
 
 static void *Old_GetBackgroundColor = nullptr;

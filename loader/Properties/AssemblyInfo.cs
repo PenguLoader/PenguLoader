@@ -11,7 +11,7 @@ using System.Windows;
 [assembly: AssemblyDescription("A JavaScript plugin loader for League of Legends Client")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("GitHub, Inc.")]
-[assembly: AssemblyProduct("League Loader")]
+[assembly: AssemblyProduct("Pengu Loader")]
 [assembly: AssemblyCopyright("Copyright © 2023")]
 [assembly: AssemblyTrademark("Application")]
 [assembly: AssemblyCulture("")]

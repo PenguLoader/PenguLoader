@@ -629,7 +629,7 @@ int APIENTRY _BootstrapEntry(HWND hwnd, HINSTANCE instance, LPWSTR commandLine, 
     {
         char msg[512];
         sprintf_s(msg, "Failed to build process parameters, RtlCreateProcessParameters returns 0x%08X.", status);
-        MessageBoxA(NULL, msg, "League Loader bootstraper", MB_OK | MB_ICONWARNING);
+        MessageBoxA(NULL, msg, "Pengu Loader bootstraper", MB_OK | MB_ICONWARNING);
         return 1;
     }
 
@@ -708,7 +708,7 @@ int APIENTRY _BootstrapEntry(HWND hwnd, HINSTANCE instance, LPWSTR commandLine, 
     {
         char msg[512];
         sprintf_s(msg, "Failed to create process, NtCreateUserProcess returns 0x%08X.", status);
-        MessageBoxA(NULL, msg, "League Loader bootstraper", MB_OK | MB_ICONWARNING);
+        MessageBoxA(NULL, msg, "Pengu Loader bootstraper", MB_OK | MB_ICONWARNING);
     }
     else
     {

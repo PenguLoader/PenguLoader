@@ -40,7 +40,7 @@ namespace PenguLoader.Main
 
             var dialog = new ProgressDialog()
             {
-                WindowTitle = "League Loader v" + update.Version,
+                WindowTitle = Program.NAME + " v" + update.Version,
                 ShowTimeRemaining = false,
                 ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar
             };

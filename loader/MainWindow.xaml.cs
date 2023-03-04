@@ -108,7 +108,7 @@ namespace PenguLoader
             }
             else
             {
-                MessageBox.Show(this, "League Loader is not loaded by any Client.",
+                MessageBox.Show(this, "The Loader is not loaded by any Client.",
                     Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
@@ -121,7 +121,7 @@ namespace PenguLoader
             }
             else
             {
-                MessageBox.Show(this, "League Loader is not loaded by any Client.",
+                MessageBox.Show(this, "The Loader is not loaded by any Client.",
                     Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
@@ -176,7 +176,7 @@ namespace PenguLoader
                     if (LCU.IsRunning())
                     {
                         if (MessageBox.Show(this,
-                            "League Loader has been activated successfully.\n" +
+                            "The Loader has been activated successfully.\n" +
                             "Do you want to restart the running League of Legends Client now?",
                             Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                         {
@@ -186,7 +186,7 @@ namespace PenguLoader
                     else
                     {
                         MessageBox.Show(this,
-                            "League Loader has been activated successfully.\n" +
+                            "The Loader has been activated successfully.\n" +
                             "Let's launch your League of Legends Client to enjoy!",
                             Program.NAME, MessageBoxButton.OK, MessageBoxImage.Information);
                     }
@@ -194,14 +194,14 @@ namespace PenguLoader
                 else
                 {
                     MessageBox.Show(this,
-                        "League Loader failed to activate.\n",
+                        "Failed to activate the Loader.\n",
                         Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             else
             {
                 if (MessageBox.Show(this,
-                    "Do you want to deactivate League Loader?",
+                    "Do you want to deactivate the Loader?",
                     Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     Module.Deactivate();
@@ -210,7 +210,7 @@ namespace PenguLoader
                     if (Module.IsLoaded())
                     {
                         if (MessageBox.Show(this,
-                            "League Loader has been deactivated successfully.\n" +
+                            "The Loader has been deactivated successfully.\n" +
                             "Do you want to restart running League of Legends Client to apply?",
                             Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
                         {
@@ -220,7 +220,7 @@ namespace PenguLoader
                     else
                     {
                         MessageBox.Show(this,
-                            "League Loader has been deactivated successfully.",
+                            "The Loader has been deactivated successfully.",
                             Program.NAME, MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }

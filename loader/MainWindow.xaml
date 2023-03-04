@@ -8,7 +8,7 @@
     xmlns:fa="http://schemas.fontawesome.io/icons/"
     xmlns:local="clr-namespace:PenguLoader"
     mc:Ignorable="d"
-    Title="League loader"
+    Title="Pengu Loader"
     Height="290" Width="449"
     ResizeMode="CanMinimize"
     BorderThickness="0"

@@ -7,7 +7,7 @@
       "devtools_tip": "Try hitting the %key% key to open Developer Tools 😉",
       "donotshowagain": "Do not show again",
       "has_new_ver": "New version is out",
-      "update_tip": "You should close the Client and run League Loader to get it."
+      "update_tip": "You should close the Client and run Pengu Loader to get it."
     },
     "vi": {
       "welcome": "Chào %name%, thông báo này cho bạn biết các plugin đã được tải thành công.",
@@ -15,7 +15,7 @@
       "devtools_tip": "Thử nhấn %key% để mở Công cụ dành cho Nhà phát triển 😉",
       "donotshowagain": "Không hiển thị lại",
       "has_new_ver": "Đã có phiên bản mới",
-      "update_tip": "Bạn nên đóng Client và chạy League Loader để cập nhật nó."
+      "update_tip": "Bạn nên đóng Client và chạy Pengu Loader để cập nhật nó."
     }
   }
 }

@@ -1,12 +1,12 @@
 ## What's this?
 
-This is a plugin built for League Loader itself with these goals:
+This is a plugin built for Pengu Loader itself with these goals:
 - Show welcome page and update changelog
 - Support i18n
-- Using SolidJS + SASS + TypeScript
+- Uses SolidJS + SASS + TypeScript
 - Vite boilerplate template
-- Fully HMR supports, it's just better than legacy hot-reload
-- Auto-patching assets path, just put assets in dev folder only
+- Fully supports HMR, it's just better than legacy hot-reload
+- Auto-patching asset path, just put assets in dev folder only
 
 This plugin replaced **league-loader.js** plugin as @default, you can find the legacy one in tag v0.6.0 and before.
 
@@ -18,7 +18,7 @@ You need **Node 16+** and **pnpm** installed to run and build this plugin. For d
 
 Before you start, let's edit the `package.json`, there are two fields in `config`:
 - `pluginName`: you should change it to avoid overriding the @default plugin.
-- `loaderPath`: path to your League Loader folder, the default value `../../bin/` points to the directory which is used for binary built output.
+- `loaderPath`: path to your Pengu Loader folder, the default value `../../bin/` points to the directory which is used for binary built output.
 
 ```json
   "config": {
@@ -35,7 +35,7 @@ pnpm i
 pnpm dev
 ```
 
-After the dev server started, you can see a new folder in League Loader's plugins. The `index.js` inside is your plugin entry.
+After the dev server started, you can see a new folder in Pengu Loader's plugins. The `index.js` inside is your plugin entry.
 
 ```
 plugins/

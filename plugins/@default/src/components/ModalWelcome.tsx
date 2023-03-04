@@ -33,7 +33,7 @@ export default function ModalWelcome(props: Props) {
     <Modal onClose={props.onClose}>
       <ModalHeader>
         <img src={logo} width="28" />
-        <h2 class="modal__title">League Loader</h2>
+        <h2 class="modal__title">Pengu Loader</h2>
         <span class="version">v{version}</span>
       </ModalHeader>
       <ModalContent>

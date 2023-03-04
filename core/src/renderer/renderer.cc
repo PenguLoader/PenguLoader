@@ -88,7 +88,7 @@ static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t
     std::string ext_code{ _ext_code, (size_t)_ext_code_length };
 
     const char *version =
-#   include "../LeagueLoader/Version.cs"
+#   include "../loader/Version.cs"
         ;
 
     ext_code.append("\nvar __llver = \"");
@@ -96,7 +96,7 @@ static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t
     ext_code.append("\"");
 
     // Register our extension.
-    CefRegisterExtension(&"v8/LeagueLoader"_s, &CefStr(ext_code), new ExtensionHandler());
+    CefRegisterExtension(&"v8/PenguLoader"_s, &CefStr(ext_code), new ExtensionHandler());
 }
 
 static decltype(cef_render_process_handler_t::on_context_created) Old_OnContextCreated;
