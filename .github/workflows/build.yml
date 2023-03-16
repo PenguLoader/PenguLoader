@@ -9,7 +9,10 @@ jobs:
     runs-on: windows-2019
 
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+          submodules: true
 
       - run: |
           echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
