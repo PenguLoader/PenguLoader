@@ -9,7 +9,7 @@ export default function ModalUpdate() {
   return (
     <Modal>
       <ModalHeader>
-        <h2 class="modal__title">League Loader update</h2>
+        <h2 class="modal__title">Pengu Loader update</h2>
       </ModalHeader>
       <ModalContent>
         <p>

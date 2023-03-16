@@ -1,65 +1,63 @@
 <br>
 
 <div align="center">
-  <a href="https://leagueloader.app">
-    <img src="https://user-images.githubusercontent.com/38210249/221445985-ef4591a8-c53e-4590-97bc-6bd4c50f3c1f.png" width="144"/>
+  <a href="https://pengu.lol">
+    <img src="https://i.imgur.com/kQOMxqS.jpg" width="144"/>
   </a>
-  <h1 align="center">League Loader</h1>
+  <h1 align="center">Pengu Loader</h1>
   <p align="center">
-    <strong>JavaScript plugin loader</strong> for League of Legends Client
+    <strong>A JavaScript plugin loader</strong> for League of Legends Client
   </p>
   <p>
-    <a href="https://chat.leagueloader.app">
+    <a href="https://chat.pengu.lol">
       <img src ="https://img.shields.io/badge/-Join%20Discord-5c5fff.svg?&style=for-the-badge&logo=Discord&logoColor=white"/>
     </a>
-    <a href="https://github.com/nomi-san/league-loader">
-      <img src="https://img.shields.io/github/stars/nomi-san/league-loader.svg?style=for-the-badge" />
+    <a href="https://github.com/PenguLoader/PenguLoader">
+      <img src="https://img.shields.io/github/stars/PenguLoader/PenguLoader.svg?style=for-the-badge" />
     </a>
     <a href="./LICENSE">
-      <img src ="https://img.shields.io/github/license/nomi-san/league-loader.svg?style=for-the-badge"/>
+      <img src ="https://img.shields.io/github/license/PenguLoader/PenguLoader.svg?style=for-the-badge"/>
     </a>
   </p>
 </div>
 
 ## About
 
-**League Loader** is a **plugin loader** designed specifically for the **League of Legends Client** (League Client).
+**Pengu Loader** (renamed from **League Loader**) is a **plugin loader** designed specifically for the **League of Legends Client** (League Client).
 
-The League Client is actually an embedded Chromium web browser, and its interface is based on web technology. With League Loader, users can load JavaScript plugins into the Client as dependencies, allowing them to customize/theme the UI/UX, automate tasks, and build a smarter Client.
-
-League Loader was created to solve the problem caused by the big LoL patch in 2021, which resurrected plugins from the death of Mecha. And now, Mecha has since returned as a debugger, but League Loader continues to thrive as the primary way for players looking to enhance their League Client with custom content, smarter functionality, and a personalized look and feel.
+The League Client Ux is actually an embedded Chromium web browser, and its interface is based on web technology. With Pengu Loader, you can load **JavaScript** plug-ins into the Client as dependencies, which can help you personalize the look and feel of the Client, load your custom content, add new features, and improve your overall experience. It also allows you to build a smarter Client that fits your needs and preferences.
 
 ## Features
 - Customize League Client with plugins
 - Theme/personalize your Client
-- Support modern JavaScript features
+- Support for modern JavaScript features
 - Support for built-in and remote DevTools
-- Work with LCU APIs with ease
+- Easier to work with LCU API
 
 ## Getting started
 
 Follow the steps below to install:
 
-1. Download the [latest release](https://github.com/nomi-san/league-loader/releases)
+1. Download the [latest release](https://github.com/PenguLoader/PenguLoader/releases)
 
     - There are two versions, the setup EXE and the portable ZIP version
     - With the ZIP version, you should extract it to a fixed location
 
-2. Run **League Loader**
-4. Click **ACTIVATE**
-5. Launch **League Client** and enjoy
+2. Run **Pengu Loader**
+3. Click **ACTIVATE**
+4. Launch **League Client** and enjoy
 
 <p align=center>
-  <img src="https://user-images.githubusercontent.com/38210249/221457186-94c0fc0d-f062-42fc-bc78-fb1b5b43e9e2.png" />
+  <img src="https://i.imgur.com/K4vehuE.png" />
 </p>
 
 Troubleshooting:
 - Windows 7 is not tested, but requires .Net Framework 4.5+ installed to run
-- For Windows 8.1/10 clean install, you should install [VC++ 2013](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
-- Do not put your League Loader folder in the 'League of Legends' or 'Riot Client' folder
+- For Windows 8.1/10 clean install, you should install [VC++ Redistributable 2015-2019](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) runtime
+- Do not put any files from the tool in the 'League of Legends' or 'Riot Client' folder
 - Before removing the portable version, you must first deactivate it
 
-> To try out the preview features, you should [build this project](#build-from-source) or download the latest auto-build in [Actions](https://github.com/nomi-san/league-loader/actions).
+> To try out the preview features, you should [build this project](#build-from-source) or download the latest auto-build in [Actions](https://github.com/PenguLoader/PenguLoader/actions) (GitHub login required).
 
 ## JavaScript plugins
 
@@ -85,7 +83,7 @@ console.log('Hello, League Client!')
 
 ### Module system
 
-> League Loader supports fully ES6+ features, including ES module system. Now this ESM becomes the official [JavaScript modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules).
+> ES6+ features are fully supported, including the ES module system. ESM is now an official [JavaScript module](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules).
 
 To load other scripts, just use `import`:
 
@@ -239,7 +237,7 @@ Example plugins:
 - [/plugins/@default](./plugins/@default) - Vite ⚡ HMR + SolidJS + SASS + TypeScript
 - [douugdev/league-a-better-client](https://github.com/douugdev/league-a-better-client) - Webpack ⚡ HMR + ⚛ Preact + SASS + TypeScript
 
-> Please note that all packages that are designed to run only in NodeJS cannot be used for League Loader plugin.
+> Note that packages those are designed to run only in NodeJS cannot be used to build plugins.
 
 > With the build tool, the output of your bundled assets output may have incorrect paths. Please refer to next the section to make correct them.
 
@@ -276,7 +274,7 @@ root/
 ## Contributing
 
 Follow these steps to contribute to the project:
-1. Fork it (https://github.com/nomi-san/league-loader/fork)
+1. Fork it (https://github.com/PenguLoader/PenguLoader/fork)
 2. Create your feature branch `feat/<branch-name>`
 3. Commit your changes
 4. Push to the branch
@@ -284,15 +282,15 @@ Follow these steps to contribute to the project:
 
 ### Ways you can contribute
 
-- **documentation and website** - the documentation always needs some work, if you discover that something is not documented or can be improved you can create a PR for it, check out [LeagueLoader org](https://github.com/LeagueLoader)
+- **documentation and website** - the documentation always needs some work, if you discover that something is not documented or can be improved you can create a PR for it, check out [PenguLoader org](https://github.com/PenguLoader)
 - **more base/starter plugins** - push your plugins with a detailed guide to help beginners get started with ease
 - **core features** - make sure you have a lot of experience with CEF and low-level programming skills
 - **javascript features** - you need too much webdev knowledge
 
 ### Project structure
 
-- **LeagueLoader** - main loader menu UI, written in C# and WPF XAML
-- **d3d9** - core module (DLL), it hooks libCEF to make everything magical
+- **loader** - main loader menu UI, written in C# and WPF XAML
+- **core** - core module (DLL), it hooks libCEF to make everything magical
 - **plugins** - templates for plugin dev beginner
 
 ### Build from source
@@ -305,7 +303,7 @@ This project requires Visual Studio 2017 with these components:
 You can also use VS 2019+ and another SDK version.
 
 Build steps:
-  1. Open **league-loader.sln**
+  1. Open **pengu-loader.sln**
   2. Right click on the solution -> **Restore Nuget Packages**
   3. Set arch to **x86**
   4. Right click on each project -> **Build**

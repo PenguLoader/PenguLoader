@@ -1,6 +1,6 @@
 # JavaScript API docs
 
-These APIs are designed to use inside League Client with League Loader plugin runtime.
+These APIs are designed to use inside League Client with Pengu Loader plugin runtime.
 
 <br>
 
@@ -204,12 +204,12 @@ Remove your added listener.
 
 ## `__llver` (property)
 
-This property contains version of League Loader in string.
+This property contains version of Pengu Loader in string.
 
 Example:
 ```js
 console.log(window.__llver); // e.g 0.7.0
-console.log('You are using League Loader v' + window.__llver);
+console.log('You are using Pengu Loader v' + window.__llver);
 ```
 
 ## TypeScript declaration

@@ -1,5 +1,5 @@
 {
-  "name": "@league-loader/vite-theme",
+  "name": "@pengu-loader/vite-theme",
   "description": "A simple theme with Vite + SASS + TypeScript",
   "private": true,
   "version": "0.0.1",
