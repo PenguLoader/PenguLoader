@@ -9,7 +9,7 @@
     <strong>A JavaScript plugin loader</strong> for League of Legends Client
   </p>
   <p>
-    <a href="https://chat.pengu.lol">
+    <a href="https://pengu.lol">
       <img src ="https://img.shields.io/badge/-pengu.lol-EC1C24.svg?&style=for-the-badge&logo=Authy&logoColor=white"/>
     </a>
     <a href="https://chat.pengu.lol">
