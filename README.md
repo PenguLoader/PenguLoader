@@ -10,6 +10,9 @@
   </p>
   <p>
     <a href="https://chat.pengu.lol">
+      <img src ="https://img.shields.io/badge/-pengu.lol-EC1C24.svg?&style=for-the-badge&logo=Authy&logoColor=white"/>
+    </a>
+    <a href="https://chat.pengu.lol">
       <img src ="https://img.shields.io/badge/-Join%20Discord-5c5fff.svg?&style=for-the-badge&logo=Discord&logoColor=white"/>
     </a>
     <a href="https://github.com/PenguLoader/PenguLoader">
@@ -21,11 +24,13 @@
   </p>
 </div>
 
+<br>
+
 ## About
 
-**Pengu Loader** (renamed from **League Loader**) is a **plugin loader** designed specifically for the **League of Legends Client** (League Client).
+**Pengu Loader** (formerly [**League Loader**](https://github.com/PenguLoader/PenguLoader/tree/league-loader)) is a **plugin loader** designed specifically for the **League of Legends Client** (League Client).
 
-The League Client Ux is actually an embedded Chromium web browser, and its interface is based on web technology. With Pengu Loader, you can load **JavaScript** plug-ins into the Client as dependencies, which can help you personalize the look and feel of the Client, load your custom content, add new features, and improve your overall experience. It also allows you to build a smarter Client that fits your needs and preferences.
+With Pengu Loader, you can load **JavaScript** plug-ins into the Client as dependencies, which can help you personalize the look and feel of the Client, load your custom content, add new features, and improve your overall experience. It also allows you to build a smarter Client that fits your needs and preferences.
 
 ## Features
 - Customize League Client with plugins
@@ -36,237 +41,13 @@ The League Client Ux is actually an embedded Chromium web browser, and its inter
 
 ## Getting started
 
-Follow the steps below to install:
+Please visit the homepage to get started.
 
-1. Download the [latest release](https://github.com/PenguLoader/PenguLoader/releases)
-
-    - There are two versions, the setup EXE and the portable ZIP version
-    - With the ZIP version, you should extract it to a fixed location
-
-2. Run **Pengu Loader**
-3. Click **ACTIVATE**
-4. Launch **League Client** and enjoy
-
-<p align=center>
-  <img src="https://i.imgur.com/K4vehuE.png" />
-</p>
-
-Troubleshooting:
-- Windows 7 is not tested, but requires .Net Framework 4.5+ installed to run
-- For Windows 8.1/10 clean install, you should install [VC++ Redistributable 2015-2019](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) runtime
-- Do not put any files from the tool in the 'League of Legends' or 'Riot Client' folder
-- Before removing the portable version, you must first deactivate it
-
-> To try out the preview features, you should [build this project](#build-from-source) or download the latest auto-build in [Actions](https://github.com/PenguLoader/PenguLoader/actions) (GitHub login required).
-
-## JavaScript plugins
-
-Plugin development requires basic knowledge of [**JavaScript**](https://developer.mozilla.org/en-US/docs/Web/JavaScript), and [**CSS**](https://developer.mozilla.org/en-US/docs/Web/CSS) if you want to make a theme. It's pretty easy if you're already familiar with web programming.
-
-To create your first plugin, simply create a new folder in the `plugins` folder and name it with the name of your plugin, e.g. `your-plugin`. Then create a new file called `index.js` in your plugins folder.
-
-```
-plugins/
-  |__your-plugin/
-    |__index.js
-```
-
-This `index.js` is an entry point for your plugin and will be executed when the League Client is ready. Add this line to your `index.js`, you will see the log in console.
-
-```js
-console.log('Hello, League Client!')
-```
-
-#### 👉 Please check out these [Basic plugin templates](./plugins) to get started.
-
-> We recommend that you use modern JavaScript editors like Visual Studio Code or WebStorm to develop your plugins, it supports intellisense, linter and code auto-completion. All your code/text files should be saved in UTF-8 encoding (no BOM).
-
-### Module system
-
-> ES6+ features are fully supported, including the ES module system. ESM is now an official [JavaScript module](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules).
-
-To load other scripts, just use `import`:
-
-```
-plugins/
-  |__your-plugin/
-    |__index.js
-    |__utils.js
-```
-
-```js
-// utils.js
-export default {
-  greet: () => console.log('Hello!')
-}
-
-// index.js
-import utils from './utils'
-utils.greet();
-```
-
-> To use `import` and `export` properly, please refer this [MDN docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import).
-
-Top-level await:
-```js
-let data = await fetch('https://...').then(res => res.text()); 
-```
-
-Import a ESM library from CDN:
-```js
-import axios from 'https://esm.run/axios';
-axios.get('https://...');
-```
-
-Assets import:
-
-```js
-import './theme.css';
-// auto-inject CSS
-
-import data from './data.json';
-// parsed JSON data
-
-import bgImage from './assets/background.png';
-// path to asset
-```
-
-Explicit import:
-```js
-import QuantifyFontUrl from './assets/Quantify.ttf?url';
-// https://plugins/your-plugin/assets/Quantify.ttf
-
-import rawData from './my-data.txt?raw';
-// content of my-data.txt in string
-```
-
-> With `?raw`, your text files must be saved in UTF8 encoding.
-
-### Theme the League Client
-
-Adding custom CSS helps you to override default the League style.
-
-From your plugin entry, use `import` to add it:
-
-```js
-import './theme.css';
-```
-
-This line will append a link tag to body pointing to `theme.css` next to your `index.js`.
-
-To use remote theme, e.g from `https://example.com/theme.css`:
-
-```js
-function addCssLink(url) {
-  const link = document.createElement('link');
-  link.href = url;
-  link.type = 'text/css';
-  link.rel = 'stylesheet';
-  document.head.appendChild(link);
-}
-
-window.addEventListener('load', () => {
-  addCssLink('https://example.com/theme.css');
-});
-```
-
-### LCU API requests
-
-Just use `fetch` to make LCU requests:
-```js
-function acceptMatchFound() {
-  fetch('/lol-matchmaking/v1/ready-check/accept', {
-    method: 'POST'  
-  });
-}
-```
-
-Note that `fetch` returns a Promise for async context, you should wrap it in inside an async function.
-```js
-async function getSummonerName() {
-  const res = await fetch('/lol-summoner/v1/current-summoner');
-  const data = await res.json();
-  return data['displayName'];
-}
-```
-
-For LCDS (RTMP) calls, you can use `URLSearchParams` and `JSON.strigify` to construct call parameters.
-```js
-async function quitLobby() {    // never know why people call it 'dodge'
-  const params = new URLSearchParams({
-    destination: 'lcdsServiceProxy',
-    method: 'call',
-    args: JSON.stringify(['', 'teambuilder-draft', 'quitV2', ''])
-  });
-  const url = '/lol-login/v1/session/invoke?' + params.toString();
-  await fetch(url, { method: 'POST' });
-}
-```
-
-### LCU WebSocket
-
-When the websocket ready, this link tag will appear:
-```html
-<link rel="riot:plugins:websocket" href="wss://riot:abcDEF0123XYZ@127.0.0.1:12345/">
-```
-
-Call this function to subscribe API event:
-```js
-function subscribe() {
-  const uri = document.querySelector('link[rel="riot:plugins:websocket"]').href
-  const ws = new WebSocket(uri, 'wamp')
-  
-  ws.onopen = () => ws.send(JSON.stringify([5, 'OnJsonApiEvent']))
-  ws.onmessage = async message => {
-    const data = JSON.parse(message.data)
-    console.log(data)
-    // ...
-  }
-}
-```
-
-### NodeJS & npm compatibility
-
-We strongly recommend that you to use npm project to build plugins. With TypeScript or other languages that require transpilation, you need a build tool to build them,
-Webpack, Rollup or Vite is the best choice.
-
-You can also use any front-end library to build custom UI, e.g. React, Preact, Vue, Svelte, SolidJS, etc. With front-end tooling, its hot-reload/HMR will help you to do faster.
-
-Example plugins:
-- [/plugins/vite-theme](./plugins/vite-theme) - A simple theme with Vite ⚡ HMR + SASS + TypeScript
-- [/plugins/@default](./plugins/@default) - Vite ⚡ HMR + SolidJS + SASS + TypeScript
-- [douugdev/league-a-better-client](https://github.com/douugdev/league-a-better-client) - Webpack ⚡ HMR + ⚛ Preact + SASS + TypeScript
-
-> Note that packages those are designed to run only in NodeJS cannot be used to build plugins.
-
-> With the build tool, the output of your bundled assets output may have incorrect paths. Please refer to next the section to make correct them.
-
-### Accessing local resources
-
-You can access local resources in **assets** and **plugins** folder by using these domain:
-
-```
-//assets/
-//plugins/
-```
-
-They are also equivalent to `https://assets/` and `https://plugins` (HTTPS based scheme).
-
-```
-root/
-  |__assets/
-    |__background.png      ->  //assets/background.png
-  |__plugins/
-    |__your-plugin/
-      |__assets/
-        |__some-image.jpg  ->  //plugins/your-plugin/assets/some-image.jpg
-```
-
-- **assets** folder contains common resources.
-- While assets in **plugins** folder are used for plugin itself.
+### 👉 https://pengu.lol/
 
 ## Documentation
 
+- [Pengu Docs](https://pengu.lol/guide/welcome)
 - [API docs](./API_DOCS.md)
 - [Migration to v1](./MIGRATION_TO_V1.md)
 - [Insecure options](./INSECURE_OPTIONS.md)
@@ -274,7 +55,7 @@ root/
 ## Contributing
 
 Follow these steps to contribute to the project:
-1. Fork it (https://github.com/PenguLoader/PenguLoader/fork)
+1. Fork it [(click here to fork now)](https://github.com/PenguLoader/PenguLoader/fork)
 2. Create your feature branch `feat/<branch-name>`
 3. Commit your changes
 4. Push to the branch
@@ -300,7 +81,14 @@ This project requires Visual Studio 2017 with these components:
 - .NET desktop development
 - Windows 8.1 SDK
 
-You can also use VS 2019+ and another SDK version.
+> You can also use VS 2019+ and another SDK version.
+
+Close the repo and update submodules
+
+```
+git clone https://github.com/PenguLoader/PenguLoader.git
+git submodule update --init --recursive
+```
 
 Build steps:
   1. Open **pengu-loader.sln**
@@ -308,13 +96,12 @@ Build steps:
   3. Set arch to **x86**
   4. Right click on each project -> **Build**
 
-The @default plugin requires:
+To build the @default plugin requires, you need:
 - NodeJS 16+
 - pnpm
 
-Then build it:
-
 ```
+cd plugins/@default
 pnpm install
 pnpm build
 ```
