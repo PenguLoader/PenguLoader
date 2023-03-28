@@ -24,8 +24,18 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
         if (name[0] == '_' || name[0] == '.')
             continue;
 
-        // Skip folder has no index.
-        if (utils::fileExist(pluginsDir + L"\\" + name + L"\\index.js"))
+        // Top-level JS file.
+        if (utils::strEndWith(name, L".js") && utils::fileExist(pluginsDir + L"\\" + name))
+        {
+            script.append(L"import(\"https://plugins/");
+            script.append(name + L"?t=");
+            script.append(std::to_wstring(current_ms));
+            script.append(L"\"); ");
+
+            count++;
+        }
+        // Sub-folder with index.
+        else if (utils::dirExist(pluginsDir + L"\\" + name) && utils::fileExist(pluginsDir + L"\\" + name + L"\\index.js"))
         {
             script.append(L"import(\"https://plugins/");
             script.append(name + L"/index.js?t=");
