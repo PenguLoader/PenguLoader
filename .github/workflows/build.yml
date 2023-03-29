@@ -30,12 +30,10 @@ jobs:
 
       - uses: pnpm/action-setup@v2
         with:
-          version: latest
+          version: 8
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-          cache: "pnpm"
-          cache-dependency-path: "plugins/@default/pnpm-lock.yaml"
 
       - name: Build solution
         run: msbuild pengu-loader.sln /t:restore,build /m /p:Platform="x86" /p:Configuration=Release
