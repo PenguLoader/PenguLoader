@@ -70,6 +70,8 @@ public:
         cef_stream_reader_t::read = _read;
         cef_stream_reader_t::seek = _seek;
         cef_stream_reader_t::tell = _tell;
+        cef_stream_reader_t::eof = _eof;
+        cef_stream_reader_t::may_block = _may_block;
 
         switch (type)
         {
@@ -93,14 +95,15 @@ public:
 
     ~ModuleStreamReader()
     {
-        data_.clear();
         if (stream_ != nullptr)
             stream_->base.release(&stream_->base);
+
+        data_.clear();
     }
 
 private:
-    string data_;
     cef_stream_reader_t *stream_;
+    string data_;
 
     static size_t CEF_CALLBACK _read(struct _cef_stream_reader_t* _,
         void* ptr,
@@ -123,6 +126,18 @@ private:
     {
         auto self = static_cast<ModuleStreamReader *>(_);
         return self->stream_->tell(self->stream_);
+    }
+
+    static int CEF_CALLBACK _eof(struct _cef_stream_reader_t* _)
+    {
+        auto self = static_cast<ModuleStreamReader *>(_);
+        return self->stream_->eof(self->stream_);
+    }
+
+    static int CEF_CALLBACK _may_block(struct _cef_stream_reader_t* _)
+    {
+        auto self = static_cast<ModuleStreamReader *>(_);
+        return self->stream_->may_block(self->stream_);
     }
 };
 

@@ -121,13 +121,9 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
     NTSTATUS (NTAPI *NtRemoveProcessDebug)(HANDLE, HANDLE);
     NTSTATUS (NTAPI *NtClose)(HANDLE Handle);
 
-    HMODULE ntdll = LoadLibraryA("ntdll.dll");
-    (LPVOID &)NtQueryInformationProcess = GetProcAddress(ntdll, "NtQueryInformationProcess");
-    (LPVOID &)NtRemoveProcessDebug = GetProcAddress(ntdll, "NtRemoveProcessDebug");
-    (LPVOID &)NtClose = GetProcAddress(ntdll, "NtClose");
-
-    STARTUPINFOW si{};
-    PROCESS_INFORMATION pi{};
+    STARTUPINFOW si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
 
     if (!CreateProcessW(NULL, commandLine, NULL, NULL, FALSE,
@@ -136,7 +132,13 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
         char msg[512];
         sprintf_s(msg, "Failed to create LeagueClientUx process, last error: %08X.", GetLastError());
         MessageBoxA(0, msg, "Pengu Loader bootstraper", MB_ICONWARNING | MB_OK);
+        return 1;
     }
+
+    HMODULE ntdll = GetModuleHandleA("ntdll.dll");
+    (LPVOID &)NtQueryInformationProcess = GetProcAddress(ntdll, "NtQueryInformationProcess");
+    (LPVOID &)NtRemoveProcessDebug = GetProcAddress(ntdll, "NtRemoveProcessDebug");
+    (LPVOID &)NtClose = GetProcAddress(ntdll, "NtClose");
 
     HANDLE hDebug;
     if (NtQueryInformationProcess(pi.hProcess, 30, &hDebug, sizeof(HANDLE), 0) >= 0)
