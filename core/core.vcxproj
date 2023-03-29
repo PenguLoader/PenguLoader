@@ -39,7 +39,6 @@
     <ClCompile Include="src\utils\file.cc" />
     <ClCompile Include="src\utils\hook.cc" />
     <ClCompile Include="src\utils\misc.cc" />
-    <ClCompile Include="src\utils\ntdll.cc" />
     <ClCompile Include="src\utils\string.cc" />
   </ItemGroup>
   <ItemGroup>

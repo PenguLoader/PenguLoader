@@ -84,4 +84,7 @@ void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame)
     // Set hotkeys.
     SetUptHotkeys(rclient);
     rclient_window_ = rclient;
+
+    args->base.release(&args->base);
+    host->base.release(&host->base);
 }
