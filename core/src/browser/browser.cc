@@ -71,7 +71,8 @@ static void CALLBACK Hooked_OnLoadStart(struct _cef_load_handler_t* self,
 
     // Patch once.
     static bool patched = false;
-    if (patched || (patched = true, false)) return;
+    if (patched) return;
+    patched = true;
 
     SetUpBrowserWindow(browser, frame);
     OpenInternalServer();
@@ -138,7 +139,7 @@ static void HookClient(cef_client_t *client)
                 struct _cef_request_t* request) -> cef_resource_handler_t*
             {
                 CefScopedStr url{ request->get_url(request) };
-                cef_resource_handler_t *handler = nullptr;
+                cef_resource_handler_t *handler = Old_GetResourceHandler(self, browser, frame, request);
 
                 if (wcsncmp(url.str, L"https://assets/", 15) == 0)
                     return CreateAssetsResourceHandler(url.str + 14, false);
@@ -147,7 +148,7 @@ static void HookClient(cef_client_t *client)
                 if (wcsncmp(url.str, L"https://riotclient/", 19) == 0)
                     return CreateRiotClientResourceHandler(frame, url.str + 18);
 
-                return Old_GetResourceHandler(self, browser, frame, request);
+                return handler;
             };
 
             return handler;
