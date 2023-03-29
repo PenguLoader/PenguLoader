@@ -126,14 +126,14 @@ bool LoadLibcefDll()
 
         // Find CefContext::GetBackGroundColor().
         {
-            MODULEINFO info{ NULL };
-            K32GetModuleInformation(GetCurrentProcess(), libcef, &info, sizeof(info));
+            //MODULEINFO info{ NULL };
+            //K32GetModuleInformation(GetCurrentProcess(), libcef, &info, sizeof(info));
 
-            const string pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
-            Old_GetBackgroundColor = utils::scanInternal(info.lpBaseOfDll, info.SizeOfImage, pattern);
+            //const string pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
+            //Old_GetBackgroundColor = utils::scanInternal(info.lpBaseOfDll, info.SizeOfImage, pattern);
 
-            // Hook CefContext::GetBackGroundColor().
-            utils::hookFunc(&Old_GetBackgroundColor, Hooked_GetBackgroundColor);
+            //// Hook CefContext::GetBackGroundColor().
+            //utils::hookFunc(&Old_GetBackgroundColor, Hooked_GetBackgroundColor);
         }
 
         return true;
