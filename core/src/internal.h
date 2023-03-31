@@ -43,7 +43,7 @@ class CefRefCount : public T
 {
 public:
     template <typename U>
-    CefRefCount(const U *) : ref_(1) {
+    CefRefCount(const U *) : T{}, ref_(1) {
         base.size = sizeof(U);
         base.add_ref = _Base_AddRef;
         base.release = _Base_Release;
@@ -52,22 +52,32 @@ public:
         self_delete_ = [](void *self) { delete static_cast<U *>(self); };
     }
 
+    CefRefCount(bool) : CefRefCount(static_cast<T *>(nullptr)) {}
+
 private:
     void(*self_delete_)(void *);
     std::atomic<size_t> ref_;
 
-    static void CALLBACK _Base_AddRef(cef_base_ref_counted_t *_)
-    { ++reinterpret_cast<CefRefCount *>(_)->ref_; }
+    static void CALLBACK _Base_AddRef(cef_base_ref_counted_t *_) {
+        ++reinterpret_cast<CefRefCount *>(_)->ref_;
+    }
 
-    static int CALLBACK _Base_Release(cef_base_ref_counted_t *_)
-    { return !--reinterpret_cast<CefRefCount *>(_)->ref_ ?
-        (reinterpret_cast<CefRefCount *>(_)->self_delete_(_), 1) : 0; }
+    static int CALLBACK _Base_Release(cef_base_ref_counted_t *_) {
+        CefRefCount *self = reinterpret_cast<CefRefCount *>(_);
+        if (--self->ref_ == 0) {
+            self->self_delete_(_);
+            return 1;
+        }
+        return 0;
+    }
 
-    static int CALLBACK _Base_HasOneRef(cef_base_ref_counted_t *_)
-    { return reinterpret_cast<CefRefCount *>(_)->ref_ == 1; }
+    static int CALLBACK _Base_HasOneRef(cef_base_ref_counted_t *_) {
+        return reinterpret_cast<CefRefCount *>(_)->ref_ == 1;
+    }
 
-    static int CALLBACK _Base_HasAtLeastOneRef(cef_base_ref_counted_t *_)
-    { return reinterpret_cast<CefRefCount *>(_)->ref_ != 0; }
+    static int CALLBACK _Base_HasAtLeastOneRef(cef_base_ref_counted_t *_) {
+        return reinterpret_cast<CefRefCount *>(_)->ref_ > 0;
+    }
 };
 
 struct CefStrBase : cef_string_t

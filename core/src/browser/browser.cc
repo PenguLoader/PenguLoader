@@ -300,6 +300,60 @@ static BOOL WINAPI Hooked_CreateProcessW(
     return ret;
 }
 
+static auto Old_CreateWindowExW = &CreateWindowExW;
+static HWND WINAPI Hooked_CreateWindowExW(
+    _In_ DWORD dwExStyle,
+    _In_opt_ LPCWSTR lpClassName,
+    _In_opt_ LPCWSTR lpWindowName,
+    _In_ DWORD dwStyle,
+    _In_ int X,
+    _In_ int Y,
+    _In_ int nWidth,
+    _In_ int nHeight,
+    _In_opt_ HWND hWndParent,
+    _In_opt_ HMENU hMenu,
+    _In_opt_ HINSTANCE hInstance,
+    _In_opt_ LPVOID lpParam)
+{
+    HWND hwnd = Old_CreateWindowExW(dwExStyle, lpClassName,
+        lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+
+    // Avoid ATOM value.
+    if ((uintptr_t)lpClassName <= UINT16_MAX)
+        return hwnd;
+
+    // Detect DevTools window.
+    if (!wcscmp(lpClassName, L"CefBrowserWindow") && !wcscmp(lpWindowName, DEVTOOLS_WINDOW_NAME))
+    {
+        // Get League icon.
+        HWND hClient = FindWindowW(L"RCLIENT", L"League of Legends");
+        HICON icon = (HICON)SendMessageW(hClient, WM_GETICON, ICON_BIG, 0);
+
+        // Set window icon.
+        SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
+        SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
+
+        extern HWND devtools_window_;
+        bool IsWindowsLightTheme();
+        void ForceDarkTheme(HWND);
+
+        if (!IsWindowsLightTheme())
+        {
+            // Force dark theme.
+            ForceDarkTheme(hwnd);
+
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+            // Fix titlebar issue.
+            SetWindowPos(hwnd, NULL, 0, 0, rc.right - 5, rc.bottom, SWP_NOMOVE | SWP_FRAMECHANGED);
+        }
+
+        devtools_window_ = hwnd;
+    }
+
+    return hwnd;
+}
+
 void HookBrowserProcess()
 {
     // Open console window.
@@ -316,4 +370,7 @@ void HookBrowserProcess()
 
     // Hook CreateProcessW().
     utils::hookFunc(&Old_CreateProcessW, Hooked_CreateProcessW);
+
+    // Hook CreateWindowExW().
+    utils::hookFunc(&Old_CreateWindowExW, Hooked_CreateWindowExW);
 }
