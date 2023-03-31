@@ -19,6 +19,7 @@ namespace PenguLoader
             Instance = this;
             InitializeComponent();
             WindowStyle = WindowStyle.ToolWindow;
+            ShowInTaskbar = true;
 
             var port = Config.RemoteDebuggingPort;
             chkRemoteDebugger.IsChecked = port != 0;
@@ -29,22 +30,22 @@ namespace PenguLoader
 
             txtVersion.Text = $"v{Version.VERSION} build {Version.BUILD_NUMBER}";
 
-            Loaded += delegate
-            {
-                Show();
-                Updater.CheckUpdate();
-            };
+            Loaded += MainWindow_Loaded;
         }
 
-        protected override void OnSourceInitialized(EventArgs e)
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            base.OnSourceInitialized(e);
+            Loaded -= MainWindow_Loaded;
+
+            Show();
 
             Window window = Window.GetWindow(this);
             var hwnd = new WindowInteropHelper(window).Handle;
 
             var oldEx = Native.GetWindowLongPtr(hwnd, -0x14).ToInt32();
             Native.SetWindowLongPtr(hwnd, -0x14, (IntPtr)(oldEx & ~0x80));
+
+            Updater.CheckUpdate();
         }
 
         private void BtnTheme_Click(object sender, RoutedEventArgs e)
