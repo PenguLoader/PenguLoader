@@ -97,41 +97,45 @@ NOINLINE void *utils::scanInternal(void *image, size_t length, const string &pat
     return match;
 }
 
+#pragma pack(push, 1)
+struct Shellcode
+{
+    uint8_t jmp[1]{ 0xE9 };
+    intptr_t offset;
+};
+#pragma pack(pop)
+
 static bool Detour32(char* src, char* dst, const intptr_t len)
 {
-    if (len < 5) return false;
+    if (len < sizeof(Shellcode))
+        return false;
 
-    DWORD  curProtection;
-    VirtualProtect(src, len, PAGE_EXECUTE_READWRITE, &curProtection);
+    DWORD op;
+    VirtualProtect(src, len, PAGE_EXECUTE_READWRITE, &op);
 
-    intptr_t  relativeAddress = (intptr_t)(dst - (intptr_t)src) - 5;
+    Shellcode code;
+    code.offset = (intptr_t)(dst - (intptr_t)src) - sizeof(Shellcode);
+    memcpy(src, &code, sizeof(Shellcode));
 
-    *src = '\xE9';
-    *(intptr_t*)((intptr_t)src + 1) = relativeAddress;
-
-    VirtualProtect(src, len, curProtection, &curProtection);
+    VirtualProtect(src, len, op, &op);
     return true;
 }
 
 // Ref: https://guidedhacking.com/threads/simple-x86-c-trampoline-hook.14188/
 static char* TrampHook32(char* src, char* dst, const int len)
 {
-    // Create the gateway (len + 5 for the overwritten bytes + the jmp)
-    void* gateway = VirtualAlloc(0, len + 5, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (len < sizeof(Shellcode))
+        return nullptr;
 
-    //Write the stolen bytes into the gateway
+    void* gateway = VirtualAlloc(0, len + sizeof(Shellcode),
+        MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+
     memcpy(gateway, src, len);
 
-    // Get the gateway to destination addy
-    intptr_t  gatewayRelativeAddr = ((intptr_t)src - (intptr_t)gateway) - 5;
+    Shellcode code;
+    code.offset = ((intptr_t)src - (intptr_t)gateway) - sizeof(Shellcode);
+    memcpy((char *)gateway + len, &code, sizeof(Shellcode));
 
-    // Add the jmp opcode to the end of the gateway
-    *(char*)((intptr_t)gateway + len) = '\xE9';
-
-    // Add the address to the jmp
-    *(intptr_t*)((intptr_t)gateway + len + 1) = gatewayRelativeAddr;
-
-    // Perform the detour
     Detour32(src, dst, len);
 
     return (char*)gateway;
