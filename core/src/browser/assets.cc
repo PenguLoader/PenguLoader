@@ -154,12 +154,8 @@ public:
         , no_cache_(false)
     {
         cef_resource_handler_t::open = _Open;
-        cef_resource_handler_t::process_request = _ProcessRequest;
         cef_resource_handler_t::get_response_headers = _GetResponseHeaders;
-        cef_resource_handler_t::skip = _Skip;
         cef_resource_handler_t::read = _Read;
-        cef_resource_handler_t::read_response = _ReadResponse;
-        cef_resource_handler_t::cancel = _Cancel;
     }
 
     ~AssetsResourceHandler()
@@ -360,26 +356,6 @@ private:
     {
         return static_cast<AssetsResourceHandler *>(_)->Open(request, handle_request, callback);
     }
-
-    // Deprecated
-    static int CEF_CALLBACK _ProcessRequest(cef_resource_handler_t* self,
-        struct _cef_request_t* request,
-        struct _cef_callback_t* callback) { return 0; }
-
-    // Ignored
-    static int CEF_CALLBACK _Skip(cef_resource_handler_t* self,
-        int64 bytes_to_skip,
-        int64* bytes_skipped,
-        struct _cef_resource_skip_callback_t* callback) { return 0; }
-
-    // Deprecated
-    static int CEF_CALLBACK _ReadResponse(cef_resource_handler_t* self,
-        void* data_out,
-        int bytes_to_read,
-        int* bytes_read,
-        struct _cef_callback_t* callback) { return 0; }
-
-    static void CEF_CALLBACK _Cancel(cef_resource_handler_t* self) { }
 };
 
 cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool plugin)
