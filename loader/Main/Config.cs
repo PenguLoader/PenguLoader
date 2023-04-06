@@ -25,10 +25,6 @@ namespace PenguLoader.Main
 
             if (!File.Exists(DataStorePath))
                 File.Create(DataStorePath).Close();
-
-            Utils.RemoveAdminPerm(AssetsDir);
-            Utils.RemoveAdminPerm(PluginsDir);
-            Utils.RemoveAdminPerm(DataStorePath);
         }
 
         public static string Language

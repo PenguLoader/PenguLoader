@@ -9,8 +9,9 @@ namespace PenguLoader
     public static class Program
     {
         public const string NAME = "Pengu Loader";
-        public static string HOMEPAGE_URL => "https://chat.pengu.lol";
-        public static string GITHUB_REPO = "PenguLoader/PenguLoader";
+        public static string HOMEPAGE_URL => "https://pengu.lol";
+        public static string DISCORD_URL => "https://chat.pengu.lol";
+        public static string GITHUB_REPO => "PenguLoader/PenguLoader";
         public static string GITHUB_URL => $"https://github.com/{GITHUB_REPO}";
         public static string GITHUB_ISSUES_URL => $"https://github.com/{GITHUB_REPO}/issues";
 
@@ -26,6 +27,10 @@ namespace PenguLoader
                 {
                     App.Main();
                     return 0;
+                }
+                else if (!createdNew && !isUninstall)
+                {
+                    Native.SetFocusToPreviousInstance(NAME);
                 }
                 else if (isUninstall)
                 {

@@ -7,7 +7,7 @@ static class Version
     public const string VERSION =
 #endif
 
-        "1.0.1"
+        "1.0.2"
 
 #if !__cplusplus
         ;

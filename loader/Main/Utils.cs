@@ -21,23 +21,6 @@ namespace PenguLoader.Main
             Process.Start(url);
         }
 
-        public static void RemoveAdminPerm(string path)
-        {
-            try
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c echo Y| cacls \"{path}\" /grant \"{Environment.UserName}\":f",
-                    UseShellExecute = true,
-                    CreateNoWindow = true,
-                    Verb = "runas",
-                    WindowStyle = ProcessWindowStyle.Hidden
-                });
-            }
-            catch { }
-        }
-
         public static bool IsFileInUse(string path)
         {
             try

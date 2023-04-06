@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 
 using ModernWpf;
 using PenguLoader.Main;
-using System.Windows.Media;
 using System.Windows.Interop;
 
 namespace PenguLoader
@@ -21,14 +18,14 @@ namespace PenguLoader
             WindowStyle = WindowStyle.ToolWindow;
             ShowInTaskbar = true;
 
-            var port = Config.RemoteDebuggingPort;
-            chkRemoteDebugger.IsChecked = port != 0;
-            txtRemotePort.Text = port != 0 ? port.ToString() : "8888";
+            UpdateActiveState();
 
-            SetActiveState(Module.IsActivated());
             btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
+            txtVersion.Text = $"v{Version.VERSION}.{Version.BUILD_NUMBER}";
 
-            txtVersion.Text = $"v{Version.VERSION} build {Version.BUILD_NUMBER}";
+            btnGitHub.Click += delegate { Utils.OpenLink(Program.GITHUB_URL); };
+            btnDiscord.Click += delegate { Utils.OpenLink(Program.DISCORD_URL); };
+            btnHomepage.Click += delegate { Utils.OpenLink(Program.HOMEPAGE_URL); };
 
             Loaded += MainWindow_Loaded;
         }
@@ -81,73 +78,7 @@ namespace PenguLoader
             DataStore.Dump();
         }
 
-        private async void BtnRestart_Click(object sender, RoutedEventArgs e)
-        {
-            if (LCU.IsRunning())
-            {
-                faRestart.Spin = true;
-                btnRestartUX.IsEnabled = false;
-
-                LCU.KillUxAndRestart();
-                await Task.Delay(5000);
-
-                faRestart.Spin = false;
-                btnRestartUX.IsEnabled = true;
-            }
-            else
-            {
-                MessageBox.Show(this, "League of Legends Client is not running.",
-                    Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        private void BtnDevTools_Click(object sender, RoutedEventArgs e)
-        {
-            if (Module.IsLoaded())
-            {
-                Module.OpenDevTools(remote: false);
-            }
-            else
-            {
-                MessageBox.Show(this, "The Loader is not loaded by any Client.",
-                    Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        private void BtnRemoteDevTools_Click(object sender, RoutedEventArgs e)
-        {
-            if (Module.IsLoaded())
-            {
-                Module.OpenDevTools(remote: true);
-            }
-            else
-            {
-                MessageBox.Show(this, "The Loader is not loaded by any Client.",
-                    Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        private void ChkRemoteDebugger_Checked(object sender, RoutedEventArgs e)
-        {
-            if (chkRemoteDebugger.IsChecked.Value)
-            {
-                int port = 0;
-                int.TryParse(txtRemotePort.Text, out port);
-                Config.RemoteDebuggingPort = port;
-            }
-            else
-            {
-                Config.RemoteDebuggingPort = 0;
-            }
-        }
-
-        private void TxtRemotePort_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
-        {
-            var regex = new Regex("[^0-9]{1,5}");
-            e.Handled = regex.IsMatch(e.Text);
-        }
-
-        private void BtnActivate_Click(object sender, RoutedEventArgs e)
+        private void BtnActivate_Toggled(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -164,16 +95,24 @@ namespace PenguLoader
                     Utils.OpenLink(Program.GITHUB_ISSUES_URL);
                 }
             }
+            finally
+            {
+                UpdateActiveState();
+            }
         }
 
         void ToggleActivation()
         {
             if (!Module.IsActivated())
             {
-                if (Module.Activate())
+                if (!Module.Exist())
                 {
-                    SetActiveState(true);
-
+                    MessageBox.Show(this,
+                        "Failed to activate the Loader. The core.dll is not found.",
+                        Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                else if (Module.Activate())
+                {
                     if (LCU.IsRunning())
                     {
                         if (MessageBox.Show(this,
@@ -183,13 +122,6 @@ namespace PenguLoader
                         {
                             LCU.KillUxAndRestart();
                         }
-                    }
-                    else
-                    {
-                        MessageBox.Show(this,
-                            "The Loader has been activated successfully.\n" +
-                            "Let's launch your League of Legends Client to enjoy!",
-                            Program.NAME, MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
                 else
@@ -201,45 +133,26 @@ namespace PenguLoader
             }
             else
             {
-                if (MessageBox.Show(this,
-                    "Do you want to deactivate the Loader?",
-                    Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                {
-                    Module.Deactivate();
-                    SetActiveState(false);
+                Module.Deactivate();
 
-                    if (Module.IsLoaded())
+                if (Module.IsLoaded())
+                {
+                    if (MessageBox.Show(this,
+                        "The Loader has been deactivated successfully.\n" +
+                        "Do you want to restart running League of Legends Client to apply?",
+                        Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
                     {
-                        if (MessageBox.Show(this,
-                            "The Loader has been deactivated successfully.\n" +
-                            "Do you want to restart running League of Legends Client to apply?",
-                            Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
-                        {
-                            LCU.KillUxAndRestart();
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show(this,
-                            "The Loader has been deactivated successfully.",
-                            Program.NAME, MessageBoxButton.OK, MessageBoxImage.Information);
+                        LCU.KillUxAndRestart();
                     }
                 }
             }
         }
 
-        void SetActiveState(bool activated)
+        void UpdateActiveState()
         {
-            if (activated)
-            {
-                txtActivate.Text = "ACTIVATED";
-                faActivate.Icon = FontAwesome.WPF.FontAwesomeIcon.Check;
-            }
-            else
-            {
-                txtActivate.Text = "ACTIVATE";
-                faActivate.Icon = FontAwesome.WPF.FontAwesomeIcon.Rocket;
-            }
+            btnActivate.Toggled -= BtnActivate_Toggled;
+            btnActivate.IsOn = Module.IsActivated();
+            btnActivate.Toggled += BtnActivate_Toggled;
         }
     }
 }
