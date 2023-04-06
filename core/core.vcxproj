@@ -28,7 +28,7 @@
     <ClCompile Include="src\browser\window.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\libcef.cc" />
-    <ClCompile Include="src\d3d9.cc" />
+    <ClCompile Include="src\dllproxy.cc" />
     <ClCompile Include="src\dllmain.cc" />
     <ClCompile Include="src\renderer\auth_callback.cc" />
     <ClCompile Include="src\renderer\datastore.cc" />

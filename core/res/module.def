@@ -9,6 +9,29 @@ EXPORTS
 	D3DPERF_SetMarker
 	D3DPERF_SetOptions
 	D3DPERF_SetRegion
+
+EXPORTS
+	DWriteCreateFactory
+
+EXPORTS
+	GetFileVersionInfoA
+	GetFileVersionInfoByHandle
+	GetFileVersionInfoExA
+	GetFileVersionInfoExW
+	GetFileVersionInfoSizeA
+	GetFileVersionInfoSizeExA
+	GetFileVersionInfoSizeExW
+	GetFileVersionInfoSizeW
+	GetFileVersionInfoW
+	VerFindFileA
+	VerFindFileW
+	VerInstallFileA
+	VerInstallFileW
+	VerLanguageNameA
+	VerLanguageNameW
+	VerQueryValueA
+	VerQueryValueW
     
+EXPORTS
     _GetCefVersion		@5000 NONAME
 	_BootstrapEntry		@6000 NONAME
