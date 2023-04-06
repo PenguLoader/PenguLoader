@@ -5,6 +5,7 @@
 
 decltype(&cef_get_mime_type) CefGetMimeType;
 decltype(&cef_request_create) CefRequest_Create;
+decltype(&cef_urlrequest_create) CefURLRequest_create;
 decltype(&cef_string_multimap_alloc) CefStringMultimap_Alloc;
 decltype(&cef_string_multimap_free) CefStringMultimap_Free;
 decltype(&cef_register_extension) CefRegisterExtension;
@@ -94,6 +95,7 @@ bool LoadLibcefDll(bool is_browser)
         // Get CEF functions.
         (LPVOID &)CefGetMimeType = GetProcAddress(libcef, "cef_get_mime_type");
         (LPVOID &)CefRequest_Create = GetProcAddress(libcef, "cef_request_create");
+        (LPVOID &)CefURLRequest_create = GetProcAddress(libcef, "cef_urlrequest_create");
         (LPVOID &)CefStringMultimap_Alloc = GetProcAddress(libcef, "cef_string_multimap_alloc");
         (LPVOID &)CefStringMultimap_Free = GetProcAddress(libcef, "cef_string_multimap_free");
         (LPVOID &)CefRegisterExtension = GetProcAddress(libcef, "cef_register_extension");
@@ -128,9 +130,7 @@ bool LoadLibcefDll(bool is_browser)
         if (is_browser)
         {
             const char *pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
-            clock_t clk = clock();
             Old_GetBackgroundColor = utils::patternScan(libcef, pattern);
-            MessageBoxA(0, std::to_string(clock() - clk).c_str(), "", 0);
 
             // Hook CefContext::GetBackGroundColor().
             utils::hookFunc(&Old_GetBackgroundColor, Hooked_GetBackgroundColor);

@@ -49,10 +49,14 @@ private:
 
         if (fn == L"OpenDevTools")
         {
+            bool remote = args.size() > 0 && args[0]->get_bool_value(args[0]);
+
             auto context = CefV8Context_GetCurrentContext();
             auto frame = context->get_frame(context);
+
             // IPC to browser process.
-            auto msg = CefProcessMessage_Create(&"__OPEN_DEVTOOLS"_s);
+            auto msg = CefProcessMessage_Create(&CefStr(remote
+                ? "__open_remote_devtools" : "__open_devtools"));
             frame->send_process_message(frame, PID_BROWSER, msg);
 
             return true;

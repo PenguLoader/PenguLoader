@@ -1,14 +1,12 @@
 #include "../internal.h"
-
-#include <wininet.h>
-#pragma comment(lib, "wininet.lib")
+#include "include/capi/cef_urlrequest_capi.h"
 
 // BROWSER PROCESS ONLY.
 
 extern HWND rclient_window_;
 extern cef_browser_t *browser_;
 extern UINT REMOTE_DEBUGGING_PORT;
-static std::string REMOTE_DEVTOOLS_URL;
+static string REMOTE_DEVTOOLS_URL{};
 
 HWND devtools_window_ = nullptr;
 LPCWSTR DEVTOOLS_WINDOW_NAME = L"DevTools - League Client";
@@ -64,47 +62,77 @@ void OpenDevTools_Internal(bool remote)
     }
 }
 
-static void PrepareDevTools_Thread()
+void PrepareDevTools()
 {
-    if (REMOTE_DEBUGGING_PORT != 0)
+    struct RequestClient : CefRefCount<cef_urlrequest_client_t>
     {
-        HINTERNET hInit, hConn, hFile;
+        cef_urlrequest_t *url_request_;
+        string data_;
 
-        hInit = InternetOpenA("HTTPGET", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
-        hConn = InternetConnectA(hInit, "localhost", REMOTE_DEBUGGING_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
-        hFile = HttpOpenRequestA(hConn, NULL, "/json/list", "HTTP/1.1", NULL, NULL,
-            INTERNET_FLAG_NO_COOKIES | INTERNET_FLAG_NO_UI | INTERNET_FLAG_IGNORE_REDIRECT_TO_HTTPS, NULL);
+        RequestClient() : CefRefCount(this), url_request_(nullptr), data_{}
+        {
+            cef_urlrequest_client_t::on_request_complete = on_request_complete;
+            cef_urlrequest_client_t::on_download_data = on_download_data;
+        }
 
-        if (HttpSendRequestA(hFile, NULL, 0, NULL, 0)) {
-            CHAR content[1024];
-            DWORD contentLength = 0;
+        ~RequestClient()
+        {
+            if (url_request_ != nullptr)
+                url_request_->base.release(&url_request_->base);
+        }
 
-            InternetReadFile(hFile, content, 1024, &contentLength);
+        void request()
+        {
+            string url{ "http://127.0.0.1:" };
+            url.append(std::to_string(REMOTE_DEBUGGING_PORT));
+            url.append("/json/list");
 
-            if (contentLength > 0) {
-                static CHAR pattern[] = "\"devtoolsFrontendUrl\": \"";
-                auto pos = strstr(content, pattern);
+            auto request_ = CefRequest_Create();
+            request_->set_url(request_, &CefStr(url));
 
-                if (pos) {
+            url_request_ = CefURLRequest_create(request_, this, nullptr);
+        }
+
+        static void CEF_CALLBACK on_request_complete(struct _cef_urlrequest_client_t* _,
+            struct _cef_urlrequest_t* request)
+        {
+            auto self = static_cast<RequestClient *>(_);
+
+            auto response = self->url_request_->get_response(self->url_request_);
+            auto status = self->url_request_->get_request_status(self->url_request_);
+
+            if (status == UR_SUCCESS && response->get_status(response) == 200)
+            {
+                const CHAR pattern[] = "\"devtoolsFrontendUrl\": \"";
+                if (auto pos = strstr(self->data_.c_str(), pattern))
+                {
                     auto start = pos + sizeof(pattern) - 1;
                     auto end = strstr(start, "\"");
 
-                    std::string link = "http://127.0.0.1:";
+                    string link = "http://127.0.0.1:";
                     link.append(std::to_string(REMOTE_DEBUGGING_PORT));
-                    link.append(std::string(start, end - start));
+                    link.append(string(start, end - start));
 
                     REMOTE_DEVTOOLS_URL = link;
                 }
             }
+
+            response->base.release(&response->base);
         }
 
-        InternetCloseHandle(hInit);
-        InternetCloseHandle(hConn);
-        InternetCloseHandle(hFile);
-    }
-}
+        static void CEF_CALLBACK on_download_data(struct _cef_urlrequest_client_t* _,
+            struct _cef_urlrequest_t* request,
+            const void* data,
+            size_t data_length)
+        {
+            auto self = static_cast<RequestClient *>(_);
+            self->data_.append(static_cast<const char *>(data), data_length);
+        }
+    };
 
-void PrepareDevTools()
-{
-    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&PrepareDevTools_Thread, NULL, 0, NULL);
+    if (REMOTE_DEBUGGING_PORT != 0)
+    {
+        auto client = new RequestClient();
+        client->request();
+    }
 }

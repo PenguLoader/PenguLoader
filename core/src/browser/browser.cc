@@ -173,8 +173,10 @@ static void HookClient(cef_client_t *client)
         if (source_process == PID_RENDERER)
         {
             CefScopedStr name{ message->get_name(message) };
-            if (name == L"__OPEN_DEVTOOLS")
+            if (name == L"__open_devtools")
                 OpenDevTools_Internal(false);
+            else if (name == L"__open_remote_devtools")
+                OpenDevTools_Internal(true);
         }
 
         return OnProcessMessageReceived(self, browser, frame, source_process, message);

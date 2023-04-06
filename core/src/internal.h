@@ -33,6 +33,7 @@
 #include "include/capi/cef_v8_capi.h"
 #include "include/capi/cef_request_capi.h"
 #include "include/capi/cef_server_capi.h"
+#include "include/capi/cef_urlrequest_capi.h"
 
 using std::string;
 using std::wstring;
@@ -129,6 +130,7 @@ private:
 // CEF functions.
 extern decltype(&cef_get_mime_type) CefGetMimeType;
 extern decltype(&cef_request_create) CefRequest_Create;
+extern decltype(&cef_urlrequest_create) CefURLRequest_create;
 extern decltype(&cef_string_multimap_alloc) CefStringMultimap_Alloc;
 extern decltype(&cef_string_multimap_free) CefStringMultimap_Free;
 extern decltype(&cef_register_extension) CefRegisterExtension;
