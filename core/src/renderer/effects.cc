@@ -1,12 +1,14 @@
 #include "../internal.h"
 
-#include <dwmapi.h>
-#pragma comment(lib, "dwmapi.lib")
-
 HWND RCLIENT_WINDOW = nullptr;
 
-// This is C++ version of vibe
-// https://github.com/pykeio/vibe
+struct MARGINS
+{
+    int cxLeftWidth;
+    int cxRightWidth;
+    int cyTopHeight;
+    int cyBottomHeight;
+};
 
 enum ACCENT_STATE
 {
@@ -40,8 +42,10 @@ struct WINDOWCOMPOSITIONATTRIBDATA
 
 typedef NTSTATUS (WINAPI *RtlGetVersion)(PRTL_OSVERSIONINFOW lpVersionInformation);
 typedef BOOL (WINAPI *SetWindowCompositionAttribute)(HWND hwnd, const WINDOWCOMPOSITIONATTRIBDATA *data);
+typedef LSTATUS (WINAPI *RegGetValueW_t)(HKEY, LPCWSTR, LPCWSTR, DWORD, LPDWORD, PVOID, LPDWORD);
 
 #define GetFunction(library, fn) _GetFunction<fn>(library, #fn)
+#define GetFunction2(library, fn) _GetFunction<decltype(&fn)>(library, #fn)
 template<typename T> T _GetFunction(const char *library, const char *func)
 {
     static T fn = nullptr;
@@ -51,6 +55,22 @@ template<typename T> T _GetFunction(const char *library, const char *func)
     if (module == NULL) return nullptr;
 
     return fn = reinterpret_cast<T>(GetProcAddress(module, func));
+}
+
+static HRESULT WINAPI DwmExtendFrameIntoClientArea(
+    HWND hWnd,
+    const MARGINS *pMarInset)
+{
+    return GetFunction2("dwmapi.dll", DwmExtendFrameIntoClientArea)(hWnd, pMarInset);
+}
+
+static HRESULT WINAPI DwmSetWindowAttribute(
+    HWND hwnd,
+    DWORD dwAttribute,
+    _In_reads_bytes_(cbAttribute) LPCVOID pvAttribute,
+    DWORD cbAttribute)
+{
+    return GetFunction2("dwmapi.dll", DwmSetWindowAttribute)(hwnd, dwAttribute, pvAttribute, cbAttribute);
 }
 
 DWORD WinVer(int index)
@@ -181,7 +201,7 @@ bool IsWindowsLightTheme()
     // The value is expected to be a REG_DWORD, which is a signed 32-bit little-endian
     auto buffer = std::vector<char>(4);
     auto cbData = static_cast<DWORD>(buffer.size() * sizeof(char));
-    auto res = RegGetValueW(
+    auto res = _GetFunction<RegGetValueW_t>("advapi32.dll", "RegGetValueW")(
         HKEY_CURRENT_USER,
         L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
         L"AppsUseLightTheme",
