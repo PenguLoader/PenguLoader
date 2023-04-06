@@ -3,7 +3,7 @@
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
-bool LoadLibcefDll();
+bool LoadLibcefDll(bool is_browser);
 void HookBrowserProcess();
 void HookRendererProcess();
 
@@ -19,14 +19,14 @@ static void Initialize()
     // Browser process.
     if (utils::strEqual(name, L"LeagueClientUx.exe", false))
     {
-        if (LoadLibcefDll())
+        if (LoadLibcefDll(true))
             HookBrowserProcess();
     }
     // Renderer process.
     else if (utils::strEqual(name, L"LeagueClientUxRender.exe", false)
         && utils::strContain(GetCommandLineW(), L"--type=renderer", false))
     {
-        if (LoadLibcefDll())
+        if (LoadLibcefDll(false))
             HookRendererProcess();
     }
 }

@@ -78,7 +78,7 @@ static NOINLINE cef_color_t __fastcall Hooked_GetBackgroundColor(void *, void *,
     return 0; // fully transparent :)
 }
 
-bool LoadLibcefDll()
+bool LoadLibcefDll(bool is_browser)
 {
     LPCWSTR filename = L"libcef.dll";
 
@@ -125,12 +125,12 @@ bool LoadLibcefDll()
         (LPVOID &)CefBrowserHost_CreateBrowser = GetProcAddress(libcef, "cef_browser_host_create_browser");
 
         // Find CefContext::GetBackGroundColor().
+        if (is_browser)
         {
-            MODULEINFO info{ NULL };
-            K32GetModuleInformation(GetCurrentProcess(), libcef, &info, sizeof(info));
-
-            const string pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
-            Old_GetBackgroundColor = utils::scanInternal(info.lpBaseOfDll, info.SizeOfImage, pattern);
+            const char *pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
+            clock_t clk = clock();
+            Old_GetBackgroundColor = utils::patternScan(libcef, pattern);
+            MessageBoxA(0, std::to_string(clock() - clk).c_str(), "", 0);
 
             // Hook CefContext::GetBackGroundColor().
             utils::hookFunc(&Old_GetBackgroundColor, Hooked_GetBackgroundColor);

@@ -196,7 +196,7 @@ namespace utils
         hookFunc(reinterpret_cast<void **>(orig), reinterpret_cast<void *>(hooked));
     }
 
-    void *scanInternal(void *image, size_t length, const string &pattern);
+    void *patternScan(const HMODULE module, const char *pattern);
 
     void openFilesExplorer(const wstring &path);
 }

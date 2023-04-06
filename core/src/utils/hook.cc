@@ -1,100 +1,64 @@
 #include "../internal.h"
 
-#include <regex>
-#include <memory>
-#include <sstream>
-
-struct PatternMask
+void *utils::patternScan(const HMODULE module, const char *pattern)
 {
-    std::string binaryPattern;
-    std::string mask;
-};
+    if (!module)
+        return nullptr;
 
-// Converts user-friendly hex pattern string into a byte array
-// and generate corresponding mask
-NOINLINE PatternMask getPatternAndMask(std::string pattern)
-{
-    // Remove whitespaces
-    pattern = std::regex_replace(pattern, std::regex("\\s+"), "");
-
-    // Convert hex to binary
-    std::stringstream patternStream;
-    std::stringstream maskStream;
-    for (size_t i = 0; i < pattern.length(); i += 2)
+    static auto PatternToBytes = [](const char *Pattern)
     {
-        std::string byteString = pattern.substr(i, 2);
+        vector<int> Bytes{};
+        char *StartPos = const_cast<char *>(Pattern);
+        char *EndPos = const_cast<char *>(Pattern) + strlen(Pattern);
 
-        maskStream << (byteString == "??" ? '?' : 'x');
-
-        // Handle wildcards ourselves, rest goes to strtol
-        patternStream << (byteString == "??" ? '?' : (char)strtol(byteString.c_str(), nullptr, 16));
-    }
-
-    return { patternStream.str(), maskStream.str() };
-}
-
-// Credit: superdoc1234
-// Source: https://www.unknowncheats.me/forum/1364641-post150.html
-NOINLINE PVOID find(PCSTR pBaseAddress, size_t memLength, PCSTR pattern, PCSTR mask)
-{
-    auto DataCompare = [](const auto* pData, const auto* mask, const auto* cmask, auto chLast, size_t iEnd) -> bool {
-        if (pData[iEnd] != chLast) return false;
-        for (size_t i = 0; i <= iEnd; ++i)
+        for (auto CurrentChar = StartPos; CurrentChar < EndPos; ++CurrentChar)
         {
-            if (cmask[i] == 'x' && pData[i] != mask[i])
+            if (*CurrentChar == '?')
             {
-                return false;
+                ++CurrentChar;
+
+                if (*CurrentChar == '?')
+                    ++CurrentChar;
+
+                Bytes.push_back(-1);
+            }
+            else
+            {
+                Bytes.push_back(strtoul(CurrentChar, &CurrentChar, 16));
             }
         }
 
-        return true;
+        return Bytes;
     };
 
-    auto iEnd = strlen(mask) - 1;
-    auto chLast = pattern[iEnd];
+    auto DosHeader = reinterpret_cast<const IMAGE_DOS_HEADER *>(module);
+    auto NtHeaders = reinterpret_cast<const IMAGE_NT_HEADERS *>(reinterpret_cast<uint8_t *>(module) + DosHeader->e_lfanew);
 
-    for (size_t i = 0; i < memLength - strlen(mask); ++i)
+    auto PatternBytes = PatternToBytes(pattern);
+    const size_t PatternBytesSize = PatternBytes.size();
+    const int *PatternBytesData = PatternBytes.data();
+
+    const size_t ImageSize = NtHeaders->OptionalHeader.SizeOfImage;
+    uint8_t *ScanBytes = reinterpret_cast<uint8_t *>(module);
+
+    for (size_t i = 0; i < ImageSize - PatternBytesSize; ++i)
     {
-        if (DataCompare(pBaseAddress + i, pattern, mask, chLast, iEnd))
+        bool Found = true;
+
+        for (size_t j = 0; j < PatternBytesSize; ++j)
         {
-            return (PVOID)(pBaseAddress + i);
+            if (ScanBytes[i + j] != PatternBytesData[j] && PatternBytesData[j] != -1)
+            {
+                Found = false;
+                break;
+            }
         }
+
+        if (Found)
+            return &ScanBytes[i];
     }
 
     return nullptr;
-}
-
-// Credit: Rake
-// Source: https://guidedhacking.com/threads/external-internal-pattern-scanning-guide.14112/
-NOINLINE void *utils::scanInternal(void *image, size_t length, const string &pattern)
-{
-    // logger->debug("DLL Base: {}, Image Size: {:X}", lpBaseOfDll, SizeOfImage);
-
-    LPVOID match = nullptr;
-    MEMORY_BASIC_INFORMATION mbi{};
-
-    auto pm = getPatternAndMask(pattern);
-
-    auto pMemory = static_cast<const char *>(image);
-    auto pCurrentRegion = pMemory;
-
-    do
-    {
-        // Skip irrelevant code regions
-        auto result = VirtualQuery((LPCVOID)pCurrentRegion, &mbi, sizeof(mbi));
-        if (result && mbi.State == MEM_COMMIT && mbi.Protect != PAGE_NOACCESS)
-        {
-            // logger->debug("Current Region: {}, Region Size: {:X}", (void*) pCurrentRegion, mbi.RegionSize);
-            match = find(pCurrentRegion, mbi.RegionSize, pm.binaryPattern.c_str(), pm.mask.c_str());
-
-            if (match != nullptr)
-                break;
-        }
-
-        pCurrentRegion += mbi.RegionSize;
-    } while (pCurrentRegion < pMemory + length);
-
-    return match;
 }
 
 #pragma pack(push, 1)
