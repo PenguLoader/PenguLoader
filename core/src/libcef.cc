@@ -84,7 +84,8 @@ bool LoadLibcefDll(bool is_browser)
 
     if (GetFileMajorVersion(filename) != CEF_VERSION_MAJOR)
     {
-        CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&WarnInvalidVersion, NULL, 0, NULL);
+        if (is_browser)
+            CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&WarnInvalidVersion, NULL, 0, NULL);
         return false;
     }
 
