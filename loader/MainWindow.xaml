@@ -25,12 +25,20 @@
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <ui:TitleBarControl
-                Background="{DynamicResource SystemControlBackgroundAltMediumHighBrush}"
-                InactiveBackground="{DynamicResource SystemControlBackgroundAltMediumHighBrush}"
+                x:Name="titleBar"
                 IsActive="True"
-                x:Name="titleBar" Icon="icon.ico" IsIconVisible="True" Title="Pengu Loader" />
-            <ui:TitleBarButton Click="BtnTheme_Click" Margin="0,0,46,0" ToolTip="Change theme" HorizontalAlignment="Right">
-                <fa:ImageAwesome Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" Icon="MoonOutline" Width="12" />
+                Icon="icon.ico"
+                IsIconVisible="True"
+                Title="Pengu Loader" />
+            <ui:TitleBarButton
+                x:Name="btnTheme"
+                Margin="0,0,46,0"
+                ToolTip="Change theme"
+                HorizontalAlignment="Right">
+                <fa:ImageAwesome
+                    Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
+                    Icon="MoonOutline"
+                    Width="12" />
             </ui:TitleBarButton>
         </Grid>
         <Grid Grid.Row="1">
@@ -57,9 +65,10 @@
                     </InlineUIContainer></TextBlock>
             </Button>
             <Grid Margin="0,139,0,0" Background="#2AAA">
-                <TextBlock HorizontalAlignment="Left" Margin="39,24,0,0" FontSize="22" Text="PENGU LOADER:" VerticalAlignment="Top" Width="183" />
+                <TextBlock HorizontalAlignment="Left" Margin="39,24,0,0" FontSize="22" Text="Status:" VerticalAlignment="Top" Width="90" />
             </Grid>
             <Button
+                x:Name="btnAssets"
                 Content="Open assets" Click="BtnAssets_Click"
                 Background="Transparent" BorderBrush="#6888"
                 Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
@@ -90,7 +99,7 @@
                             Icon="ExternalLink" Width="14" Margin="5,0,0,-1" />
                     </InlineUIContainer></TextBlock>
             </Button>
-            <ui:ToggleSwitch x:Name="btnActivate" OffContent="OFF" OnContent="READY" Margin="268,162,0,25" RenderTransformOrigin="0.5,0.5" Width="113" Height="31">
+            <ui:ToggleSwitch x:Name="btnActivate" OffContent="OFF" OnContent="READY" Margin="268,162,0,25" RenderTransformOrigin="0.5,0.5" Width="128" Height="31">
                 <ui:ToggleSwitch.RenderTransform>
                     <TransformGroup>
                         <ScaleTransform ScaleX="1.4" ScaleY="1.4"/>

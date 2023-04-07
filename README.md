@@ -6,7 +6,7 @@
   </a>
   <h1 align="center">Pengu Loader</h1>
   <p align="center">
-    <strong>A JavaScript plugin loader</strong> for League of Legends Client
+    <strong>A JavaScript plugin loader</strong> for the League of Legends Client
   </p>
   <p>
     <a href="https://pengu.lol">
@@ -26,22 +26,33 @@
 
 <br>
 
+## Table of Contents
+- [About](#about)
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+  - [Ways to Contribute](#ways-you-can-contribute)
+  - [Project Structure](#project-structure)
+  - [Build from Source](#build-from-source)
+- [License](#license)
+
 ## About
 
-**Pengu Loader** (formerly [**League Loader**](https://github.com/PenguLoader/PenguLoader/tree/league-loader)) is a **plugin loader** designed specifically for the **League of Legends Client** (League Client).
+**Pengu Loader**, previously known as [**League Loader**](https://github.com/Yurichtofen/Pengu-Loader/tree/league-loader), is a **plugin loader** specifically designed for the **League of Legends Client** (League Client).
 
-With Pengu Loader, you can load **JavaScript** plug-ins into the Client as dependencies, which can help you personalize the look and feel of the Client, load your custom content, add new features, and improve your overall experience. It also allows you to build a smarter Client that fits your needs and preferences.
+Pengu Loader enables you to load **JavaScript** plugins into the Client as dependencies. This allows you to personalize the Client's appearance, load custom content, add new features, and enhance your overall experience. With Pengu Loader, you can build a smarter and more customized Client that suits your needs and preferences.
 
 ## Features
-- Customize League Client with plugins
-- Theme/personalize your Client
+- Customize the League Client using plugins
+- Personalize and theme your Client
 - Support for modern JavaScript features
-- Support for built-in and remote DevTools
-- Easier to work with LCU API
+- Built-in and remote DevTools support
+- Simplified LCU API usage
 
-## Getting started
+## Getting Started
 
-Please visit the homepage to get started.
+Please visit the homepage to begin:
 
 ### 👉 https://pengu.lol/
 
@@ -54,58 +65,53 @@ Please visit the homepage to get started.
 
 ## Contributing
 
-Follow these steps to contribute to the project:
-1. Fork it [(click here to fork now)](https://github.com/PenguLoader/PenguLoader/fork)
+To contribute to the project, follow these steps:
+1. Fork the repository [(click here to fork now)](https://github.com/PenguLoader/PenguLoader/fork)
 2. Create your feature branch `feat/<branch-name>`
 3. Commit your changes
 4. Push to the branch
-5. Create a new Pull Request
+5. Submit a new Pull Request
 
 ### Ways you can contribute
 
-- **documentation and website** - the documentation always needs some work, if you discover that something is not documented or can be improved you can create a PR for it, check out [PenguLoader org](https://github.com/PenguLoader)
-- **more base/starter plugins** - push your plugins with a detailed guide to help beginners get started with ease
-- **core features** - make sure you have a lot of experience with CEF and low-level programming skills
-- **javascript features** - you need too much webdev knowledge
+- **Documentation and website**: The documentation can always be improved. If you find something that is not documented or could be enhanced, create a PR for it. Check out the [PenguLoader organization](https://github.com/PenguLoader) for more information.
+- **Additional Base/Starter plugins**: Share your plugins along with a detailed guide to help beginners get started easily.
+- **Core features**: Ensure you have extensive experience with CEF and low-level programming skills.
+- **JavaScript features**: Extensive web development knowledge is required.
 
 ### Project structure
 
-- **loader** - main loader menu UI, written in C# and WPF XAML
-- **core** - core module (DLL), it hooks libCEF to make everything magical
-- **plugins** - templates for plugin dev beginner
+- **Loader** - The main loader menu UI, written in C# and WPF XAML.
+- **Core** - The core module (DLL) that hooks into libCEF to enable the plugin's magic.
+- **Plugins**: Templates for plugin development beginners.
 
 ### Build from source
 
-This project requires Visual Studio 2017 with these components:
+#### Prerequisites
 - Desktop development with C++
 - .NET desktop development
-- Windows 8.1 SDK
-
-> You can also use VS 2019+ and another SDK version.
-
-Close the repo and update submodules
-
-```
-git clone https://github.com/PenguLoader/PenguLoader.git
-git submodule update --init --recursive
-```
-
-Build steps:
-  1. Open **pengu-loader.sln**
-  2. Right click on the solution -> **Restore Nuget Packages**
-  3. Set arch to **x86**
-  4. Right click on each project -> **Build**
-
-To build the @default plugin requires, you need:
-- NodeJS 16+
+- Windows SDK
+- NodeJS
 - pnpm
 
-```
-cd plugins/@default
-pnpm install
-pnpm build
-```
+#### Initial Steps
+- Clone the repository:
+   - `git clone https://github.com/PenguLoader/PenguLoader`
+- Update submodules: 
+   - `cd Pengu-Loader`
+   - `git submodule update --init --recursive`
+
+#### Build Steps for Pengu Loader
+  - Open `pengu-loader.sln`
+  - Right-click on the solution -> `Restore Nuget Packages`
+  - Set the architecture to `x86`
+  - Right-click on each project -> `Build`
+
+#### Build Steps for the `@default` plugin:
+  - Make sure you have NodeJS and pnpm installed on your system.
+  - Navigate to the `plugins/@default` directory: `cd PenguLoader/plugins/@default`
+  - Install the plugin dependencies using pnpm: `pnpm install`
+  - Build the plugin using pnpm: `pnpm build`
 
 ## License
-
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnomi-san%2Fleague-loader.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnomi-san%2Fleague-loader?ref=badge_large)

@@ -1,25 +1,23 @@
 ## Insecure options
 
-> For development purposes only. Use at your own risk with ban rate < 2%.
+> These options are intended for development purposes only and should be used at your own risk.
 
-These options help you to bypass default UX security.<br>
-To enable them, just edit the `config`:
+The following options allow you to bypass default UX security measures. To enable them, simply edit the `config` file:
 
 ```ini
 [Main]
 
 ; Disable all web security features
-;   e.g CORS request and many unpleasant web policies
+;   e.g. CORS requests and other web policies
 DisableWebSecurity=1
 
 ; Ignore all error/invalid SSL certificates
-;	i.e requesting to self-assigned SSL/untrusted HTTPS server
+;   i.e. requests to self-assigned SSL/untrusted HTTPS servers
 IgnoreCertificateErrors=1
 
-; Allow requests through a proxy, for debugging purposes only
+; Allow requests through a proxy (for debugging purposes only)
 NoProxyServer=0
 
-; Append custom Chromium command line args
+; Append custom Chromium command line arguments
 ChromiumArgs=--disable-gpu --some-flag "--flag-with-value=some_value"
-
 ```

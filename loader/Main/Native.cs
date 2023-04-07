@@ -7,10 +7,9 @@ namespace PenguLoader.Main
     {
         public static IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
         {
-            if (IntPtr.Size == 8)
-                return SetWindowLongPtr64(hWnd, nIndex, dwNewLong);
-            else
-                return new IntPtr(SetWindowLong32(hWnd, nIndex, dwNewLong.ToInt32()));
+            return IntPtr.Size == 8
+                ? SetWindowLongPtr64(hWnd, nIndex, dwNewLong)
+                : new IntPtr(SetWindowLong32(hWnd, nIndex, dwNewLong.ToInt32()));
         }
 
         [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
@@ -19,19 +18,18 @@ namespace PenguLoader.Main
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
         static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
+        public static IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex)
+        {
+            return IntPtr.Size == 8
+                ? GetWindowLongPtr64(hWnd, nIndex)
+                : GetWindowLongPtr32(hWnd, nIndex);
+        }
+
         [DllImport("user32.dll", EntryPoint = "GetWindowLong")]
         private static extern IntPtr GetWindowLongPtr32(IntPtr hWnd, int nIndex);
 
         [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
         private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
-
-        public static IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex)
-        {
-            if (IntPtr.Size == 8)
-                return GetWindowLongPtr64(hWnd, nIndex);
-            else
-                return GetWindowLongPtr32(hWnd, nIndex);
-        }
 
         [DllImport("user32.dll", SetLastError = true)]
         static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
@@ -57,20 +55,20 @@ namespace PenguLoader.Main
             const int SW_SHOW = 5;
             const int SW_RESTORE = 9;
 
-            var hWnd = FindWindow(null, windowCaption);
+            IntPtr hWnd = FindWindow(null, windowCaption);
 
-            if (hWnd != null)
+            if (hWnd != IntPtr.Zero)
             {
-                var hPopupWnd = GetLastActivePopup(hWnd);
+                IntPtr hPopupWnd = GetLastActivePopup(hWnd);
 
-                if (hPopupWnd != null && IsWindowEnabled(hPopupWnd))
+                if (hPopupWnd != IntPtr.Zero && IsWindowEnabled(hPopupWnd))
                     hWnd = hPopupWnd;
-
-                ShowWindow(hWnd, SW_SHOW);
-                SetForegroundWindow(hWnd);
 
                 if (IsIconic(hWnd))
                     ShowWindow(hWnd, SW_RESTORE);
+
+                SetForegroundWindow(hWnd);
+                ShowWindow(hWnd, SW_SHOW);
             }
         }
     }

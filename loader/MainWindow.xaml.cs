@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows;
-
 using ModernWpf;
 using PenguLoader.Main;
 using System.Windows.Interop;
@@ -15,52 +14,50 @@ namespace PenguLoader
         {
             Instance = this;
             InitializeComponent();
+            ConfigureWindow();
+            InitializeButtons();
+            Loaded += OnMainWindowLoaded;
+        }
+
+        private void ConfigureWindow()
+        {
             WindowStyle = WindowStyle.ToolWindow;
             ShowInTaskbar = true;
 
-            UpdateActiveState();
-
             btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
             txtVersion.Text = $"v{Version.VERSION}.{Version.BUILD_NUMBER}";
-
-            btnGitHub.Click += delegate { Utils.OpenLink(Program.GITHUB_URL); };
-            btnDiscord.Click += delegate { Utils.OpenLink(Program.DISCORD_URL); };
-            btnHomepage.Click += delegate { Utils.OpenLink(Program.HOMEPAGE_URL); };
-
-            Loaded += MainWindow_Loaded;
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void InitializeButtons()
         {
-            Loaded -= MainWindow_Loaded;
+            btnGitHub.Click += (sender, args) => Utils.OpenLink(Program.GithubUrl);
+            btnDiscord.Click += (sender, args) => Utils.OpenLink(Program.DiscordUrl);
+            btnHomepage.Click += (sender, args) => Utils.OpenLink(Program.HomepageUrl);
+            btnTheme.Click += BtnTheme_Click;
+            btnAssets.Click += BtnAssets_Click;
+            btnPlugins.Click += BtnPlugins_Click;
+            btnDataStore.Click += BtnDataStore_Click;
+            btnActivate.Toggled += BtnActivate_Toggled;
+        }
 
+        private async void OnMainWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnMainWindowLoaded;
             Show();
 
-            Window window = Window.GetWindow(this);
-            var hwnd = new WindowInteropHelper(window).Handle;
-
+            var hwnd = new WindowInteropHelper(this).Handle;
             var oldEx = Native.GetWindowLongPtr(hwnd, -0x14).ToInt32();
             Native.SetWindowLongPtr(hwnd, -0x14, (IntPtr)(oldEx & ~0x80));
 
-            Updater.CheckUpdate();
+            await Updater.CheckUpdate();
         }
 
         private void BtnTheme_Click(object sender, RoutedEventArgs e)
         {
             var tm = ThemeManager.Current;
-            if (tm.ApplicationTheme == null)
-                tm.ApplicationTheme = (tm.ActualApplicationTheme == ApplicationTheme.Light) ? ApplicationTheme.Light : ApplicationTheme.Dark;
-            tm.ApplicationTheme = (tm.ActualApplicationTheme == ApplicationTheme.Light) ? ApplicationTheme.Dark : ApplicationTheme.Light;
-        }
-
-        private void BtnGitHub_Click(object sender, RoutedEventArgs e)
-        {
-            Utils.OpenLink(Program.GITHUB_URL);
-        }
-
-        private void BtnHomepage_Click(object sender, RoutedEventArgs e)
-        {
-            Utils.OpenLink(Program.HOMEPAGE_URL);
+            tm.ApplicationTheme = (tm.ApplicationTheme == ApplicationTheme.Light) 
+                ? ApplicationTheme.Dark 
+                : ApplicationTheme.Light;
         }
 
         private void BtnAssets_Click(object sender, RoutedEventArgs e)
@@ -90,9 +87,9 @@ namespace PenguLoader
                     "Failed to perform activation.\n" +
                     "Error: " + err.Message + "\n\n" +
                     "Please capture the error message and click Yes to report it.",
-                    Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
-                    Utils.OpenLink(Program.GITHUB_ISSUES_URL);
+                    Utils.OpenLink(Program.GithubIssuesUrl);
                 }
             }
             finally
@@ -101,50 +98,58 @@ namespace PenguLoader
             }
         }
 
-        void ToggleActivation()
+        private void ToggleActivation()
         {
             if (!Module.IsActivated())
             {
-                if (!Module.Exist())
+                if (!Module.Exists())
                 {
-                    MessageBox.Show(this,
-                        "Failed to activate the Loader. The core.dll is not found.",
-                        Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowMessage("Failed to activate the Loader. core.dll not found.", Program.Name, MessageBoxImage.Error);
                 }
                 else if (Module.Activate())
                 {
-                    if (LCU.IsRunning())
-                    {
-                        if (MessageBox.Show(this,
-                            "The Loader has been activated successfully.\n" +
-                            "Do you want to restart the running League of Legends Client now?",
-                            Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                        {
-                            LCU.KillUxAndRestart();
-                        }
-                    }
+                    PromptRestart("The Loader has been activated successfully.");
                 }
                 else
                 {
-                    MessageBox.Show(this,
-                        "Failed to activate the Loader.\n",
-                        Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowMessage("Failed to activate the Loader.", Program.Name, MessageBoxImage.Error);
                 }
             }
             else
             {
                 Module.Deactivate();
 
-                if (Module.IsLoaded())
+                PromptRestart(Module.IsLoaded() ? "The Loader has been deactivated successfully." :
+                                                    "The Loader has been deactivated successfully.");
+            }
+        }
+
+        private MessageBoxResult ShowMessage(string message, string caption, MessageBoxImage icon)
+        {
+            if (icon == MessageBoxImage.Question)
+            {
+                return MessageBox.Show(this, message, caption, MessageBoxButton.YesNo, icon);
+            }
+            else
+            {
+                return MessageBox.Show(this, message, caption, MessageBoxButton.OK, icon);
+            }
+        }
+
+        private void PromptRestart(string message)
+        {
+            if (LCU.IsRunning())
+            {
+                if (MessageBox.Show(this, "Do you want to restart the running League of Legends Client now?",
+                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
-                    if (MessageBox.Show(this,
-                        "The Loader has been deactivated successfully.\n" +
-                        "Do you want to restart running League of Legends Client to apply?",
-                        Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
-                    {
-                        LCU.KillUxAndRestart();
-                    }
+                    LCU.KillUxAndRestart();
+                    ShowMessage(message, Program.Name, MessageBoxImage.Information);
                 }
+            }
+            else
+            {
+                ShowMessage(message, Program.Name, MessageBoxImage.Information);
             }
         }
 

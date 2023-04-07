@@ -6,7 +6,7 @@ These APIs are designed to use inside League Client with Pengu Loader plugin run
 
 ## `openDevTools()` [function]
 
-Call it to open built-in DevTools window of League Client.
+Call it to open the built-in DevTools window of the League Client.
 
 Example:
 ```js
@@ -15,7 +15,7 @@ window.openDevTools();
 
 ## `openAssetsFolder()` [function]
 
-Call it to open the assets folder in new File Explorer window.
+Call it to open the assets folder in a new File Explorer window.
 
 Example:
 ```js
@@ -24,7 +24,7 @@ window.openAssetsFolder();
 
 ## `openPluginsFolder()` [function]
 
-Call it to open the plugins folder in new File Explorer window.
+Call it to open the plugins folder in a new File Explorer window.
 
 Example:
 ```js
@@ -35,27 +35,28 @@ window.openPluginsFolder();
 
 ## `AuthCallback` [namespace]
 
-This namespace helps you to create callback URL and read its response from an auth flow.
+This namespace helps you create a callback URL and read its response from an auth flow.
 
 ### `AuthCallback.createURL()` [function]
 
-Create an unique URL can be used for auth callback/redirect from external web browsers.
+Create a unique URL that can be used for auth callback/redirect from external web browsers.
 
 ### `AuthCallback.readResponse(url, timeout?)` [function]
 
-This function wait for response from a given callback URL. It returns a Promise for async context, contains string if success or null when timeout.
+This function waits for a response from a given callback URL. It returns a Promise for an async context, containing a string if successful or null when timed out.
 
 - `url`: Callback URL created by `createURL()`.
 - `timeout`: Optional timeout in milliseconds, default is 180s.
 
-Callback URL supports **GET** request only, the response of this function could be search params fullfilled by auth flow. 
+Callback URL supports **GET** request only, the response of this function could be search params fulfilled by auth flow. 
 
 Example:
 ```js
 async function requestUserAuth() {
   const callbackURL = AuthCallback.createURL();
   const requestAuth = 'https://.../?redirect_uri=' + encodeURIComponent(callbackURL);
-  // Open in web browser
+  
+  // Open the authentication request URL in a new browser window.
   window.open(callbackURL);
 
   const response = await AuthCallback.readResponse(callbackURL);
@@ -65,12 +66,12 @@ async function requestUserAuth() {
     console.log(response);
   }
   
-  // Should show UX to get back focus
+  // Notify the Riot client to bring the focus back to the application window.
   fetch('/riotclient/ux-show', { method: 'POST' });
 }
 ```
 
-See [spotify-gateway](https://github.com/LeagueLoader/spotify-gateway) example to learn more.
+See the [spotify-gateway](https://github.com/LeagueLoader/spotify-gateway) example to learn more.
 
 <br>
 
@@ -81,8 +82,8 @@ League Client does not save userdata to disk, as same as incognito mode in web b
 ### `DataStore.set(key, value)` [function]
 
 Call this function to store your data with a given key.
-- `key` [required] Keys should be string or number.
-- `value` [require] Value may be string, number, boolean, null or collection like array and object. Actually, it will be stored as JSON format, so any value like function and runtime object are ignored.
+- `key` [required] Keys should be a string or number.
+- `value` [require] Value may be a string, number, boolean, null, or a collection like array and object. It will be stored as JSON format, so any value like function and runtime object are ignored.
 
 Example:
 ```js
@@ -146,7 +147,7 @@ console.log(Effect.current)
 A function that takes the name of the desired effect name and an optional object.<br>
 It returns a boolean indicating whether the effect was successfully applied or not.
 
-- `name` [required] These effect names above to be applied, in string.
+- `name` [required] These effect names above to be applied, in a string.
 
 - `options` [optional] Additional options for the effect, `acrylic`, `unified` and `blurbehind` could have tint color, but `mica` will ignore this options.
 
@@ -154,22 +155,22 @@ This function returns `false` if the effect could not be applied, see the notes 
 
 Example:
 ```js
-// enable acrylic on Windows 10
-Effect.apply('acrylic')
+// Apply the acrylic effect to the current window.
+Effect.apply('acrylic');
 
-// with tinting color
-Effect.apply('unified', { color: '#4446' })
+// Apply the unified effect with a white tinting color to the current window.
+Effect.apply('unified', { color: '#FFFFFF' });
 
-// mica on windows 11, no options needed
+// Apply the mica effect to the current window.
 Effect.apply('mica')
 ```
 
 #### System compatibility
 - These effects are currently supported on Windows only.
-- On Windows 7, only the `blurbehind` is supported.
-- On Windows 10, requires build 1703 or higher to use `acrylic`.
+- On Windows 7, only `blurbehind` is supported.
+- On Windows 10, it requires build 1703 or higher to use `acrylic`.
   - With any build after 2020, enabling it with transparency effects (on Personalize -> Color settings) will cause lagging.
-- `mica` and `unified` are only supported on Windows 11, but `unified` can be enabled on Windows 10 without different from `acrylic`. 
+- `mica` and `unified` are only supported on Windows 11, but `unified` can be enabled on Windows 10 without difference from `acrylic`. 
 
 ### `Effect.clear()` [function]
 
@@ -178,13 +179,13 @@ Use `Effect.current` after cleared will give you `undefined`.
 
 Example:
 ```js
-// just clear applied effect, even if nothing applied
+// just clear the applied effect, even if nothing is applied
 Effect.clear();
 ```
 
 ### `Effect.on(event, callback)` [function]
 
-Add a listener which will be triggered when effect changed.
+Add a listener which will be triggered when the effect changes.
 
 ```js
 Effect.on('apply', ({ old, name, options }) => {
@@ -204,7 +205,7 @@ Remove your added listener.
 
 ## `__llver` (property)
 
-This property contains version of Pengu Loader in string.
+This property contains the version of Pengu Loader in a string.
 
 Example:
 ```js
