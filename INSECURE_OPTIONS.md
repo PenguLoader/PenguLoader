@@ -7,6 +7,11 @@ The following options allow you to bypass default UX security measures. To enabl
 ```ini
 [Main]
 
+; Enable Chrome remote debugger using a specific port
+;   to access the remote DevTools, just open http://localhost:PORT/json/list
+;   you will see a list of URLs, then open the first one (http://localhost:PORT/...)
+RemoteDebuggingPort=8888
+
 ; Disable all web security features
 ;   e.g. CORS requests and other web policies
 DisableWebSecurity=1

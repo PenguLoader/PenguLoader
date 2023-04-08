@@ -77,7 +77,7 @@ See the [spotify-gateway](https://github.com/LeagueLoader/spotify-gateway) examp
 
 ## `DataStore` [namespace]
 
-League Client does not save userdata to disk, as same as incognito mode in web browsers. This namespace helps you to store userdata to disk.
+League Client does not save user data to disk, as same as incognito mode in web browsers. This namespace helps you to store user data, as a persistent storage.
 
 ### `DataStore.set(key, value)` [function]
 

@@ -39,7 +39,7 @@
 
 ## About
 
-**Pengu Loader**, previously known as [**League Loader**](https://github.com/Yurichtofen/Pengu-Loader/tree/league-loader), is a **plugin loader** specifically designed for the **League of Legends Client** (League Client).
+**Pengu Loader**, previously known as [**League Loader**](https://github.com/PenguLoader/PenguLoader/tree/league-loader), is a **plugin loader** specifically designed for the **League of Legends Client**.
 
 Pengu Loader enables you to load **JavaScript** plugins into the Client as dependencies. This allows you to personalize the Client's appearance, load custom content, add new features, and enhance your overall experience. With Pengu Loader, you can build a smarter and more customized Client that suits your needs and preferences.
 
@@ -88,17 +88,18 @@ To contribute to the project, follow these steps:
 ### Build from source
 
 #### Prerequisites
-- Desktop development with C++
-- .NET desktop development
-- Windows SDK
-- NodeJS
+- Visual Studio 2017
+  - Desktop development with C++
+  - .NET desktop development
+  - Windows 8.1 SDK
+- NodeJS 16+
 - pnpm
 
 #### Initial Steps
 - Clone the repository:
    - `git clone https://github.com/PenguLoader/PenguLoader`
 - Update submodules: 
-   - `cd Pengu-Loader`
+   - `cd PenguLoader`
    - `git submodule update --init --recursive`
 
 #### Build Steps for Pengu Loader
