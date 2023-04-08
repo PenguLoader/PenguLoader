@@ -17,7 +17,6 @@ namespace PenguLoader
             ConfigureWindow();
             InitializeButtons();
             Loaded += OnMainWindowLoaded;
-
             SourceInitialized += MainWindow_SourceInitialized;
         }
 
@@ -60,8 +59,12 @@ namespace PenguLoader
         private void BtnTheme_Click(object sender, RoutedEventArgs e)
         {
             var tm = ThemeManager.Current;
-            tm.ApplicationTheme = (tm.ApplicationTheme == ApplicationTheme.Light) 
-                ? ApplicationTheme.Dark 
+            var isLight = tm.ApplicationTheme == null
+                ? tm.ActualApplicationTheme == ApplicationTheme.Light
+                : tm.ApplicationTheme == ApplicationTheme.Light;
+
+            tm.ApplicationTheme = isLight
+                ? ApplicationTheme.Dark
                 : ApplicationTheme.Light;
         }
 
