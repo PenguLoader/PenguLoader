@@ -9,29 +9,40 @@ jobs:
     runs-on: windows-2019
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
           ref: main
           submodules: true
 
-      - run: |
+      - name: Prepare environment variables
+        run: |
           echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
           echo "BUILD_DATE=$(git show -s --date=format:%Y%m%d-%H%M --format=%cd)" >> $env:GITHUB_ENV
+
+      - name: Update project files
+        run: |
           (Get-Content core\core.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File core\core.vcxproj
           (Get-Content loader\Version.cs) -replace 'int\s*BUILD_NUMBER.*;', 'string BUILD_NUMBER = "${{ env.BUILD_DATE }}";' | Out-File loader\Version.cs
 
-      - uses: microsoft/setup-msbuild@v1.1
-      - uses: actions/cache@v3
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - uses: pnpm/action-setup@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
           version: 8
-      - uses: actions/setup-node@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 18.x
 

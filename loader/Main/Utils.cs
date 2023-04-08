@@ -8,47 +8,60 @@ namespace PenguLoader.Main
     {
         public static void OpenFolder(string path)
         {
-            Process.Start(new ProcessStartInfo()
-            {
-                FileName = "explorer.exe",
-                Arguments = $"\"{path}\"",
-                UseShellExecute = true
-            });
+            Process.Start("explorer.exe", $"\"{path}\"");
         }
 
         public static void OpenLink(string url)
         {
-            Process.Start(url);
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
 
         public static bool IsFileInUse(string path)
         {
+            if (!File.Exists(path)) return false;
+
             try
             {
-                if (!File.Exists(path))
-                    return false;
-
-                using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-                {
-                    return false;
-                }
+                using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
             }
             catch
             {
                 return true;
             }
+
+            return false;
         }
 
         public static void DeletePath(string path, bool isDir = false)
         {
             try
             {
-                if (isDir && Directory.Exists(path))
+                if (isDir)
+                {
                     Directory.Delete(path, true);
-                else if (File.Exists(path))
+                }
+                else
+                {
                     File.Delete(path);
+                }
             }
             catch { }
+        }
+
+        public static void EnsureDirectoryExists(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+
+        public static void EnsureFileExists(string path)
+        {
+            if (!File.Exists(path))
+            {
+                File.Create(path).Close();
+            }
         }
     }
 }
