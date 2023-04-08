@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,21 +63,25 @@ namespace PenguLoader.Main
 
         private static async Task<string> DownloadString(string url)
         {
-            using var client = new WebClient();
-            client.Headers.Add(HttpRequestHeader.UserAgent, UserAgent);
-            return await client.DownloadStringTaskAsync(url);
+            using (var client = new WebClient())
+            {
+                client.Headers.Add(HttpRequestHeader.UserAgent, UserAgent);
+                return await client.DownloadStringTaskAsync(url);
+            }
         }
 
         private static async Task DownloadFile(string url, string path, Action<long, long, int> onProgress)
         {
-            using var client = new WebClient();
-            client.Headers.Add(HttpRequestHeader.UserAgent, UserAgent);
-            client.DownloadProgressChanged += (s, e) =>
+            using (var client = new WebClient())
             {
-                onProgress.Invoke(e.BytesReceived, e.TotalBytesToReceive, e.ProgressPercentage);
-            };
+                client.Headers.Add(HttpRequestHeader.UserAgent, UserAgent);
+                client.DownloadProgressChanged += (s, e) =>
+                {
+                    onProgress.Invoke(e.BytesReceived, e.TotalBytesToReceive, e.ProgressPercentage);
+                };
 
-            await client.DownloadFileTaskAsync(new Uri(url), path);
+                await client.DownloadFileTaskAsync(new Uri(url), path);
+            }
         }
 
         private static void ApplyUpdate()

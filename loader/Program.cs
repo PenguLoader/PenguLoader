@@ -8,7 +8,7 @@ namespace PenguLoader
 {
     public static class Program
     {
-        public const string Name = "Pengu Loader";
+        public static string Name => "Pengu Loader";
         public static string HomepageUrl => "https://pengu.lol";
         public static string DiscordUrl => "https://chat.pengu.lol";
         public static string GithubRepo => "PenguLoader/PenguLoader";

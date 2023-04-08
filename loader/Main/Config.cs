@@ -14,22 +14,16 @@ namespace PenguLoader.Main
 
         static Config()
         {
-            EnsureDirectoryExists(AssetsDir);
-            EnsureDirectoryExists(PluginsDir);
-            EnsureFileExists(ConfigPath);
-            EnsureFileExists(DataStorePath);
+            Utils.EnsureDirectoryExists(AssetsDir);
+            Utils.EnsureDirectoryExists(PluginsDir);
+            Utils.EnsureFileExists(ConfigPath);
+            Utils.EnsureFileExists(DataStorePath);
         }
 
         public static string Language
         {
             get => Get("Language");
             set => Set("Language", value);
-        }
-
-        public static int RemoteDebuggingPort
-        {
-            get => GetInt("RemoteDebuggingPort");
-            set => Set("RemoteDebuggingPort", value.ToString());
         }
 
         [DllImport("kernel32", CharSet = CharSet.Unicode)]
@@ -43,26 +37,10 @@ namespace PenguLoader.Main
             return Path.Combine(Directory.GetCurrentDirectory(), folderName);
         }
 
-        private static void EnsureDirectoryExists(string path)
-        {
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-        }
-
-        private static void EnsureFileExists(string path)
-        {
-            if (!File.Exists(path))
-            {
-                File.Create(path).Close();
-            }
-        }
-
-        private static string Get(string key)
+        private static string Get(string key, string @default = "")
         {
             var value = new StringBuilder(2048);
-            GetPrivateProfileString("Main", key, "", value, 2048, ConfigPath);
+            GetPrivateProfileString("Main", key, @default, value, 2048, ConfigPath);
             return value.ToString();
         }
 
@@ -71,9 +49,9 @@ namespace PenguLoader.Main
             WritePrivateProfileString("Main", key, value, ConfigPath);
         }
 
-        private static int GetInt(string key)
+        private static int GetInt(string key, int @default = 0)
         {
-            return int.TryParse(Get(key), out int result) ? result : 0;
+            return int.TryParse(Get(key), out int result) ? result : @default;
         }
     }
 }

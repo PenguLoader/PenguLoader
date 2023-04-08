@@ -11,11 +11,14 @@ namespace PenguLoader.Main
         public static string GetDebugger(string target)
         {
             using (var key = OpenIFEOKey())
-            using (var image = key?.OpenSubKey(target))
             {
-                return image?.GetValue(VALUE_NAME) as string;
+                using (var image = key?.OpenSubKey(target))
+                {
+                    return image?.GetValue(VALUE_NAME) as string;
+                }
             }
         }
+
         public static bool SetDebugger(string target, string debugger)
         {
             using (var key = OpenIFEOKey(writable: true))
@@ -28,6 +31,7 @@ namespace PenguLoader.Main
                     image.SetValue(VALUE_NAME, debugger, RegistryValueKind.String);
                 }
             }
+
             return true;
         }
 

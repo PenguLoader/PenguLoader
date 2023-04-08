@@ -44,14 +44,18 @@ namespace PenguLoader.Main
 
             try
             {
-                using var req = new HttpRequestMessage(new HttpMethod(method), uri);
-                req.Headers.Add("Authorization", authorization);
+                using (var req = new HttpRequestMessage(new HttpMethod(method), uri))
+                {
+                    req.Headers.Add("Authorization", authorization);
 
-                if (!string.IsNullOrEmpty(body))
-                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
+                    if (!string.IsNullOrEmpty(body))
+                        req.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
-                using var res = await Http.SendAsync(req);
-                return await res.Content.ReadAsStringAsync();
+                    using (var res = await Http.SendAsync(req))
+                    {
+                        return await res.Content.ReadAsStringAsync();
+                    }
+                }
             }
             catch
             {
@@ -67,23 +71,27 @@ namespace PenguLoader.Main
             {
                 var lockfilePath = Path.Combine(lcPath, "lockfile");
 
-                using var fileStream = new FileStream(lockfilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var reader = new StreamReader(fileStream);
-                var content = reader.ReadToEnd();
-
-                if (!string.IsNullOrEmpty(content))
+                using (var fileStream = new FileStream(lockfilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    var tokens = content.Split(':');
-                    port = tokens[2];
-                    pass = tokens[3];
-                    return true;
+                    using (var reader = new StreamReader(fileStream))
+                    {
+                        var content = reader.ReadToEnd();
+
+                        if (!string.IsNullOrEmpty(content))
+                        {
+                            var tokens = content.Split(':');
+                            port = tokens[2];
+                            pass = tokens[3];
+                            return true;
+                        }
+                    }
                 }
             }
             catch
             {
             }
 
-            port = pass = "";
+            port = pass = string.Empty;
             return false;
         }
     }

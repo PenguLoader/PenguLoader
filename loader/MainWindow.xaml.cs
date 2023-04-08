@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Interop;
 using ModernWpf;
 using PenguLoader.Main;
-using System.Windows.Interop;
 
 namespace PenguLoader
 {
@@ -43,8 +43,11 @@ namespace PenguLoader
         private async void OnMainWindowLoaded(object sender, RoutedEventArgs e)
         {
             Loaded -= OnMainWindowLoaded;
+
+            UpdateActiveState();
             Show();
 
+            // Fix window style issue.
             var hwnd = new WindowInteropHelper(this).Handle;
             var oldEx = Native.GetWindowLongPtr(hwnd, -0x14).ToInt32();
             Native.SetWindowLongPtr(hwnd, -0x14, (IntPtr)(oldEx & ~0x80));
@@ -104,11 +107,11 @@ namespace PenguLoader
             {
                 if (!Module.Exists())
                 {
-                    ShowMessage("Failed to activate the Loader. core.dll not found.", Program.Name, MessageBoxImage.Error);
+                    ShowMessage("Failed to activate the Loader: \"core.dll\" not found.", Program.Name, MessageBoxImage.Error);
                 }
                 else if (Module.Activate())
                 {
-                    PromptRestart("The Loader has been activated successfully.");
+                    PromptRestart("The Loader has been ACTIVATED successfully.", false);
                 }
                 else
                 {
@@ -118,9 +121,7 @@ namespace PenguLoader
             else
             {
                 Module.Deactivate();
-
-                PromptRestart(Module.IsLoaded() ? "The Loader has been deactivated successfully." :
-                                                    "The Loader has been deactivated successfully.");
+                PromptRestart("The Loader has been DEACTIVATED successfully.", true);
             }
         }
 
@@ -136,9 +137,9 @@ namespace PenguLoader
             }
         }
 
-        private void PromptRestart(string message)
+        private void PromptRestart(string message, bool isDeactivaed)
         {
-            if (LCU.IsRunning())
+            if ((LCU.IsRunning() && !isDeactivaed) || (Module.IsLoaded() && isDeactivaed))
             {
                 if (MessageBox.Show(this, "Do you want to restart the running League of Legends Client now?",
                     Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
