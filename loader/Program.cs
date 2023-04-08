@@ -43,7 +43,7 @@ namespace PenguLoader
             }
             else
             {
-                Native.SetFocusToPreviousInstance(Name);
+                Native.SetFocusToPreviousInstance();
                 return 0;
             }
         }

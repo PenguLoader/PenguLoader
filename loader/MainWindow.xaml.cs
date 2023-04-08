@@ -17,6 +17,8 @@ namespace PenguLoader
             ConfigureWindow();
             InitializeButtons();
             Loaded += OnMainWindowLoaded;
+
+            SourceInitialized += MainWindow_SourceInitialized;
         }
 
         private void ConfigureWindow()
@@ -159,6 +161,30 @@ namespace PenguLoader
             btnActivate.Toggled -= BtnActivate_Toggled;
             btnActivate.IsOn = Module.IsActivated();
             btnActivate.Toggled += BtnActivate_Toggled;
+        }
+
+        private void MainWindow_SourceInitialized(object sender, EventArgs e)
+        {
+            var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+            source.AddHook(new HwndSourceHook(WndProc));
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wp, IntPtr lp, ref bool handled)
+        {
+            if (msg == Native.WM_SHOWME)
+            {
+                if (WindowState == WindowState.Minimized)
+                    WindowState = WindowState.Normal;
+
+                if (Visibility == Visibility.Hidden)
+                    Visibility = Visibility.Visible;
+
+                Activate();
+
+                handled = true;
+            }
+
+            return IntPtr.Zero;
         }
     }
 }
