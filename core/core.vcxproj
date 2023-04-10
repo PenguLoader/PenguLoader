@@ -37,7 +37,6 @@
     <ClCompile Include="src\renderer\renderer.cc" />
     <ClCompile Include="src\utils\cefstr.cc" />
     <ClCompile Include="src\utils\file.cc" />
-    <ClCompile Include="src\utils\hook.cc" />
     <ClCompile Include="src\utils\misc.cc" />
     <ClCompile Include="src\utils\string.cc" />
   </ItemGroup>
@@ -45,6 +44,7 @@
     <None Include="res\module.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\hook.h" />
     <ClInclude Include="src\internal.h" />
     <None Include="src\renderer\extension.js">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

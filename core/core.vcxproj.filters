@@ -55,9 +55,6 @@
     <ClCompile Include="src\utils\string.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
-    <ClCompile Include="src\utils\hook.cc">
-      <Filter>src\utils</Filter>
-    </ClCompile>
     <ClCompile Include="src\utils\misc.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
@@ -93,6 +90,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\internal.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hook.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

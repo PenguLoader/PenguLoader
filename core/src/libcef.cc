@@ -1,4 +1,7 @@
+#pragma once
+
 #include "internal.h"
+#include "hook.h"
 #include "include/cef_version.h"
 #include <Psapi.h>
 
@@ -30,10 +33,6 @@ decltype(&cef_v8value_create_string) CefV8Value_CreateString;
 decltype(&cef_v8value_create_function) CefV8Value_CreateFunction;
 decltype(&cef_v8value_create_array) CefV8Value_CreateArray;
 decltype(&cef_v8value_create_bool) CefV8Value_CreateBool;
-
-decltype(&cef_initialize) CefInitialize;
-decltype(&cef_execute_process) CefExecuteProcess;
-decltype(&cef_browser_host_create_browser) CefBrowserHost_CreateBrowser;
 
 static int GetFileMajorVersion(LPCWSTR file)
 {
@@ -71,8 +70,14 @@ static void WarnInvalidVersion()
     ShellExecute(NULL, L"open", L"https://git.pengu.lol", NULL, NULL, NULL);
 }
 
-static void *Old_GetBackgroundColor = nullptr;
-static NOINLINE cef_color_t __fastcall Hooked_GetBackgroundColor(void *, void *,
+#ifdef _WIN64
+typedef cef_color_t(__fastcall * GetBackgroundColor_t)(void *_rcx, cef_browser_settings_t *, cef_state_t);
+#else
+typedef cef_color_t(__fastcall * GetBackgroundColor_t)(void *_ecx, void *_edx, cef_browser_settings_t *, cef_state_t);
+#endif
+
+static Hook<GetBackgroundColor_t> Old_GetBackgroundColor;
+static cef_color_t __fastcall Hooked_GetBackgroundColor(void *, void *,
     cef_browser_settings_t *settings, cef_state_t state)
 {
     return 0; // fully transparent :)
@@ -122,18 +127,14 @@ bool LoadLibcefDll(bool is_browser)
         (LPVOID &)CefV8Value_CreateArray = GetProcAddress(libcef, "cef_v8value_create_array");
         (LPVOID &)CefV8Value_CreateBool = GetProcAddress(libcef, "cef_v8value_create_bool");
 
-        (LPVOID &)CefInitialize = GetProcAddress(libcef, "cef_initialize");
-        (LPVOID &)CefExecuteProcess = GetProcAddress(libcef, "cef_execute_process");
-        (LPVOID &)CefBrowserHost_CreateBrowser = GetProcAddress(libcef, "cef_browser_host_create_browser");
-
         // Find CefContext::GetBackGroundColor().
         if (is_browser)
         {
             const char *pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
-            Old_GetBackgroundColor = utils::patternScan(libcef, pattern);
+            auto GetBackgroundColor = (GetBackgroundColor_t)utils::patternScan(libcef, pattern);
 
             // Hook CefContext::GetBackGroundColor().
-            utils::hookFunc(&Old_GetBackgroundColor, Hooked_GetBackgroundColor);
+            Old_GetBackgroundColor.hook(GetBackgroundColor, Hooked_GetBackgroundColor);
         }
 
         return true;

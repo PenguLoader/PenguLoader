@@ -1,4 +1,5 @@
 #include "../internal.h"
+#include "../hook.h"
 
 #include "include/capi/cef_base_capi.h"
 #include "include/capi/cef_app_capi.h"
@@ -196,6 +197,7 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
     return Old_OnProcessMessageReceived(self, browser, frame, source_process, message);
 }
 
+static Hook<decltype(&cef_execute_process)> Old_CefExecuteProcess;
 static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app, void* windows_sandbox_info)
 {
     // Hook RenderProcessHandler.
@@ -228,11 +230,11 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
         return handler;
     };
 
-    return CefExecuteProcess(args, app, windows_sandbox_info);
+    return Old_CefExecuteProcess(args, app, windows_sandbox_info);
 }
 
 void HookRendererProcess()
 {
     // Hook CefExecuteProcess().
-    utils::hookFunc(&CefExecuteProcess, Hooked_CefExecuteProcess);
+    Old_CefExecuteProcess.hook("libcef.dll", "cef_execute_process", Hooked_CefExecuteProcess);
 }

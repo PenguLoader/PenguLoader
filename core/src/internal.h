@@ -1,5 +1,4 @@
-#ifndef _LEAGUE_LOADER_H
-#define _LEAGUE_LOADER_H
+#pragma once
 
 //#ifdef _WIN64
 //#error "Build 32-bit only."
@@ -8,10 +7,6 @@
 #ifdef _MSC_VER
 #define NOMINMAX
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
-#ifndef NOINLINE
-#define NOINLINE __declspec(noinline)
 #endif
 
 #ifndef COUNT_OF
@@ -23,6 +18,8 @@
 #include <atomic>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <utility>
 #include <windows.h>
 
 #include "include/internal/cef_string.h"
@@ -159,11 +156,6 @@ extern decltype(&cef_v8value_create_function) CefV8Value_CreateFunction;
 extern decltype(&cef_v8value_create_array) CefV8Value_CreateArray;
 extern decltype(&cef_v8value_create_bool) CefV8Value_CreateBool;
 
-// Hooking entries.
-extern decltype(&cef_initialize) CefInitialize;
-extern decltype(&cef_execute_process) CefExecuteProcess;
-extern decltype(&cef_browser_host_create_browser) CefBrowserHost_CreateBrowser;
-
 static CefStr operator""_s(const char *s, size_t l)
 {
     return CefStr(s, l);
@@ -193,14 +185,6 @@ namespace utils
     bool readFile(const wstring &path, string &out);
     vector<wstring> readDir(const std::wstring &dir);
 
-    void hookFunc(void **orig, void *hooked);
-    template<typename T> void hookFunc(T *orig, T hooked) {
-        hookFunc(reinterpret_cast<void **>(orig), reinterpret_cast<void *>(hooked));
-    }
-
-    void *patternScan(const HMODULE module, const char *pattern);
-
     void openFilesExplorer(const wstring &path);
+    void *patternScan(const HMODULE module, const char *pattern);
 }
-
-#endif
