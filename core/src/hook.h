@@ -25,8 +25,11 @@ public:
         }
     }
 
-    void hook(Fn orig, Fn hook)
+    bool hook(Fn orig, Fn hook)
     {
+        if (orig == nullptr || hook == nullptr)
+            return false;
+
         orig_func_ = orig;
         orig_code_ = malloc(sizeof(Shellcode));
         memcpy(orig_code_, orig, sizeof(Shellcode));
@@ -36,11 +39,13 @@ public:
         memcpy_safe(orig, &code, sizeof(Shellcode));
     }
 
-    void hook(const char *lib, const char *proc, Fn hook)
+    bool hook(const char *lib, const char *proc, Fn hook)
     {
         if (HMODULE mod = GetModuleHandleA(lib))
             if (Fn orig = reinterpret_cast<Fn>(GetProcAddress(mod, proc)))
-                this->hook(orig, hook);
+                return this->hook(orig, hook);
+
+        return false;
     }
 
     template<typename ...Args>
