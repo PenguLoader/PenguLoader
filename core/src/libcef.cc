@@ -128,13 +128,17 @@ bool LoadLibcefDll(bool is_browser)
         (LPVOID &)CefV8Value_CreateArray = GetProcAddress(libcef, "cef_v8value_create_array");
         (LPVOID &)CefV8Value_CreateBool = GetProcAddress(libcef, "cef_v8value_create_bool");
 
-        // Find CefContext::GetBackGroundColor().
         if (is_browser)
         {
+            // Find CefContext::GetBackgroundColor().
+#ifdef _WIN64
+            const char *pattern = "41 83 F8 01 74 0B 41 83 F8 02 75 0A 45 31 C0";
+#else
             const char *pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
+#endif
             auto GetBackgroundColor = (GetBackgroundColor_t)utils::patternScan(libcef, pattern);
 
-            // Hook CefContext::GetBackGroundColor().
+            // Hook CefContext::GetBackgroundColor().
             Old_GetBackgroundColor.hook(GetBackgroundColor, Hooked_GetBackgroundColor);
         }
 

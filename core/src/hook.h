@@ -37,6 +37,8 @@ public:
         Shellcode code;
         code.addr = static_cast<void *>(hook);
         memcpy_safe(orig, &code, sizeof(Shellcode));
+
+        return true;
     }
 
     bool hook(const char *lib, const char *proc, Fn hook)
