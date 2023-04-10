@@ -172,7 +172,7 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
         {
             // Received RCLIENT HWND.
             auto args = message->get_argument_list(message);
-            RCLIENT_WINDOW = reinterpret_cast<HWND>(args->get_int(args, 0));
+            RCLIENT_WINDOW = reinterpret_cast<HWND>((intptr_t)args->get_int(args, 0));
             return 1;
         }
         else if (msg == L"__server_port")

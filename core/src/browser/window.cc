@@ -65,7 +65,7 @@ void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame)
     // Send RCLIENT HWND to renderer.
     auto msg = CefProcessMessage_Create(&"__rclient"_s);
     auto args = msg->get_argument_list(msg);
-    args->set_int(args, 0, static_cast<int>((DWORD)rclient));
+    args->set_int(args, 0, (int32_t)reinterpret_cast<intptr_t>(rclient));
     frame->send_process_message(frame, PID_RENDERER, msg);
 
     rclient_window_ = rclient;
