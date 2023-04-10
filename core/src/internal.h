@@ -1,9 +1,9 @@
 #ifndef _LEAGUE_LOADER_H
 #define _LEAGUE_LOADER_H
 
-#ifdef _WIN64
-#error "Build 32-bit only."
-#endif
+//#ifdef _WIN64
+//#error "Build 32-bit only."
+//#endif
 
 #ifdef _MSC_VER
 #define NOMINMAX
