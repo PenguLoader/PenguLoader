@@ -71,14 +71,15 @@ static void WarnInvalidVersion()
 }
 
 #ifdef _WIN64
-typedef cef_color_t(__fastcall * GetBackgroundColor_t)(void *_rcx, cef_browser_settings_t *, cef_state_t);
+#define THISCALL_PARAMS void *_rcx
 #else
-typedef cef_color_t(__fastcall * GetBackgroundColor_t)(void *_ecx, void *_edx, cef_browser_settings_t *, cef_state_t);
+#define THISCALL_PARAMS void *_ecx, void *_edx
 #endif
 
+typedef cef_color_t(__fastcall * GetBackgroundColor_t)(THISCALL_PARAMS, cef_browser_settings_t *, cef_state_t);
+
 static Hook<GetBackgroundColor_t> Old_GetBackgroundColor;
-static cef_color_t __fastcall Hooked_GetBackgroundColor(void *, void *,
-    cef_browser_settings_t *settings, cef_state_t state)
+static cef_color_t __fastcall Hooked_GetBackgroundColor(THISCALL_PARAMS, cef_browser_settings_t *settings, cef_state_t state)
 {
     return 0; // fully transparent :)
 }
