@@ -33,5 +33,6 @@ EXPORTS
 	VerQueryValueW
     
 EXPORTS
-    _GetCefVersion		@5000 NONAME
-	_BootstrapEntry		@6000 NONAME
+    _GetCefVersion			@5000 NONAME
+	_BootstrapEntry			@6000 NONAME
+	_GetLoadLibraryEntry	@6001 NONAME

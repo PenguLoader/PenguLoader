@@ -1,9 +1,6 @@
-#pragma once
-
 #include "internal.h"
 #include "hook.h"
 #include "include/cef_version.h"
-#include <Psapi.h>
 
 decltype(&cef_get_mime_type) CefGetMimeType;
 decltype(&cef_request_create) CefRequest_Create;

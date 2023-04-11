@@ -1,6 +1,5 @@
 #include "../internal.h"
 #include "../hook.h"
-#include <psapi.h>
 
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_client_capi.h"

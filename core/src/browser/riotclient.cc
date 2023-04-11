@@ -143,7 +143,7 @@ private:
     bool Read(void *data_out, int bytes_to_read, int &bytes_read, cef_resource_read_callback_t *callback)
     {
         if ((client_->response_length_ > 0 && bytes_read_ >= client_->response_length_)
-            || (bytes_read_ >= data_.length() && client_->done_))
+            || (bytes_read_ >= (int64)data_.length() && client_->done_))
         {
             bytes_read = 0;
             return false;
