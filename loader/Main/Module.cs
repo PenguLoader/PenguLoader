@@ -5,10 +5,10 @@ namespace PenguLoader.Main
 {
     static class Module
     {
-        private const string ModuleName = "core.dll";
-        private const string TargetName = "LeagueClientUx.exe";
-        private static readonly string ModulePath = Path.Combine(Directory.GetCurrentDirectory(), ModuleName);
-        private static readonly string DebuggerValue = $"rundll32 \"{ModulePath}\", #6000 ";
+        private static string ModuleName => Environment.Is64BitOperatingSystem ? "core.dll" : "core32.dll";
+        private static string TargetName => "LeagueClientUx.exe";
+        private static string ModulePath => Path.Combine(Directory.GetCurrentDirectory(), ModuleName);
+        private static string DebuggerValue => $"rundll32 \"{ModulePath}\", #6000 ";
 
         public static bool IsLoaded() => Utils.IsFileInUse(ModulePath);
 
