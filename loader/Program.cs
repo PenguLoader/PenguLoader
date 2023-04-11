@@ -38,6 +38,13 @@ namespace PenguLoader
         {
             if (createdNew)
             {
+                if (!Environment.Is64BitOperatingSystem)
+                {
+                    MessageBox.Show("32-BIT CLIENT DEPRECATION\n\n" +
+                        "Starting with LoL patch 13.8, 32-bit Windows is no longer supported. Please upgrade your Windows to 64-bit.",
+                        Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
                 App.Main();
                 return 0;
             }
