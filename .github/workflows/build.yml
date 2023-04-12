@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: ${{ github.ref }}
           submodules: true
 
       - name: Prepare environment variables
