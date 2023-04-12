@@ -176,8 +176,8 @@ $(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.h _e
       <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
     </Link>
     <PreBuildEvent>
-      <Command>cl bin2c.c /link /out:$(Configuration)\bin2c.exe
-$(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.h _ext_code</Command>
+      <Command>cl bin2c.c /link /out:"$(Platform)\$(Configuration)\bin2c.exe"
+"$(Platform)\$(Configuration)\bin2c.exe" src/renderer/extension.js src/renderer/extension.h _ext_code</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -238,8 +238,8 @@ $(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.h _e
       <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
     </Link>
     <PreBuildEvent>
-      <Command>cl bin2c.c /link /out:$(Configuration)\bin2c.exe
-$(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.h _ext_code</Command>
+      <Command>cl bin2c.c /link /out:"$(Platform)\$(Configuration)\bin2c.exe"
+"$(Platform)\$(Configuration)\bin2c.exe" src/renderer/extension.js src/renderer/extension.h _ext_code</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
