@@ -48,9 +48,10 @@ jobs:
           node-version: 18.x
 
       - name: Build solution
-        run: |
-          msbuild pengu-loader.sln /t:restore,build /m /p:Configuration=Release /p:Platform="x64"
-          msbuild pengu-loader.sln /t:restore,build /t:core /m /p:Configuration=Release /p:Platform="x86"
+        run: msbuild pengu-loader.sln /t:restore,build /m /p:Configuration=Release /p:Platform=x64
+
+      - name: Build solution (x86)
+        run: msbuild pengu-loader.sln /t:build /t:core /m /p:Configuration=Release /p:Platform=x86
 
       - name: Build @default plugin
         run: |
