@@ -143,7 +143,7 @@ namespace PenguLoader
             btnActivate.Toggled += BtnActivate_Toggled;
         }
 
-        private void InitializeWindowHook()
+        private void InitializeWindowHook(object sender, EventArgs e)
         {
             var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
             source.AddHook(new HwndSourceHook(WndProc));
