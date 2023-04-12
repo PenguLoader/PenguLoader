@@ -17,7 +17,7 @@ namespace PenguLoader
             ConfigureWindow();
             InitializeButtons();
             Loaded += OnMainWindowLoaded;
-            SourceInitialized += MainWindow_SourceInitialized;
+            SourceInitialized += InitializeWindowHook;
         }
 
         private void ConfigureWindow()
