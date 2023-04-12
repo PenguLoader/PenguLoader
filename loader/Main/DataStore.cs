@@ -39,7 +39,7 @@ namespace PenguLoader.Main
 
             for (int i = 0; i < bytes.Length; i++)
             {
-                bytes[i] = (byte)(bytes[i] ^ (byte)key[i % key.Length]);
+                bytes[i] ^= (byte)key[i % key.Length];
             }
         }
     }

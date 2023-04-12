@@ -6,15 +6,9 @@ namespace PenguLoader.Main
 {
     static class Utils
     {
-        public static void OpenFolder(string path)
-        {
-            Process.Start("explorer.exe", $"\"{path}\"");
-        }
+        public static void OpenFolder(string path) => Process.Start("explorer.exe", $"\"{path}\"");
 
-        public static void OpenLink(string url)
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
+        public static void OpenLink(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 
         public static bool IsFileInUse(string path)
         {
@@ -36,32 +30,14 @@ namespace PenguLoader.Main
         {
             try
             {
-                if (isDir)
-                {
-                    Directory.Delete(path, true);
-                }
-                else
-                {
-                    File.Delete(path);
-                }
+                if (isDir) Directory.Delete(path, true);
+                else File.Delete(path);
             }
             catch { }
         }
 
-        public static void EnsureDirectoryExists(string path)
-        {
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-        }
+        public static void EnsureDirectoryExists(string path) => Directory.CreateDirectory(path);
 
-        public static void EnsureFileExists(string path)
-        {
-            if (!File.Exists(path))
-            {
-                File.Create(path).Close();
-            }
-        }
+        public static void EnsureFileExists(string path) => File.Create(path).Close();
     }
 }

@@ -44,14 +44,8 @@ namespace PenguLoader.Main
             return value.ToString();
         }
 
-        private static void Set(string key, string value)
-        {
-            WritePrivateProfileString("Main", key, value, ConfigPath);
-        }
+        private static void Set(string key, string value) => WritePrivateProfileString("Main", key, value, ConfigPath);
 
-        private static int GetInt(string key, int @default = 0)
-        {
-            return int.TryParse(Get(key), out int result) ? result : @default;
-        }
+        private static int GetInt(string key, int @default = 0) => int.TryParse(Get(key), out int result) ? result : @default;
     }
 }

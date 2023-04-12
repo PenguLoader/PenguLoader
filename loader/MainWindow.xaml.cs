@@ -59,29 +59,14 @@ namespace PenguLoader
         private void BtnTheme_Click(object sender, RoutedEventArgs e)
         {
             var tm = ThemeManager.Current;
-            var isLight = tm.ApplicationTheme == null
-                ? tm.ActualApplicationTheme == ApplicationTheme.Light
-                : tm.ApplicationTheme == ApplicationTheme.Light;
-
-            tm.ApplicationTheme = isLight
-                ? ApplicationTheme.Dark
-                : ApplicationTheme.Light;
+            tm.ApplicationTheme = (tm.ApplicationTheme == ApplicationTheme.Light) ? ApplicationTheme.Dark : ApplicationTheme.Light;
         }
 
-        private void BtnAssets_Click(object sender, RoutedEventArgs e)
-        {
-            Utils.OpenFolder(Config.AssetsDir);
-        }
+        private void BtnAssets_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.AssetsDir);
 
-        private void BtnPlugins_Click(object sender, RoutedEventArgs e)
-        {
-            Utils.OpenFolder(Config.PluginsDir);
-        }
+        private void BtnPlugins_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.PluginsDir);
 
-        private void BtnDataStore_Click(object sender, RoutedEventArgs e)
-        {
-            DataStore.Dump();
-        }
+        private void BtnDataStore_Click(object sender, RoutedEventArgs e) => DataStore.Dump();
 
         private void BtnActivate_Toggled(object sender, RoutedEventArgs e)
         {
@@ -89,13 +74,12 @@ namespace PenguLoader
             {
                 ToggleActivation();
             }
-            catch (Exception err)
+            catch (Exception ex)
             {
-                if (MessageBox.Show(this,
-                    "Failed to perform activation.\n" +
-                    "Error: " + err.Message + "\n\n" +
-                    "Please capture the error message and click Yes to report it.",
-                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                var message = $"Failed to perform activation.\nError: {ex.Message}\n\nPlease capture the error message and click Yes to report it.";
+                var result = ShowMessage(message, Program.Name, MessageBoxImage.Warning, MessageBoxButton.YesNo);
+
+                if (result == MessageBoxResult.Yes)
                 {
                     Utils.OpenLink(Program.GithubIssuesUrl);
                 }
@@ -116,7 +100,7 @@ namespace PenguLoader
                 }
                 else if (Module.Activate())
                 {
-                    PromptRestart("The Loader has been ACTIVATED successfully.", false);
+                    PromptRestart("The Loader has been activated successfully.", false);
                 }
                 else
                 {
@@ -126,21 +110,14 @@ namespace PenguLoader
             else
             {
                 Module.Deactivate();
-                PromptRestart("The Loader has been DEACTIVATED successfully.", true);
+                PromptRestart("The Loader has been deactivated successfully.", true);
             }
         }
 
-        private MessageBoxResult ShowMessage(string message, string caption, MessageBoxImage icon)
-        {
-            if (icon == MessageBoxImage.Question)
-            {
-                return MessageBox.Show(this, message, caption, MessageBoxButton.YesNo, icon);
-            }
-            else
-            {
-                return MessageBox.Show(this, message, caption, MessageBoxButton.OK, icon);
-            }
-        }
+        private MessageBoxResult ShowMessage(string message, string caption, MessageBoxImage icon, MessageBoxButton button = MessageBoxButton.OK)
+            => icon == MessageBoxImage.Question
+                ? MessageBox.Show(this, message, caption, MessageBoxButton.YesNo, icon)
+                : MessageBox.Show(this, message, caption, MessageBoxButton.OK, icon);
 
         private void PromptRestart(string message, bool isDeactivaed)
         {
@@ -166,7 +143,7 @@ namespace PenguLoader
             btnActivate.Toggled += BtnActivate_Toggled;
         }
 
-        private void MainWindow_SourceInitialized(object sender, EventArgs e)
+        private void InitializeWindowHook()
         {
             var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
             source.AddHook(new HwndSourceHook(WndProc));
@@ -177,10 +154,14 @@ namespace PenguLoader
             if (msg == Native.WM_SHOWME)
             {
                 if (WindowState == WindowState.Minimized)
+                {
                     WindowState = WindowState.Normal;
+                }
 
-                if (Visibility == Visibility.Hidden)
-                    Visibility = Visibility.Visible;
+                if (!IsVisible)
+                {
+                    Show();
+                }
 
                 Activate();
 
