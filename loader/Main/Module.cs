@@ -12,11 +12,7 @@ namespace PenguLoader.Main
 
         public static bool IsLoaded() => Utils.IsFileInUse(ModulePath);
 
-        public static bool IsActivated()
-        {
-            var value = IFEO.GetDebugger(TargetName);
-            return DebuggerValue.Equals(value, StringComparison.OrdinalIgnoreCase);
-        }
+        public static bool IsActivated() => DebuggerValue.Equals(IFEO.GetDebugger(TargetName), StringComparison.OrdinalIgnoreCase);
 
         public static bool Exists() => File.Exists(ModulePath);
 

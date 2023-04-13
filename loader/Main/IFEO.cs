@@ -25,31 +25,30 @@ namespace PenguLoader.Main
             {
                 if (key == null) return false;
 
-                using (var image = key.OpenSubKey(target, true) ?? key.CreateSubKey(target))
+                using (var image = key.CreateSubKey(target))
                 {
                     if (image == null) return false;
+
                     image.SetValue(VALUE_NAME, debugger, RegistryValueKind.String);
+                    return true;
                 }
             }
-
-            return true;
         }
 
         public static void RemoveDebugger(string target)
         {
             using (var key = OpenIFEOKey(writable: true))
-            using (var image = key?.OpenSubKey(target, true))
             {
-                if (image == null) return;
+                using (var image = key?.OpenSubKey(target, true))
+                {
+                    if (image == null) return;
 
-                image.DeleteValue(VALUE_NAME);
-                key.DeleteSubKey(target);
+                    image.DeleteValue(VALUE_NAME);
+                    key.DeleteSubKey(target, false);
+                }
             }
         }
 
-        private static RegistryKey OpenIFEOKey(bool writable = false)
-        {
-            return Registry.LocalMachine.OpenSubKey(IFEO_PATH, writable);
-        }
+        private static RegistryKey OpenIFEOKey(bool writable = false) => Registry.LocalMachine.OpenSubKey(IFEO_PATH, writable);
     }
 }

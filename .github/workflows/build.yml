@@ -1,8 +1,6 @@
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
   workflow_dispatch:
 
 jobs:
@@ -18,7 +16,7 @@ jobs:
 
       - name: Prepare environment variables
         run: |
-          echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
+          echo "SHORT_SHA=$("${{ github.sha }}" | cut -c1-8)" >> $env:GITHUB_ENV
           echo "BUILD_DATE=$(git show -s --date=format:%Y%m%d-%H%M --format=%cd)" >> $env:GITHUB_ENV
 
       - name: Update project files
@@ -34,8 +32,7 @@ jobs:
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
+          restore-keys: ${{ runner.os }}-nuget-
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
