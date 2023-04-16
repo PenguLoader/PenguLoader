@@ -16,6 +16,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
 
     int count = 0;
     std::wstring code = L"!(function () { ";
+    code.append(L"window.__hookEvents?.(); ");
 
     // Scan plugins dir.
     for (const auto &name : utils::readDir(pluginsDir + L"\\*"))

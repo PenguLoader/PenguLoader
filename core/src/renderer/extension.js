@@ -143,3 +143,53 @@ var AuthCallback = new function () {
         }
     };
 };
+
+var __hookEvents = function () {
+    var windowLoaded = false;
+    var windowDOMLoaded = false;
+    var documentDOMLoaded = false;
+
+    window.addEventListener('load', function () {
+        windowLoaded = true;
+    });
+
+    window.addEventListener('DOMContentLoaded', function () {
+        windowDOMLoaded = true;
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        documentDOMLoaded = true;
+    });
+
+    function trigger(listener) {
+        try {
+            listener.call(window);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    var windowAddEventListener = window.addEventListener;
+    window.addEventListener = function (type, listener, options) {
+        if (typeof listener === 'function') {
+            if (windowLoaded && type === 'load') {
+                trigger(listener);
+            } else if (windowDOMLoaded && type === 'DOMContentLoaded') {
+                trigger(listener);
+            }
+        }
+        windowAddEventListener.call(window, type, listener, options);
+    };
+
+    var documentAddEventListener = document.addEventListener;
+    document.addEventListener = function (type, listener, options) {
+        if (typeof listener === 'function') {
+            if (documentDOMLoaded && type === 'DOMContentLoaded') {
+                trigger(listener);
+            }
+        }
+        documentAddEventListener.call(document, type, listener, options);
+    };
+
+    delete window['__hookEvents'];
+};
