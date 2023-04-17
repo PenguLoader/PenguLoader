@@ -28,7 +28,7 @@
     <ClCompile Include="src\browser\window.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\libcef.cc" />
-    <ClCompile Include="src\d3d9.cc" />
+    <ClCompile Include="src\dllproxy.cc" />
     <ClCompile Include="src\dllmain.cc" />
     <ClCompile Include="src\renderer\auth_callback.cc" />
     <ClCompile Include="src\renderer\datastore.cc" />
@@ -37,7 +37,6 @@
     <ClCompile Include="src\renderer\renderer.cc" />
     <ClCompile Include="src\utils\cefstr.cc" />
     <ClCompile Include="src\utils\file.cc" />
-    <ClCompile Include="src\utils\hook.cc" />
     <ClCompile Include="src\utils\misc.cc" />
     <ClCompile Include="src\utils\string.cc" />
   </ItemGroup>
@@ -45,6 +44,7 @@
     <None Include="res\module.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\hook.h" />
     <ClInclude Include="src\internal.h" />
     <None Include="src\renderer\extension.js">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -112,18 +112,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\</OutDir>
-    <TargetName>core</TargetName>
+    <TargetName>core32</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <TargetName>core</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\</OutDir>
-    <TargetName>core</TargetName>
+    <TargetName>core32</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <TargetName>core</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -154,18 +158,27 @@ $(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.h _e
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>
+      </SDLCheck>
       <PreprocessorDefinitions>_DEBUG;CORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>./</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
     </Link>
+    <PreBuildEvent>
+      <Command>cl bin2c.c /link /out:"$(Platform)\$(Configuration)\bin2c.exe"
+"$(Platform)\$(Configuration)\bin2c.exe" src/renderer/extension.js src/renderer/extension.h _ext_code</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -202,14 +215,19 @@ $(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.h _e
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>
+      </SDLCheck>
       <PreprocessorDefinitions>NDEBUG;CORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>./</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -217,7 +235,12 @@ $(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.h _e
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
     </Link>
+    <PreBuildEvent>
+      <Command>cl bin2c.c /link /out:"$(Platform)\$(Configuration)\bin2c.exe"
+"$(Platform)\$(Configuration)\bin2c.exe" src/renderer/extension.js src/renderer/extension.h _ext_code</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

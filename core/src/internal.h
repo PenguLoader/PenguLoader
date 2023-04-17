@@ -1,17 +1,12 @@
-#ifndef _LEAGUE_LOADER_H
-#define _LEAGUE_LOADER_H
+#pragma once
 
-#ifdef _WIN64
-#error "Build 32-bit only."
-#endif
+//#ifdef _WIN64
+//#error "Build 32-bit only."
+//#endif
 
 #ifdef _MSC_VER
 #define NOMINMAX
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
-#ifndef NOINLINE
-#define NOINLINE __declspec(noinline)
 #endif
 
 #ifndef COUNT_OF
@@ -23,6 +18,8 @@
 #include <atomic>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <utility>
 #include <windows.h>
 
 #include "include/internal/cef_string.h"
@@ -33,6 +30,7 @@
 #include "include/capi/cef_v8_capi.h"
 #include "include/capi/cef_request_capi.h"
 #include "include/capi/cef_server_capi.h"
+#include "include/capi/cef_urlrequest_capi.h"
 
 using std::string;
 using std::wstring;
@@ -129,6 +127,7 @@ private:
 // CEF functions.
 extern decltype(&cef_get_mime_type) CefGetMimeType;
 extern decltype(&cef_request_create) CefRequest_Create;
+extern decltype(&cef_urlrequest_create) CefURLRequest_create;
 extern decltype(&cef_string_multimap_alloc) CefStringMultimap_Alloc;
 extern decltype(&cef_string_multimap_free) CefStringMultimap_Free;
 extern decltype(&cef_register_extension) CefRegisterExtension;
@@ -156,11 +155,6 @@ extern decltype(&cef_v8value_create_string) CefV8Value_CreateString;
 extern decltype(&cef_v8value_create_function) CefV8Value_CreateFunction;
 extern decltype(&cef_v8value_create_array) CefV8Value_CreateArray;
 extern decltype(&cef_v8value_create_bool) CefV8Value_CreateBool;
-
-// Hooking entries.
-extern decltype(&cef_initialize) CefInitialize;
-extern decltype(&cef_execute_process) CefExecuteProcess;
-extern decltype(&cef_browser_host_create_browser) CefBrowserHost_CreateBrowser;
 
 static CefStr operator""_s(const char *s, size_t l)
 {
@@ -191,14 +185,6 @@ namespace utils
     bool readFile(const wstring &path, string &out);
     vector<wstring> readDir(const std::wstring &dir);
 
-    void hookFunc(void **orig, void *hooked);
-    template<typename T> void hookFunc(T *orig, T hooked) {
-        hookFunc(reinterpret_cast<void **>(orig), reinterpret_cast<void *>(hooked));
-    }
-
-    void *scanInternal(void *image, size_t length, const string &pattern);
-
     void openFilesExplorer(const wstring &path);
+    void *patternScan(const HMODULE module, const char *pattern);
 }
-
-#endif

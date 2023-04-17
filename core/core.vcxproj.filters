@@ -19,9 +19,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\d3d9.cc">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\dllmain.cc">
       <Filter>src</Filter>
     </ClCompile>
@@ -58,9 +55,6 @@
     <ClCompile Include="src\utils\string.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
-    <ClCompile Include="src\utils\hook.cc">
-      <Filter>src\utils</Filter>
-    </ClCompile>
     <ClCompile Include="src\utils\misc.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
@@ -82,6 +76,9 @@
     <ClCompile Include="src\browser\jsdialog.cc">
       <Filter>src\browser</Filter>
     </ClCompile>
+    <ClCompile Include="src\dllproxy.cc">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\renderer\extension.js">
@@ -93,6 +90,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\internal.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hook.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

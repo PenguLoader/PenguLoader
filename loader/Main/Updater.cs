@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,139 +13,41 @@ namespace PenguLoader.Main
 {
     static class Updater
     {
-        static string API_URL => $"https://api.github.com/repos/{Program.GITHUB_REPO}/releases/latest";
-        static string DOWNLOAD_URL => $"https://github.com/{Program.GITHUB_REPO}/releases/latest";
-
-        const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" +
+        private const string ApiUrl = "https://api.github.com/repos/{0}/releases/latest";
+        private const string DownloadUrl = "https://github.com/{0}/releases/latest";
+        private const string UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" +
             " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36";
-
-        class Update
-        {
-            public string Version;
-            public string Changes;
-            public string DownloadUrl;
-        }
 
         static Updater()
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
         }
 
-        public static async void CheckUpdate()
+        public static async Task CheckUpdate()
         {
             var update = await FetchUpdate();
             if (update == null) return;
 
-            var dialog = new ProgressDialog()
-            {
-                WindowTitle = Program.NAME + " v" + update.Version,
-                ShowTimeRemaining = false,
-                ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar
-            };
-
-            var cancel = false;
-            var percent = 0;
-            var message = "Downloading...";
-
-            dialog.DoWork += (s, e) =>
-            {
-                while (percent < 100)
-                {
-                    if (cancel || dialog.CancellationPending)
-                    {
-                        e.Cancel = true;
-                        return;
-                    }
-
-                    dialog.ReportProgress(percent, "Downloading update...", message);
-                    Thread.Sleep(100);
-                }
-
-                Thread.Sleep(100);
-                dialog.ReportProgress(100, "Updating...", "Done.");
-            };
-
-            MainWindow.Instance.Hide();
-            dialog.Show();
-
-            try
-            {
-                var updateDir = Path.Combine(Directory.GetCurrentDirectory(), ".update");
-
-                var tempFile = Path.GetTempFileName();
-                await DownloadFile(update.DownloadUrl, tempFile, (downloaded, total, percent_) =>
-                {
-                    percent = percent_;
-                    message = String.Format("{0:0.##} / {1:0.##} MB received.",
-                        (double)downloaded / 1024 / 1024,
-                        (double)total / 1024 / 1024);
-                });
-
-                Utils.DeletePath(updateDir, true);
-                ZipFile.ExtractToDirectory(tempFile, updateDir);
-                Utils.DeletePath(tempFile);
-
-                while (Module.IsLoaded())
-                {
-                    MessageBox.Show("Please close your League of Legends Client to apply update.",
-                        Program.NAME, MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-
-                ApplyUpdate();
-                Environment.Exit(0);
-            }
-            catch
-            {
-                cancel = true;
-
-                MainWindow.Instance.Show();
-                MessageBox.Show(MainWindow.Instance,
-                    "Failed to download update. Please try downloading the update on GitHub releases page.",
-                    Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                Utils.OpenLink(DOWNLOAD_URL);
-            }
-            finally
-            {
-                dialog.Dispose();
-            }
+            await ShowProgressDialog(update);
         }
 
-        static async Task<Update> FetchUpdate()
+        private static async Task<Update> FetchUpdate()
         {
             try
             {
-                var json = await DownloadString(API_URL);
-                var match = new Regex("\"tag_name\":\\s+\"(.*)\"").Match(json);
+                var apiUrl = string.Format(ApiUrl, Program.GithubRepo);
+                var json = await DownloadString(apiUrl);
+                var remoteVersion = ExtractVersion(json);
+                var localVersion = new System.Version(Version.VERSION);
 
-                if (match.Success && match.Groups.Count > 1)
+                if (remoteVersion.CompareTo(localVersion) > 0)
                 {
-                    var vtag = match.Groups[1].Value.ToLower();
-                    if (vtag.StartsWith("v"))
-                        vtag = vtag.Substring(1);
-
-                    var remote = new System.Version(vtag);
-                    var local = new System.Version(Version.VERSION);
-
-                    if (remote.CompareTo(local) > 0)
+                    return new Update
                     {
-                        string changes = "";
-                        match = new Regex("\"body\":\\s+\"(.*)\"").Match(json);
-                        if (match.Success && match.Groups.Count > 1)
-                            changes = Regex.Unescape(match.Groups[1].Value);
-
-                        string downloadUrl = "";
-                        match = new Regex("\"browser_download_url\":\\s+\"(.*(\\d+\\.?)(?:-stable)?\\.zip)\"").Match(json);
-                        if (match.Success && match.Groups.Count > 1)
-                            downloadUrl = Regex.Unescape(match.Groups[1].Value);
-
-                        return new Update
-                        {
-                            Version = vtag,
-                            Changes = changes,
-                            DownloadUrl = downloadUrl
-                        };
-                    }
+                        Version = remoteVersion.ToString(),
+                        Changes = ExtractChanges(json),
+                        DownloadUrl = ExtractDownloadUrl(json)
+                    };
                 }
 
                 return null;
@@ -155,30 +56,25 @@ namespace PenguLoader.Main
             {
                 MessageBox.Show(MainWindow.Instance,
                     "Failed to check update.\n" + ex.Message,
-                    Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
                 return null;
             }
         }
 
-        static async Task<string> DownloadString(string url)
+        private static async Task<string> DownloadString(string url)
         {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-            request.UserAgent = USER_AGENT;
-
-            using (HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync())
-            using (Stream stream = response.GetResponseStream())
-            using (StreamReader reader = new StreamReader(stream))
+            using (var client = new WebClient())
             {
-                return await reader.ReadToEndAsync();
+                client.Headers.Add(HttpRequestHeader.UserAgent, UserAgent);
+                return await client.DownloadStringTaskAsync(url);
             }
         }
 
-        static async Task DownloadFile(string url, string path, Action<long, long, int> onProgress)
+        private static async Task DownloadFile(string url, string path, Action<long, long, int> onProgress)
         {
-            using (WebClient client = new WebClient())
+            using (var client = new WebClient())
             {
-                client.Headers.Add("User-Agent", USER_AGENT);
+                client.Headers.Add(HttpRequestHeader.UserAgent, UserAgent);
                 client.DownloadProgressChanged += (s, e) =>
                 {
                     onProgress.Invoke(e.BytesReceived, e.TotalBytesToReceive, e.ProgressPercentage);
@@ -188,7 +84,7 @@ namespace PenguLoader.Main
             }
         }
 
-        static void ApplyUpdate()
+        private static void ApplyUpdate()
         {
             var exe = AppDomain.CurrentDomain.FriendlyName;
             var dir = Directory.GetCurrentDirectory();
@@ -210,6 +106,121 @@ namespace PenguLoader.Main
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden
             });
+        }
+
+        private static System.Version ExtractVersion(string json)
+        {
+            var match = new Regex("\"tag_name\":\\s+\"(.*)\"").Match(json);
+            return match.Success && match.Groups.Count > 1
+                ? new System.Version(match.Groups[1].Value.TrimStart('v').ToLower())
+                : null;
+        }
+
+        private static string ExtractChanges(string json)
+        {
+            var match = new Regex("\"body\":\\s+\"(.*)\"").Match(json);
+            return match.Success && match.Groups.Count > 1
+                ? Regex.Unescape(match.Groups[1].Value)
+                : string.Empty;
+        }
+
+        private static string ExtractDownloadUrl(string json)
+        {
+            var match = new Regex("\"browser_download_url\":\\s+\"(.*(\\d+\\.?)(?:-stable)?\\.zip)\"").Match(json);
+            return match.Success && match.Groups.Count > 1
+                ? Regex.Unescape(match.Groups[1].Value)
+                : string.Empty;
+        }
+        private static async Task ShowProgressDialog(Update update)
+        {
+            var dialog = new ProgressDialog()
+            {
+                WindowTitle = $"{Program.Name} v{update.Version}",
+                ShowTimeRemaining = false,
+                ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar
+            };
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            IProgress<DownloadProgress> progress = new Progress<DownloadProgress>(p => dialog.ReportProgress(p.Percent, $"Downloading update...",
+                $"{p.DownloadedMb:0.##} / {p.TotalMb:0.##} MB received."));
+
+            var tcs = new TaskCompletionSource<bool>();
+
+            dialog.DoWork += async (s, e) =>
+            {
+                try
+                {
+                    var tempFile = Path.GetTempFileName();
+                    var updateDir = Path.Combine(Directory.GetCurrentDirectory(), ".update");
+
+                    await DownloadFile(update.DownloadUrl, tempFile, (downloaded, total, percent) =>
+                    {
+                        if (cancellationTokenSource.Token.IsCancellationRequested)
+                        {
+                            cancellationTokenSource.Cancel();
+                            return;
+                        }
+                        progress.Report(new DownloadProgress(downloaded, total, percent));
+                    });
+
+                    Utils.DeletePath(updateDir, true);
+                    ZipFile.ExtractToDirectory(tempFile, updateDir);
+                    Utils.DeletePath(tempFile);
+
+                    while (Module.IsLoaded())
+                    {
+                        MessageBox.Show("Please close your League of Legends Client to apply the update.",
+                            Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+
+                    ApplyUpdate();
+                    Environment.Exit(0);
+                }
+                catch
+                {
+                    if (!cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        cancellationTokenSource.Cancel();
+
+                        MainWindow.Instance.Show();
+                        MessageBox.Show(MainWindow.Instance,
+                            "Failed to download update. Please try downloading the update on GitHub releases page.",
+                            Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                        Utils.OpenLink(string.Format(DownloadUrl, Program.GithubRepo));
+                    }
+                }
+                finally
+                {
+                    tcs.SetResult(true);
+                }
+            };
+
+            MainWindow.Instance.Hide();
+            dialog.Show(MainWindow.Instance);
+
+            await tcs.Task;
+        }
+
+        private class Update
+        {
+            public string Version;
+            public string Changes;
+            public string DownloadUrl;
+        }
+
+        private class DownloadProgress
+        {
+            public DownloadProgress(long downloaded, long total, int percent)
+            {
+                DownloadedMb = (double)downloaded / 1024 / 1024;
+                TotalMb = (double)total / 1024 / 1024;
+                Percent = percent;
+            }
+
+            public double DownloadedMb { get; }
+            public double TotalMb { get; }
+            public int Percent { get; }
         }
     }
 }

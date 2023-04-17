@@ -5,52 +5,50 @@ namespace PenguLoader.Main
 {
     static class IFEO
     {
-        const string IFEO_PATH = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
-        const string VALUE_NAME = "Debugger";
+        private const string IFEO_PATH = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
+        private const string VALUE_NAME = "Debugger";
 
         public static string GetDebugger(string target)
         {
-            using (var key = Registry.LocalMachine.OpenSubKey(IFEO_PATH))
-                if (key != null)
-                    using (var image = key.OpenSubKey(target))
-                        if (image != null)
-                            return image.GetValue(VALUE_NAME, null) as string;
-
-            return null;
+            using (var key = OpenIFEOKey())
+            {
+                using (var image = key?.OpenSubKey(target))
+                {
+                    return image?.GetValue(VALUE_NAME) as string;
+                }
+            }
         }
 
         public static bool SetDebugger(string target, string debugger)
         {
-            using (var key = Registry.LocalMachine.OpenSubKey(IFEO_PATH, true))
-                if (key != null)
+            using (var key = OpenIFEOKey(writable: true))
+            {
+                if (key == null) return false;
+
+                using (var image = key.CreateSubKey(target))
                 {
-                    var image = key.OpenSubKey(target, true);
-                    if (image == null)
-                    {
-                        image = key.CreateSubKey(target);
-                    }
+                    if (image == null) return false;
 
                     image.SetValue(VALUE_NAME, debugger, RegistryValueKind.String);
-                    image.Dispose();
                     return true;
                 }
-
-            return false;
+            }
         }
 
-        public static void RemoveDegubber(string target)
+        public static void RemoveDebugger(string target)
         {
-            using (var key = Registry.LocalMachine.OpenSubKey(IFEO_PATH, true))
-                if (key != null)
+            using (var key = OpenIFEOKey(writable: true))
+            {
+                using (var image = key?.OpenSubKey(target, true))
                 {
-                    var image = key.OpenSubKey(target, true);
                     if (image == null) return;
 
                     image.DeleteValue(VALUE_NAME);
-                    key.DeleteSubKey(target);
-
-                    image.Dispose();
+                    key.DeleteSubKey(target, false);
                 }
+            }
         }
+
+        private static RegistryKey OpenIFEOKey(bool writable = false) => Registry.LocalMachine.OpenSubKey(IFEO_PATH, writable);
     }
 }

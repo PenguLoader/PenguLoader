@@ -4,59 +4,46 @@ HWND rclient_window_ = nullptr;
 extern cef_browser_t *browser_;
 void OpenDevTools_Internal(bool remote);
 
-#define HK_DEVTOOLS     0x101
-#define HK_RELOAD       0x102
-#define WM_DEVTOOLS     (WM_APP + HK_DEVTOOLS)
-
-static LRESULT CALLBACK MsgWin_WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+static WNDPROC Old_WidgetWndProc;
+static LRESULT CALLBACK Hooked_WidgetWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     switch (msg)
     {
-        case WM_HOTKEY:
+        case WM_KEYDOWN:
         {
-            auto rclient = (HWND)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-            if (GetForegroundWindow() != rclient)
-                return 0;
-
-            switch (wp)
+            if ((HIWORD(lp) & KF_REPEAT) == 0)  // no repeat
             {
-                case HK_DEVTOOLS:
+                bool ctrl_shift = GetKeyState(VK_CONTROL) < 0
+                    && GetKeyState(VK_SHIFT) < 0;
+
+                if (wp == VK_F12 || (ctrl_shift && wp == 'I'))
+                {
                     OpenDevTools_Internal(false);
-                    break;
-                case HK_RELOAD:
+                }
+                else if ((ctrl_shift && wp == 'R'))
+                {
                     if (browser_ != nullptr)
                         browser_->reload_ignore_cache(browser_);
-                    break;
+                }
             }
 
-            return 0;
+            break;
         }
 
-        case WM_DEVTOOLS:
+        case (WM_APP + 0x101):
         {
             OpenDevTools_Internal(wp != 0);
             return 0;
         }
     }
 
-    return DefWindowProc(hwnd, msg, wp, lp);
+    return Old_WidgetWndProc(hwnd, msg, wp, lp);
 }
 
-static void SetUptHotkeys(HWND rclient)
+static void HooKWidgetWindow(HWND hwnd)
 {
-    wstring classn = L"LL.MSG.";
-    classn.append(std::to_wstring(GetCurrentProcessId()));
-
-    WNDCLASS wc{};
-    wc.lpfnWndProc = MsgWin_WndProc;
-    wc.lpszClassName = classn.c_str();
-
-    auto msg = CreateWindowEx(0, MAKEINTATOM(RegisterClass(&wc)),
-        NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
-    SetWindowLongPtr(msg, GWLP_USERDATA, (LONG_PTR)rclient);
-
-    RegisterHotKey(msg, HK_DEVTOOLS, MOD_NOREPEAT | MOD_CONTROL | MOD_SHIFT, 'I');
-    RegisterHotKey(msg, HK_RELOAD, MOD_NOREPEAT | MOD_CONTROL | MOD_SHIFT, 'R');
+    Old_WidgetWndProc = (WNDPROC)GetWindowLongPtr(hwnd, GWLP_WNDPROC);
+    SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)Hooked_WidgetWndProc);
 }
 
 void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame)
@@ -78,12 +65,11 @@ void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame)
     // Send RCLIENT HWND to renderer.
     auto msg = CefProcessMessage_Create(&"__rclient"_s);
     auto args = msg->get_argument_list(msg);
-    args->set_int(args, 0, static_cast<int>((DWORD)rclient));
+    args->set_int(args, 0, (int32_t)reinterpret_cast<intptr_t>(rclient));
     frame->send_process_message(frame, PID_RENDERER, msg);
 
-    // Set hotkeys.
-    SetUptHotkeys(rclient);
     rclient_window_ = rclient;
+    HooKWidgetWindow(widgetWin);
 
     args->base.release(&args->base);
     host->base.release(&host->base);

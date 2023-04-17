@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
-
+using System.Windows.Interop;
 using ModernWpf;
 using PenguLoader.Main;
-using System.Windows.Media;
-using System.Windows.Interop;
 
 namespace PenguLoader
 {
@@ -18,228 +14,161 @@ namespace PenguLoader
         {
             Instance = this;
             InitializeComponent();
+            ConfigureWindow();
+            InitializeButtons();
+            Loaded += OnMainWindowLoaded;
+            SourceInitialized += InitializeWindowHook;
+        }
+
+        private void ConfigureWindow()
+        {
             WindowStyle = WindowStyle.ToolWindow;
             ShowInTaskbar = true;
 
-            var port = Config.RemoteDebuggingPort;
-            chkRemoteDebugger.IsChecked = port != 0;
-            txtRemotePort.Text = port != 0 ? port.ToString() : "8888";
-
-            SetActiveState(Module.IsActivated());
             btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
-
-            txtVersion.Text = $"v{Version.VERSION} build {Version.BUILD_NUMBER}";
-
-            Loaded += MainWindow_Loaded;
+            txtVersion.Text = $"v{Version.VERSION}.{Version.BUILD_NUMBER}";
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void InitializeButtons()
         {
-            Loaded -= MainWindow_Loaded;
+            btnGitHub.Click += (sender, args) => Utils.OpenLink(Program.GithubUrl);
+            btnDiscord.Click += (sender, args) => Utils.OpenLink(Program.DiscordUrl);
+            btnHomepage.Click += (sender, args) => Utils.OpenLink(Program.HomepageUrl);
+            btnTheme.Click += BtnTheme_Click;
+            btnAssets.Click += BtnAssets_Click;
+            btnPlugins.Click += BtnPlugins_Click;
+            btnDataStore.Click += BtnDataStore_Click;
+            btnActivate.Toggled += BtnActivate_Toggled;
+        }
 
+        private async void OnMainWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnMainWindowLoaded;
+
+            UpdateActiveState();
             Show();
 
-            Window window = Window.GetWindow(this);
-            var hwnd = new WindowInteropHelper(window).Handle;
-
+            // Fix window style issue.
+            var hwnd = new WindowInteropHelper(this).Handle;
             var oldEx = Native.GetWindowLongPtr(hwnd, -0x14).ToInt32();
             Native.SetWindowLongPtr(hwnd, -0x14, (IntPtr)(oldEx & ~0x80));
 
-            Updater.CheckUpdate();
+            await Updater.CheckUpdate();
         }
 
         private void BtnTheme_Click(object sender, RoutedEventArgs e)
         {
             var tm = ThemeManager.Current;
-            if (tm.ApplicationTheme == null)
-                tm.ApplicationTheme = (tm.ActualApplicationTheme == ApplicationTheme.Light) ? ApplicationTheme.Light : ApplicationTheme.Dark;
-            tm.ApplicationTheme = (tm.ActualApplicationTheme == ApplicationTheme.Light) ? ApplicationTheme.Dark : ApplicationTheme.Light;
+            tm.ApplicationTheme = (tm.ApplicationTheme == ApplicationTheme.Light) ? ApplicationTheme.Dark : ApplicationTheme.Light;
         }
 
-        private void BtnGitHub_Click(object sender, RoutedEventArgs e)
-        {
-            Utils.OpenLink(Program.GITHUB_URL);
-        }
+        private void BtnAssets_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.AssetsDir);
 
-        private void BtnHomepage_Click(object sender, RoutedEventArgs e)
-        {
-            Utils.OpenLink(Program.HOMEPAGE_URL);
-        }
+        private void BtnPlugins_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.PluginsDir);
 
-        private void BtnAssets_Click(object sender, RoutedEventArgs e)
-        {
-            Utils.OpenFolder(Config.AssetsDir);
-        }
+        private void BtnDataStore_Click(object sender, RoutedEventArgs e) => DataStore.Dump();
 
-        private void BtnPlugins_Click(object sender, RoutedEventArgs e)
-        {
-            Utils.OpenFolder(Config.PluginsDir);
-        }
-
-        private void BtnDataStore_Click(object sender, RoutedEventArgs e)
-        {
-            DataStore.Dump();
-        }
-
-        private async void BtnRestart_Click(object sender, RoutedEventArgs e)
-        {
-            if (LCU.IsRunning())
-            {
-                faRestart.Spin = true;
-                btnRestartUX.IsEnabled = false;
-
-                LCU.KillUxAndRestart();
-                await Task.Delay(5000);
-
-                faRestart.Spin = false;
-                btnRestartUX.IsEnabled = true;
-            }
-            else
-            {
-                MessageBox.Show(this, "League of Legends Client is not running.",
-                    Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        private void BtnDevTools_Click(object sender, RoutedEventArgs e)
-        {
-            if (Module.IsLoaded())
-            {
-                Module.OpenDevTools(remote: false);
-            }
-            else
-            {
-                MessageBox.Show(this, "The Loader is not loaded by any Client.",
-                    Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        private void BtnRemoteDevTools_Click(object sender, RoutedEventArgs e)
-        {
-            if (Module.IsLoaded())
-            {
-                Module.OpenDevTools(remote: true);
-            }
-            else
-            {
-                MessageBox.Show(this, "The Loader is not loaded by any Client.",
-                    Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        private void ChkRemoteDebugger_Checked(object sender, RoutedEventArgs e)
-        {
-            if (chkRemoteDebugger.IsChecked.Value)
-            {
-                int port = 0;
-                int.TryParse(txtRemotePort.Text, out port);
-                Config.RemoteDebuggingPort = port;
-            }
-            else
-            {
-                Config.RemoteDebuggingPort = 0;
-            }
-        }
-
-        private void TxtRemotePort_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
-        {
-            var regex = new Regex("[^0-9]{1,5}");
-            e.Handled = regex.IsMatch(e.Text);
-        }
-
-        private void BtnActivate_Click(object sender, RoutedEventArgs e)
+        private void BtnActivate_Toggled(object sender, RoutedEventArgs e)
         {
             try
             {
                 ToggleActivation();
             }
-            catch (Exception err)
+            catch (Exception ex)
             {
-                if (MessageBox.Show(this,
-                    "Failed to perform activation.\n" +
-                    "Error: " + err.Message + "\n\n" +
-                    "Please capture the error message and click Yes to report it.",
-                    Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                var message = $"Failed to perform activation.\nError: {ex.Message}\n\nPlease capture the error message and click Yes to report it.";
+                var result = ShowMessage(message, Program.Name, MessageBoxImage.Warning, MessageBoxButton.YesNo);
+
+                if (result == MessageBoxResult.Yes)
                 {
-                    Utils.OpenLink(Program.GITHUB_ISSUES_URL);
+                    Utils.OpenLink(Program.GithubIssuesUrl);
                 }
+            }
+            finally
+            {
+                UpdateActiveState();
             }
         }
 
-        void ToggleActivation()
+        private void ToggleActivation()
         {
             if (!Module.IsActivated())
             {
-                if (Module.Activate())
+                if (!Module.Exists())
                 {
-                    SetActiveState(true);
-
-                    if (LCU.IsRunning())
-                    {
-                        if (MessageBox.Show(this,
-                            "The Loader has been activated successfully.\n" +
-                            "Do you want to restart the running League of Legends Client now?",
-                            Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                        {
-                            LCU.KillUxAndRestart();
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show(this,
-                            "The Loader has been activated successfully.\n" +
-                            "Let's launch your League of Legends Client to enjoy!",
-                            Program.NAME, MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
+                    ShowMessage("Failed to activate the Loader: \"core.dll\" not found.", Program.Name, MessageBoxImage.Error);
+                }
+                else if (Module.Activate())
+                {
+                    PromptRestart("The Loader has been activated successfully.", false);
                 }
                 else
                 {
-                    MessageBox.Show(this,
-                        "Failed to activate the Loader.\n",
-                        Program.NAME, MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowMessage("Failed to activate the Loader.", Program.Name, MessageBoxImage.Error);
                 }
             }
             else
             {
-                if (MessageBox.Show(this,
-                    "Do you want to deactivate the Loader?",
-                    Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                {
-                    Module.Deactivate();
-                    SetActiveState(false);
-
-                    if (Module.IsLoaded())
-                    {
-                        if (MessageBox.Show(this,
-                            "The Loader has been deactivated successfully.\n" +
-                            "Do you want to restart running League of Legends Client to apply?",
-                            Program.NAME, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
-                        {
-                            LCU.KillUxAndRestart();
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show(this,
-                            "The Loader has been deactivated successfully.",
-                            Program.NAME, MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                }
+                Module.Deactivate();
+                PromptRestart("The Loader has been deactivated successfully.", true);
             }
         }
 
-        void SetActiveState(bool activated)
+        private MessageBoxResult ShowMessage(string message, string caption, MessageBoxImage icon, MessageBoxButton button = MessageBoxButton.OK)
+            => icon == MessageBoxImage.Question
+                ? MessageBox.Show(this, message, caption, MessageBoxButton.YesNo, icon)
+                : MessageBox.Show(this, message, caption, MessageBoxButton.OK, icon);
+
+        private void PromptRestart(string message, bool isDeactivaed)
         {
-            if (activated)
+            if ((LCU.IsRunning() && !isDeactivaed) || (Module.IsLoaded() && isDeactivaed))
             {
-                txtActivate.Text = "ACTIVATED";
-                faActivate.Icon = FontAwesome.WPF.FontAwesomeIcon.Check;
+                if (MessageBox.Show(this, "Do you want to restart the running League of Legends Client now?",
+                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                {
+                    LCU.KillUxAndRestart();
+                    ShowMessage(message, Program.Name, MessageBoxImage.Information);
+                }
             }
             else
             {
-                txtActivate.Text = "ACTIVATE";
-                faActivate.Icon = FontAwesome.WPF.FontAwesomeIcon.Rocket;
+                ShowMessage(message, Program.Name, MessageBoxImage.Information);
             }
+        }
+
+        void UpdateActiveState()
+        {
+            btnActivate.Toggled -= BtnActivate_Toggled;
+            btnActivate.IsOn = Module.IsActivated();
+            btnActivate.Toggled += BtnActivate_Toggled;
+        }
+
+        private void InitializeWindowHook(object sender, EventArgs e)
+        {
+            var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+            source.AddHook(new HwndSourceHook(WndProc));
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wp, IntPtr lp, ref bool handled)
+        {
+            if (msg == Native.WM_SHOWME)
+            {
+                if (WindowState == WindowState.Minimized)
+                {
+                    WindowState = WindowState.Normal;
+                }
+
+                if (!IsVisible)
+                {
+                    Show();
+                }
+
+                Activate();
+
+                handled = true;
+            }
+
+            return IntPtr.Zero;
         }
     }
 }

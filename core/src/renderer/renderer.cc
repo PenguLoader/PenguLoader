@@ -1,4 +1,5 @@
 #include "../internal.h"
+#include "../hook.h"
 
 #include "include/capi/cef_base_capi.h"
 #include "include/capi/cef_app_capi.h"
@@ -49,10 +50,14 @@ private:
 
         if (fn == L"OpenDevTools")
         {
+            bool remote = args.size() > 0 && args[0]->get_bool_value(args[0]);
+
             auto context = CefV8Context_GetCurrentContext();
             auto frame = context->get_frame(context);
+
             // IPC to browser process.
-            auto msg = CefProcessMessage_Create(&"__OPEN_DEVTOOLS"_s);
+            auto msg = CefProcessMessage_Create(&CefStr(remote
+                ? "__open_remote_devtools" : "__open_devtools"));
             frame->send_process_message(frame, PID_BROWSER, msg);
 
             return true;
@@ -167,7 +172,7 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
         {
             // Received RCLIENT HWND.
             auto args = message->get_argument_list(message);
-            RCLIENT_WINDOW = reinterpret_cast<HWND>(args->get_int(args, 0));
+            RCLIENT_WINDOW = reinterpret_cast<HWND>((intptr_t)args->get_int(args, 0));
             return 1;
         }
         else if (msg == L"__server_port")
@@ -192,6 +197,7 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
     return Old_OnProcessMessageReceived(self, browser, frame, source_process, message);
 }
 
+static Hook<decltype(&cef_execute_process)> Old_CefExecuteProcess;
 static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app, void* windows_sandbox_info)
 {
     // Hook RenderProcessHandler.
@@ -224,11 +230,11 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
         return handler;
     };
 
-    return CefExecuteProcess(args, app, windows_sandbox_info);
+    return Old_CefExecuteProcess(args, app, windows_sandbox_info);
 }
 
 void HookRendererProcess()
 {
     // Hook CefExecuteProcess().
-    utils::hookFunc(&CefExecuteProcess, Hooked_CefExecuteProcess);
+    Old_CefExecuteProcess.hook("libcef.dll", "cef_execute_process", Hooked_CefExecuteProcess);
 }

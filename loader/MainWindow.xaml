@@ -9,7 +9,7 @@
     xmlns:local="clr-namespace:PenguLoader"
     mc:Ignorable="d"
     Title="Pengu Loader"
-    Height="290" Width="449"
+    Height="250" Width="417"
     ResizeMode="CanMinimize"
     BorderThickness="0"
     WindowStartupLocation="CenterScreen"
@@ -25,82 +25,90 @@
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <ui:TitleBarControl
-                Background="{DynamicResource SystemControlBackgroundAltMediumHighBrush}"
-                InactiveBackground="{DynamicResource SystemControlBackgroundAltMediumHighBrush}"
+                x:Name="titleBar"
                 IsActive="True"
-                x:Name="titleBar" Icon="icon.ico" IsIconVisible="True" Title="Pengu Loader" />
-            <ui:TitleBarButton Click="BtnTheme_Click" Margin="0,0,46,0" ToolTip="Change theme" HorizontalAlignment="Right">
-                <fa:ImageAwesome Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" Icon="MoonOutline" Width="12" />
-            </ui:TitleBarButton>
-            <ui:TitleBarButton Click="BtnGitHub_Click" Margin="0,0,92,0" ToolTip="Open source" HorizontalAlignment="Right">
-                <fa:ImageAwesome Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" Icon="Github" Width="12" />
-            </ui:TitleBarButton>
-            <ui:TitleBarButton Click="BtnHomepage_Click" Margin="0,0,138,0" ToolTip="Homepage" HorizontalAlignment="Right">
-                <fa:ImageAwesome Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" Icon="Home" Width="12" />
+                Icon="icon.ico"
+                IsIconVisible="True"
+                Title="Pengu Loader" />
+            <ui:TitleBarButton
+                x:Name="btnTheme"
+                Margin="0,0,46,0"
+                ToolTip="Change theme"
+                HorizontalAlignment="Right">
+                <fa:ImageAwesome
+                    Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
+                    Icon="MoonOutline"
+                    Width="12" />
             </ui:TitleBarButton>
         </Grid>
         <Grid Grid.Row="1">
-            <TextBlock HorizontalAlignment="Left" Margin="25,10,0,0" FontSize="13" Text="Remote debugger" VerticalAlignment="Top"/>
-            <CheckBox
-                x:Name="chkRemoteDebugger"
-                Checked="ChkRemoteDebugger_Checked" Unchecked="ChkRemoteDebugger_Checked"
-                Focusable="False" Content="Use port" HorizontalAlignment="Left" Margin="25,40,0,0" VerticalAlignment="Top" Width="67" MinWidth="100"/>
-            <TextBox
-                x:Name="txtRemotePort" PreviewTextInput="TxtRemotePort_PreviewTextInput"
-                IsTabStop="False" MaxLength="5" HorizontalAlignment="Left" Height="11" Margin="125,40,0,0" TextWrapping="Wrap" Text="8888" VerticalAlignment="Top" Width="80"/>
-
+            <TextBlock HorizontalAlignment="Left" Margin="25,10,0,0" FontSize="13" Text="Community" VerticalAlignment="Top"/>
             <Button
-                Click="BtnRemoteDevTools_Click"
+                x:Name="btnGitHub"
                 Background="Transparent" BorderBrush="#6888" Focusable="False"
-                HorizontalAlignment="Stretch" Margin="25,85,244,0" VerticalAlignment="Top">
+                HorizontalAlignment="Stretch" Margin="25,36,297,0" VerticalAlignment="Top">
                 <TextBlock>
-                    Remote DevTools
+                    GitHub
                     <fa:ImageAwesome
                         Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                        Icon="ExternalLink" Width="14" Margin="5,0,0,-1" />
-                </TextBlock>
-            </Button>
-            <Grid Margin="0,139,0,0" Background="#2AAA"/>
-            <Button x:Name="btnActivate" Click="BtnActivate_Click" FontSize="20"
-                HorizontalAlignment="Left" Margin="244,186,0,0" VerticalAlignment="Top" Height="50"
-                Style="{StaticResource AccentButtonStyle}" Focusable="False" Width="180">
-                <TextBlock>
-                    <fa:ImageAwesome x:Name="faActivate" Icon="Rocket" Width="18" Margin="0,0,12,-1" Visibility="Visible" Foreground="#FFFFFF" />
-                    <TextBlock x:Name="txtActivate" Text="ACTIVATE" />
+                        Icon="Github" Width="14" Margin="5,0,0,-1" />
                 </TextBlock>
             </Button>
             <Button
-                Content="Open assets" Click="BtnAssets_Click"
+                x:Name="btnHomepage"
+                Background="Transparent" BorderBrush="#6888" Focusable="False"
+                HorizontalAlignment="Stretch" Margin="25,78,197,0" VerticalAlignment="Top">
+                <TextBlock><Run Text="PENGU.LOL "/><InlineUIContainer>
+                        <fa:ImageAwesome
+                            Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
+                            Icon="ExternalLink" Width="14" Margin="5,0,0,-1" />
+                    </InlineUIContainer></TextBlock>
+            </Button>
+            <Grid Margin="0,139,0,0" Background="#2AAA">
+                <TextBlock HorizontalAlignment="Left" Margin="39,24,0,0" FontSize="22" Text="Status:" VerticalAlignment="Top" Width="90" />
+            </Grid>
+            <Button
+                x:Name="btnAssets"
+                Content="Open assets"
                 Background="Transparent" BorderBrush="#6888"
                 Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                Focusable="False" HorizontalAlignment="Stretch" Margin="274,10,25,0" VerticalAlignment="Top"/>
+                Focusable="False" HorizontalAlignment="Stretch" Margin="242,10,25,0" VerticalAlignment="Top"/>
             <Button
                 x:Name="btnPlugins"
-                Content="Open plugins" Click="BtnPlugins_Click"
+                Content="Open plugins"
                 Background="Transparent" BorderBrush="#6888"
                 Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
                 Focusable="False" HorizontalAlignment="Right" Margin="0,50,25,0" VerticalAlignment="Top" Width="150"
             />
-            <Button x:Name="btnRestartUX" Click="BtnRestart_Click"
-                Focusable="False" HorizontalAlignment="Left" Margin="25,160,0,0" VerticalAlignment="Top" Width="180">
-                <TextBlock>
-                    <fa:ImageAwesome x:Name="faRestart" Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" Icon="Refresh" SpinDuration="4" Width="14" Margin="0,0,5,-2" /> Restart UX
-                </TextBlock>
-            </Button>
             <Button
                 x:Name="btnDataStore"
-                Content="Dump DataStore" Click="BtnDataStore_Click"
+                Content="Dump DataStore"
                 Background="Transparent" BorderBrush="#6888"
                 Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
                 Focusable="False" HorizontalAlignment="Right" Margin="0,90,25,0" VerticalAlignment="Top" Width="150"
             />
+            <TextBlock x:Name="txtVersion" Margin="112,-26,0,0" TextWrapping="Wrap" Text="v0.0.0"
+                TextAlignment="Left" FontSize="13" VerticalAlignment="Top" HorizontalAlignment="Left" Width="108" Height="19"/>
             <Button
-                Content="Open DevTools" Click="BtnDevTools_Click"
-                Style="{StaticResource AccentButtonStyle}"
-                Focusable="False" HorizontalAlignment="Left" Margin="25,204,0,0" VerticalAlignment="Top" Width="180"
-            />
-            <TextBlock x:Name="txtVersion" Margin="259,156,0,0" TextWrapping="Wrap" Text="v0.0.0 build 1000"
-                TextAlignment="Right" FontSize="13" VerticalAlignment="Top" HorizontalAlignment="Left" Width="165" Height="19"/>
+                x:Name="btnDiscord"
+                Background="Transparent" BorderBrush="#6888" Focusable="False"
+                HorizontalAlignment="Stretch" Margin="125,36,197,0" VerticalAlignment="Top">
+                <TextBlock><Run Text="Discord "/><InlineUIContainer>
+                        <fa:ImageAwesome
+                            Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
+                            Icon="ExternalLink" Width="14" Margin="5,0,0,-1" />
+                    </InlineUIContainer></TextBlock>
+            </Button>
+            <ui:ToggleSwitch x:Name="btnActivate" OffContent="OFF" OnContent="READY" Cursor="Hand" Margin="268,162,0,25" RenderTransformOrigin="0.5,0.5" Width="128" Height="31">
+                <ui:ToggleSwitch.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="1.4" ScaleY="1.4"/>
+                        <SkewTransform/>
+                        <RotateTransform/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </ui:ToggleSwitch.RenderTransform>
+            </ui:ToggleSwitch>
         </Grid>
     </Grid>
 </Window>

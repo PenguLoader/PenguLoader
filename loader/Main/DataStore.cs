@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 
 namespace PenguLoader.Main
 {
@@ -22,7 +18,12 @@ namespace PenguLoader.Main
                 var output = Config.DataStorePath + ".d";
                 File.WriteAllText(output, text);
 
-                Process.Start("notepad.exe", $"\"{output}\"");
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "notepad.exe",
+                    Arguments = $"\"{output}\"",
+                    UseShellExecute = false
+                });
             }
             catch
             {
@@ -38,7 +39,7 @@ namespace PenguLoader.Main
 
             for (int i = 0; i < bytes.Length; i++)
             {
-                bytes[i] = (byte)(bytes[i] ^ (byte)key[i % key.Length]);
+                bytes[i] ^= (byte)key[i % key.Length];
             }
         }
     }
