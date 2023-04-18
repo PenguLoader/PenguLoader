@@ -5,7 +5,7 @@
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_v8_capi.h"
 
-#include "extension.h"
+#include "extension.g.h"
 
 // RENDERER PROCESS ONLY.
 
