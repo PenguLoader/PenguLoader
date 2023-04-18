@@ -219,9 +219,6 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     CefScopedStr rc_token{ command_line->get_switch_value(command_line, &"riotclient-auth-token"_s) };
     SetRiotClientCredentials(rc_port.cstr(), rc_token.cstr());
 
-    // Keep Riot's command lines.
-    Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
-
     // Extract args string.
     auto args = CefScopedStr{ command_line->get_command_line_string(command_line) }.cstr();
 
@@ -239,6 +236,8 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     // Rebuild it.
     command_line->reset(command_line);
     command_line->init_from_string(command_line, &CefStr(args));
+
+    Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
 
     auto sPort = config::getConfigValue(L"RemoteDebuggingPort");
     REMOTE_DEBUGGING_PORT = wcstol(sPort.c_str(), NULL, 10);
