@@ -99,7 +99,7 @@
                             Icon="ExternalLink" Width="14" Margin="5,0,0,-1" />
                     </InlineUIContainer></TextBlock>
             </Button>
-            <ui:ToggleSwitch x:Name="btnActivate" OffContent="OFF" OnContent="READY" Cursor="Hand" Margin="268,162,0,25" RenderTransformOrigin="0.5,0.5" Width="128" Height="31">
+            <ui:ToggleSwitch x:Name="btnActivate" OffContent="OFF" OnContent="READY" Cursor="Hand" Focusable="False" Margin="268,162,0,25" RenderTransformOrigin="0.5,0.5" Width="128" Height="31">
                 <ui:ToggleSwitch.RenderTransform>
                     <TransformGroup>
                         <ScaleTransform ScaleX="1.4" ScaleY="1.4"/>

@@ -422,4 +422,4 @@ FodyWeavers.xsd
 
 bin/*
 packages/
-d3d9/src/renderer/extension.h
+*.g.h
