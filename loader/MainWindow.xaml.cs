@@ -59,7 +59,13 @@ namespace PenguLoader
         private void BtnTheme_Click(object sender, RoutedEventArgs e)
         {
             var tm = ThemeManager.Current;
-            tm.ApplicationTheme = (tm.ApplicationTheme == ApplicationTheme.Light) ? ApplicationTheme.Dark : ApplicationTheme.Light;
+            var isLight = tm.ApplicationTheme == null
+                ? tm.ActualApplicationTheme == ApplicationTheme.Light
+                : tm.ApplicationTheme == ApplicationTheme.Light;
+
+            tm.ApplicationTheme = isLight
+                ? ApplicationTheme.Dark
+                : ApplicationTheme.Light;
         }
 
         private void BtnAssets_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.AssetsDir);
