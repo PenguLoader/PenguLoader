@@ -44,17 +44,17 @@ var DataStore = new function () {
     return {
         [Symbol.toStringTag]: 'DataStore',
         has(key) {
-            return data().has(key);
+            return data().has(String(key));
         },
         get(key) {
-            return data().get(key);
+            return data().get(String(key));
         },
         set(key, value) {
-            data().set(key, value);
+            data().set(String(key), value);
             commitData();
         },
         remove(key) {
-            var result = data().delete(key);
+            var result = data().delete(String(key));
             commitData();
             return result;
         }
