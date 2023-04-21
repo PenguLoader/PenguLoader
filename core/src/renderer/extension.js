@@ -14,6 +14,11 @@ var openPluginsFolder = function () {
     OpenPluginsFolder();
 };
 
+var reloadClient = function () {
+    native function ReloadClient();
+    ReloadClient();
+};
+
 var DataStore = new function () {
     native function LoadData();
     native function SaveData();

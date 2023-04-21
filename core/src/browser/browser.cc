@@ -177,6 +177,8 @@ static void HookClient(cef_client_t *client)
                 OpenDevTools_Internal(false);
             else if (name == L"__open_remote_devtools")
                 OpenDevTools_Internal(true);
+            else if (name == L"__reload_client")
+                browser->reload_ignore_cache(browser);
         }
 
         return OnProcessMessageReceived(self, browser, frame, source_process, message);
