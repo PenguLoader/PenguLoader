@@ -106,39 +106,6 @@ void InjectThisDll(HANDLE hProcess)
     WCHAR thisDllPath[2048]{};
     GetModuleFileNameW((HMODULE)&__ImageBase, thisDllPath, _countof(thisDllPath));
 
-#ifdef _WIN64
-    BOOL wow64 = FALSE;
-    if (IsWow64Process(hProcess, &wow64) && wow64)
-    {
-        size_t length = lstrlenW(thisDllPath);
-        lstrcpyW(thisDllPath + length - 4, L"32.dll");
-
-        WCHAR rundll32[MAX_PATH];
-        GetSystemWow64DirectoryW(rundll32, MAX_PATH);
-        lstrcatW(rundll32, L"\\rundll32.exe");
-
-        WCHAR cmdLine[2048]{};
-        lstrcatW(cmdLine, L"\"");
-        lstrcatW(cmdLine, rundll32);
-        lstrcatW(cmdLine, L"\" \"");
-        lstrcatW(cmdLine, thisDllPath);
-        lstrcatW(cmdLine, L"\", #6001");
-
-        STARTUPINFOW si{};
-        PROCESS_INFORMATION pi{};
-        si.cb = sizeof(si);
-
-        if (CreateProcessW(NULL, cmdLine, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
-        {
-            WaitForSingleObject(pi.hProcess, INFINITE);
-            GetExitCodeProcess(pi.hProcess, reinterpret_cast<DWORD *>(&pLoadLibraryW));
-
-            CloseHandle(pi.hProcess);
-            CloseHandle(pi.hThread);
-        }
-    }
-#endif
-
     size_t pathSize = (wcslen(thisDllPath) + 1) * sizeof(WCHAR);
     LPVOID pathAddr = VirtualAllocEx(hProcess, NULL, pathSize, MEM_COMMIT, PAGE_READWRITE);
     WriteProcessMemory(hProcess, pathAddr, thisDllPath, pathSize, NULL);
@@ -185,15 +152,6 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
     InjectThisDll(pi.hProcess);
     ResumeThread(pi.hThread);
     WaitForSingleObject(pi.hProcess, INFINITE);
-
-    return 0;
-}
-
-int APIENTRY _GetLoadLibraryEntry(HWND, HINSTANCE, LPWSTR, int)
-{
-#ifndef _WIN64
-    ExitProcess((int)reinterpret_cast<intptr_t>(&LoadLibraryW));
-#endif
 
     return 0;
 }

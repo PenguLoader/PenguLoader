@@ -1,8 +1,8 @@
 #pragma once
 
-//#ifdef _WIN64
-//#error "Build 32-bit only."
-//#endif
+#ifndef _WIN64
+#error "Build 64-bit only."
+#endif
 
 #ifdef _MSC_VER
 #define NOMINMAX
