@@ -180,8 +180,8 @@ namespace utils
     bool strStartWith(const wstring &str, const wstring &sub);
     bool strEndWith(const wstring &str, const wstring &sub);
 
-    bool dirExist(const wstring &path);
-    bool fileExist(const wstring &path);
+    bool isDir(const wstring &path);
+    bool isFile(const wstring &path);
     bool readFile(const wstring &path, string &out);
     vector<wstring> readDir(const std::wstring &dir);
 

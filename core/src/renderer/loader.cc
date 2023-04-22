@@ -7,7 +7,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
 {
     auto pluginsDir = config::getPluginsDir();
 
-    if (!utils::dirExist(pluginsDir))
+    if (!utils::isDir(pluginsDir))
         return;
 
     using namespace std::chrono;
@@ -26,7 +26,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
             continue;
 
         // Top-level JS file.
-        if (utils::strEndWith(name, L".js") && utils::fileExist(pluginsDir + L"\\" + name))
+        if (utils::strEndWith(name, L".js") && utils::isFile(pluginsDir + L"\\" + name))
         {
             code.append(L"import(\"https://plugins/");
             code.append(name + L"?t=");
@@ -36,7 +36,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
             count++;
         }
         // Sub-folder with index.
-        else if (utils::dirExist(pluginsDir + L"\\" + name) && utils::fileExist(pluginsDir + L"\\" + name + L"\\index.js"))
+        else if (utils::isDir(pluginsDir + L"\\" + name) && utils::isFile(pluginsDir + L"\\" + name + L"\\index.js"))
         {
             code.append(L"import(\"https://plugins/");
             code.append(name + L"/index.js?t=");

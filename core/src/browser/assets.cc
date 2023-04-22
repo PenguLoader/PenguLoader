@@ -212,15 +212,15 @@ private:
                 if (sub.find_last_of(L'.') == wstring::npos)
                 {
                     // peek .js
-                    if (js_mime = utils::fileExist(path_ + L".js"))
+                    if (js_mime = utils::isFile(path_ + L".js"))
                         path_.append(L".js");
                     // peek folder
-                    else if (js_mime = utils::dirExist(path_))
+                    else if (js_mime = utils::isDir(path_))
                         path_.append(L"/index.js");
                 }
             }
 
-            if (utils::fileExist(path_))
+            if (utils::isFile(path_))
             {
                 auto import = IMPORT_DEFAULT;
 

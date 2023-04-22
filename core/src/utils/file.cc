@@ -1,7 +1,7 @@
 #include "../internal.h"
 #include <fstream>
 
-bool utils::dirExist(const std::wstring &path)
+bool utils::isDir(const std::wstring &path)
 {
     DWORD attr = GetFileAttributesW(path.c_str());
 
@@ -11,7 +11,7 @@ bool utils::dirExist(const std::wstring &path)
     return attr & FILE_ATTRIBUTE_DIRECTORY;
 }
 
-bool utils::fileExist(const std::wstring &path)
+bool utils::isFile(const std::wstring &path)
 {
     DWORD attr = GetFileAttributesW(path.c_str());
 
