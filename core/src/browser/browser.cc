@@ -177,6 +177,8 @@ static void HookClient(cef_client_t *client)
                 OpenDevTools_Internal(false);
             else if (name == L"__open_remote_devtools")
                 OpenDevTools_Internal(true);
+            else if (name == L"__reload_client")
+                browser->reload_ignore_cache(browser);
         }
 
         return OnProcessMessageReceived(self, browser, frame, source_process, message);
@@ -267,6 +269,11 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     // Hook command line.
     Old_OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
+
+    wchar_t cachePath[1024];
+    GetEnvironmentVariableW(L"LOCALAPPDATA", cachePath, _countof(cachePath));
+    lstrcatW(cachePath, L"\\Riot Games\\League of Legends\\Cache");
+    const_cast<cef_settings_t *>(settings)->cache_path = CefStr(cachePath).forawrd();
 
     return Old_CefInitialize(args, settings, app, windows_sandbox_info);
 }

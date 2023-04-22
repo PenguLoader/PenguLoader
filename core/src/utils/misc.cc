@@ -1,8 +1,17 @@
 #include "../internal.h"
 
-void utils::openFilesExplorer(const wstring &path)
+void utils::shellExecuteOpen(const wstring &link)
 {
-    ShellExecuteW(NULL, L"open", path.c_str(), NULL, NULL, SW_SHOW);
+    static decltype(&ShellExecuteW) pShellExecuteW = nullptr;
+
+    if (!pShellExecuteW)
+    {
+        HMODULE shell32 = LoadLibraryA("shell32");
+        (LPVOID &)pShellExecuteW = GetProcAddress(shell32, "ShellExecuteW");
+    }
+
+    if (pShellExecuteW)
+        pShellExecuteW(NULL, L"open", link.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
 void *utils::patternScan(const HMODULE module, const char *pattern)

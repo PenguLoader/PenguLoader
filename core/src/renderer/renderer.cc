@@ -64,12 +64,23 @@ private:
         }
         else if (fn == L"OpenAssetsFolder")
         {
-            utils::openFilesExplorer(config::getAssetsDir());
+            utils::shellExecuteOpen(config::getAssetsDir());
             return true;
         }
         else if (fn == L"OpenPluginsFolder")
         {
-            utils::openFilesExplorer(config::getPluginsDir());
+            utils::shellExecuteOpen(config::getPluginsDir());
+            return true;
+        }
+        else if (fn == L"ReloadClient")
+        {
+            auto context = CefV8Context_GetCurrentContext();
+            auto frame = context->get_frame(context);
+
+            // IPC to browser process.
+            auto msg = CefProcessMessage_Create(&CefStr("__reload_client"));
+            frame->send_process_message(frame, PID_BROWSER, msg);
+
             return true;
         }
         else if (HandlePlugins(fn, args, *retval))

@@ -101,49 +101,19 @@ static void RemoveOldModule()
 
 void InjectThisDll(HANDLE hProcess)
 {
-    LPVOID pLoadLibraryW = &LoadLibraryW;
+    HMODULE kernel32 = GetModuleHandleA("kernel32");
+    auto pVirtualAllocEx = (decltype(&VirtualAllocEx))GetProcAddress(kernel32, "VirtualAllocEx");
+    auto pWriteProcessMemory = (decltype(&WriteProcessMemory))GetProcAddress(kernel32, "WriteProcessMemory");
+    auto pCreateRemoteThread = (decltype(&CreateRemoteThread))GetProcAddress(kernel32, "CreateRemoteThread");
 
     WCHAR thisDllPath[2048]{};
     GetModuleFileNameW((HMODULE)&__ImageBase, thisDllPath, _countof(thisDllPath));
 
-#ifdef _WIN64
-    BOOL wow64 = FALSE;
-    if (IsWow64Process(hProcess, &wow64) && wow64)
-    {
-        size_t length = lstrlenW(thisDllPath);
-        lstrcpyW(thisDllPath + length - 4, L"32.dll");
-
-        WCHAR rundll32[MAX_PATH];
-        GetSystemWow64DirectoryW(rundll32, MAX_PATH);
-        lstrcatW(rundll32, L"\\rundll32.exe");
-
-        WCHAR cmdLine[2048]{};
-        lstrcatW(cmdLine, L"\"");
-        lstrcatW(cmdLine, rundll32);
-        lstrcatW(cmdLine, L"\" \"");
-        lstrcatW(cmdLine, thisDllPath);
-        lstrcatW(cmdLine, L"\", #6001");
-
-        STARTUPINFOW si{};
-        PROCESS_INFORMATION pi{};
-        si.cb = sizeof(si);
-
-        if (CreateProcessW(NULL, cmdLine, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
-        {
-            WaitForSingleObject(pi.hProcess, INFINITE);
-            GetExitCodeProcess(pi.hProcess, reinterpret_cast<DWORD *>(&pLoadLibraryW));
-
-            CloseHandle(pi.hProcess);
-            CloseHandle(pi.hThread);
-        }
-    }
-#endif
-
     size_t pathSize = (wcslen(thisDllPath) + 1) * sizeof(WCHAR);
-    LPVOID pathAddr = VirtualAllocEx(hProcess, NULL, pathSize, MEM_COMMIT, PAGE_READWRITE);
-    WriteProcessMemory(hProcess, pathAddr, thisDllPath, pathSize, NULL);
+    LPVOID pathAddr = pVirtualAllocEx(hProcess, NULL, pathSize, MEM_COMMIT, PAGE_READWRITE);
+    pWriteProcessMemory(hProcess, pathAddr, thisDllPath, pathSize, NULL);
 
-    HANDLE loader = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)pLoadLibraryW, pathAddr, 0, NULL);
+    HANDLE loader = pCreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)&LoadLibraryW, pathAddr, 0, NULL);
     WaitForSingleObject(loader, INFINITE);
     CloseHandle(loader);
 }
@@ -170,7 +140,7 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
         return 1;
     }
 
-    HMODULE ntdll = GetModuleHandleA("ntdll.dll");
+    HMODULE ntdll = GetModuleHandleA("ntdll");
     (LPVOID &)NtQueryInformationProcess = GetProcAddress(ntdll, "NtQueryInformationProcess");
     (LPVOID &)NtRemoveProcessDebug = GetProcAddress(ntdll, "NtRemoveProcessDebug");
     (LPVOID &)NtClose = GetProcAddress(ntdll, "NtClose");
@@ -186,14 +156,7 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
     ResumeThread(pi.hThread);
     WaitForSingleObject(pi.hProcess, INFINITE);
 
-    return 0;
-}
-
-int APIENTRY _GetLoadLibraryEntry(HWND, HINSTANCE, LPWSTR, int)
-{
-#ifndef _WIN64
-    ExitProcess((int)reinterpret_cast<intptr_t>(&LoadLibraryW));
-#endif
-
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
     return 0;
 }

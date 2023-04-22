@@ -6,7 +6,7 @@
 extern HWND rclient_window_;
 extern cef_browser_t *browser_;
 extern UINT REMOTE_DEBUGGING_PORT;
-static string REMOTE_DEVTOOLS_URL{};
+static wstring REMOTE_DEVTOOLS_URL{};
 
 HWND devtools_window_ = nullptr;
 LPCWSTR DEVTOOLS_WINDOW_NAME = L"DevTools - League Client";
@@ -18,8 +18,7 @@ void OpenDevTools_Internal(bool remote)
         if (REMOTE_DEBUGGING_PORT == 0) return;
         if (REMOTE_DEVTOOLS_URL.empty()) return;
 
-        ShellExecuteA(NULL, "open",
-            REMOTE_DEVTOOLS_URL.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        utils::shellExecuteOpen(REMOTE_DEVTOOLS_URL);
     }
     else if (browser_ != nullptr)
     {
@@ -113,7 +112,7 @@ void PrepareDevTools()
                     link.append(std::to_string(REMOTE_DEBUGGING_PORT));
                     link.append(string(start, end - start));
 
-                    REMOTE_DEVTOOLS_URL = link;
+                    REMOTE_DEVTOOLS_URL = wstring(link.begin(), link.end());
                 }
             }
 

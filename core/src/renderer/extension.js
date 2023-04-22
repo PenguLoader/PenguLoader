@@ -14,37 +14,47 @@ var openPluginsFolder = function () {
     OpenPluginsFolder();
 };
 
+var reloadClient = function () {
+    native function ReloadClient();
+    ReloadClient();
+};
+
 var DataStore = new function () {
     native function LoadData();
     native function SaveData();
 
-    let data;
-    try {
-        var object = JSON.parse(LoadData());
-        data = new Map(Object.entries(object));
-    } catch {
-        data = new Map();
+    let _data;
+    function data() {
+        if (!(_data instanceof Map)) {
+            try {
+                var object = JSON.parse(LoadData());
+                _data = new Map(Object.entries(object));
+            } catch {
+                _data = new Map();
+            }
+        }
+        return _data;
     }
 
     function commitData() {
-        var object = Object.fromEntries(data);
+        var object = Object.fromEntries(_data);
         SaveData(JSON.stringify(object));
     }
 
     return {
         [Symbol.toStringTag]: 'DataStore',
         has(key) {
-            return data.has(key);
+            return data().has(String(key));
         },
         get(key) {
-            return data.get(key);
+            return data().get(String(key));
         },
         set(key, value) {
-            data.set(key, value);
+            data().set(String(key), value);
             commitData();
         },
         remove(key) {
-            var result = data.delete(key);
+            var result = data().delete(String(key));
             commitData();
             return result;
         }

@@ -5,10 +5,10 @@ namespace PenguLoader
     {
         public const string VERSION =
 #endif
-        "1.0.3"
+        "1.0.4"
 #if !__cplusplus
         ;
-        public const int BUILD_NUMBER = 1449;
+        public const int BUILD_NUMBER = 1470;
     }
 }
 #endif

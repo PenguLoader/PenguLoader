@@ -36,8 +36,16 @@ namespace PenguLoader.Main
             catch { }
         }
 
-        public static void EnsureDirectoryExists(string path) => Directory.CreateDirectory(path);
+        public static void EnsureDirectoryExists(string path)
+        {
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+        }
 
-        public static void EnsureFileExists(string path) => File.Create(path).Close();
+        public static void EnsureFileExists(string path)
+        {
+            if (!File.Exists(path))
+                File.Create(path).Close();
+        }
     }
 }

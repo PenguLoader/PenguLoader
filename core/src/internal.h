@@ -1,8 +1,8 @@
 #pragma once
 
-//#ifdef _WIN64
-//#error "Build 32-bit only."
-//#endif
+#ifndef _WIN64
+#error "Build 64-bit only."
+#endif
 
 #ifdef _MSC_VER
 #define NOMINMAX
@@ -180,11 +180,11 @@ namespace utils
     bool strStartWith(const wstring &str, const wstring &sub);
     bool strEndWith(const wstring &str, const wstring &sub);
 
-    bool dirExist(const wstring &path);
-    bool fileExist(const wstring &path);
+    bool isDir(const wstring &path);
+    bool isFile(const wstring &path);
     bool readFile(const wstring &path, string &out);
     vector<wstring> readDir(const std::wstring &dir);
 
-    void openFilesExplorer(const wstring &path);
+    void shellExecuteOpen(const wstring &link);
     void *patternScan(const HMODULE module, const char *pattern);
 }
