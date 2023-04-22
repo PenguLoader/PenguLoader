@@ -101,16 +101,19 @@ static void RemoveOldModule()
 
 void InjectThisDll(HANDLE hProcess)
 {
-    LPVOID pLoadLibraryW = &LoadLibraryW;
+    HMODULE kernel32 = GetModuleHandleA("kernel32");
+    auto pVirtualAllocEx = (decltype(&VirtualAllocEx))GetProcAddress(kernel32, "VirtualAllocEx");
+    auto pWriteProcessMemory = (decltype(&WriteProcessMemory))GetProcAddress(kernel32, "WriteProcessMemory");
+    auto pCreateRemoteThread = (decltype(&CreateRemoteThread))GetProcAddress(kernel32, "CreateRemoteThread");
 
     WCHAR thisDllPath[2048]{};
     GetModuleFileNameW((HMODULE)&__ImageBase, thisDllPath, _countof(thisDllPath));
 
     size_t pathSize = (wcslen(thisDllPath) + 1) * sizeof(WCHAR);
-    LPVOID pathAddr = VirtualAllocEx(hProcess, NULL, pathSize, MEM_COMMIT, PAGE_READWRITE);
-    WriteProcessMemory(hProcess, pathAddr, thisDllPath, pathSize, NULL);
+    LPVOID pathAddr = pVirtualAllocEx(hProcess, NULL, pathSize, MEM_COMMIT, PAGE_READWRITE);
+    pWriteProcessMemory(hProcess, pathAddr, thisDllPath, pathSize, NULL);
 
-    HANDLE loader = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)pLoadLibraryW, pathAddr, 0, NULL);
+    HANDLE loader = pCreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)&LoadLibraryW, pathAddr, 0, NULL);
     WaitForSingleObject(loader, INFINITE);
     CloseHandle(loader);
 }
@@ -137,7 +140,7 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
         return 1;
     }
 
-    HMODULE ntdll = GetModuleHandleA("ntdll.dll");
+    HMODULE ntdll = GetModuleHandleA("ntdll");
     (LPVOID &)NtQueryInformationProcess = GetProcAddress(ntdll, "NtQueryInformationProcess");
     (LPVOID &)NtRemoveProcessDebug = GetProcAddress(ntdll, "NtRemoveProcessDebug");
     (LPVOID &)NtClose = GetProcAddress(ntdll, "NtClose");
@@ -153,5 +156,7 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
     ResumeThread(pi.hThread);
     WaitForSingleObject(pi.hProcess, INFINITE);
 
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
     return 0;
 }

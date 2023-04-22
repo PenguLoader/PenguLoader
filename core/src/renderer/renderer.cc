@@ -64,12 +64,12 @@ private:
         }
         else if (fn == L"OpenAssetsFolder")
         {
-            utils::openFilesExplorer(config::getAssetsDir());
+            utils::shellExecuteOpen(config::getAssetsDir());
             return true;
         }
         else if (fn == L"OpenPluginsFolder")
         {
-            utils::openFilesExplorer(config::getPluginsDir());
+            utils::shellExecuteOpen(config::getPluginsDir());
             return true;
         }
         else if (fn == L"ReloadClient")

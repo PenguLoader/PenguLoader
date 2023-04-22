@@ -185,6 +185,6 @@ namespace utils
     bool readFile(const wstring &path, string &out);
     vector<wstring> readDir(const std::wstring &dir);
 
-    void openFilesExplorer(const wstring &path);
+    void shellExecuteOpen(const wstring &link);
     void *patternScan(const HMODULE module, const char *pattern);
 }

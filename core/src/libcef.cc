@@ -64,7 +64,8 @@ static void WarnInvalidVersion()
         L"The version of your League of Legends Client is not supported.\n"
         L"Please check existing issues or open new issue about that, and wait for the new update.",
         L"Pengu Loader", MB_TOPMOST | MB_OK | MB_ICONWARNING);
-    ShellExecute(NULL, L"open", L"https://git.pengu.lol", NULL, NULL, NULL);
+
+    utils::shellExecuteOpen(L"https://git.pengu.lol");
 }
 
 #ifdef _WIN64
