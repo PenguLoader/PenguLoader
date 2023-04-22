@@ -1,6 +1,1 @@
-*.* linguist-detectable
-
-*.h linguist-language=C++
-*.cc linguist-language=C++
-*.cs linguist-language=C#
-*.md linguist-language=Markdown
+loader/Main/Dummy.cs linguist-language=false
