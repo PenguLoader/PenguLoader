@@ -18,8 +18,8 @@ void PrepareDevTools();
 void OpenDevTools_Internal(bool remote);
 void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame);
 
-cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool isPlugins);
-cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path);
+void RegisterAssetsSchemeHandlerFactory();
+void RegisterRiotClientSchemeHandlerFactory();
 void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken);
 
 void OpenInternalServer();
@@ -111,52 +111,6 @@ static void HookClient(cef_client_t *client)
         return handler;
     };
 
-    // Hook RequestHandler.
-    static auto Old_GetRequestHandler = client->get_request_handler;
-    client->get_request_handler = [](struct _cef_client_t* self) -> cef_request_handler_t*
-    {
-        auto handler = Old_GetRequestHandler(self);
-
-        static auto Old_GetResourceRequestHandler = handler->get_resource_request_handler;
-        handler->get_resource_request_handler = [](
-            struct _cef_request_handler_t* self,
-            struct _cef_browser_t* browser,
-            struct _cef_frame_t* frame,
-            struct _cef_request_t* request,
-            int is_navigation,
-            int is_download,
-            const cef_string_t* request_initiator,
-            int* disable_default_handling) -> cef_resource_request_handler_t*
-        {
-            auto handler = Old_GetResourceRequestHandler(self, browser, frame, request,
-                is_navigation, is_download, request_initiator, disable_default_handling);
-
-            static auto Old_GetResourceHandler = handler->get_resource_handler;
-            handler->get_resource_handler = [](
-                struct _cef_resource_request_handler_t* self,
-                struct _cef_browser_t* browser,
-                struct _cef_frame_t* frame,
-                struct _cef_request_t* request) -> cef_resource_handler_t*
-            {
-                CefScopedStr url{ request->get_url(request) };
-                cef_resource_handler_t *handler = Old_GetResourceHandler(self, browser, frame, request);
-
-                if (wcsncmp(url.str, L"https://assets/", 15) == 0)
-                    return CreateAssetsResourceHandler(url.str + 14, false);
-                if (wcsncmp(url.str, L"https://plugins/", 16) == 0)
-                    return CreateAssetsResourceHandler(url.str + 15, true);
-                if (wcsncmp(url.str, L"https://riotclient/", 19) == 0)
-                    return CreateRiotClientResourceHandler(frame, url.str + 18);
-
-                return handler;
-            };
-
-            return handler;
-        };
-
-        return handler;
-    };
-
     static auto GetJSDialogHandler = client->get_jsdialog_handler;
     client->get_jsdialog_handler = [](struct _cef_client_t* self)
     {
@@ -208,7 +162,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
         HookClient(client);
     }
 
-    return Old_CefBrowserHost_CreateBrowser(windowInfo, client, url, settings, extra_info, request_context);
+    return Old_CefBrowserHost_CreateBrowser(windowInfo, client, url, settings, extra_info, nullptr);
 }
 
 static decltype(cef_app_t::on_before_command_line_processing) Old_OnBeforeCommandLineProcessing;
@@ -270,10 +224,22 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     Old_OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
-    wchar_t cachePath[1024];
-    GetEnvironmentVariableW(L"LOCALAPPDATA", cachePath, _countof(cachePath));
-    lstrcatW(cachePath, L"\\Riot Games\\League of Legends\\Cache");
-    const_cast<cef_settings_t *>(settings)->cache_path = CefStr(cachePath).forawrd();
+    static auto GetBrowserProcessHandler = app->get_browser_process_handler;
+    app->get_browser_process_handler = [](cef_app_t *self)
+    {
+        auto handler = GetBrowserProcessHandler(self);
+        
+        static auto OnContextIntialized = handler->on_context_initialized;
+        handler->on_context_initialized = [](cef_browser_process_handler_t *self)
+        {
+            RegisterAssetsSchemeHandlerFactory();
+            RegisterRiotClientSchemeHandlerFactory();
+
+            OnContextIntialized(self);
+        };
+
+        return handler;
+    };
 
     return Old_CefInitialize(args, settings, app, windows_sandbox_info);
 }
