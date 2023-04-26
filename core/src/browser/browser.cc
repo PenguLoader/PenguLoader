@@ -216,6 +216,24 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &"ignore-certificate-errors"_s);
     }
 
+    if (config::getConfigValueBool(L"OptimizeClient", true))
+    {
+        // Optimize Client.
+        command_line->append_switch(command_line, &"disable-async-dns"_s);
+        command_line->append_switch(command_line, &"disable-gpu"_s);
+        command_line->append_switch(command_line, &"disable-plugins"_s);
+        command_line->append_switch(command_line, &"disable-background-networking"_s);
+        command_line->append_switch(command_line, &"disable-background-timer-throttling"_s);
+        command_line->append_switch(command_line, &"disable-backgrounding-occluded-windows"_s);
+        command_line->append_switch(command_line, &"disable-renderer-backgrounding"_s);
+        command_line->append_switch(command_line, &"disable-software-rasterizer"_s);
+        command_line->append_switch(command_line, &"disable-gpu-rasterization"_s);
+        command_line->append_switch(command_line, &"disable-metrics"_s);
+        command_line->append_switch(command_line, &"enable-quic"_s);
+        command_line->append_switch(command_line, &"no-pings"_s);
+        command_line->append_switch(command_line, &"no-sandbox"_s);
+    }
+
     if (config::getConfigValueBool(L"SuperLowSpecMode", false))
     {
         // Super Low Spec Mode.
