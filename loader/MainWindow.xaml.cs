@@ -27,6 +27,9 @@ namespace PenguLoader
 
             btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
             txtVersion.Text = $"v{Version.VERSION}.{Version.BUILD_NUMBER}";
+
+            chkOptimizeClient.IsChecked = Config.OptimizeClient;
+            chkSuperLowSpecMode.IsChecked = Config.SuperLowSpecMode;
         }
 
         private void InitializeButtons()
@@ -39,6 +42,52 @@ namespace PenguLoader
             btnPlugins.Click += BtnPlugins_Click;
             btnDataStore.Click += BtnDataStore_Click;
             btnActivate.Toggled += BtnActivate_Toggled;
+            chkOptimizeClient.Click += ChkOptimizeClient_Click;
+            chkSuperLowSpecMode.Click += ChkSuperLowSpecMode_Click;
+        }
+
+        private void ChkOptimizeClient_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkOptimizeClient.IsChecked.Value)
+            {
+                // Prevent checked flickering.
+                chkOptimizeClient.IsChecked = false;
+
+                if (MessageBox.Show(this,
+                    "Optimize Client\n\n" +
+                    "It is recommended to enable this option. Enabling it will disable GPU rendering, " +
+                    "disable some unused background tasks, and reduce lag.\n\n" +
+                    "Do you want to continue?",
+                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                {
+                    chkOptimizeClient.IsChecked = true;
+                }
+            }
+
+            Config.OptimizeClient = chkOptimizeClient.IsChecked.Value;
+        }
+
+        private void ChkSuperLowSpecMode_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkSuperLowSpecMode.IsChecked.Value)
+            {
+                // Prevent checked flickering.
+                chkSuperLowSpecMode.IsChecked = false;
+
+                if (MessageBox.Show(this,
+                    "Super Low Spec Mode\n\n" +
+                    "This option extends the default Low Spec Mode. " +
+                    "Enabling it will disable all transition and animation effects, " +
+                    "also greatly reduce lag and increase response speed.\n\n" +
+                    "It's very helpful for low PC, but may cause bug.\n" +
+                    "Do you want to continue?",
+                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                {
+                    chkSuperLowSpecMode.IsChecked = true;
+                }
+            }
+
+            Config.SuperLowSpecMode = chkSuperLowSpecMode.IsChecked.Value;
         }
 
         private void OnMainWindowLoaded(object sender, RoutedEventArgs e)
