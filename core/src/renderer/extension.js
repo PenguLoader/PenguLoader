@@ -19,6 +19,12 @@ var reloadClient = function () {
     ReloadClient();
 };
 
+var restartClient = function () {
+    fetch('/riotclient/kill-and-restart-ux', {
+        method: 'POST'
+    });
+};
+
 var DataStore = new function () {
     native function LoadData();
     native function SaveData();
