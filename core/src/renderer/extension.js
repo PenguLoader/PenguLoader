@@ -46,12 +46,21 @@ var DataStore = new function () {
         has(key) {
             return data().has(String(key));
         },
-        get(key) {
-            return data().get(String(key));
+        get(key, fallback) {
+            key = String(key);
+            if (data().has(key)) {
+                return data().get(key);
+            }
+            return fallback;
         },
         set(key, value) {
-            data().set(String(key), value);
-            commitData();
+            if (typeof key === 'function' || typeof key === 'object') {
+                return false;
+            } else {
+                data().set(String(key), value);
+                commitData();
+                return true;
+            }
         },
         remove(key) {
             var result = data().delete(String(key));
