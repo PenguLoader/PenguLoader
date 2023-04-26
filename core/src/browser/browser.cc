@@ -180,9 +180,11 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 
     auto chromiumArgs = config::getConfigValue(L"ChromiumArgs");
     if (!chromiumArgs.empty())
+    {
         args += L" " + chromiumArgs;
+    }
 
-    if (config::getConfigValue(L"NoProxyServer") == L"0")
+    if (!config::getConfigValueBool(L"NoProxyServer", true))
     {
         size_t pos = args.find(L"--no-proxy-server");
         if (pos != std::wstring::npos)
@@ -195,21 +197,20 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 
     Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
 
-    auto sPort = config::getConfigValue(L"RemoteDebuggingPort");
-    REMOTE_DEBUGGING_PORT = wcstol(sPort.c_str(), NULL, 10);
-    if (REMOTE_DEBUGGING_PORT != 0) {
+    if (REMOTE_DEBUGGING_PORT = config::getConfigValueInt(L"RemoteDebuggingPort", 0))
+    {
         // Set remote debugging port.
         command_line->append_switch_with_value(command_line,
             &"remote-debugging-port"_s, &CefStr(std::to_string(REMOTE_DEBUGGING_PORT)));
     }
 
-    if (config::getConfigValue(L"DisableWebSecurity") == L"1")
+    if (config::getConfigValueBool(L"DisableWebSecurity", false))
     {
         // Disable web security.
         command_line->append_switch(command_line, &"disable-web-security"_s);
     }
 
-    if (config::getConfigValue(L"IgnoreCertificateErrors") == L"1")
+    if (config::getConfigValueBool(L"IgnoreCertificateErrors", false))
     {
         // Ignore invalid certs.
         command_line->append_switch(command_line, &"ignore-certificate-errors"_s);
@@ -228,6 +229,7 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     GetEnvironmentVariableW(L"LOCALAPPDATA", cachePath, _countof(cachePath));
     lstrcatW(cachePath, L"\\Riot Games\\League of Legends\\Cache");
     const_cast<cef_settings_t *>(settings)->cache_path = CefStr(cachePath).forawrd();
+    const_cast<cef_settings_t *>(settings)->log_severity = LOGSEVERITY_DISABLE;
 
     static auto GetBrowserProcessHandler = app->get_browser_process_handler;
     app->get_browser_process_handler = [](cef_app_t *self)

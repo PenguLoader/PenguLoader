@@ -167,7 +167,10 @@ namespace config
     wstring getLoaderDir();
     wstring getAssetsDir();
     wstring getPluginsDir();
-    wstring getConfigValue(const wstring &key);
+
+    wstring getConfigValue(const wstring &key, const wstring &fallback = L"");
+    bool getConfigValueBool(const wstring &key, bool fallback);
+    int getConfigValueInt(const wstring &key, int fallback);
 }
 
 namespace utils
