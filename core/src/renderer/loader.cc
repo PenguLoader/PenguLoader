@@ -14,9 +14,13 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
     auto current_time = system_clock::now();
     auto current_ms = duration_cast<milliseconds>(current_time.time_since_epoch()).count();
 
-    int count = 0;
-    std::wstring code = L"!(function () { ";
-    code.append(L"window.__hookEvents?.(); ");
+    std::wstring code = L"(function () { ";
+    code.append(L"window.__hookEvents(); ");
+
+    if (config::getConfigValueBool(L"SuperLowSpecMode", false))
+        code.append(L"window.__initSuperPotatoMode(); ");
+
+    code.append(L"})(); (function () { ");
 
     // Scan plugins dir.
     for (const auto &name : utils::readDir(pluginsDir + L"\\*"))
@@ -32,8 +36,6 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
             code.append(name + L"?t=");
             code.append(std::to_wstring(current_ms));
             code.append(L"\"); ");
-
-            count++;
         }
         // Sub-folder with index.
         else if (utils::isDir(pluginsDir + L"\\" + name) && utils::isFile(pluginsDir + L"\\" + name + L"\\index.js"))
@@ -42,19 +44,14 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
             code.append(name + L"/index.js?t=");
             code.append(std::to_wstring(current_ms));
             code.append(L"\"); ");
-
-            count++;
         }
     }
 
     code.append(L"})();");
 
     // Execute script.
-    if (count > 0)
-    {
-        CefStr script{ code };
-        frame->execute_java_script(frame, &script, &""_s, 1);
-    }
+    CefStr script{ code };
+    frame->execute_java_script(frame, &script, &"https://plugins/"_s, 1);
 }
 
 bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval)

@@ -215,6 +215,14 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         // Ignore invalid certs.
         command_line->append_switch(command_line, &"ignore-certificate-errors"_s);
     }
+
+    if (config::getConfigValueBool(L"SuperLowSpecMode", false))
+    {
+        // Super Low Spec Mode.
+        command_line->append_switch(command_line, &"disable-smooth-scrolling"_s);
+        command_line->append_switch(command_line, &"wm-window-animations-disabled"_s);
+        command_line->append_switch_with_value(command_line, &"animation-duration-scale"_s, &"0"_s);
+    }
 }
 
 static Hook<decltype(&cef_initialize)> Old_CefInitialize;
