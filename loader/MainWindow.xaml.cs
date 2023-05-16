@@ -132,7 +132,7 @@ namespace PenguLoader
             catch (Exception ex)
             {
                 var message = $"Failed to perform activation.\nError: {ex.Message}\n\nPlease capture the error message and click Yes to report it.";
-                var result = ShowMessage(message, Program.Name, MessageBoxImage.Warning, MessageBoxButton.YesNo);
+                var result = MessageBox.Show(message, Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
@@ -151,28 +151,23 @@ namespace PenguLoader
             {
                 if (!Module.Exists())
                 {
-                    ShowMessage("Failed to activate the Loader: \"core.dll\" not found.", Program.Name, MessageBoxImage.Error);
+                    MessageBox.Show("Failed to activate the Loader: \"core.dll\" not found.", Program.Name, MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else if (Module.Activate())
                 {
-                    PromptRestart("The Loader has been activated successfully.", false);
+                    PromptRestart("The Loader has been ACTIVATED successfully.", false);
                 }
                 else
                 {
-                    ShowMessage("Failed to activate the Loader.", Program.Name, MessageBoxImage.Error);
+                    MessageBox.Show("Failed to activate the Loader.", Program.Name, MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
             {
                 Module.Deactivate();
-                PromptRestart("The Loader has been deactivated successfully.", true);
+                PromptRestart("The Loader has been DEACTIVATED successfully.", true);
             }
         }
-
-        private MessageBoxResult ShowMessage(string message, string caption, MessageBoxImage icon, MessageBoxButton button = MessageBoxButton.OK)
-            => icon == MessageBoxImage.Question
-                ? MessageBox.Show(this, message, caption, MessageBoxButton.YesNo, icon)
-                : MessageBox.Show(this, message, caption, MessageBoxButton.OK, icon);
 
         private void PromptRestart(string message, bool isDeactivaed)
         {
@@ -182,12 +177,12 @@ namespace PenguLoader
                     Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     LCU.KillUxAndRestart();
-                    ShowMessage(message, Program.Name, MessageBoxImage.Information);
+                    MessageBox.Show(message, Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             else
             {
-                ShowMessage(message, Program.Name, MessageBoxImage.Information);
+                MessageBox.Show(message, Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
