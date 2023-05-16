@@ -220,15 +220,20 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     {
         // Optimize Client.
         command_line->append_switch(command_line, &"disable-async-dns"_s);
-        command_line->append_switch(command_line, &"disable-gpu"_s);
         command_line->append_switch(command_line, &"disable-plugins"_s);
+        command_line->append_switch(command_line, &"disable-extensions"_s);
         command_line->append_switch(command_line, &"disable-background-networking"_s);
         command_line->append_switch(command_line, &"disable-background-timer-throttling"_s);
         command_line->append_switch(command_line, &"disable-backgrounding-occluded-windows"_s);
         command_line->append_switch(command_line, &"disable-renderer-backgrounding"_s);
-        command_line->append_switch(command_line, &"disable-software-rasterizer"_s);
-        command_line->append_switch(command_line, &"disable-gpu-rasterization"_s);
         command_line->append_switch(command_line, &"disable-metrics"_s);
+        command_line->append_switch(command_line, &"disable-component-update"_s);
+        command_line->append_switch(command_line, &"disable-domain-reliability"_s);
+        command_line->append_switch(command_line, &"disable-translate"_s);
+        command_line->append_switch(command_line, &"disable-gpu-watchdog"_s);
+        command_line->append_switch(command_line, &"disable-renderer-accessibility"_s);
+        command_line->append_switch(command_line, &"enable-parallel-downloading"_s);
+        command_line->append_switch(command_line, &"enable-new-download-backend"_s);
         command_line->append_switch(command_line, &"enable-quic"_s);
         command_line->append_switch(command_line, &"no-pings"_s);
         command_line->append_switch(command_line, &"no-sandbox"_s);
@@ -255,7 +260,7 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     GetEnvironmentVariableW(L"LOCALAPPDATA", cachePath, _countof(cachePath));
     lstrcatW(cachePath, L"\\Riot Games\\League of Legends\\Cache");
     const_cast<cef_settings_t *>(settings)->cache_path = CefStr(cachePath).forawrd();
-    const_cast<cef_settings_t *>(settings)->log_severity = LOGSEVERITY_DISABLE;
+    //const_cast<cef_settings_t *>(settings)->log_severity = LOGSEVERITY_DISABLE;
 
     static auto GetBrowserProcessHandler = app->get_browser_process_handler;
     app->get_browser_process_handler = [](cef_app_t *self)
