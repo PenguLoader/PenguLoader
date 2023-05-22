@@ -221,14 +221,14 @@ var __hookEvents = function () {
 
 var __initSuperPotatoMode = function () {
     const GLOBAL_STYLE = `
-  *:not(.store-loading):not(.spinner), *:before, *:after {
+  *:not(.store-loading):not(.spinner):not([animated]):not(.lol-uikit-vignette-celebration-layer *), *:before, *:after {
     transition: none !important;
     transition-property: none !important;
     animation: none !important;
   }
 `;
     const SHADOW_STYLE = `
-  *:not(.spinner), *:before, *:after {
+  *:not(.spinner):not([animated]), *:before, *:after {
     transition: none !important;
     transition-property: none !important;
     animation: none !important;
