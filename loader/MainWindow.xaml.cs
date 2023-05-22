@@ -55,8 +55,8 @@ namespace PenguLoader
 
                 if (MessageBox.Show(this,
                     "Optimize Client\n\n" +
-                    "It is recommended to enable this option. Enabling it will disable GPU rendering, " +
-                    "disable some unused background tasks, and reduce lag.\n\n" +
+                    "It is recommended to enable this option. Enabling it will disable some unused things, " +
+                    "unused background tasks, and reduce lag.\n\n" +
                     "Do you want to continue?",
                     Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
                 {
@@ -79,7 +79,7 @@ namespace PenguLoader
                     "This option extends the default Low Spec Mode. " +
                     "Enabling it will disable all transition and animation effects, " +
                     "also greatly reduce lag and increase response speed.\n\n" +
-                    "It's very helpful for low PC, but may cause bug.\n" +
+                    "It's very helpful for low PC, but may cause bug. Please report your issues to help us improve this mode.\n\n" +
                     "Do you want to continue?",
                     Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
                 {
