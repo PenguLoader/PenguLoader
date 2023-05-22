@@ -138,6 +138,7 @@ extern decltype(&cef_process_message_create) CefProcessMessage_Create;
 extern decltype(&cef_v8context_get_current_context) CefV8Context_GetCurrentContext;
 extern decltype(&cef_server_create) CefServer_Create;
 extern decltype(&cef_uridecode) CefURIDecode;
+extern decltype(&cef_register_scheme_handler_factory) CefRegisterSchemeHandlerFactory;
 
 // Strings helpers.
 extern decltype(&cef_string_set) CefString_Set;
@@ -166,7 +167,10 @@ namespace config
     wstring getLoaderDir();
     wstring getAssetsDir();
     wstring getPluginsDir();
-    wstring getConfigValue(const wstring &key);
+
+    wstring getConfigValue(const wstring &key, const wstring &fallback = L"");
+    bool getConfigValueBool(const wstring &key, bool fallback);
+    int getConfigValueInt(const wstring &key, int fallback);
 }
 
 namespace utils

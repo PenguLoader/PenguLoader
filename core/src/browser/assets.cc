@@ -358,7 +358,30 @@ private:
     }
 };
 
-cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool plugin)
+void RegisterAssetsSchemeHandlerFactory()
 {
-    return new AssetsResourceHandler(path, plugin);
+    struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
+    {
+        AssetsSchemeHandlerFactory() : CefRefCount(this)
+        {
+            cef_scheme_handler_factory_t::create = create;
+        }
+
+        static cef_resource_handler_t* CEF_CALLBACK create(
+            struct _cef_scheme_handler_factory_t* self,
+            struct _cef_browser_t* browser,
+            struct _cef_frame_t* frame,
+            const cef_string_t* scheme_name,
+            struct _cef_request_t* request)
+        {
+            CefScopedStr url{ request->get_url(request) };
+            bool is_assets = wcsncmp(url.str, L"https://assets/", 15) == 0;
+            auto path = url.str + (is_assets ? 14 : 15);
+
+            return new AssetsResourceHandler(path, !is_assets);
+        }
+    };
+
+    CefRegisterSchemeHandlerFactory(&"https"_s, &CefStr("assets"), new AssetsSchemeHandlerFactory());
+    CefRegisterSchemeHandlerFactory(&"https"_s, &CefStr("plugins"), new AssetsSchemeHandlerFactory());
 }

@@ -26,6 +26,18 @@ namespace PenguLoader.Main
             set => Set("Language", value);
         }
 
+        public static bool OptimizeClient
+        {
+            get => GetBool("OptimizeClient", true);
+            set => SetBool("OptimizeClient", value);
+        }
+
+        public static bool SuperLowSpecMode
+        {
+            get => GetBool("SuperLowSpecMode", false);
+            set => SetBool("SuperLowSpecMode", value);
+        }
+
         [DllImport("kernel32", CharSet = CharSet.Unicode)]
         private static extern long WritePrivateProfileString(string section, string key, string value, string file);
 
@@ -47,5 +59,18 @@ namespace PenguLoader.Main
         private static void Set(string key, string value) => WritePrivateProfileString("Main", key, value, ConfigPath);
 
         private static int GetInt(string key, int @default = 0) => int.TryParse(Get(key), out int result) ? result : @default;
+
+        static bool GetBool(string key, bool @default)
+        {
+            var value = Get(key);
+            if (value == "true" || value == "1")
+                return true;
+            else if (value == "false" || value == "0")
+                return false;
+
+            return @default;
+        }
+
+        static void SetBool(string key, bool value) => Set(key, value ? "true" : "false");
     }
 }

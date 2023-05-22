@@ -122,8 +122,6 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
     struct _cef_frame_t* frame,
     struct _cef_v8context_t* context)
 {
-    Old_OnContextCreated(self, browser, frame, context);
-
     if (is_main_)
     {
         CefScopedStr url{ frame->get_url(frame) };
@@ -141,6 +139,8 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
             LoadPlugins(frame, context);
         }
     }
+
+    Old_OnContextCreated(self, browser, frame, context);
 }
 
 static decltype(cef_render_process_handler_t::on_context_released) Old_OnContextReleased;

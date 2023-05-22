@@ -27,6 +27,9 @@ namespace PenguLoader
 
             btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
             txtVersion.Text = $"v{Version.VERSION}.{Version.BUILD_NUMBER}";
+
+            chkOptimizeClient.IsChecked = Config.OptimizeClient;
+            chkSuperLowSpecMode.IsChecked = Config.SuperLowSpecMode;
         }
 
         private void InitializeButtons()
@@ -39,6 +42,52 @@ namespace PenguLoader
             btnPlugins.Click += BtnPlugins_Click;
             btnDataStore.Click += BtnDataStore_Click;
             btnActivate.Toggled += BtnActivate_Toggled;
+            chkOptimizeClient.Click += ChkOptimizeClient_Click;
+            chkSuperLowSpecMode.Click += ChkSuperLowSpecMode_Click;
+        }
+
+        private void ChkOptimizeClient_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkOptimizeClient.IsChecked.Value)
+            {
+                // Prevent checked flickering.
+                chkOptimizeClient.IsChecked = false;
+
+                if (MessageBox.Show(this,
+                    "Optimize Client\n\n" +
+                    "It is recommended to enable this option. Enabling it will disable some unused things, " +
+                    "unused background tasks, and reduce lag.\n\n" +
+                    "Do you want to continue?",
+                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                {
+                    chkOptimizeClient.IsChecked = true;
+                }
+            }
+
+            Config.OptimizeClient = chkOptimizeClient.IsChecked.Value;
+        }
+
+        private void ChkSuperLowSpecMode_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkSuperLowSpecMode.IsChecked.Value)
+            {
+                // Prevent checked flickering.
+                chkSuperLowSpecMode.IsChecked = false;
+
+                if (MessageBox.Show(this,
+                    "Super Low Spec Mode\n\n" +
+                    "This option extends the default Low Spec Mode. " +
+                    "Enabling it will disable all transition and animation effects, " +
+                    "also greatly reduce lag and increase response speed.\n\n" +
+                    "It's very helpful for low PC, but may cause bug. Please report your issues to help us improve this mode.\n\n" +
+                    "Do you want to continue?",
+                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                {
+                    chkSuperLowSpecMode.IsChecked = true;
+                }
+            }
+
+            Config.SuperLowSpecMode = chkSuperLowSpecMode.IsChecked.Value;
         }
 
         private void OnMainWindowLoaded(object sender, RoutedEventArgs e)
@@ -83,7 +132,7 @@ namespace PenguLoader
             catch (Exception ex)
             {
                 var message = $"Failed to perform activation.\nError: {ex.Message}\n\nPlease capture the error message and click Yes to report it.";
-                var result = ShowMessage(message, Program.Name, MessageBoxImage.Warning, MessageBoxButton.YesNo);
+                var result = MessageBox.Show(message, Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
@@ -102,28 +151,23 @@ namespace PenguLoader
             {
                 if (!Module.Exists())
                 {
-                    ShowMessage("Failed to activate the Loader: \"core.dll\" not found.", Program.Name, MessageBoxImage.Error);
+                    MessageBox.Show("Failed to activate the Loader: \"core.dll\" not found.", Program.Name, MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else if (Module.Activate())
                 {
-                    PromptRestart("The Loader has been activated successfully.", false);
+                    PromptRestart("The Loader has been ACTIVATED successfully.", false);
                 }
                 else
                 {
-                    ShowMessage("Failed to activate the Loader.", Program.Name, MessageBoxImage.Error);
+                    MessageBox.Show("Failed to activate the Loader.", Program.Name, MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
             {
                 Module.Deactivate();
-                PromptRestart("The Loader has been deactivated successfully.", true);
+                PromptRestart("The Loader has been DEACTIVATED successfully.", true);
             }
         }
-
-        private MessageBoxResult ShowMessage(string message, string caption, MessageBoxImage icon, MessageBoxButton button = MessageBoxButton.OK)
-            => icon == MessageBoxImage.Question
-                ? MessageBox.Show(this, message, caption, MessageBoxButton.YesNo, icon)
-                : MessageBox.Show(this, message, caption, MessageBoxButton.OK, icon);
 
         private void PromptRestart(string message, bool isDeactivaed)
         {
@@ -133,12 +177,12 @@ namespace PenguLoader
                     Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     LCU.KillUxAndRestart();
-                    ShowMessage(message, Program.Name, MessageBoxImage.Information);
+                    MessageBox.Show(message, Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             else
             {
-                ShowMessage(message, Program.Name, MessageBoxImage.Information);
+                MessageBox.Show(message, Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 

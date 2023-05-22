@@ -180,9 +180,30 @@ private:
     static void CEF_CALLBACK _cancel(struct _cef_resource_handler_t* self) { }
 };
 
-cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path)
+void RegisterRiotClientSchemeHandlerFactory()
 {
-    return new RiotClientResourceHandler(frame, path);
+    struct RiotClientSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
+    {
+        RiotClientSchemeHandlerFactory() : CefRefCount(this)
+        {
+            cef_scheme_handler_factory_t::create = create;
+        }
+
+        static cef_resource_handler_t* CEF_CALLBACK create(
+            struct _cef_scheme_handler_factory_t* self,
+            struct _cef_browser_t* browser,
+            struct _cef_frame_t* frame,
+            const cef_string_t* scheme_name,
+            struct _cef_request_t* request)
+        {
+            CefScopedStr url{ request->get_url(request) };
+            auto path = url.str + 18;
+
+            return new RiotClientResourceHandler(frame, path);
+        }
+    };
+
+    CefRegisterSchemeHandlerFactory(&"https"_s, &CefStr("riotclient"), new RiotClientSchemeHandlerFactory());
 }
 
 void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken)

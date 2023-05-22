@@ -19,6 +19,12 @@ var reloadClient = function () {
     ReloadClient();
 };
 
+var restartClient = function () {
+    fetch('/riotclient/kill-and-restart-ux', {
+        method: 'POST'
+    });
+};
+
 var DataStore = new function () {
     native function LoadData();
     native function SaveData();
@@ -46,12 +52,21 @@ var DataStore = new function () {
         has(key) {
             return data().has(String(key));
         },
-        get(key) {
-            return data().get(String(key));
+        get(key, fallback) {
+            key = String(key);
+            if (data().has(key)) {
+                return data().get(key);
+            }
+            return fallback;
         },
         set(key, value) {
-            data().set(String(key), value);
-            commitData();
+            if (typeof key === 'function' || typeof key === 'object') {
+                return false;
+            } else {
+                data().set(String(key), value);
+                commitData();
+                return true;
+            }
         },
         remove(key) {
             var result = data().delete(String(key));
@@ -202,4 +217,58 @@ var __hookEvents = function () {
     };
 
     delete window['__hookEvents'];
+};
+
+var __initSuperPotatoMode = function () {
+    const GLOBAL_STYLE = `
+  *:not(.store-loading):not(.spinner):not([animated]):not(.lol-uikit-vignette-celebration-layer *), *:before, *:after {
+    transition: none !important;
+    transition-property: none !important;
+    animation: none !important;
+  }
+`;
+    const SHADOW_STYLE = `
+  *:not(.spinner):not([animated]), *:before, *:after {
+    transition: none !important;
+    transition-property: none !important;
+    animation: none !important;
+  }
+  .section-glow {
+    transform: none !important;
+  }
+`;
+    function main() {
+        const style = document.createElement('style');
+        style.textContent = GLOBAL_STYLE;
+        document.body.appendChild(style);
+
+        const createElement = document.createElement;
+        document.createElement = function (name) {
+            const elm = createElement.apply(this, arguments);
+
+            if (elm.shadowRoot && elm.shadowRoot.children.length > 0) {
+                const style = elm.shadowRoot.children[0];
+                if (style instanceof HTMLStyleElement) {
+                    style.textContent += SHADOW_STYLE;
+                }
+            }
+
+            return elm;
+        };
+
+        fetch('/lol-settings/v1/local/lol-user-experience', {
+            method: 'PATCH',
+            headers: {
+                "content-type": "application/json"
+            },
+            body: JSON.stringify({
+                schemaVersion: 3,
+                data: { potatoModeEnabled: true }
+            })
+        });
+    }
+
+    window.addEventListener('load', main);
+
+    delete window['__initSuperPotatoMode'];
 };

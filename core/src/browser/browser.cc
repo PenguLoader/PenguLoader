@@ -18,8 +18,8 @@ void PrepareDevTools();
 void OpenDevTools_Internal(bool remote);
 void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame);
 
-cef_resource_handler_t *CreateAssetsResourceHandler(const wstring &path, bool isPlugins);
-cef_resource_handler_t *CreateRiotClientResourceHandler(cef_frame_t *frame, wstring path);
+void RegisterAssetsSchemeHandlerFactory();
+void RegisterRiotClientSchemeHandlerFactory();
 void SetRiotClientCredentials(const wstring &appPort, const wstring &authToken);
 
 void OpenInternalServer();
@@ -111,52 +111,6 @@ static void HookClient(cef_client_t *client)
         return handler;
     };
 
-    // Hook RequestHandler.
-    static auto Old_GetRequestHandler = client->get_request_handler;
-    client->get_request_handler = [](struct _cef_client_t* self) -> cef_request_handler_t*
-    {
-        auto handler = Old_GetRequestHandler(self);
-
-        static auto Old_GetResourceRequestHandler = handler->get_resource_request_handler;
-        handler->get_resource_request_handler = [](
-            struct _cef_request_handler_t* self,
-            struct _cef_browser_t* browser,
-            struct _cef_frame_t* frame,
-            struct _cef_request_t* request,
-            int is_navigation,
-            int is_download,
-            const cef_string_t* request_initiator,
-            int* disable_default_handling) -> cef_resource_request_handler_t*
-        {
-            auto handler = Old_GetResourceRequestHandler(self, browser, frame, request,
-                is_navigation, is_download, request_initiator, disable_default_handling);
-
-            static auto Old_GetResourceHandler = handler->get_resource_handler;
-            handler->get_resource_handler = [](
-                struct _cef_resource_request_handler_t* self,
-                struct _cef_browser_t* browser,
-                struct _cef_frame_t* frame,
-                struct _cef_request_t* request) -> cef_resource_handler_t*
-            {
-                CefScopedStr url{ request->get_url(request) };
-                cef_resource_handler_t *handler = Old_GetResourceHandler(self, browser, frame, request);
-
-                if (wcsncmp(url.str, L"https://assets/", 15) == 0)
-                    return CreateAssetsResourceHandler(url.str + 14, false);
-                if (wcsncmp(url.str, L"https://plugins/", 16) == 0)
-                    return CreateAssetsResourceHandler(url.str + 15, true);
-                if (wcsncmp(url.str, L"https://riotclient/", 19) == 0)
-                    return CreateRiotClientResourceHandler(frame, url.str + 18);
-
-                return handler;
-            };
-
-            return handler;
-        };
-
-        return handler;
-    };
-
     static auto GetJSDialogHandler = client->get_jsdialog_handler;
     client->get_jsdialog_handler = [](struct _cef_client_t* self)
     {
@@ -208,7 +162,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
         HookClient(client);
     }
 
-    return Old_CefBrowserHost_CreateBrowser(windowInfo, client, url, settings, extra_info, request_context);
+    return Old_CefBrowserHost_CreateBrowser(windowInfo, client, url, settings, extra_info, nullptr);
 }
 
 static decltype(cef_app_t::on_before_command_line_processing) Old_OnBeforeCommandLineProcessing;
@@ -226,9 +180,11 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 
     auto chromiumArgs = config::getConfigValue(L"ChromiumArgs");
     if (!chromiumArgs.empty())
+    {
         args += L" " + chromiumArgs;
+    }
 
-    if (config::getConfigValue(L"NoProxyServer") == L"0")
+    if (!config::getConfigValueBool(L"NoProxyServer", true))
     {
         size_t pos = args.find(L"--no-proxy-server");
         if (pos != std::wstring::npos)
@@ -241,24 +197,54 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 
     Old_OnBeforeCommandLineProcessing(self, process_type, command_line);
 
-    auto sPort = config::getConfigValue(L"RemoteDebuggingPort");
-    REMOTE_DEBUGGING_PORT = wcstol(sPort.c_str(), NULL, 10);
-    if (REMOTE_DEBUGGING_PORT != 0) {
+    if (REMOTE_DEBUGGING_PORT = config::getConfigValueInt(L"RemoteDebuggingPort", 0))
+    {
         // Set remote debugging port.
         command_line->append_switch_with_value(command_line,
             &"remote-debugging-port"_s, &CefStr(std::to_string(REMOTE_DEBUGGING_PORT)));
     }
 
-    if (config::getConfigValue(L"DisableWebSecurity") == L"1")
+    if (config::getConfigValueBool(L"DisableWebSecurity", false))
     {
         // Disable web security.
         command_line->append_switch(command_line, &"disable-web-security"_s);
     }
 
-    if (config::getConfigValue(L"IgnoreCertificateErrors") == L"1")
+    if (config::getConfigValueBool(L"IgnoreCertificateErrors", false))
     {
         // Ignore invalid certs.
         command_line->append_switch(command_line, &"ignore-certificate-errors"_s);
+    }
+
+    if (config::getConfigValueBool(L"OptimizeClient", true))
+    {
+        // Optimize Client.
+        command_line->append_switch(command_line, &"disable-async-dns"_s);
+        command_line->append_switch(command_line, &"disable-plugins"_s);
+        command_line->append_switch(command_line, &"disable-extensions"_s);
+        command_line->append_switch(command_line, &"disable-background-networking"_s);
+        command_line->append_switch(command_line, &"disable-background-timer-throttling"_s);
+        command_line->append_switch(command_line, &"disable-backgrounding-occluded-windows"_s);
+        command_line->append_switch(command_line, &"disable-renderer-backgrounding"_s);
+        command_line->append_switch(command_line, &"disable-metrics"_s);
+        command_line->append_switch(command_line, &"disable-component-update"_s);
+        command_line->append_switch(command_line, &"disable-domain-reliability"_s);
+        command_line->append_switch(command_line, &"disable-translate"_s);
+        command_line->append_switch(command_line, &"disable-gpu-watchdog"_s);
+        command_line->append_switch(command_line, &"disable-renderer-accessibility"_s);
+        command_line->append_switch(command_line, &"enable-parallel-downloading"_s);
+        command_line->append_switch(command_line, &"enable-new-download-backend"_s);
+        command_line->append_switch(command_line, &"enable-quic"_s);
+        command_line->append_switch(command_line, &"no-pings"_s);
+        command_line->append_switch(command_line, &"no-sandbox"_s);
+    }
+
+    if (config::getConfigValueBool(L"SuperLowSpecMode", false))
+    {
+        // Super Low Spec Mode.
+        command_line->append_switch(command_line, &"disable-smooth-scrolling"_s);
+        command_line->append_switch(command_line, &"wm-window-animations-disabled"_s);
+        command_line->append_switch_with_value(command_line, &"animation-duration-scale"_s, &"0"_s);
     }
 }
 
@@ -274,6 +260,24 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     GetEnvironmentVariableW(L"LOCALAPPDATA", cachePath, _countof(cachePath));
     lstrcatW(cachePath, L"\\Riot Games\\League of Legends\\Cache");
     const_cast<cef_settings_t *>(settings)->cache_path = CefStr(cachePath).forawrd();
+    //const_cast<cef_settings_t *>(settings)->log_severity = LOGSEVERITY_DISABLE;
+
+    static auto GetBrowserProcessHandler = app->get_browser_process_handler;
+    app->get_browser_process_handler = [](cef_app_t *self)
+    {
+        auto handler = GetBrowserProcessHandler(self);
+        
+        static auto OnContextIntialized = handler->on_context_initialized;
+        handler->on_context_initialized = [](cef_browser_process_handler_t *self)
+        {
+            RegisterAssetsSchemeHandlerFactory();
+            RegisterRiotClientSchemeHandlerFactory();
+
+            OnContextIntialized(self);
+        };
+
+        return handler;
+    };
 
     return Old_CefInitialize(args, settings, app, windows_sandbox_info);
 }

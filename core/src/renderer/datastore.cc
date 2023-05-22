@@ -1,11 +1,14 @@
 #include "../internal.h"
 #include <fstream>
 
-static void TransformData(string &data)
+static void TransformData(vector<char> &data)
 {
-    const std::string key = "A5dgY6lz9fpG9kGNiH1mZ";
-    for (size_t i = 0; i < data.length(); i++)
-        data[i] = (uint8_t)data[i] ^ (uint8_t)key[i % key.length()];
+    static const std::string key = "A5dgY6lz9fpG9kGNiH1mZ";
+
+    for (size_t i = 0; i < data.size(); i++)
+    {
+        (uint8_t &)data[i] ^= (uint8_t)key[i % key.length()];
+    }
 }
 
 static wstring GetDataPath()
@@ -13,31 +16,50 @@ static wstring GetDataPath()
     return config::getLoaderDir() + L"\\datastore";
 }
 
-void LoadData(string &data)
+static void LoadData(string &json)
 {
-    std::ifstream stream(GetDataPath());
+    std::ifstream stream(GetDataPath(), std::ios::binary);
 
     if (stream.good())
     {
-        data.assign((std::istreambuf_iterator<char>(stream)),
-            (std::istreambuf_iterator<char>()));
-        TransformData(data);
+        stream.seekg(0, std::ios::end);
+        size_t fileSize = stream.tellg();
+        stream.seekg(0, std::ios::beg);
+
+        vector<char> buffer(fileSize);
+        stream.read(buffer.data(), fileSize);
+
+        TransformData(buffer);
+        json.assign(buffer.begin(), buffer.end());
+    }
+    else
+    {
+        json.assign("{}");
     }
 
     stream.close();
+
+#if _DEBUG
+    printf("datastore.load: %.*s\n", (int)json.length(), json.c_str());
+#endif
 }
 
-void SaveData(string &data)
+static void SaveData(string &json)
 {
-    std::ofstream stream(GetDataPath());
+    std::ofstream stream(GetDataPath(), std::ios::binary);
 
     if (stream.good())
     {
-        TransformData(data);
-        stream.write(data.c_str(), data.length());
+        vector<char> buffer(json.begin(), json.end());
+        TransformData(buffer);
+        stream.write(buffer.data(), buffer.size());
     }
 
     stream.close();
+
+#if _DEBUG
+    printf("datastore.save: %.*s\n", (int)json.length(), json.c_str());
+#endif
 }
 
 bool HandleDataStore(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval)
