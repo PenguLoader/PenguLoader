@@ -25,6 +25,12 @@ var restartClient = function () {
     });
 };
 
+var getScriptPath = function () {
+    var error = new Error();
+    var stack = error.stack;
+    return stack.match(/(?:http|https):\/\/[^\s]+\.js/g)?.[0];
+}
+
 var DataStore = new function () {
     native function LoadData();
     native function SaveData();
