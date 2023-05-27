@@ -98,7 +98,10 @@ namespace PenguLoader.Main
             {
                 var content = File.ReadAllText(path, Encoding.UTF8);
                 plugin.Author = GetTagValue(content, "author");
-                plugin.Link = GetTagValue(content, "link");
+
+                var link = GetTagValue(content, "link");
+                if (link.StartsWith("http://") || link.StartsWith("https://"))
+                    plugin.Link = link;
             }
         }
 
