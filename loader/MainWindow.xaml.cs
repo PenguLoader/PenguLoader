@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using ModernWpf;
 using PenguLoader.Main;
@@ -25,7 +26,7 @@ namespace PenguLoader
             WindowStyle = WindowStyle.ToolWindow;
             ShowInTaskbar = true;
 
-            btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
+            btnPlugins.Content = $"Manage plugins ({Plugins.All().Count})";
             txtVersion.Text = $"v{Version.VERSION}.{Version.BUILD_NUMBER}";
 
             chkOptimizeClient.IsChecked = Config.OptimizeClient;
@@ -39,11 +40,35 @@ namespace PenguLoader
             btnHomepage.Click += (sender, args) => Utils.OpenLink(Program.HomepageUrl);
             btnTheme.Click += BtnTheme_Click;
             btnAssets.Click += BtnAssets_Click;
-            btnPlugins.Click += BtnPlugins_Click;
             btnDataStore.Click += BtnDataStore_Click;
             btnActivate.Toggled += BtnActivate_Toggled;
             chkOptimizeClient.Click += ChkOptimizeClient_Click;
             chkSuperLowSpecMode.Click += ChkSuperLowSpecMode_Click;
+
+            btnPlugins.Click += delegate
+            {
+                var plugins = Plugins.All();
+                spPlugins.Children.Clear();
+
+                foreach (var plugin in plugins)
+                {
+                    var item = new PluginItem(plugin);
+                    spPlugins.Children.Add(item);
+                }
+
+                gPluginManager.Visibility = Visibility.Visible;
+            };
+
+            btnManageOK.Click += delegate
+            {
+                spPlugins.Children.Clear();
+                gPluginManager.Visibility = Visibility.Hidden;
+            };
+
+            btnOpenPlugins.Click += delegate
+            {
+                Utils.OpenFolder(Config.PluginsDir);
+            };
         }
 
         private void ChkOptimizeClient_Click(object sender, RoutedEventArgs e)
@@ -118,8 +143,6 @@ namespace PenguLoader
         }
 
         private void BtnAssets_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.AssetsDir);
-
-        private void BtnPlugins_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.PluginsDir);
 
         private void BtnDataStore_Click(object sender, RoutedEventArgs e) => DataStore.Dump();
 

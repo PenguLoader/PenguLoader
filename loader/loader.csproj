@@ -71,6 +71,9 @@
     </ApplicationDefinition>
     <Compile Include="Main\DataStore.cs" />
     <Compile Include="Main\Native.cs" />
+    <Compile Include="PluginItem.xaml.cs">
+      <DependentUpon>PluginItem.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Version.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -84,6 +87,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="PluginItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Properties\DesignTimeResources.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

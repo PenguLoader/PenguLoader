@@ -13,7 +13,6 @@
     ResizeMode="CanMinimize"
     BorderThickness="0"
     WindowStartupLocation="CenterScreen"
-    Background="White"
     WindowStyle="None"
     ui:WindowHelper.UseModernWindowStyle="True"
     ui:TitleBar.ExtendViewIntoTitleBar="True"
@@ -111,6 +110,22 @@
             </ui:ToggleSwitch>
             <CheckBox x:Name="chkOptimizeClient" Content="Optimize Client" FontSize="13" HorizontalAlignment="Left" Margin="25,147,0,0" VerticalAlignment="Top"/>
             <CheckBox x:Name="chkSuperLowSpecMode" Content="Super Low Spec Mode" FontSize="13" HorizontalAlignment="Left" Margin="25,179,0,0" VerticalAlignment="Top"/>
+
+            <Grid x:Name="gPluginManager" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Visibility="Hidden">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="50" />
+                </Grid.RowDefinitions>
+                <ScrollViewer Grid.Row="0">
+                    <StackPanel x:Name="spPlugins">
+                    </StackPanel>
+                </ScrollViewer>
+                <Grid Grid.Row="1" Background="#2AAA">
+                    <TextBlock x:Name="tManagePlugins" Text="Manage your plugins" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="25,0,0,0" />
+                    <Button x:Name="btnOpenPlugins" Content="Open folder" FontSize="12" HorizontalAlignment="Right" Margin="0,0,100,0" VerticalAlignment="Center" Width="90" Height="30"/>
+                    <Button x:Name="btnManageOK" Content="Back" FontSize="12" HorizontalAlignment="Right" Margin="0,0,25,0" VerticalAlignment="Center" Width="60" Height="30"/>
+                </Grid>
+            </Grid>
         </Grid>
     </Grid>
 </Window>
