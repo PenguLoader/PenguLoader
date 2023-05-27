@@ -1,5 +1,10 @@
 {
   "name": "pengu-loader",
+  "author": "nomi-san",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/PenguLoader/PenguLoader/tree/main/plugins/%40default"
+  },
   "description": "The first Pengu Loader plug-in, built for itself",
   "private": true,
   "version": "0.0.1",

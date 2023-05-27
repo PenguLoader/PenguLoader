@@ -15,6 +15,16 @@ const getIndexCode = (port: number) => (
 });`
 );
 
+const generateJsdoc = () => (
+`/**
+ * @name @default
+ * @author ${pkg.author}
+ * @description ${pkg.description}
+ * @link ${pkg.repository.url}
+ */
+`
+)
+
 let port: number;
 const outDir = resolve(__dirname, 'dist');
 const pluginsDir = resolve(__dirname, pkg.config.loaderPath, 'plugins', PLUGIN_NAME);
@@ -79,7 +89,8 @@ export default defineConfig({
           .replace(/^/, 'window.addEventListener("load", function () {\n')
           .replace(/$/, '});')
           // Import CSS module
-          .replace(/^/, 'import "./index.css";\n');
+          .replace(/^/, 'import "./index.css";\n')
+          .replace(/^/, generateJsdoc());
         await writeFile(indexJs, jsCode);
 
         const cssCode = (await readFile(indexCss, 'utf-8'))
