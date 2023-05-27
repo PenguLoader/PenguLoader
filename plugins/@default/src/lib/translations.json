@@ -16,6 +16,14 @@
       "donotshowagain": "Không hiển thị lại",
       "has_new_ver": "Đã có phiên bản mới",
       "update_tip": "Bạn nên đóng Client và chạy Pengu Loader để cập nhật nó."
+    },
+    "zh": {
+      "welcome": "\u55e8\uff01 %name%\uff0c\u6b64\u5f39\u7a97\u662f\u8ba9\u4e86\u8ba9\u60a8\u77e5\u9053\u63d2\u4ef6\u5df2\u7ecf\u6210\u529f\u88ab\u8f7d\u5165\u3002",
+      "checkout_links": "\u52a0\u5165\u6211\u4eec\u7684 %discord% \u6765\u83b7\u5f97\u66f4\u591a\u6709\u8da3\u7684\u63d2\u4ef6\u548c\u4e3b\u9898\u3002\u8bbf\u95ee %github% \u4ed3\u5e93\u4ee5\u4e86\u89e3\u6709\u5173\u521b\u5efa\u63d2\u4ef6\u7684\u66f4\u591a\u4fe1\u606f🤘",
+      "devtools_tip": "\u5c1d\u8bd5\u6309\u4e0b %key% \u952e\u6765\u542f\u52a8\u5f00\u53d1\u8005\u5de5\u5177 😉",
+      "donotshowagain": "\u4e0d\u518d\u663e\u793a",
+      "has_new_ver": "\u68c0\u6d4b\u5230\u65b0\u7248\u672c\u53d1\u5e03",
+      "update_tip": "\u60a8\u5e94\u8be5\u5173\u95ed\u82f1\u96c4\u8054\u76df\u5ba2\u6237\u7aef\u5e76\u8fd0\u884c Pengu Loader \u6765\u83b7\u53d6\u5b83\u3002"
     }
   }
 }
