@@ -30,7 +30,7 @@ namespace PenguLoader
             {
                 if (!string.IsNullOrEmpty(plugin.Author))
                 {
-                    tLink.Text = "@" + plugin.Author;
+                    tLink.Text = plugin.Author;
                 }
                 else
                 {

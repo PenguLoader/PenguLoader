@@ -97,7 +97,9 @@ namespace PenguLoader.Main
             if (File.Exists(path))
             {
                 var content = File.ReadAllText(path, Encoding.UTF8);
-                plugin.Author = GetTagValue(content, "author");
+
+                var author = GetTagValue(content, "author");
+                plugin.Author = author.Contains("#") ? author : '@' + author;
 
                 var link = GetTagValue(content, "link");
                 if (link.StartsWith("http://") || link.StartsWith("https://"))

@@ -10,7 +10,7 @@
     <Grid Margin="10,0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="100" />
+            <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
         <CheckBox Grid.Column="0" x:Name="tName" />
         <TextBlock Grid.Column="1" x:Name="tLink" VerticalAlignment="Center" HorizontalAlignment="Right" />
