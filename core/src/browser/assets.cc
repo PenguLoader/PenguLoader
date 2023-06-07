@@ -42,6 +42,20 @@ const content = window.requireFile(url);
 export default JSON.parse(content);
 )";
 
+static const auto SCRIPT_IMPORT_TOML = u8R"(
+import { parse } from 'https://esm.sh/smol-toml@1.1.0';
+const url = import.meta.url.replace(/\?.*$/, '');
+const content = window.requireFile(url);
+export default parse(content);
+)";
+
+static const auto SCRIPT_IMPORT_YAML = u8R"(
+import { load } from 'https://esm.sh/js-yaml@4.1.0';
+const url = import.meta.url.replace(/\?.*$/, '');
+const content = window.requireFile(url);
+export default load(content);
+)";
+
 static const auto SCRIPT_IMPORT_RAW = u8R"(
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = window.requireFile(url);
@@ -58,6 +72,8 @@ enum ImportType
     IMPORT_DEFAULT = 0,
     IMPORT_CSS,
     IMPORT_JSON,
+    IMPORT_TOML,
+    IMPORT_YAML,
     IMPORT_RAW,
     IMPORT_URL
 };
@@ -80,6 +96,12 @@ public:
                 break;
             case IMPORT_JSON:
                 data_.assign(SCRIPT_IMPORT_JSON);
+                break;
+            case IMPORT_TOML:
+                data_.assign(SCRIPT_IMPORT_TOML);
+                break;
+            case IMPORT_YAML:
+                data_.assign(SCRIPT_IMPORT_YAML);
                 break;
             case IMPORT_RAW:
                 data_.assign(SCRIPT_IMPORT_RAW);
@@ -244,6 +266,10 @@ private:
                             import = IMPORT_CSS;
                         else if (ext == L"json")
                             import = IMPORT_JSON;
+                        else if (ext == L"toml")
+                            import = IMPORT_TOML;
+                        else if (ext == L"yml" || ext == L"yaml")
+                            import = IMPORT_YAML;
                         else if (known_assets.find(ext) != known_assets.end())
                             import = IMPORT_URL;
                     }
