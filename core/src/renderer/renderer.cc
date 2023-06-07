@@ -208,7 +208,7 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
     return Old_OnProcessMessageReceived(self, browser, frame, source_process, message);
 }
 
-static Hook<decltype(&cef_execute_process)> Old_CefExecuteProcess;
+static Hook<decltype(cef_execute_process)> Old_CefExecuteProcess;
 static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app, void* windows_sandbox_info)
 {
     // Hook RenderProcessHandler.

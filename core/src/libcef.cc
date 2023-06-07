@@ -75,13 +75,11 @@ static void WarnInvalidVersion()
 #define THISCALL_PARAMS void *_ecx, void *_edx
 #endif
 
-typedef cef_color_t(__fastcall * GetBackgroundColor_t)(THISCALL_PARAMS, cef_browser_settings_t *, cef_state_t);
-
-static Hook<GetBackgroundColor_t> Old_GetBackgroundColor;
 static cef_color_t __fastcall Hooked_GetBackgroundColor(THISCALL_PARAMS, cef_browser_settings_t *settings, cef_state_t state)
 {
     return 0; // fully transparent :)
 }
+static Hook<decltype(Hooked_GetBackgroundColor)> Old_GetBackgroundColor;
 
 bool LoadLibcefDll(bool is_browser)
 {
@@ -136,7 +134,7 @@ bool LoadLibcefDll(bool is_browser)
 #else
             const char *pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
 #endif
-            auto GetBackgroundColor = (GetBackgroundColor_t)utils::patternScan(libcef, pattern);
+            auto GetBackgroundColor = (decltype(&Hooked_GetBackgroundColor))utils::patternScan(libcef, pattern);
 
             // Hook CefContext::GetBackgroundColor().
             Old_GetBackgroundColor.hook(GetBackgroundColor, Hooked_GetBackgroundColor);

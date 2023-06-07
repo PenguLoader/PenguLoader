@@ -139,7 +139,7 @@ static void HookClient(cef_client_t *client)
     };
 }
 
-static Hook<decltype(&cef_browser_host_create_browser)> Old_CefBrowserHost_CreateBrowser;
+static Hook<decltype(cef_browser_host_create_browser)> Old_CefBrowserHost_CreateBrowser;
 static int Hooked_CefBrowserHost_CreateBrowser(
     const cef_window_info_t* windowInfo,
     struct _cef_client_t* client,
@@ -248,7 +248,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     }
 }
 
-static Hook<decltype(&cef_initialize)> Old_CefInitialize;
+static Hook<decltype(cef_initialize)> Old_CefInitialize;
 static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     const struct _cef_settings_t* settings, cef_app_t* app, void* windows_sandbox_info)
 {
@@ -282,7 +282,7 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     return Old_CefInitialize(args, settings, app, windows_sandbox_info);
 }
 
-static Hook<decltype(&CreateProcessW)> Old_CreateProcessW;
+static Hook<decltype(CreateProcessW)> Old_CreateProcessW;
 static BOOL WINAPI Hooked_CreateProcessW(
     _In_opt_ LPCWSTR lpApplicationName,
     _Inout_opt_ LPWSTR lpCommandLine,
@@ -314,7 +314,7 @@ static BOOL WINAPI Hooked_CreateProcessW(
     return ret;
 }
 
-static Hook<decltype(&CreateWindowExW)> Old_CreateWindowExW;
+static Hook<decltype(CreateWindowExW)> Old_CreateWindowExW;
 static HWND WINAPI Hooked_CreateWindowExW(
     _In_ DWORD dwExStyle,
     _In_opt_ LPCWSTR lpClassName,

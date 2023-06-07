@@ -1,15 +1,19 @@
 #pragma once
 
 #include <mutex>
-#include <utility> 
 #include <windows.h>
 
 // Special thanks to https://github.com/nbqofficial/divert/
 
-template<typename Fn>
-class Hook
+template<typename>
+class Hook;
+
+template<typename R, typename ...Args>
+class Hook<R(Args...)>
 {
 public:
+    using Fn = R(*)(Args...);
+
     Hook() : orig_func_(nullptr)
     {
     }
@@ -35,7 +39,7 @@ public:
         memcpy(orig_code_, orig, sizeof(Shellcode));
 
         Shellcode code;
-        code.addr = static_cast<void *>(hook);
+        code.addr = reinterpret_cast<intptr_t>(hook);
         memcpy_safe(orig, &code, sizeof(Shellcode));
 
         return true;
@@ -50,13 +54,14 @@ public:
         return false;
     }
 
-    template<typename ...Args>
-    auto operator ()(Args &&...args)
+    R operator ()(Args ...args)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         {
             RestoreGuard temp(orig_func_, orig_code_);
-            return orig_func_(std::forward<Args>(args)...);
+            {
+                return orig_func_(args...);
+            }
         }
     }
 
@@ -65,18 +70,16 @@ private:
     void *orig_code_;
     std::mutex mutex_;
 
-    using byte = unsigned char;
-
 #   pragma pack(push, 1)
     struct Shellcode
     {
 #       ifdef _WIN64
-        byte movabs = 0x48;     // eax -> rax
-#       endif
-        byte mov_eax = 0xB8;
-        void *addr;
-        byte push_eax = 0x50;
-        byte ret = 0xC3;
+        uint8_t movabs = 0x48;      // x86                  x86_64                 
+#       endif                       //
+        uint8_t mov_eax = 0xB8;     // mov eax [addr]   |   movabs rax [addr]
+        intptr_t addr;              //
+        uint8_t push_eax = 0x50;    // push eax         |   push rax
+        uint8_t ret = 0xC3;         // ret              |   ret
     };
 #   pragma pack(pop)
 
@@ -101,7 +104,8 @@ private:
             memcpy_safe(func_, backup_, sizeof(Shellcode));
         }
 
+    private:
         void *func_;
-        byte backup_[sizeof(Shellcode)];
+        uint8_t backup_[sizeof(Shellcode)];
     };
 };
