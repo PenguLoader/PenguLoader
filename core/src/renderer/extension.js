@@ -1,3 +1,4 @@
+('hasOwn' in Object) || (Object.hasOwn = Object.call.bind(Object.hasOwnProperty));
 
 var openDevTools = function (remote) {
     native function OpenDevTools();
@@ -28,8 +29,8 @@ var restartClient = function () {
 var getScriptPath = function () {
     var error = new Error();
     var stack = error.stack;
-    return stack.match(/(?:http|https):\/\/[^\s]+\.js/g)?.[0];
-}
+    return stack.match(/(?:http|https):\/\/[^\s]+\.js/g) ?.[0];
+};
 
 var DataStore = new function () {
     native function LoadData();
