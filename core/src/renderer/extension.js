@@ -29,7 +29,7 @@ var restartClient = function () {
 var getScriptPath = function () {
     var error = new Error();
     var stack = error.stack;
-    return stack.match(/(?:http|https):\/\/[^\s]+\.js/g) ?.[0];
+    return stack.match(/(?:http|https):\/\/[^\s]+\.js/g)?.[0];
 };
 
 var DataStore = new function () {
@@ -177,9 +177,9 @@ var AuthCallback = new function () {
 };
 
 var __hookEvents = function () {
-    var windowLoaded = false;
-    var windowDOMLoaded = false;
-    var documentDOMLoaded = false;
+    let windowLoaded = false;
+    let windowDOMLoaded = false;
+    let documentDOMLoaded = false;
 
     window.addEventListener('load', function () {
         windowLoaded = true;
@@ -193,32 +193,34 @@ var __hookEvents = function () {
         documentDOMLoaded = true;
     });
 
-    function trigger(listener) {
+    const once = Symbol();
+    function trigger(self, listener) {
         try {
-            listener.call(window);
+            if (listener[once]) return;
+            listener[once] = true;
+            listener.call(self);
         } catch (err) {
             console.error(err);
         }
     }
 
-    var windowAddEventListener = window.addEventListener;
+    const windowAddEventListener = window.addEventListener;
     window.addEventListener = function (type, listener, options) {
-        if (typeof listener === 'function') {
-            if (windowLoaded && type === 'load') {
-                trigger(listener);
-            } else if (windowDOMLoaded && type === 'DOMContentLoaded') {
-                trigger(listener);
-            }
+        if (windowLoaded && type === 'load') {
+            trigger(window, listener);
+            return;
+        } else if (windowDOMLoaded && type === 'DOMContentLoaded') {
+            trigger(window, listener);
+            return;
         }
         windowAddEventListener.call(window, type, listener, options);
     };
 
-    var documentAddEventListener = document.addEventListener;
+    const documentAddEventListener = document.addEventListener;
     document.addEventListener = function (type, listener, options) {
-        if (typeof listener === 'function') {
-            if (documentDOMLoaded && type === 'DOMContentLoaded') {
-                trigger(listener);
-            }
+        if (documentDOMLoaded && type === 'DOMContentLoaded') {
+            trigger(document, listener);
+            return;
         }
         documentAddEventListener.call(document, type, listener, options);
     };
