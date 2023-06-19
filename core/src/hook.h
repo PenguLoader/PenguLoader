@@ -14,7 +14,7 @@ class Hook<R(Args...)>
 public:
     using Fn = R(*)(Args...);
 
-    Hook() : orig_func_(nullptr)
+    Hook() : orig_func_(nullptr), mutex_{}
     {
     }
 
@@ -23,9 +23,9 @@ public:
         if (orig_func_ != nullptr)
         {
             std::lock_guard<std::mutex> lock(mutex_);
-
-            memcpy_safe(orig_func_, orig_code_, sizeof(Shellcode));
-            free(orig_code_);
+            {
+                memcpy_safe(orig_func_, orig_code_, sizeof(Shellcode));
+            }
         }
     }
 
@@ -35,11 +35,9 @@ public:
             return false;
 
         orig_func_ = orig;
-        orig_code_ = malloc(sizeof(Shellcode));
         memcpy(orig_code_, orig, sizeof(Shellcode));
 
-        Shellcode code;
-        code.addr = reinterpret_cast<intptr_t>(hook);
+        Shellcode code(reinterpret_cast<intptr_t>(hook));
         memcpy_safe(orig, &code, sizeof(Shellcode));
 
         return true;
@@ -58,7 +56,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(mutex_);
         {
-            RestoreGuard temp(orig_func_, orig_code_);
+            RestoreGuard<sizeof(Shellcode)> _t(orig_func_, orig_code_);
             {
                 return orig_func_(args...);
             }
@@ -66,46 +64,49 @@ public:
     }
 
 private:
-    Fn orig_func_;
-    void *orig_code_;
-    std::mutex mutex_;
-
 #   pragma pack(push, 1)
     struct Shellcode
     {
-#       ifdef _WIN64
-        uint8_t movabs = 0x48;      // x86                  x86_64                 
-#       endif                       //
-        uint8_t mov_eax = 0xB8;     // mov eax [addr]   |   movabs rax [addr]
+#   ifdef _WIN64
+        uint8_t movabs    = 0x48;   // x86                  x86_64                 
+#   endif                           //
+        uint8_t mov_eax   = 0xB8;   // mov eax [addr]   |   movabs rax [addr]
         intptr_t addr;              //
-        uint8_t push_eax = 0x50;    // push eax         |   push rax
-        uint8_t ret = 0xC3;         // ret              |   ret
+        uint8_t push_eax  = 0x50;   // push eax         |   push rax
+        uint8_t ret       = 0xC3;   // ret              |   ret
+
+        Shellcode(intptr_t addr) : addr(addr) {}
     };
 #   pragma pack(pop)
 
-    static void memcpy_safe(void *src, const void *dst, size_t size)
+    Fn orig_func_;
+    uint8_t orig_code_[sizeof(Shellcode)];
+    std::mutex mutex_;
+
+    static void memcpy_safe(void *dst, const void *src, size_t size)
     {
         DWORD op;
-        VirtualProtect(src, size, PAGE_EXECUTE_READWRITE, &op);
-        memcpy(src, dst, size);
-        VirtualProtect(src, size, op, &op);
+        VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &op);
+        memcpy(dst, src, size);
+        VirtualProtect(dst, size, op, &op);
     }
 
+    template<int size>
     struct RestoreGuard
     {
         RestoreGuard(void *func, const void *code) : func_(func)
         {
-            memcpy(backup_, func, sizeof(Shellcode));
-            memcpy_safe(func, code, sizeof(Shellcode));
+            memcpy(backup_, func, size);
+            memcpy_safe(func, code, size);
         }
 
         ~RestoreGuard()
         {
-            memcpy_safe(func_, backup_, sizeof(Shellcode));
+            memcpy_safe(func_, backup_, size);
         }
 
     private:
         void *func_;
-        uint8_t backup_[sizeof(Shellcode)];
+        uint8_t backup_[size];
     };
 };
