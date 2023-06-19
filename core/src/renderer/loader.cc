@@ -20,7 +20,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
     if (config::getConfigValueBool(L"SuperLowSpecMode", false))
         code.append(L"window.__initSuperPotatoMode(); ");
 
-    code.append(L"})(); (function () { ");
+    code.append(L"})(); window.addEventListener('load', function () { ");
 
     // Scan plugins dir.
     for (const auto &name : utils::readDir(pluginsDir + L"\\*"))
@@ -47,7 +47,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
         }
     }
 
-    code.append(L"})();");
+    code.append(L"});");
 
     // Execute script.
     CefStr script{ code };

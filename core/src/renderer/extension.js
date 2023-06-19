@@ -178,27 +178,18 @@ var AuthCallback = new function () {
 
 var __hookEvents = function () {
     let windowLoaded = false;
-    let windowDOMLoaded = false;
-    let documentDOMLoaded = false;
 
     window.addEventListener('load', function () {
         windowLoaded = true;
-    });
+    })
 
-    window.addEventListener('DOMContentLoaded', function () {
-        windowDOMLoaded = true;
-    });
-
-    document.addEventListener('DOMContentLoaded', function () {
-        documentDOMLoaded = true;
-    });
-
-    const once = Symbol();
     function trigger(self, listener) {
         try {
-            if (listener[once]) return;
-            listener[once] = true;
-            listener.call(self);
+            if (listener.hasOwnProperty('prototype')) {
+                listener.call(self);
+            } else {
+                listener(self);
+            }
         } catch (err) {
             console.error(err);
         }
@@ -208,21 +199,20 @@ var __hookEvents = function () {
     window.addEventListener = function (type, listener, options) {
         if (windowLoaded && type === 'load') {
             trigger(window, listener);
-            return;
-        } else if (windowDOMLoaded && type === 'DOMContentLoaded') {
+        } else if (document.readyState === 'complete' && type === 'DOMContentLoaded') {
             trigger(window, listener);
-            return;
+        } else {
+            windowAddEventListener.call(window, type, listener, options);
         }
-        windowAddEventListener.call(window, type, listener, options);
     };
 
     const documentAddEventListener = document.addEventListener;
     document.addEventListener = function (type, listener, options) {
-        if (documentDOMLoaded && type === 'DOMContentLoaded') {
+        if ((document.readyState === 'interactive' || document.readyState === 'complete') && type === 'DOMContentLoaded') {
             trigger(document, listener);
-            return;
+        } else {
+            documentAddEventListener.call(document, type, listener, options);
         }
-        documentAddEventListener.call(document, type, listener, options);
     };
 
     delete window['__hookEvents'];
@@ -230,7 +220,7 @@ var __hookEvents = function () {
 
 var __initSuperPotatoMode = function () {
     const GLOBAL_STYLE = `
-  *:not(.store-loading):not(.spinner):not([animated]):not(.lol-uikit-vignette-celebration-layer *), *:before, *:after {
+  *:not(.store-loading):not(.spinner):not([animated]):not(.lol-loading-screen-spinner):not(.lol-uikit-vignette-celebration-layer *), *:before, *:after {
     transition: none !important;
     transition-property: none !important;
     animation: none !important;
