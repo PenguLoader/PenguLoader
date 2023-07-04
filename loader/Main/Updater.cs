@@ -36,6 +36,22 @@ namespace PenguLoader.Main
             var update = await FetchUpdate();
             if (update == null) return;
 
+            using (var taskDialog = new TaskDialog())
+            {
+                taskDialog.WindowTitle = Program.Name;
+                taskDialog.MainInstruction = $"v{update.Version} update available!";
+                taskDialog.Content = update.Changes;
+
+                var acceptButton = new TaskDialogButton("Update now");
+                taskDialog.Buttons.Add(acceptButton);
+                taskDialog.Buttons.Add(new TaskDialogButton("Later"));
+
+                if (taskDialog.ShowDialog(MainWindow.Instance) != acceptButton)
+                {
+                    return;
+                }
+            }
+
             var dialog = new ProgressDialog()
             {
                 WindowTitle = Program.Name + " v" + update.Version,
@@ -43,15 +59,15 @@ namespace PenguLoader.Main
                 ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar
             };
 
-            var cancel = false;
             var percent = 0;
             var message = "Downloading...";
+            var cancellation = new CancellationTokenSource();
 
             dialog.DoWork += (s, e) =>
             {
                 while (percent < 100)
                 {
-                    if (cancel || dialog.CancellationPending)
+                    if (cancellation.IsCancellationRequested || dialog.CancellationPending)
                     {
                         e.Cancel = true;
                         return;
@@ -65,8 +81,7 @@ namespace PenguLoader.Main
                 dialog.ReportProgress(100, "Updating...", "Done.");
             };
 
-            MainWindow.Instance.Hide();
-            dialog.Show();
+            dialog.ShowDialog(MainWindow.Instance, cancellation.Token);
 
             try
             {
@@ -76,7 +91,7 @@ namespace PenguLoader.Main
                 await DownloadFile(update.DownloadUrl, tempFile, (downloaded, total, percent_) =>
                 {
                     percent = percent_;
-                    message = String.Format("{0:0.##} / {1:0.##} MB received.",
+                    message = string.Format("{0:0.##} / {1:0.##} MB",
                         (double)downloaded / 1024 / 1024,
                         (double)total / 1024 / 1024);
                 });
@@ -85,7 +100,7 @@ namespace PenguLoader.Main
                 ZipFile.ExtractToDirectory(tempFile, updateDir);
                 Utils.DeletePath(tempFile);
 
-                while (Module.IsLoaded())
+                while (Module.IsLoaded)
                 {
                     MessageBox.Show("Please close your League of Legends Client to apply update.",
                         Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
@@ -96,7 +111,7 @@ namespace PenguLoader.Main
             }
             catch
             {
-                cancel = true;
+                cancellation.Cancel();
 
                 MainWindow.Instance.Show();
                 MessageBox.Show(MainWindow.Instance,
@@ -124,8 +139,8 @@ namespace PenguLoader.Main
                     if (vtag.StartsWith("v"))
                         vtag = vtag.Substring(1);
 
-                    var remote = new System.Version(vtag);
-                    var local = new System.Version(Version.VERSION);
+                    var remote = new Version(vtag);
+                    var local = new Version(Program.VERSION);
 
                     if (remote.CompareTo(local) > 0)
                     {
@@ -150,11 +165,8 @@ namespace PenguLoader.Main
 
                 return null;
             }
-            catch (Exception ex)
+            catch
             {
-                MessageBox.Show(MainWindow.Instance,
-                    "Failed to check update.\n" + ex.Message,
-                    Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
                 return null;
             }
         }

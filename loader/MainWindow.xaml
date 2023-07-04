@@ -5,127 +5,63 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.modernwpf.com/2019"
-    xmlns:fa="http://schemas.fontawesome.io/icons/"
+    xmlns:fa5="http://schemas.fontawesome.com/icons/"
     xmlns:local="clr-namespace:PenguLoader"
+    xmlns:views="clr-namespace:PenguLoader.Views"
     mc:Ignorable="d"
-    Title="Pengu Loader"
-    Height="250" Width="417"
+    Height="280" Width="460"
     ResizeMode="CanMinimize"
     BorderThickness="0"
     WindowStartupLocation="CenterScreen"
-    WindowStyle="None"
     ui:WindowHelper.UseModernWindowStyle="True"
     ui:TitleBar.ExtendViewIntoTitleBar="True"
+    WindowChrome.IsHitTestVisibleInChrome="True"
 >
-    <Grid Background="{DynamicResource SystemControlBackgroundAltMediumHighBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="32" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid Grid.Row="0">
-            <ui:TitleBarControl
-                x:Name="titleBar"
-                IsActive="True"
-                Icon="icon.ico"
-                IsIconVisible="True"
-                Title="Pengu Loader" />
-            <ui:TitleBarButton
-                x:Name="btnTheme"
-                Margin="0,0,46,0"
-                ToolTip="Change theme"
-                HorizontalAlignment="Right">
-                <fa:ImageAwesome
-                    Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                    Icon="MoonOutline"
-                    Width="12" />
-            </ui:TitleBarButton>
-        </Grid>
-        <Grid Grid.Row="1">
-            <TextBlock HorizontalAlignment="Left" Margin="25,10,0,0" FontSize="13" Text="Community" VerticalAlignment="Top"/>
-            <Button
-                x:Name="btnGitHub"
-                Background="Transparent" BorderBrush="#6888" Focusable="False"
-                HorizontalAlignment="Stretch" Margin="25,36,297,0" VerticalAlignment="Top">
-                <TextBlock>
-                    GitHub
-                    <fa:ImageAwesome
-                        Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                        Icon="Github" Width="14" Margin="5,0,0,-1" />
-                </TextBlock>
-            </Button>
-            <Button
-                x:Name="btnHomepage"
-                Background="Transparent" BorderBrush="#6888" Focusable="False"
-                HorizontalAlignment="Stretch" Margin="25,78,197,0" VerticalAlignment="Top">
-                <TextBlock><Run Text="PENGU.LOL "/><InlineUIContainer>
-                        <fa:ImageAwesome
-                            Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                            Icon="ExternalLink" Width="14" Margin="5,0,0,-1" />
-                    </InlineUIContainer></TextBlock>
-            </Button>
-            <Grid Margin="0,139,0,0" Background="#2AAA">
-                <TextBlock HorizontalAlignment="Left" Margin="256,5,0,0" FontSize="16" Text="Active status:" VerticalAlignment="Top" Width="117" />
-            </Grid>
-            <Button
-                x:Name="btnAssets"
-                Content="Open assets"
-                Background="Transparent" BorderBrush="#6888"
-                Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                Focusable="False" HorizontalAlignment="Stretch" Margin="242,10,25,0" VerticalAlignment="Top"/>
-            <Button
-                x:Name="btnPlugins"
-                Content="Open plugins"
-                Background="Transparent" BorderBrush="#6888"
-                Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                Focusable="False" HorizontalAlignment="Right" Margin="0,50,25,0" VerticalAlignment="Top" Width="150"
-            />
-            <Button
-                x:Name="btnDataStore"
-                Content="Dump DataStore"
-                Background="Transparent" BorderBrush="#6888"
-                Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                Focusable="False" HorizontalAlignment="Right" Margin="0,90,25,0" VerticalAlignment="Top" Width="150"
-            />
-            <TextBlock x:Name="txtVersion" Margin="112,-26,0,0" TextWrapping="Wrap" Text="v0.0.0"
-                TextAlignment="Left" FontSize="13" VerticalAlignment="Top" HorizontalAlignment="Left" Width="108" Height="19"/>
-            <Button
-                x:Name="btnDiscord"
-                Background="Transparent" BorderBrush="#6888" Focusable="False"
-                HorizontalAlignment="Stretch" Margin="125,36,197,0" VerticalAlignment="Top">
-                <TextBlock><Run Text="Discord "/><InlineUIContainer>
-                        <fa:ImageAwesome
-                            Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                            Icon="ExternalLink" Width="14" Margin="5,0,0,-1" />
-                    </InlineUIContainer></TextBlock>
-            </Button>
-            <ui:ToggleSwitch x:Name="btnActivate" OffContent="OFF" OnContent="READY" Cursor="Hand" Focusable="False" Margin="270,174,0,13" RenderTransformOrigin="0.5,0.5" Width="100" Height="31">
-                <ui:ToggleSwitch.RenderTransform>
-                    <TransformGroup>
-                        <ScaleTransform ScaleX="1.3" ScaleY="1.3"/>
-                        <SkewTransform/>
-                        <RotateTransform/>
-                        <TranslateTransform/>
-                    </TransformGroup>
-                </ui:ToggleSwitch.RenderTransform>
-            </ui:ToggleSwitch>
-            <CheckBox x:Name="chkOptimizeClient" Content="Optimize Client" FontSize="13" HorizontalAlignment="Left" Margin="25,147,0,0" VerticalAlignment="Top"/>
-            <CheckBox x:Name="chkSuperLowSpecMode" Content="Super Low Spec Mode" FontSize="13" HorizontalAlignment="Left" Margin="25,179,0,0" VerticalAlignment="Top"/>
+    <Window.Title>
+        <MultiBinding StringFormat=" {0} v{1}">
+            <Binding Source="{x:Static local:Program.Name}" Path="." />
+            <Binding Source="{x:Static local:Program.VERSION}" Path="." />
+        </MultiBinding>
+    </Window.Title>
+    <Grid>
+        <ui:TitleBarControl
+            VerticalAlignment="Top"
+            Icon="icon.ico"
+            IsIconVisible="False"
+            IsActive="True"
+            Background="{DynamicResource SystemControlForegroundChromeMediumBrush}"
+        />
 
-            <Grid x:Name="gPluginManager" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Visibility="Hidden">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="50" />
-                </Grid.RowDefinitions>
-                <ScrollViewer Grid.Row="0">
-                    <StackPanel x:Name="spPlugins">
-                    </StackPanel>
-                </ScrollViewer>
-                <Grid Grid.Row="1" Background="#2AAA">
-                    <TextBlock x:Name="tManagePlugins" Text="Manage your plugins" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="25,0,0,0" />
-                    <Button x:Name="btnOpenPlugins" Content="Open folder" FontSize="12" HorizontalAlignment="Right" Margin="0,0,100,0" VerticalAlignment="Center" Width="90" Height="30"/>
-                    <Button x:Name="btnManageOK" Content="Back" FontSize="12" HorizontalAlignment="Right" Margin="0,0,25,0" VerticalAlignment="Center" Width="60" Height="30"/>
-                </Grid>
-            </Grid>
-        </Grid>
+        <TabControl
+            Mouse.MouseDown="MouseDragMove"
+            Background="Transparent"
+            Margin="0,-6,0,0"
+            SelectedIndex="0"
+        >
+            <TabControl.Items>
+                <TabItem Header="Loader">
+                    <ui:TabItemHelper.Icon>
+                        <ui:BitmapIcon UriSource="icon.ico" ShowAsMonochrome="False" />
+                    </ui:TabItemHelper.Icon>
+                    <Frame Source="Views/MainPage.xaml" />
+                </TabItem>
+                <TabItem Header="Plugins">
+                    <ui:TabItemHelper.Icon>
+                        <fa5:ImageAwesome Icon="Brands_Js" Foreground="#e4a228" />
+                    </ui:TabItemHelper.Icon>
+                    <Frame Source="Views/PluginsPage.xaml" />
+                </TabItem>
+            </TabControl.Items>
+        </TabControl>
+
+        <ui:TitleBarButton
+            Click="ThemeButtonClick"
+            Margin="0,0,138,0"
+            ToolTip="Change theme"
+            VerticalAlignment="Top"
+            HorizontalAlignment="Right"
+        >
+            <fa5:ImageAwesome Icon="Solid_Adjust" Width="12" Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" />
+        </ui:TitleBarButton>
     </Grid>
 </Window>

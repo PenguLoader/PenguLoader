@@ -5,7 +5,7 @@ using System.Windows.Media;
 using System.Windows;
 using PenguLoader.Main;
 
-namespace PenguLoader
+namespace PenguLoader.Views
 {
     public partial class PluginItem : UserControl
     {
@@ -34,14 +34,14 @@ namespace PenguLoader
                 }
                 else
                 {
-                    tLink.Text = "Link";
+                    tLink.Text = "Source";
                 }
 
                 if (!string.IsNullOrEmpty(plugin.Link))
                 {
                     tLink.Cursor = Cursors.Hand;
                     tLink.MouseUp += delegate { Utils.OpenLink(plugin.Link); };
-                    tLink.Foreground = new SolidColorBrush(Colors.DeepSkyBlue);
+                    tLink.Foreground = new SolidColorBrush(Colors.SeaGreen);
                 }
             }
         }

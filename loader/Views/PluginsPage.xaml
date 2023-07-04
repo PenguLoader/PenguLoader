@@ -1,0 +1,38 @@
+﻿<Page
+    x:Class="PenguLoader.Views.PluginsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:local="clr-namespace:PenguLoader.Views"
+    mc:Ignorable="d" 
+    
+    xmlns:ui="http://schemas.modernwpf.com/2019"
+    xmlns:fa5="http://schemas.fontawesome.com/icons/"
+    Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+    d:DesignHeight="260" d:DesignWidth="450"
+ >
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Page.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <fa5:ImageAwesome
+            Width="20" Height="20" Icon="Solid_Plug"
+            Spin="{Binding Path=IsLoading}"
+            Visibility="{Binding Path=IsLoading, Converter={StaticResource BoolToVis}}"
+            Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
+        />
+        <ListView Grid.Row="0" x:Name="_plugins" VirtualizingPanel.VirtualizationMode="Recycling" SelectionMode="Single" VerticalAlignment="Center" />
+        <Grid Grid.Row="1" Background="#2AAA">
+            <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Margin="25,0,0,0">
+                Available plugins: <TextBlock x:Name="_count" Text="0" />
+            </TextBlock>
+            <Button Click="ShowFolderClick" Content="Open folder" FontSize="12" HorizontalAlignment="Right" Margin="0,10,120,10" VerticalAlignment="Center" Height="30" Width="100"/>
+            <Button IsEnabled="{Binding Path=IsDone}" Click="RefreshPluginsClick" Content="Refresh" FontSize="12" HorizontalAlignment="Right" Margin="0,10,25,10" VerticalAlignment="Center" Height="30" Width="80"/>
+        </Grid>
+    </Grid>
+</Page>
