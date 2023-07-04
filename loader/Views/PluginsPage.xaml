@@ -9,8 +9,10 @@
     
     xmlns:ui="http://schemas.modernwpf.com/2019"
     xmlns:fa5="http://schemas.fontawesome.com/icons/"
-    Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
     d:DesignHeight="260" d:DesignWidth="450"
+    
+    Background="{DynamicResource SystemControlPageBackgroundAltHighBrush}"
+    Foreground="{DynamicResource SystemControlPageTextBaseHighBrush}"
  >
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />

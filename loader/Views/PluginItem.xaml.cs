@@ -18,8 +18,8 @@ namespace PenguLoader.Views
         {
             InitializeComponent();
 
-            tName.Content = plugin.Name;
             tName.IsChecked = plugin.Enabled;
+            (tName.Content as TextBlock).Text = plugin.Name;
             tName.Click += delegate { Plugins.Toggle(plugin); };
 
             if (string.IsNullOrEmpty(plugin.Author) && string.IsNullOrEmpty(plugin.Link))

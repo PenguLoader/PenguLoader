@@ -5,15 +5,17 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
     xmlns:local="clr-namespace:PenguLoader"
-    mc:Ignorable="d" 
-    d:DesignHeight="32" d:DesignWidth="400"
+    mc:Ignorable="d"
 >
-    <Grid>
+    <Grid Width="420" Height="36">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <CheckBox Grid.Column="0" x:Name="tName" HorizontalAlignment="Stretch" />
-        <TextBlock Grid.Column="1" x:Name="tLink" VerticalAlignment="Center" />
+        <CheckBox Grid.Column="0" x:Name="tName" HorizontalAlignment="Stretch">
+            <TextBlock TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+        </CheckBox>
+        <TextBlock Grid.Column="1" x:Name="tLink" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+            TextAlignment="Right" TextTrimming="CharacterEllipsis"  TextWrapping="NoWrap" />
     </Grid>
 </UserControl>
