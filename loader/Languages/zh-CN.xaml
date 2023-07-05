@@ -10,7 +10,7 @@
     <system:String x:Key="t_super_potato_mode">超低配模式</system:String>
 
     <system:String x:Key="t_available_plugins">可用插件</system:String>
-    <system:String x:Key="t_open_plugins">打开插件</system:String>
+    <system:String x:Key="t_open_plugins">打开插件目录</system:String>
     <system:String x:Key="t_refresh">刷新</system:String>
 
     <system:String x:Key="t_msg_module_not_found">未找到 "core.dll"，请重新安装程序。</system:String>
