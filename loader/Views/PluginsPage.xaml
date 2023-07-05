@@ -31,10 +31,10 @@
         <ListView Grid.Row="0" x:Name="_plugins" VirtualizingPanel.VirtualizationMode="Recycling" SelectionMode="Single" VerticalAlignment="Center" />
         <Grid Grid.Row="1" Background="#2AAA">
             <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Margin="25,0,0,0">
-                Available plugins: <TextBlock x:Name="_count" Text="0" />
+                <TextBlock Text="{DynamicResource t_available_plugins}" />: <TextBlock x:Name="_count" Text="0" />
             </TextBlock>
-            <Button Click="ShowFolderClick" Content="Open folder" FontSize="12" HorizontalAlignment="Right" Margin="0,10,120,10" VerticalAlignment="Center" Height="30" Width="100"/>
-            <Button IsEnabled="{Binding Path=IsDone}" Click="RefreshPluginsClick" Content="Refresh" FontSize="12" HorizontalAlignment="Right" Margin="0,10,25,10" VerticalAlignment="Center" Height="30" Width="80"/>
+            <Button Content="{DynamicResource t_open_plugins}" Focusable="False" Click="ShowFolderClick" FontSize="12" HorizontalAlignment="Right" Margin="0,10,120,10" VerticalAlignment="Center" Height="30" Width="100"/>
+            <Button Content="{DynamicResource t_refresh}" Focusable="False" IsEnabled="{Binding Path=IsDone}" Click="RefreshPluginsClick" FontSize="12" HorizontalAlignment="Right" Margin="0,10,25,10" VerticalAlignment="Center" Height="30" Width="80"/>
         </Grid>
     </Grid>
 </Page>

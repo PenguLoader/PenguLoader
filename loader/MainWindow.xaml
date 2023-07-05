@@ -38,19 +38,20 @@
             Background="Transparent"
             Margin="0,-6,0,0"
             SelectedIndex="0"
+            Focusable="False"
         >
             <TabControl.Items>
                 <TabItem Header="Loader">
                     <ui:TabItemHelper.Icon>
                         <ui:BitmapIcon UriSource="icon.ico" ShowAsMonochrome="False" />
                     </ui:TabItemHelper.Icon>
-                    <Frame Source="Views/MainPage.xaml" />
+                    <Frame Source="Views/MainPage.xaml" Focusable="False" />
                 </TabItem>
                 <TabItem Header="Plugins">
                     <ui:TabItemHelper.Icon>
                         <fa5:ImageAwesome Icon="Brands_Js" Foreground="#e4a228" />
                     </ui:TabItemHelper.Icon>
-                    <Frame Source="Views/PluginsPage.xaml" />
+                    <Frame Source="Views/PluginsPage.xaml" Focusable="False" />
                 </TabItem>
             </TabControl.Items>
         </TabControl>

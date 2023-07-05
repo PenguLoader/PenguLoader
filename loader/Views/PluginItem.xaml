@@ -12,7 +12,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <CheckBox Grid.Column="0" x:Name="tName">
+        <CheckBox Grid.Column="0" x:Name="tName" Focusable="False">
             <TextBlock TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
         </CheckBox>
         <TextBlock Grid.Column="1" x:Name="tLink" VerticalAlignment="Center" HorizontalAlignment="Right"

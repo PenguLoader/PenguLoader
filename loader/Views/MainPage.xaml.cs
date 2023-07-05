@@ -21,14 +21,11 @@ namespace PenguLoader.Views
             {
                 if (value == true)
                 {
-                    if (MessageBox.Show(Owner, "Optimize Client\n\n" +
-                        "It is recommended to enable this option. Enabling it will disable some unused things, " +
-                        "unused background tasks, and reduce lag.\n\n" +
-                        "Do you want to continue?",
-                        Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes)
-                    {
-                        value = false;
-                    }
+                    var caption = App.GetTranslation("t_optimize_client");
+                    var message = App.GetTranslation("t_msg_optimize_client_prompt");
+
+                    value = MessageBox.Show(Owner, message, caption,
+                        MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes;
                 }
 
                 Config.OptimizeClient = value;
@@ -43,16 +40,11 @@ namespace PenguLoader.Views
             {
                 if (value == true)
                 {
-                    if (MessageBox.Show(Owner, "Super Low Spec Mode\n\n" +
-                        "This option extends the default Low Spec Mode. " +
-                        "Enabling it will disable all transition and animation effects, " +
-                        "also greatly reduce lag and increase response speed.\n\n" +
-                        "It's very helpful for low PC, but may cause bug. Please report your issues to help us improve this mode.\n\n" +
-                        "Do you want to continue?",
-                        Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes)
-                    {
-                        value = false;
-                    }
+                    var caption = App.GetTranslation("t_super_potato_mode");
+                    var message = App.GetTranslation("t_msg_super_potato_mode_prompt");
+
+                    value = MessageBox.Show(Owner, message, caption,
+                        MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes;
                 }
 
                 Config.SuperLowSpecMode = value;
@@ -69,7 +61,7 @@ namespace PenguLoader.Views
                 {
                     if (!Module.IsFound)
                     {
-                        MessageBox.Show(Owner, "The \"core.dll\" is not found, please re-install the program.",
+                        MessageBox.Show(Owner, App.GetTranslation("t_msg_module_not_found"),
                              Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                     else
@@ -79,7 +71,7 @@ namespace PenguLoader.Views
 
                         if ((value && LCU.IsRunning) || (!value && Module.IsLoaded))
                         {
-                            if (MessageBox.Show(Owner, "Do you want to restart the running League of Legends Client now?",
+                            if (MessageBox.Show(Owner, App.GetTranslation("t_msg_restart_client"),
                                 Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                             {
                                 LCU.KillUxAndRestart();
@@ -89,7 +81,7 @@ namespace PenguLoader.Views
                 }
                 catch (Exception ex)
                 {
-                    var msg = "Failed to perform activation.\nPlease capture the error message and click Yes to report it.";
+                    var msg = App.GetTranslation("t_msg_activation_fail");
                     msg += string.Format("\n\nERR: {0}\n{1}", ex.Message, ex.StackTrace);
 
                     if (ex.InnerException != null)

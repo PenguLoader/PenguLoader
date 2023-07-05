@@ -10,7 +10,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemeResources AccentColor="#00a1ff" />
-                <ui:XamlControlsResources />
+                <ui:XamlControlsResources UseCompactResources="True" />
+                <ResourceDictionary Source="Languages/en-US.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

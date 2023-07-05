@@ -78,6 +78,22 @@
     <Compile Include="Views\PluginsPage.xaml.cs">
       <DependentUpon>PluginsPage.xaml</DependentUpon>
     </Compile>
+    <Page Include="Languages\en-US.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Languages\ja-JP.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Languages\vi-VN.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Languages\zh-CN.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -155,6 +171,9 @@
     </PackageReference>
     <PackageReference Include="FontAwesome5">
       <Version>2.1.11</Version>
+    </PackageReference>
+    <PackageReference Include="MadMilkman.Ini">
+      <Version>1.0.6</Version>
     </PackageReference>
     <PackageReference Include="ModernWpfUI">
       <Version>0.9.6</Version>
