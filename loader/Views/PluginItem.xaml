@@ -12,10 +12,10 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <CheckBox Grid.Column="0" x:Name="tName" HorizontalAlignment="Stretch">
+        <CheckBox Grid.Column="0" x:Name="tName">
             <TextBlock TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
         </CheckBox>
-        <TextBlock Grid.Column="1" x:Name="tLink" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+        <TextBlock Grid.Column="1" x:Name="tLink" VerticalAlignment="Center" HorizontalAlignment="Right"
             TextAlignment="Right" TextTrimming="CharacterEllipsis"  TextWrapping="NoWrap" />
     </Grid>
 </UserControl>

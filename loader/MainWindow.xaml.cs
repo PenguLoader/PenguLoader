@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+
 using ModernWpf;
 using PenguLoader.Main;
 
@@ -10,7 +11,6 @@ namespace PenguLoader
     public partial class MainWindow : Window
     {
         public static MainWindow Instance { get; private set; }
-        public IntPtr Handle { get; private set; }
 
         public MainWindow()
         {
@@ -29,6 +29,7 @@ namespace PenguLoader
             Show();
             Topmost = false;
 
+            GC.Collect();
             Updater.CheckUpdate();
         }
 
@@ -48,8 +49,8 @@ namespace PenguLoader
         {
             base.OnSourceInitialized(e);
 
-            Handle = new WindowInteropHelper(this).EnsureHandle();
-            var source = HwndSource.FromHwnd(Handle);
+            var hwnd = new WindowInteropHelper(this).EnsureHandle();
+            var source = HwndSource.FromHwnd(hwnd);
             source.AddHook(new HwndSourceHook(WndProc));
         }
 
@@ -58,17 +59,12 @@ namespace PenguLoader
             if (msg == Native.WM_SHOWME)
             {
                 if (WindowState == WindowState.Minimized)
-                {
                     WindowState = WindowState.Normal;
-                }
 
                 if (!IsVisible)
-                {
                     Show();
-                }
 
                 Activate();
-
                 handled = true;
             }
 

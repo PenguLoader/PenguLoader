@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+
 using PenguLoader.Main;
 
 namespace PenguLoader.Views
@@ -74,6 +75,7 @@ namespace PenguLoader.Views
                     else
                     {
                         Module.SetActive(value);
+                        TriggerPropertyChanged(nameof(IsActivated));
 
                         if ((value && LCU.IsRunning) || (!value && Module.IsLoaded))
                         {
@@ -100,8 +102,6 @@ namespace PenguLoader.Views
                         Utils.OpenLink(Program.GithubIssuesUrl);
                     }
                 }
-
-                TriggerPropertyChanged(nameof(IsActivated));
             }
         }
 

@@ -12,6 +12,7 @@
     Height="280" Width="460"
     ResizeMode="CanMinimize"
     BorderThickness="0"
+    WindowStyle="None"
     WindowStartupLocation="CenterScreen"
     ui:WindowHelper.UseModernWindowStyle="True"
     ui:TitleBar.ExtendViewIntoTitleBar="True"
