@@ -3,10 +3,62 @@
 
 // RENDERER PROCESS ONLY.
 
+static const auto SUPER_POTATO_SCRIPT = u8R"(
+
+window.addEventListener('load', function () {
+    const GLOBAL_STYLE = `
+*:not(.store-loading):not(.spinner):not([animated]):not(.lol-loading-screen-spinner):not(.lol-uikit-vignette-celebration-layer *), *:before, *:after {
+    transition: none !important;
+    transition-property: none !important;
+    animation: none !important;
+}`;
+    const SHADOW_STYLE = `
+*:not(.spinner):not([animated]), *:before, *:after {
+    transition: none !important;
+    transition-property: none !important;
+    animation: none !important;
+}
+.section-glow {
+    transform: none !important;
+}`;
+
+    const style = document.createElement('style');
+    style.textContent = GLOBAL_STYLE;
+    document.body.appendChild(style);
+
+    const createElement = document.createElement;
+    document.createElement = function (name) {
+        const elm = createElement.apply(this, arguments);
+
+        if (elm.shadowRoot) {
+            const style = document.createElement('style');
+            style.textContent = SHADOW_STYLE;
+            elm.shadowRoot.appendChild(style);
+        }
+
+        return elm;
+    };
+
+    fetch('/lol-settings/v1/local/lol-user-experience', {
+        method: 'PATCH',
+        headers: {
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+            schemaVersion: 3,
+            data: { potatoModeEnabled: true }
+        })
+    });
+});
+
+)";
+
 void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
 {
-    auto pluginsDir = config::getPluginsDir();
+    if (config::getConfigValueBool(L"SuperLowSpecMode", false))
+        frame->execute_java_script(frame, &CefStr(SUPER_POTATO_SCRIPT), nullptr, 1);
 
+    auto pluginsDir = config::getPluginsDir();
     if (!utils::isDir(pluginsDir))
         return;
 
@@ -14,13 +66,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
     auto current_time = system_clock::now();
     auto current_ms = duration_cast<milliseconds>(current_time.time_since_epoch()).count();
 
-    std::wstring code = L"(function () { ";
-    code.append(L"window.__hookEvents(); ");
-
-    if (config::getConfigValueBool(L"SuperLowSpecMode", false))
-        code.append(L"window.__initSuperPotatoMode(); ");
-
-    code.append(L"})(); window.addEventListener('load', function () { ");
+    std::wstring code = L"window.__hookEvents(); window.addEventListener('load', function () { ";
 
     // Scan plugins dir.
     for (const auto &name : utils::readDir(pluginsDir + L"\\*"))
@@ -51,7 +97,7 @@ void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context)
 
     // Execute script.
     CefStr script{ code };
-    frame->execute_java_script(frame, &script, &"https://plugins/"_s, 1);
+    frame->execute_java_script(frame, &script, nullptr, 1);
 }
 
 bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval)
