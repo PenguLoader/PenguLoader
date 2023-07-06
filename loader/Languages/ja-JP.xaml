@@ -10,7 +10,7 @@
     <system:String x:Key="t_super_potato_mode">スーパーロースペックモード</system:String>
 
     <system:String x:Key="t_available_plugins">利用可能なプラグイン</system:String>
-    <system:String x:Key="t_open_plugins">プラグインを開く</system:String>
+    <system:String x:Key="t_open_plugins">開いたフォルダ</system:String>
     <system:String x:Key="t_refresh">更新</system:String>
 
     <system:String x:Key="t_msg_module_not_found">「core.dll」が見つかりません。プログラムを再インストールしてください。</system:String>

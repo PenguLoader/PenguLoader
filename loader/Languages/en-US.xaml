@@ -10,7 +10,7 @@
     <system:String x:Key="t_super_potato_mode">Super Low Spec Mode</system:String>
 
     <system:String x:Key="t_available_plugins">Available plugins</system:String>
-    <system:String x:Key="t_open_plugins">Open plugins</system:String>
+    <system:String x:Key="t_open_plugins">Open folder</system:String>
     <system:String x:Key="t_refresh">Refresh</system:String>
 
     <system:String x:Key="t_msg_module_not_found">The "core.dll" is not found, please re-install the program.</system:String>
