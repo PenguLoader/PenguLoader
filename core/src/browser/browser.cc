@@ -256,11 +256,13 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     Old_OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
-    wchar_t cachePath[1024];
-    GetEnvironmentVariableW(L"LOCALAPPDATA", cachePath, _countof(cachePath));
-    lstrcatW(cachePath, L"\\Riot Games\\League of Legends\\Cache");
-    const_cast<cef_settings_t *>(settings)->cache_path = CefStr(cachePath).forawrd();
-    //const_cast<cef_settings_t *>(settings)->log_severity = LOGSEVERITY_DISABLE;
+    if (config::getConfigValueBool(L"OptimizeClient", true))
+    {
+        wchar_t cachePath[1024];
+        GetEnvironmentVariableW(L"LOCALAPPDATA", cachePath, _countof(cachePath));
+        lstrcatW(cachePath, L"\\Riot Games\\League of Legends\\Cache");
+        const_cast<cef_settings_t *>(settings)->cache_path = CefStr(cachePath).forawrd();
+    }
 
     static auto GetBrowserProcessHandler = app->get_browser_process_handler;
     app->get_browser_process_handler = [](cef_app_t *self)
