@@ -203,6 +203,11 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
             TriggerAuthCallback(url.cstr(), id, response.cstr());
             return 1;
         }
+        else if (msg == L"__restart_client")
+        {
+            frame->execute_java_script(frame, &"restartClient();"_s, nullptr, 1);
+            return 1;
+        }
     }
 
     return Old_OnProcessMessageReceived(self, browser, frame, source_process, message);

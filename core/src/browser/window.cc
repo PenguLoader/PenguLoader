@@ -11,19 +11,32 @@ static LRESULT CALLBACK Hooked_WidgetWndProc(HWND hwnd, UINT msg, WPARAM wp, LPA
     {
         case WM_KEYDOWN:
         {
-            if ((HIWORD(lp) & KF_REPEAT) == 0)  // no repeat
+            if (browser_ != nullptr
+                && (HIWORD(lp) & KF_REPEAT) == 0)  // no repeat
             {
                 bool ctrl_shift = GetKeyState(VK_CONTROL) < 0
                     && GetKeyState(VK_SHIFT) < 0;
 
-                if (wp == VK_F12 || (ctrl_shift && wp == 'I'))
+                if (wp == VK_F12 || (ctrl_shift && wp == 'I')) // F12 or Ctrl Shift I
                 {
                     OpenDevTools_Internal(false);
                 }
-                else if ((ctrl_shift && wp == 'R'))
+                else if (ctrl_shift && wp == 'R') // Ctrl Shift R
                 {
-                    if (browser_ != nullptr)
-                        browser_->reload_ignore_cache(browser_);
+                    browser_->reload_ignore_cache(browser_);
+                }
+                else if (ctrl_shift && wp == VK_RETURN) // Ctrl Shift Enter
+                {
+                    if (MessageBoxA(rclient_window_, "Would you like to restart your League Client?",
+                        "Pengu Loader", MB_ICONQUESTION | MB_YESNO) == IDYES)
+                    {
+                        auto frame = browser_->get_main_frame(browser_);
+
+                        auto msg = CefProcessMessage_Create(&"__restart_client"_s);
+                        frame->send_process_message(frame, PID_RENDERER, msg);
+
+                        frame->base.release(&frame->base);
+                    }
                 }
             }
 
