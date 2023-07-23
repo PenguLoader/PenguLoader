@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&display=swap');
+
+/* @tailwind base; */
+@tailwind components;
+@tailwind utilities;
+
+body {
+  position: relative;
+}
+
+#pengu-root-layer {
+  font-size: 14px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+#pengu-root-layer * {
+  box-sizing: border-box;
+}
+
+div[id^=index_loading_div] {
+  background-color: #010a13;
+}
+
+div[id^=index_loading_div] > img {
+  display: none;
+}
+
+div[id^=index_loading_div]::before {
+  content: '';
+  background-image: url(https://pengu.lol/Pengu_Featherknight_144.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: 144px;
+  height: 144px;
+  border-radius: 50%;
+}
+
+div[id^=index_loading_div]:after {
+  margin-top: 32px;
+  content: "Pengu-Powered";
+  color: #e2e1e1;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  text-transform: uppercase;
+}
