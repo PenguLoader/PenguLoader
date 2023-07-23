@@ -1,7 +1,17 @@
-#include "../internal.h"
+#include "commons.h"
 #include <fstream>
 
-bool utils::isDir(const std::wstring &path)
+bool utils::isSymlink(const wstr &path)
+{
+    DWORD attr = GetFileAttributesW(path.c_str());
+
+    if (attr == INVALID_FILE_ATTRIBUTES)
+        return false;
+
+    return attr & FILE_ATTRIBUTE_REPARSE_POINT;
+}
+
+bool utils::isDir(const wstr &path)
 {
     DWORD attr = GetFileAttributesW(path.c_str());
 
@@ -11,7 +21,7 @@ bool utils::isDir(const std::wstring &path)
     return attr & FILE_ATTRIBUTE_DIRECTORY;
 }
 
-bool utils::isFile(const std::wstring &path)
+bool utils::isFile(const wstr &path)
 {
     DWORD attr = GetFileAttributesW(path.c_str());
 
@@ -21,7 +31,7 @@ bool utils::isFile(const std::wstring &path)
     return !(attr & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-bool utils::readFile(const std::wstring &path, std::string &out)
+bool utils::readFile(const wstr &path, str &out)
 {
     bool result = false;
     std::ifstream input(path, std::ios::binary);
@@ -36,9 +46,9 @@ bool utils::readFile(const std::wstring &path, std::string &out)
     return result;
 }
 
-vector<wstring> utils::readDir(const std::wstring &dir)
+vec<wstr> utils::readDir(const wstr &dir)
 {
-    vector<wstring> files{};
+    vec<wstr> files{};
 
     WIN32_FIND_DATAW fd;
     HANDLE hFind = FindFirstFileW(dir.c_str(), &fd);

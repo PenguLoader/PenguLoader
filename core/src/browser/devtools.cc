@@ -1,4 +1,5 @@
-#include "../internal.h"
+#include "commons.h"
+#include "include/capi/cef_client_capi.h"
 #include "include/capi/cef_urlrequest_capi.h"
 
 // BROWSER PROCESS ONLY.
@@ -6,7 +7,7 @@
 extern HWND rclient_window_;
 extern cef_browser_t *browser_;
 extern UINT REMOTE_DEBUGGING_PORT;
-static wstring REMOTE_DEVTOOLS_URL{};
+static wstr REMOTE_DEVTOOLS_URL{};
 
 HWND devtools_window_ = nullptr;
 LPCWSTR DEVTOOLS_WINDOW_NAME = L"DevTools - League Client";
@@ -18,7 +19,7 @@ void OpenDevTools_Internal(bool remote)
         if (REMOTE_DEBUGGING_PORT == 0) return;
         if (REMOTE_DEVTOOLS_URL.empty()) return;
 
-        utils::shellExecuteOpen(REMOTE_DEVTOOLS_URL);
+        utils::openLink(REMOTE_DEVTOOLS_URL);
     }
     else if (browser_ != nullptr)
     {
@@ -48,11 +49,11 @@ void OpenDevTools_Internal(bool remote)
             wi.ex_style = WS_EX_APPWINDOW;
             wi.style = WS_OVERLAPPEDWINDOW
                 | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
-            wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME).forawrd();
+            wi.window_name = CefStr(DEVTOOLS_WINDOW_NAME).forward();
 
             cef_browser_settings_t settings{};
             auto host = browser_->get_host(browser_);
-            host->show_dev_tools(host, &wi, new CefRefCount<cef_client_t>(false), &settings, nullptr);
+            host->show_dev_tools(host, &wi, new CefRefCount<cef_client_t>(nullptr), &settings, nullptr);
             //                              ^--- We use new client to keep DevTools
             //                                   from being scaled by League Client (e.g 0.8, 1.6).
 
@@ -66,7 +67,7 @@ void PrepareDevTools()
     struct RequestClient : CefRefCount<cef_urlrequest_client_t>
     {
         cef_urlrequest_t *url_request_;
-        string data_;
+        str data_;
 
         RequestClient() : CefRefCount(this), url_request_(nullptr), data_{}
         {
@@ -82,14 +83,14 @@ void PrepareDevTools()
 
         void request()
         {
-            string url{ "http://127.0.0.1:" };
+            str url{ "http://127.0.0.1:" };
             url.append(std::to_string(REMOTE_DEBUGGING_PORT));
             url.append("/json/list");
 
-            auto request_ = CefRequest_Create();
+            auto request_ = cef_request_create();
             request_->set_url(request_, &CefStr(url));
 
-            url_request_ = CefURLRequest_create(request_, this, nullptr);
+            url_request_ = cef_urlrequest_create(request_, this, nullptr);
         }
 
         static void CEF_CALLBACK on_request_complete(struct _cef_urlrequest_client_t* _,
@@ -108,11 +109,11 @@ void PrepareDevTools()
                     auto start = pos + sizeof(pattern) - 1;
                     auto end = strstr(start, "\"");
 
-                    string link = "http://127.0.0.1:";
+                    str link = "http://127.0.0.1:";
                     link.append(std::to_string(REMOTE_DEBUGGING_PORT));
-                    link.append(string(start, end - start));
+                    link.append(str(start, end - start));
 
-                    REMOTE_DEVTOOLS_URL = wstring(link.begin(), link.end());
+                    REMOTE_DEVTOOLS_URL = wstr(link.begin(), link.end());
                 }
             }
 

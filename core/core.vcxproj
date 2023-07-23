@@ -22,37 +22,24 @@
     <ClCompile Include="src\browser\assets.cc" />
     <ClCompile Include="src\browser\browser.cc" />
     <ClCompile Include="src\browser\devtools.cc" />
-    <ClCompile Include="src\browser\jsdialog.cc" />
     <ClCompile Include="src\browser\riotclient.cc" />
-    <ClCompile Include="src\browser\server.cc" />
     <ClCompile Include="src\browser\window.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\dllproxy.cc" />
     <ClCompile Include="src\dllmain.cc" />
-    <ClCompile Include="src\renderer\auth_callback.cc" />
     <ClCompile Include="src\renderer\datastore.cc" />
-    <ClCompile Include="src\renderer\effects.cc" />
-    <ClCompile Include="src\renderer\loader.cc" />
+    <ClCompile Include="src\renderer\winbrancy.cc" />
     <ClCompile Include="src\renderer\renderer.cc" />
     <ClCompile Include="src\utils\cefstr.cc" />
     <ClCompile Include="src\utils\file.cc" />
     <ClCompile Include="src\utils\misc.cc" />
-    <ClCompile Include="src\utils\string.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\hook.h" />
-    <ClInclude Include="src\internal.h" />
-    <None Include="src\renderer\extension.js">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </DeploymentContent>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </ExcludedFromBuild>
-      <FileType>CppHeader</FileType>
-    </None>
+    <ClInclude Include="src\commons.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc" />
@@ -151,10 +138,6 @@
       <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
-    <PreBuildEvent>
-      <Command>cl bin2c.c /link /out:$(Configuration)\bin2c.exe
-$(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.g.h _ext_code</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -165,20 +148,20 @@ $(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.g.h 
       </SDLCheck>
       <PreprocessorDefinitions>_DEBUG;CORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;src/</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>
+      </LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
+      <DelayLoadDLLs>
+      </DelayLoadDLLs>
     </Link>
-    <PreBuildEvent>
-      <Command>cl bin2c.c /link /out:"$(Platform)\$(Configuration)\bin2c.exe"
-"$(Platform)\$(Configuration)\bin2c.exe" src/renderer/extension.js src/renderer/extension.g.h _ext_code</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -208,10 +191,6 @@ $(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.g.h 
       <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
-    <PreBuildEvent>
-      <Command>cl bin2c.c /link /out:$(Configuration)\bin2c.exe
-$(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.g.h _ext_code</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -237,10 +216,6 @@ $(Configuration)\bin2c.exe src/renderer/extension.js src/renderer/extension.g.h 
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
     </Link>
-    <PreBuildEvent>
-      <Command>cl bin2c.c /link /out:"$(Platform)\$(Configuration)\bin2c.exe"
-"$(Platform)\$(Configuration)\bin2c.exe" src/renderer/extension.js src/renderer/extension.g.h _ext_code</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

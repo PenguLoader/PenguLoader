@@ -1,4 +1,4 @@
-#include "../internal.h"
+#include "commons.h"
 
 HWND rclient_window_ = nullptr;
 extern cef_browser_t *browser_;
@@ -32,7 +32,7 @@ static LRESULT CALLBACK Hooked_WidgetWndProc(HWND hwnd, UINT msg, WPARAM wp, LPA
                     {
                         auto frame = browser_->get_main_frame(browser_);
 
-                        auto msg = CefProcessMessage_Create(&"__restart_client"_s);
+                        auto msg = cef_process_message_create(&L"__restart_client"_s);
                         frame->send_process_message(frame, PID_RENDERER, msg);
 
                         frame->base.release(&frame->base);
@@ -41,12 +41,6 @@ static LRESULT CALLBACK Hooked_WidgetWndProc(HWND hwnd, UINT msg, WPARAM wp, LPA
             }
 
             break;
-        }
-
-        case (WM_APP + 0x101):
-        {
-            OpenDevTools_Internal(wp != 0);
-            return 0;
         }
     }
 
@@ -61,12 +55,17 @@ static void HooKWidgetWindow(HWND hwnd)
 
 void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame)
 {
+    if (rclient_window_ != nullptr)
+        return;
+
     auto host = browser->get_host(browser);
     // Get needed windows.
     HWND browserWin = host->get_window_handle(host);
     HWND rclient = GetParent(browserWin);
     HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
     HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
+
+    // Ensure transparency effect.
 
     // Hide Chrome_RenderWidgetHostHWND.
     ShowWindow(widgetHost, SW_HIDE);
@@ -76,7 +75,7 @@ void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame)
     SetParent(widgetWin, rclient);
 
     // Send RCLIENT HWND to renderer.
-    auto msg = CefProcessMessage_Create(&"__rclient"_s);
+    auto msg = cef_process_message_create(&L"__rclient"_s);
     auto args = msg->get_argument_list(msg);
     args->set_int(args, 0, (int32_t)reinterpret_cast<intptr_t>(rclient));
     frame->send_process_message(frame, PID_RENDERER, msg);

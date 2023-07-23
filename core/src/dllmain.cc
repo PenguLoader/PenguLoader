@@ -1,4 +1,7 @@
-#include "internal.h"
+#include <string>
+#include <regex>
+#include <windows.h>
+
 #include "include/cef_version.h"
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -9,25 +12,28 @@ void HookRendererProcess();
 
 static void Initialize()
 {
-    // Get exe path.
-    WCHAR _path[2048];
-    wstring name(_path, GetModuleFileNameW(NULL, _path, _countof(_path)));
-    name = name.substr(name.find_last_of(L"\\/") + 1);
+    WCHAR exe_path[2048]{};
+    GetModuleFileNameW(nullptr, exe_path, _countof(exe_path));
 
     // Determine which process to be hooked.
 
     // Browser process.
-    if (utils::strEqual(name, L"LeagueClientUx.exe", false))
+    if (std::regex_search(exe_path,
+        std::wregex(L"LeagueClientUx\\.exe$", std::wregex::icase)))
     {
         if (LoadLibcefDll(true))
             HookBrowserProcess();
     }
-    // Renderer process.
-    else if (utils::strEqual(name, L"LeagueClientUxRender.exe", false)
-        && utils::strContain(GetCommandLineW(), L"--type=renderer", false))
+    // Render process.
+    else if (std::regex_search(exe_path,
+        std::wregex(L"LeagueClientUxRender\\.exe$", std::wregex::icase)))
     {
-        if (LoadLibcefDll(false))
-            HookRendererProcess();
+        // Renderer only.
+        if (wcsstr(GetCommandLineW(), L"--type=renderer") != nullptr)
+        {
+            if (LoadLibcefDll(false))
+                HookRendererProcess();
+        }
     }
 }
 

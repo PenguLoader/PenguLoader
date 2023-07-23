@@ -1,39 +1,118 @@
-#include "../internal.h"
-#include "../hook.h"
-
-#include "include/capi/cef_base_capi.h"
+#include "commons.h"
 #include "include/capi/cef_app_capi.h"
-#include "include/capi/cef_v8_capi.h"
+#include "include/capi/cef_render_process_handler_capi.h"
 
-#include "extension.g.h"
+static const char *PL_VERSION {
+#   include "../loader/version.cs"
+};
 
 // RENDERER PROCESS ONLY.
 
 extern HWND RCLIENT_WINDOW;
 static bool is_main_ = false;
 
-int server_port_ = 0;
+V8Value *native_LoadDataStore(const vec<V8Value *> &args);
+V8Value *native_SaveDataStore(const vec<V8Value *> &args);
 
-void LoadPlugins(cef_frame_t *frame, cef_v8context_t *context);
-bool HandlePlugins(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
-bool HandleDataStore(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
-bool HandleWindowEffect(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
+V8Value *native_GetWindowEffect(const vec<V8Value *> &args);
+V8Value *native_SetWindowEffect(const vec<V8Value *> &args);
 
-void TriggerAuthCallback(const wstring &url, int browser_id, const wstring &response);
-bool HandleAuthCallback(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval);
-void ClearAuthCallbacks(cef_v8context_t *context);
-
-// Custom V8 handler for extenstion
-struct ExtensionHandler : CefRefCount<cef_v8handler_t>
+static vec<wstr> GetPluginEntries()
 {
-public:
-    ExtensionHandler() : CefRefCount(this)
+    vec<wstr> entries{};
+
+    auto pluginsDir = config::pluginsDir();
+    if (utils::isDir(pluginsDir))
     {
-        cef_v8handler_t::execute = _Execute;
+        // Scan plugins dir.
+        for (const auto &name : utils::readDir(pluginsDir + L"\\*"))
+        {
+            // Skip name starts with underscore or dot.
+            if (name[0] == '_' || name[0] == '.')
+                continue;
+
+            // Top-level JS file.
+            if (std::regex_search(name, std::wregex(L"\\.js$", std::regex::icase))
+                && utils::isFile(pluginsDir + L"\\" + name))
+            {
+                entries.push_back(name);
+            }
+            // Sub-folder with index.
+            else if (utils::isDir(pluginsDir + L"\\" + name)
+                && utils::isFile(pluginsDir + L"\\" + name + L"\\index.js"))
+            {
+                entries.push_back(name + L"/index.js");
+            }
+        }
+    }
+
+    return entries;
+}
+
+static V8Value *native_OpenDevTools(const vec<V8Value *> &args)
+{
+    bool remote = args.size() > 0 && args[0]->asBool();
+
+    auto context = cef_v8context_get_current_context();
+    auto frame = context->get_frame(context);
+
+    // IPC to browser process.
+    auto name = remote ? L"__open_remote_devtools"_s : L"__open_devtools"_s;
+    auto msg = cef_process_message_create(&name);
+    frame->send_process_message(frame, PID_BROWSER, msg);
+
+    return nullptr;
+}
+
+static V8Value *native_OpenAssetsFolder(const vec<V8Value *> &args)
+{
+    utils::openLink(config::assetsDir());
+
+    return nullptr;
+}
+
+static V8Value *native_OpenPluginsFolder(const vec<V8Value *> &args)
+{
+    utils::openLink(config::pluginsDir());
+
+    return nullptr;
+}
+
+static V8Value *native_ReloadClient(const vec<V8Value *> &args)
+{
+    auto context = cef_v8context_get_current_context();
+    auto frame = context->get_frame(context);
+
+    // IPC to browser process.
+    auto msg = cef_process_message_create(&CefStr("__reload_client"));
+    frame->send_process_message(frame, PID_BROWSER, msg);
+
+    return nullptr;
+}
+
+static map<wstr, V8FunctionHandler> m_nativeDelegateMap
+{
+    { L"OpenDevTools", native_OpenDevTools },
+    { L"OpenAssetsFolder", native_OpenAssetsFolder },
+    { L"OpenPluginsFolder", native_OpenPluginsFolder },
+    { L"ReloadClient", native_ReloadClient },
+
+    { L"LoadDataStore", native_LoadDataStore },
+    { L"SaveDataStore", native_SaveDataStore },
+
+    { L"GetWindowEffect", native_GetWindowEffect },
+    { L"SetWindowEffect", native_SetWindowEffect },
+};
+
+struct NativeV8Handler : CefRefCount<cef_v8handler_t>
+{
+    NativeV8Handler() : CefRefCount(this)
+    {
+        cef_v8handler_t::execute = Execute;
     }
 
 private:
-    static int CALLBACK _Execute(cef_v8handler_t* self,
+    static int CALLBACK Execute(cef_v8handler_t* self,
         const cef_string_t* name,
         cef_v8value_t* object,
         size_t argc,
@@ -41,109 +120,128 @@ private:
         cef_v8value_t** retval,
         cef_string_t* exception)
     {
-        wstring fn(name->str, name->length);
-        vector<cef_v8value_t *> args(argv, argv + argc);
+        wstr func{ name->str, name->length };
 
 #if _DEBUG
-        wprintf(L">> exec: %s\n", fn.c_str());
+        wprintf(L"native invoke: %s(%zu)\n", func.c_str(), argc);
 #endif
 
-        if (fn == L"OpenDevTools")
+        auto it = m_nativeDelegateMap.find(func);
+        if (it != m_nativeDelegateMap.end())
         {
-            bool remote = args.size() > 0 && args[0]->get_bool_value(args[0]);
+            const auto argv_ = (V8Value **)(argv);
+            vec<V8Value *> args{ argv_, argv_ + argc };
 
-            auto context = CefV8Context_GetCurrentContext();
-            auto frame = context->get_frame(context);
-
-            // IPC to browser process.
-            auto msg = CefProcessMessage_Create(&CefStr(remote
-                ? "__open_remote_devtools" : "__open_devtools"));
-            frame->send_process_message(frame, PID_BROWSER, msg);
+            auto result = it->second(args);
+            if (result != nullptr)
+            {
+                *retval = (cef_v8value_t *)result;
+            }
 
             return true;
         }
-        else if (fn == L"OpenAssetsFolder")
-        {
-            utils::shellExecuteOpen(config::getAssetsDir());
-            return true;
-        }
-        else if (fn == L"OpenPluginsFolder")
-        {
-            utils::shellExecuteOpen(config::getPluginsDir());
-            return true;
-        }
-        else if (fn == L"ReloadClient")
-        {
-            auto context = CefV8Context_GetCurrentContext();
-            auto frame = context->get_frame(context);
-
-            // IPC to browser process.
-            auto msg = CefProcessMessage_Create(&CefStr("__reload_client"));
-            frame->send_process_message(frame, PID_BROWSER, msg);
-
-            return true;
-        }
-        else if (HandlePlugins(fn, args, *retval))
-            return true;
-        else if (HandleDataStore(fn, args, *retval))
-            return true;
-        else if (HandleWindowEffect(fn, args, *retval))
-            return true;
-        else if (HandleAuthCallback(fn, args, *retval))
-            return true;
 
         return false;
     }
 };
 
-static decltype(cef_render_process_handler_t::on_web_kit_initialized) Old_OnWebKitInitialized;
-static void CEF_CALLBACK Hooked_OnWebKitInitialized(cef_render_process_handler_t* self)
+static void ExposeNativeFunctions(V8Object *window)
 {
-    Old_OnWebKitInitialized(self);
+    auto native = V8Object::create();
 
-    std::string ext_code{ _ext_code, (size_t)_ext_code_length };
+    for (const auto &it : m_nativeDelegateMap)
+    {
+        auto name = CefStr(it.first);
+        auto function = V8Value::function(&name, new NativeV8Handler());
+        native->set(&name, function, V8_PROPERTY_ATTRIBUTE_READONLY);
+    }
 
-    const char *version =
-#   include "../loader/Version.cs"
-        ;
-
-    ext_code.append("\nvar __llver = \"");
-    ext_code.append(version);
-    ext_code.append("\"");
-
-    // Register our extension.
-    CefRegisterExtension(&"v8/PenguLoader"_s, &CefStr(ext_code), new ExtensionHandler());
+    window->set(&L"__native"_s, native, V8_PROPERTY_ATTRIBUTE_READONLY);
 }
 
-static decltype(cef_render_process_handler_t::on_context_created) Old_OnContextCreated;
+static void LoadPlugins(V8Object *window)
+{
+    auto pengu = V8Object::create();
+
+    // Pengu.version
+    auto version = V8Value::string(&CefStr(PL_VERSION));
+    pengu->set(&L"version"_s, version, V8_PROPERTY_ATTRIBUTE_READONLY);
+
+    // Pengu.superPotato
+    auto superPotato = V8Value::boolean(config::getConfigValueBool(L"SuperLowSpecMode", false));
+    pengu->set(&L"superPotato"_s, superPotato, V8_PROPERTY_ATTRIBUTE_READONLY);
+
+    pengu->set(&L"os"_s, V8Value::string(&L"win"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
+    pengu->set(&L"osVersion"_s, V8Value::string(&L"10"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
+
+    // Pengu.entries
+    auto entries = GetPluginEntries();
+    auto pluginEntries = V8Array::create((int)entries.size());
+
+    for (int index = 0; index < entries.size(); index++)
+    {
+        auto entry = V8Value::string(&CefStr(entries[index]));
+        pluginEntries->set(index, entry);
+    }
+
+    // Should add to parent objet after init.
+    pengu->set(&L"plugins"_s, pluginEntries, V8_PROPERTY_ATTRIBUTE_READONLY);
+
+    // Add Pengu to window.
+    window->set(&L"Pengu"_s, pengu, V8_PROPERTY_ATTRIBUTE_READONLY);
+}
+
+static void ExecutePreloadScript(cef_frame_t *frame)
+{
+#ifdef _DEBUG
+    str script{};
+    if (utils::readFile(config::loaderDir() + L"\\..\\plugins\\dist\\preload.js", script))
+    {
+        CefStr code{ script.c_str(), script.length() };
+        frame->execute_java_script(frame, &code, &L"https://plugins/@/preload"_s, 1);
+    }
+    else
+    {
+        printf("preload is not found, please start dev server and reload your client\n");
+    }
+#else
+#   include "../plugins/dist/preload.g.h"
+    CefStr script{ (const char *)_preload_script, _preload_script_size };
+    frame->execute_java_script(frame, &script, nullptr, 1);
+#endif
+}
+
+static decltype(cef_render_process_handler_t::on_context_created) OnContextCreated;
 static void CEF_CALLBACK Hooked_OnContextCreated(
     struct _cef_render_process_handler_t* self,
     struct _cef_browser_t* browser,
     struct _cef_frame_t* frame,
     struct _cef_v8context_t* context)
 {
-    Old_OnContextCreated(self, browser, frame, context);
+    CefScopedStr url = frame->get_url(frame);
+    OnContextCreated(self, browser, frame, context);
 
-    if (is_main_)
+    // Detect main page.
+    if (is_main_ && url.search(L"^https:\\/\\/riot:.+\\/index\\.html", true))
     {
-        CefScopedStr url{ frame->get_url(frame) };
-
-        if (url.contain(L"riot:") && url.contain(L"index.html"))
-        {
-            // Open console window.
+        // Open console window.
 #if _DEBUG
-            AllocConsole();
-            SetConsoleTitleA("League Client (main renderer process)");
-            freopen("CONOUT$", "w", stdout);
+        AllocConsole();
+        SetConsoleTitleA("League Client (main renderer process)");
+        freopen("CONOUT$", "w", stdout);
+
+        wprintf(L"main frame: %.*s\n", (int)url.length, url.str);
 #endif
 
-            // Load plugins.
-            LoadPlugins(frame, context);
-        }
+        auto window = context->get_global(context);
+
+        ExposeNativeFunctions(reinterpret_cast<V8Object *>(window));
+        LoadPlugins(reinterpret_cast<V8Object *>(window));
+        ExecutePreloadScript(frame);
     }
 }
 
-static decltype(cef_render_process_handler_t::on_context_released) Old_OnContextReleased;
+static decltype(cef_render_process_handler_t::on_context_released) OnContextReleased;
 static void CEF_CALLBACK Hooked_OnContextReleased(
     struct _cef_render_process_handler_t* self,
     struct _cef_browser_t* browser,
@@ -152,23 +250,24 @@ static void CEF_CALLBACK Hooked_OnContextReleased(
 {
     if (is_main_)
     {
-        ClearAuthCallbacks(context);
     }
+
+    OnContextReleased(self, browser, frame, context);
 }
 
-static decltype(cef_render_process_handler_t::on_browser_created) Old_OnBrowserCreated;
+static decltype(cef_render_process_handler_t::on_browser_created) OnBrowserCreated;
 static void CEF_CALLBACK Hooked_OnBrowserCreated(
     struct _cef_render_process_handler_t* self,
     struct _cef_browser_t* browser,
     struct _cef_dictionary_value_t* extra_info)
 {
-    // Detect hooked client.
-    is_main_ = extra_info && extra_info->has_key(extra_info, &"is_main"_s);
+    // Detect main browser.
+    is_main_ = extra_info && extra_info->has_key(extra_info, &L"is_main"_s);
 
-    Old_OnBrowserCreated(self, browser, extra_info);
+    OnBrowserCreated(self, browser, extra_info);
 }
 
-static decltype(cef_render_process_handler_t::on_process_message_received) Old_OnProcessMessageReceived;
+static decltype(cef_render_process_handler_t::on_process_message_received) OnProcessMessageReceived;
 static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
     struct _cef_render_process_handler_t* self,
     struct _cef_browser_t* browser,
@@ -179,41 +278,25 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
     if (is_main_ && source_process == PID_BROWSER)
     {
         CefScopedStr msg{ message->get_name(message) };
-        if (msg == L"__rclient")
+        if (msg.equal(L"__rclient"))
         {
             // Received RCLIENT HWND.
             auto args = message->get_argument_list(message);
             RCLIENT_WINDOW = reinterpret_cast<HWND>((intptr_t)args->get_int(args, 0));
             return 1;
         }
-        else if (msg == L"__server_port")
+        else if (msg.equal(L"__restart_client"))
         {
-            auto args = message->get_argument_list(message);
-            server_port_ = args->get_int(args, 0);
-            return 1;
-        }
-        else if (msg == L"__auth_response")
-        {
-            auto args = message->get_argument_list(message);
-
-            int id = browser->get_identifier(browser);
-            CefScopedStr url{ args->get_string(args, 0) };
-            CefScopedStr response{ args->get_string(args, 1) };
-
-            TriggerAuthCallback(url.cstr(), id, response.cstr());
-            return 1;
-        }
-        else if (msg == L"__restart_client")
-        {
-            frame->execute_java_script(frame, &"restartClient();"_s, nullptr, 1);
+            frame->execute_java_script(frame,
+                &L"fetch('/riotclient/kill-and-restart-ux', { method: 'POST' });"_s, nullptr, 1);
             return 1;
         }
     }
 
-    return Old_OnProcessMessageReceived(self, browser, frame, source_process, message);
+    return OnProcessMessageReceived(self, browser, frame, source_process, message);
 }
 
-static Hook<decltype(cef_execute_process)> Old_CefExecuteProcess;
+static hook::Hook<decltype(cef_execute_process)> CefExecuteProcess;
 static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app, void* windows_sandbox_info)
 {
     // Hook RenderProcessHandler.
@@ -223,34 +306,30 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
         // Get default handler.
         auto handler = Old_GetRenderProcessHandler(self);
 
-        // Hook OnWebKitInitialized().
-        Old_OnWebKitInitialized = handler->on_web_kit_initialized;
-        handler->on_web_kit_initialized = Hooked_OnWebKitInitialized;
-
         // Hook OnContextCreated().
-        Old_OnContextCreated = handler->on_context_created;
+        OnContextCreated = handler->on_context_created;
         handler->on_context_created = Hooked_OnContextCreated;
 
         // Hook OnContextReleased().
-        Old_OnContextReleased = handler->on_context_released;
+        OnContextReleased = handler->on_context_released;
         handler->on_context_released = Hooked_OnContextReleased;
 
         // Hook OnBrowserCreated().
-        Old_OnBrowserCreated = handler->on_browser_created;
+        OnBrowserCreated = handler->on_browser_created;
         handler->on_browser_created = Hooked_OnBrowserCreated;
 
         // Hook OnProcessMessageReceived().
-        Old_OnProcessMessageReceived = handler->on_process_message_received;
+        OnProcessMessageReceived = handler->on_process_message_received;
         handler->on_process_message_received = Hooked_OnProcessMessageReceived;
 
         return handler;
     };
 
-    return Old_CefExecuteProcess(args, app, windows_sandbox_info);
+    return CefExecuteProcess(args, app, windows_sandbox_info);
 }
 
 void HookRendererProcess()
 {
     // Hook CefExecuteProcess().
-    Old_CefExecuteProcess.hook("libcef.dll", "cef_execute_process", Hooked_CefExecuteProcess);
+    CefExecuteProcess.hook("libcef.dll", "cef_execute_process", Hooked_CefExecuteProcess);
 }

@@ -1,4 +1,4 @@
-#include "../internal.h"
+#include "commons.h"
 
 HWND RCLIENT_WINDOW = nullptr;
 
@@ -343,10 +343,9 @@ uint32_t ParseHexColor(std::wstring value)
 {
     unsigned a = 0, r = 0, g = 0, b = 0;
 
-    if (value.empty())
-        goto _done;
-    if (value.length() == 1 && value[0] == '#')
-        goto _done;
+    if (value.empty() || (value.length() == 1 && value[0] == '#'))
+        return 0;
+
     if (value.length() > 1 && value[0] == '#')
         value.erase(0, 1);
 
@@ -387,58 +386,56 @@ uint32_t ParseHexColor(std::wstring value)
             a = 0xFF;
     }
 
-_done:
     return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
 }
 
-bool HandleWindowEffect(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval)
+static wstr m_current = L"";
+
+V8Value *native_GetWindowEffect(const vec<V8Value *> &args)
 {
-    static std::wstring current = L"";
+    if (m_current.empty())
+        return V8Value::undefined();
+    else
+        return V8Value::string(&CefStr(m_current));
+}
 
-    if (fn == L"GetEffect")
-    {
-        retval = CefV8Value_CreateString(&CefStr(current));
-        return true;
-    }
-    else if (fn == L"ApplyEffect")
-    {
-        bool success = false;
+V8Value *native_SetWindowEffect(const vec<V8Value *> &args)
+{
+    bool success = false;
 
-        if (args.size() >= 1 && args[0]->is_string(args[0]))
+    if (args.size() > 0)
+    {
+        if (args[0]->isBool() && args[0]->asBool() == false)
         {
-            CefScopedStr name{ args[0]->get_string_value(args[0]) };
+            success = ClearEffect(m_current);
+            m_current.clear();
+        }
+        else if (args[0]->isString())
+        {
+            CefScopedStr name{ args[0]->asString() };
             uint32_t tintColor = 0;
 
-            if (args.size() >= 2 && args[1]->is_object(args[1]))
+            if (args.size() >= 2 && args[1]->isObject())
             {
-                if (args[1]->has_value_bykey(args[1], &"color"_s))
+                auto options = args[1]->asObject();
+                if (options->has(&L"color"_s))
                 {
-                    auto color = args[1]->get_value_bykey(args[1], &"color"_s);
-                    if (color->is_string(color))
+                    auto color = options->get(&L"color"_s);
+                    if (color->isString())
                     {
-                        CefScopedStr value{ color->get_string_value(color) };
+                        CefScopedStr value{ color->asString() };
                         tintColor = ParseHexColor(value.str);
                     }
                 }
             }
 
-            if (ClearEffect(current))
-                current = L"";
+            //if (ClearEffect(m_current))
+            //    m_current = L"";
 
             if (success = ApplyEffect(name.str, tintColor))
-                current.assign(name.str, name.length);
+                m_current.assign(name.str, name.length);
         }
-        
-        retval = CefV8Value_CreateBool(success);
-        return true;
-    }
-    else if (fn == L"ClearEffect")
-    {
-        if (!current.empty())
-            ClearEffect(current);
-        current.clear();
-        return true;
     }
 
-    return false;
+    return V8Value::boolean(success);
 }

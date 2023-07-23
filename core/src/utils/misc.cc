@@ -1,6 +1,6 @@
-#include "../internal.h"
+#include "commons.h"
 
-void utils::shellExecuteOpen(const wstring &link)
+void utils::openLink(const wstr &link)
 {
     static decltype(&ShellExecuteW) pShellExecuteW = nullptr;
 
@@ -21,7 +21,7 @@ void *utils::patternScan(const HMODULE module, const char *pattern)
 
     static auto PatternToBytes = [](const char *Pattern)
     {
-        vector<int> Bytes{};
+        vec<int> Bytes{};
         char *StartPos = const_cast<char *>(Pattern);
         char *EndPos = const_cast<char *>(Pattern) + strlen(Pattern);
 

@@ -1,7 +1,7 @@
-#include "../internal.h"
+#include "commons.h"
 #include <fstream>
 
-static void TransformData(vector<char> &data)
+static void TransformData(vec<char> &data)
 {
     static const std::string key = "A5dgY6lz9fpG9kGNiH1mZ";
 
@@ -11,14 +11,9 @@ static void TransformData(vector<char> &data)
     }
 }
 
-static wstring GetDataPath()
+static void LoadData(str &json)
 {
-    return config::getLoaderDir() + L"\\datastore";
-}
-
-static void LoadData(string &json)
-{
-    std::ifstream stream(GetDataPath(), std::ios::binary);
+    std::ifstream stream(config::datastorePath(), std::ios::binary);
 
     if (stream.good())
     {
@@ -26,7 +21,7 @@ static void LoadData(string &json)
         size_t fileSize = stream.tellg();
         stream.seekg(0, std::ios::beg);
 
-        vector<char> buffer(fileSize);
+        vec<char> buffer(fileSize);
         stream.read(buffer.data(), fileSize);
 
         TransformData(buffer);
@@ -44,13 +39,13 @@ static void LoadData(string &json)
 #endif
 }
 
-static void SaveData(string &json)
+static void SaveData(str &json)
 {
-    std::ofstream stream(GetDataPath(), std::ios::binary);
+    std::ofstream stream(config::datastorePath(), std::ios::binary);
 
     if (stream.good())
     {
-        vector<char> buffer(json.begin(), json.end());
+        vec<char> buffer(json.begin(), json.end());
         TransformData(buffer);
         stream.write(buffer.data(), buffer.size());
     }
@@ -62,38 +57,32 @@ static void SaveData(string &json)
 #endif
 }
 
-bool HandleDataStore(const wstring &fn, const vector<cef_v8value_t *> &args, cef_v8value_t * &retval)
+V8Value *native_LoadDataStore(const vec<V8Value *> &args)
 {
-    if (fn == L"LoadData")
-    {
-        string json{};
-        LoadData(json);
+    str json{};
+    LoadData(json);
 
-        cef_string_t result{};
-        CefString_FromUtf8(json.c_str(), json.length(), &result);
-        retval = CefV8Value_CreateString(&result);
+    CefStr result{};
+    cef_string_from_utf8(json.c_str(), json.length(), &result);
 
-        CefString_Clear(&result);
-        return true;
-    }
-    else if (fn == L"SaveData")
+    return V8Value::string(&result);
+}
+
+V8Value *native_SaveDataStore(const vec<V8Value *> &args)
+{
+    if (args.size() > 0 && args[0]->isString())
     {
-        if (args.size() > 0 && args[0]->is_string(args[0]))
+        CefScopedStr json = args[0]->asString();
+
+        if (!json.empty())
         {
-            auto json = args[0]->get_string_value(args[0]);
-            if (!json || json->length == 0)
-                return true;
+            CefStrUtf8 output(json.ptr());
+            cef_string_to_utf8(json.str, json.length, &output);
 
-            cef_string_utf8_t output{};
-            CefString_ToUtf8(json->str, json->length, &output);
-            string data(output.str, output.length);
-
+            str data = output.cstr();
             SaveData(data);
-            CefString_UserFree_Free(json);
-            CefString_ClearUtf8(&output);
         }
-        return true;
     }
 
-    return false;
+    return nullptr;
 }
