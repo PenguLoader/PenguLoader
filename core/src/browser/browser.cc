@@ -244,38 +244,6 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     return CefInitialize(args, settings, app, windows_sandbox_info);
 }
 
-static hook::Hook<decltype(CreateProcessW)> Old_CreateProcessW;
-static BOOL WINAPI Hooked_CreateProcessW(
-    _In_opt_ LPCWSTR lpApplicationName,
-    _Inout_opt_ LPWSTR lpCommandLine,
-    _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
-    _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
-    _In_ BOOL bInheritHandles,
-    _In_ DWORD dwCreationFlags,
-    _In_opt_ LPVOID lpEnvironment,
-    _In_opt_ LPCWSTR lpCurrentDirectory,
-    _In_ LPSTARTUPINFOW lpStartupInfo,
-    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
-{
-    bool is_renderer = std::regex_search(lpCommandLine,
-        std::wregex(L"LeagueClientUxRender\\.exe.+--type=renderer", std::wregex::icase));
-
-    if (is_renderer)
-        dwCreationFlags |= CREATE_SUSPENDED;
-
-    BOOL success = Old_CreateProcessW(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes,
-        bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
-
-    if (success && is_renderer)
-    {
-        void InjectThisDll(HANDLE hProcess);
-        InjectThisDll(lpProcessInformation->hProcess);
-        ResumeThread(lpProcessInformation->hThread);
-    }
-
-    return success;
-}
-
 void HookBrowserProcess()
 {
     // Open console window.
@@ -290,7 +258,4 @@ void HookBrowserProcess()
 
     // Hook CefBrowserHost::CreateBrowser().
     CefBrowserHost_CreateBrowser.hook("libcef.dll", "cef_browser_host_create_browser", Hooked_CefBrowserHost_CreateBrowser);
-
-    // Hook CreateProcessW().
-    Old_CreateProcessW.hook(&CreateProcessW, Hooked_CreateProcessW);
 }

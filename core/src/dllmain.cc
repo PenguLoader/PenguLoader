@@ -1,7 +1,4 @@
-#include <string>
-#include <regex>
-#include <windows.h>
-
+#include "commons.h"
 #include "include/cef_version.h"
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -9,6 +6,38 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 bool LoadLibcefDll(bool is_browser);
 void HookBrowserProcess();
 void HookRendererProcess();
+void InjectThisDll(HANDLE hProcess);
+
+static hook::Hook<decltype(CreateProcessW)> Old_CreateProcessW;
+static BOOL WINAPI Hooked_CreateProcessW(
+    _In_opt_ LPCWSTR lpApplicationName,
+    _Inout_opt_ LPWSTR lpCommandLine,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    _In_ BOOL bInheritHandles,
+    _In_ DWORD dwCreationFlags,
+    _In_opt_ LPVOID lpEnvironment,
+    _In_opt_ LPCWSTR lpCurrentDirectory,
+    _In_ LPSTARTUPINFOW lpStartupInfo,
+    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
+{
+    bool is_renderer = std::regex_search(lpCommandLine,
+        std::wregex(L"LeagueClientUxRender\\.exe.+--type=renderer", std::wregex::icase));
+
+    if (is_renderer)
+        dwCreationFlags |= CREATE_SUSPENDED;
+
+    BOOL success = Old_CreateProcessW(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes,
+        bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+
+    if (success && is_renderer)
+    {
+        InjectThisDll(lpProcessInformation->hProcess);
+        ResumeThread(lpProcessInformation->hThread);
+    }
+
+    return success;
+}
 
 static void Initialize()
 {
@@ -22,7 +51,12 @@ static void Initialize()
         std::wregex(L"LeagueClientUx\\.exe$", std::wregex::icase)))
     {
         if (LoadLibcefDll(true))
+        {
             HookBrowserProcess();
+
+            // Hook CreateProcessW.
+            Old_CreateProcessW.hook(&CreateProcessW, Hooked_CreateProcessW);
+        }
     }
     // Render process.
     else if (std::regex_search(exe_path,
