@@ -22,8 +22,8 @@
     <ClCompile Include="src\browser\assets.cc" />
     <ClCompile Include="src\browser\browser.cc" />
     <ClCompile Include="src\browser\devtools.cc" />
+    <ClCompile Include="src\browser\keyboard.cc" />
     <ClCompile Include="src\browser\riotclient.cc" />
-    <ClCompile Include="src\browser\window.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\dllproxy.cc" />

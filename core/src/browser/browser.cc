@@ -5,69 +5,67 @@
 
 // BROWSER PROCESS ONLY.
 
-UINT REMOTE_DEBUGGING_PORT = 0;
+HWND rclient_;
+int main_browser_id_;
+extern int remote_debugging_port_;
 
-cef_browser_t *browser_ = nullptr;
-static int browser_id_ = -1;
-
-extern LPCWSTR DEVTOOLS_WINDOW_NAME;
-
-void PrepareDevTools();
-void OpenDevTools_Internal(bool remote);
+void OpenDevTools(cef_browser_t *browser);
+void OpenRemoteDevTools();
+void PrepareRemoteDevTools();
 void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame);
 
 void RegisterAssetsSchemeHandlerFactory();
 void RegisterRiotClientSchemeHandlerFactory();
 void SetRiotClientCredentials(const wstr &appPort, const wstr &authToken);
 
+static void SetUpBrowserWindow(cef_browser_t *browser)
+{
+    if (rclient_ != nullptr) return;
+
+    main_browser_id_ = browser->get_identifier(browser);
+    auto host = browser->get_host(browser);
+
+    // Get needed windows.
+    HWND browserWin = host->get_window_handle(host);
+    HWND rclient = (rclient_ = GetParent(browserWin));
+    HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
+    //HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
+
+    // Ensure transparency effect.
+
+    // Hide Chrome_RenderWidgetHostHWND.
+    //ShowWindow(widgetHost, SW_HIDE);
+    // Hide CefBrowserWindow.
+    ShowWindow(browserWin, SW_HIDE);
+    // Bring Chrome_WidgetWin_0 into top-level children.
+    SetParent(widgetWin, rclient);
+
+    // Send RCLIENT HWND to renderer.
+    auto frame = browser->get_main_frame(browser);
+    auto msg = cef_process_message_create(&L"__rclient"_s);
+    auto args = msg->get_argument_list(msg);
+    args->set_int(args, 0, (int32_t)reinterpret_cast<intptr_t>(rclient));
+    frame->send_process_message(frame, PID_RENDERER, msg);
+
+    args->base.release(&args->base);
+    host->base.release(&host->base);
+
+    PrepareRemoteDevTools();
+}
+
 static decltype(cef_life_span_handler_t::on_after_created) OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
-    if (browser_ == nullptr)
-    {
-        // Add ref.
-        browser->base.add_ref(&browser_->base);
-        // Save client browser.
-        browser_ = browser;
-        browser_id_ = browser->get_identifier(browser);
-
-        // Initialize DevTools opener.
-        PrepareDevTools();
-    }
-
     OnAfterCreated(self, browser);
+    SetUpBrowserWindow(browser);
 }
 
-static decltype(cef_life_span_handler_t::on_before_close) OnBeforeClose;
-static void CEF_CALLBACK Hooked_OnBeforeClose(cef_life_span_handler_t* self,
-    struct _cef_browser_t* browser)
+static void HookMainBrowserClient(cef_client_t *client)
 {
-    // Check main browser.
-    if (browser->get_identifier(browser) == browser_id_)
-    {
-        browser_ = nullptr;
-    }
+    void HookKeyboardHandler(cef_client_t *client);
+    HookKeyboardHandler(client);
 
-    OnBeforeClose(self, browser);
-}
-
-static decltype(cef_load_handler_t::on_load_start) OnLoadStart;
-static void CALLBACK Hooked_OnLoadStart(struct _cef_load_handler_t* self,
-    struct _cef_browser_t* browser,
-    struct _cef_frame_t* frame,
-    cef_transition_type_t transition_type)
-{
-    OnLoadStart(self, browser, frame, transition_type);
-
-    if (frame->is_main(frame))
-    {
-        SetUpBrowserWindow(browser, frame);
-    }
-};
-
-static void HookClient(cef_client_t *client)
-{
     // Hook LifeSpanHandler.
     static auto GetLifeSpanHandler = client->get_life_span_handler;
     // Don't worry about calling convention here (stdcall).
@@ -78,23 +76,6 @@ static void HookClient(cef_client_t *client)
         // Hook OnAfterCreated().
         OnAfterCreated = handler->on_after_created;
         handler->on_after_created = Hooked_OnAfterCreated;
-
-        // Hook OnBeforeClose().
-        OnBeforeClose = handler->on_before_close;
-        handler->on_before_close = Hooked_OnBeforeClose;
-
-        return handler;
-    };
-
-    // Hook LoadHandler;
-    static auto GetLoadHandler = client->get_load_handler;
-    client->get_load_handler = [](struct _cef_client_t* self)
-    {
-        auto handler = GetLoadHandler(self);
-
-        // Hook OnLoadStart().
-        OnLoadStart = handler->on_load_start;
-        handler->on_load_start = Hooked_OnLoadStart;
 
         return handler;
     };
@@ -110,9 +91,9 @@ static void HookClient(cef_client_t *client)
         {
             CefScopedStr name = message->get_name(message);
             if (name.equal(L"__open_devtools"))
-                OpenDevTools_Internal(false);
+                OpenDevTools(browser);
             else if (name.equal(L"__open_remote_devtools"))
-                OpenDevTools_Internal(true);
+                OpenRemoteDevTools();
             else if (name.equal(L"__reload_client"))
                 browser->reload_ignore_cache(browser);
         }
@@ -144,7 +125,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
         extra_info->set_null(extra_info, &L"is_main"_s);
 
         // Hook client.
-        HookClient(client);
+        HookMainBrowserClient(client);
     }
 
     return CefBrowserHost_CreateBrowser(windowInfo, client, url, settings, extra_info, nullptr);
@@ -182,11 +163,11 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 
     OnBeforeCommandLineProcessing(self, process_type, command_line);
 
-    if (REMOTE_DEBUGGING_PORT = config::getConfigValueInt(L"RemoteDebuggingPort", 0))
+    if (remote_debugging_port_ = config::getConfigValueInt(L"RemoteDebuggingPort", 0))
     {
         // Set remote debugging port.
         command_line->append_switch_with_value(command_line,
-            &L"remote-debugging-port"_s, &CefStr(std::to_string(REMOTE_DEBUGGING_PORT)));
+            &L"remote-debugging-port"_s, &CefStr(std::to_string(remote_debugging_port_)));
     }
 
     if (config::getConfigValueBool(L"DisableWebSecurity", false))
@@ -231,9 +212,6 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &L"wm-window-animations-disabled"_s);
         command_line->append_switch_with_value(command_line, &L"animation-duration-scale"_s, &L"0"_s);
     }
-
-    command_line->append_switch_with_value(command_line,
-        &L"disable-features"_s, &L"BlockInsecurePrivateNetworkRequests,OutOfBlinkCors"_s);
 }
 
 static hook::Hook<decltype(cef_initialize)> CefInitialize;
@@ -298,60 +276,6 @@ static BOOL WINAPI Hooked_CreateProcessW(
     return success;
 }
 
-static hook::Hook<decltype(CreateWindowExW)> Old_CreateWindowExW;
-static HWND WINAPI Hooked_CreateWindowExW(
-    _In_ DWORD dwExStyle,
-    _In_opt_ LPCWSTR lpClassName,
-    _In_opt_ LPCWSTR lpWindowName,
-    _In_ DWORD dwStyle,
-    _In_ int X,
-    _In_ int Y,
-    _In_ int nWidth,
-    _In_ int nHeight,
-    _In_opt_ HWND hWndParent,
-    _In_opt_ HMENU hMenu,
-    _In_opt_ HINSTANCE hInstance,
-    _In_opt_ LPVOID lpParam)
-{
-    HWND hwnd = Old_CreateWindowExW(dwExStyle, lpClassName,
-        lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
-
-    // Avoid ATOM value.
-    if ((uintptr_t)lpClassName <= UINT16_MAX)
-        return hwnd;
-
-    // Detect DevTools window.
-    if (!wcscmp(lpClassName, L"CefBrowserWindow") && !wcscmp(lpWindowName, DEVTOOLS_WINDOW_NAME))
-    {
-        // Get League icon.
-        HWND hClient = FindWindowW(L"RCLIENT", L"League of Legends");
-        HICON icon = (HICON)SendMessageW(hClient, WM_GETICON, ICON_BIG, 0);
-
-        // Set window icon.
-        SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
-        SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
-
-        extern HWND devtools_window_;
-        bool IsWindowsLightTheme();
-        void ForceDarkTheme(HWND);
-
-        if (!IsWindowsLightTheme())
-        {
-            // Force dark theme.
-            ForceDarkTheme(hwnd);
-
-            RECT rc;
-            GetClientRect(hwnd, &rc);
-            // Fix titlebar issue.
-            SetWindowPos(hwnd, NULL, 0, 0, rc.right - 5, rc.bottom, SWP_NOMOVE | SWP_FRAMECHANGED);
-        }
-
-        devtools_window_ = hwnd;
-    }
-
-    return hwnd;
-}
-
 void HookBrowserProcess()
 {
     // Open console window.
@@ -369,7 +293,4 @@ void HookBrowserProcess()
 
     // Hook CreateProcessW().
     Old_CreateProcessW.hook(&CreateProcessW, Hooked_CreateProcessW);
-
-    // Hook CreateWindowExW().
-    Old_CreateWindowExW.hook(CreateWindowExW, Hooked_CreateWindowExW);
 }
