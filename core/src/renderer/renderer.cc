@@ -189,6 +189,8 @@ static void LoadPlugins(V8Object *window)
 
     // Add Pengu to window.
     window->set(&L"Pengu"_s, pengu, V8_PROPERTY_ATTRIBUTE_READONLY);
+
+    window->set(&L"__llver"_s, version, V8_PROPERTY_ATTRIBUTE_READONLY);
 }
 
 static void ExecutePreloadScript(cef_frame_t *frame)
@@ -277,18 +279,13 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
 {
     if (is_main_ && source_process == PID_BROWSER)
     {
-        CefScopedStr msg{ message->get_name(message) };
+        CefScopedStr msg = message->get_name(message);
+
         if (msg.equal(L"__rclient"))
         {
             // Received RCLIENT HWND.
             auto args = message->get_argument_list(message);
             RCLIENT_WINDOW = reinterpret_cast<HWND>((intptr_t)args->get_int(args, 0));
-            return 1;
-        }
-        else if (msg.equal(L"__restart_client"))
-        {
-            frame->execute_java_script(frame,
-                &L"fetch('/riotclient/kill-and-restart-ux', { method: 'POST' });"_s, nullptr, 1);
             return 1;
         }
     }

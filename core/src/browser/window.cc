@@ -31,11 +31,8 @@ static LRESULT CALLBACK Hooked_WidgetWndProc(HWND hwnd, UINT msg, WPARAM wp, LPA
                         "Pengu Loader", MB_ICONQUESTION | MB_YESNO) == IDYES)
                     {
                         auto frame = browser_->get_main_frame(browser_);
-
-                        auto msg = cef_process_message_create(&L"__restart_client"_s);
-                        frame->send_process_message(frame, PID_RENDERER, msg);
-
-                        frame->base.release(&frame->base);
+                        frame->execute_java_script(frame,
+                            &L"fetch('/riotclient/kill-and-restart-ux', { method: 'POST' })"_s, nullptr, 1);
                     }
                 }
             }
