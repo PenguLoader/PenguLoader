@@ -23,7 +23,7 @@ async function loadPlugin(entry: string) {
     const msg = `Loaded plugin "${entry}".`;
     console.info('%c Pengu ', 'background: #183461; color: #fff', msg);
   } catch (err) {
-    const msg = `Failed to ${stage} plugin "${entry}"\n.`;
+    const msg = `Failed to ${stage} plugin "${entry}".\n`;
     console.error('%c Pengu ', 'background: #183461; color: #fff', msg, err);
   }
 }
