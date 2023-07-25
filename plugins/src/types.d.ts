@@ -51,6 +51,7 @@ declare const openPluginsFolder: () => void;
 declare const reloadClient: () => void;
 declare const restartClient: () => void;
 declare const getScriptPath: () => string | undefined;
+declare const __llver: string;
 
 declare interface Window {
 
@@ -64,4 +65,5 @@ declare interface Window {
   reloadClient: typeof reloadClient;
   restartClient: typeof restartClient;
   getScriptPath: typeof getScriptPath;
+  __llver: string;
 }

@@ -157,6 +157,8 @@ static void ExposeNativeFunctions(V8Object *window)
     }
 
     window->set(&L"__native"_s, native, V8_PROPERTY_ATTRIBUTE_READONLY);
+
+    window->set(&L"__llver"_s, V8Value::string(&CefStr(PL_VERSION)), V8_PROPERTY_ATTRIBUTE_READONLY);
 }
 
 static void LoadPlugins(V8Object *window)
@@ -189,8 +191,6 @@ static void LoadPlugins(V8Object *window)
 
     // Add Pengu to window.
     window->set(&L"Pengu"_s, pengu, V8_PROPERTY_ATTRIBUTE_READONLY);
-
-    window->set(&L"__llver"_s, version, V8_PROPERTY_ATTRIBUTE_READONLY);
 }
 
 static void ExecutePreloadScript(cef_frame_t *frame)
