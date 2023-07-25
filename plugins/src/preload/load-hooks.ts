@@ -20,7 +20,9 @@ window.addEventListener = function (type, listener, options) {
 
 // Make sure the late document's DOMContentLoaded listeners are called
 document.addEventListener = function (type, listener, options) {
-  if (type === 'DOMContentLoaded' && document.readyState === 'complete') {
+  if (type === 'DOMContentLoaded'
+    && (document.readyState === 'interactive'
+      || document.readyState === 'complete')) {
     setTimeout(listener, 1);
   } else {
     documentAddEventListener.call(this, type, listener, options);
