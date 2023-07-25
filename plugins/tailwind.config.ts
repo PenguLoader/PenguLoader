@@ -5,7 +5,11 @@ const config: Config = {
     './index.html',
     './src/**/*.{ts,tsx,css,html,scss}',
   ],
-  prefix: 'tw-',
+  // prefix: 'tw-',
+  important: '#pengu',
+  corePlugins: {
+    preflight: false,
+  },
   // darkMode: 'class',
   theme: {
     extend: {

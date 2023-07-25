@@ -7,49 +7,49 @@ export function Welcome() {
 
   return (
     <Show when={visible()}>
-      <div class="tw-z-10 tw-relative">
-        <div class="tw-fixed tw-inset-0 tw-bg-black tw-bg-opacity-50 tw-transition-opacity"></div>
-        <div class="tw-fixed tw-inset-0 tw-z-10 tw-overflow-y-auto">
-          <div class="tw-flex tw-min-h-full tw-items-end tw-justify-center tw-p-4 tw-text-center sm:tw-items-center sm:tw-p-0">
-            <div class="tw-relative tw-transform tw-overflow-hidden tw-rounded-lg tw-bg-white tw-text-left tw-shadow-xl tw-transition-all sm:tw-my-8 sm:tw-w-full sm:tw-max-w-lg">
-              <div class="tw-bg-white tw-px-4 tw-pb-4 tw-pt-5 sm:tw-p-6 sm:tw-pb-4">
-                <div class="sm:tw-flex sm:tw-items-start">
-                  <div class="tw-mx-auto tw-flex tw-h-12 tw-w-12 tw-flex-shrink-0 tw-items-center tw-justify-center sm:tw-mx-0 sm:tw-h-10 sm:tw-w-10">
-                    <img src={penguLogo} class="tw-w-10 tw-h-10 tw-rounded" alt="" />
+      <div class="z-10 relative">
+        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+          <div class="flex min-h-full justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+              <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                  <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center sm:mx-0 sm:h-10 sm:w-10">
+                    <img src={penguLogo} class="w-10 h-10 rounded" alt="" />
                   </div>
-                  <div class="tw-mt-3 tw-text-center sm:tw-ml-4 sm:tw-mt-0 sm:tw-text-left">
-                    <h3 class="tw-text-base tw-mt-0 tw-font-semibold tw-leading-6 tw-text-gray-900" id="modal-title">Pengu Loader</h3>
-                    <div class="tw-mt-2">
-                      <p class="tw-text-sm tw-text-black">
+                  <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left">
+                    <h3 class="text-base mt-0 font-semibold leading-6 text-gray-900" id="modal-title">Pengu Loader</h3>
+                    <div class="mt-2">
+                      <div class="text-sm text-black">
                         Hi Summoner, your installed plugins have been successfully loaded.
                         Join our community to get more 😎 awesome plugins and themes now 👇
-                      </p>
-                      <p class="flex tw-space-x-1">
-                        <a href="https://pengu.lol/" target="_blank" rel="noreferrer" class="tw-opacity-90 hover:tw-opacity-100">
-                          <img height="28" src="https://img.shields.io/badge/-pengu.lol-607080.svg?&style=for-the-badge&logo=Authy&logoColor=white" alt="" />
+                      </div>
+                      <div class="flex my-3 space-x-1">
+                        <a href="https://chat.pengu.lol/" target="_blank" rel="noreferrer" class="opacity-90 hover:opacity-100">
+                          <img src="https://img.shields.io/discord/1069483280438673418?style=flat-square&logo=discord&logoColor=white&label=discord&color=5c5fff" alt="" />
                         </a>
-                        <a href="https://chat.pengu.lol/" target="_blank" rel="noreferrer" class="tw-opacity-90 hover:tw-opacity-100">
-                          <img height="28" src="https://img.shields.io/badge/-discord-5c5fff.svg?&style=for-the-badge&logo=Discord&logoColor=white" alt="" />
+                        <a href="https://pengu.lol/" target="_blank" rel="noreferrer" class="opacity-90 hover:opacity-100">
+                          <img src="https://img.shields.io/badge/-pengu.lol-607080.svg?&style=flat-square&logo=gitbook&logoColor=white" alt="" />
                         </a>
-                        <a href="https://github.com/PenguLoader/PenguLoader/" target="_blank" rel="noreferrer" class="tw-opacity-90 hover:tw-opacity-100">
-                          <img height="28" src="https://img.shields.io/badge/-github-1f2328.svg?&style=for-the-badge&logo=Github&logoColor=white" alt="" />
+                        <a href="https://github.com/PenguLoader/PenguLoader/" target="_blank" rel="noreferrer" class="opacity-90 hover:opacity-100">
+                          <img src="https://img.shields.io/github/stars/PenguLoader/PenguLoader?style=flat-square&logo=github" alt="" />
                         </a>
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="tw-bg-gray-50 tw-px-4 tw-py-3 tw-flex tw-flex-row tw-justify-between tw-items-center sm:tw-px-6">
-                <div class="tw-flex tw-items-center tw-space-x-2">
-                  <input type="checkbox" id="TxrO6Gew" class="tw-h-4 tw-w-4 tw-rounded tw-border-gray-300 tw-outline-none" />
-                  <label for="TxrO6Gew" class="tw-text-sm tw-font-medium tw-text-gray-700">
+              <div class="bg-gray-50 px-4 py-3 flex flex-row justify-between items-center sm:px-6">
+                <div class="flex items-center space-x-2">
+                  <input type="checkbox" id="TxrO6Gew" class="h-4 w-4 rounded border-gray-300 outline-none" />
+                  <label for="TxrO6Gew" class="text-sm font-medium text-gray-700">
                     Do not show again
                   </label>
                 </div>
                 <button
                   onClick={() => show(false)}
                   type="button"
-                  class="tw-uppercase tw-text-sm tw-outline-none tw-border-none tw-bg-gray-300/60 tw-px-3 tw-py-1 tw-text-gray-900 tw-rounded hover:tw-bg-gray-300 tw-cursor-pointer"
+                  class="uppercase text-sm outline-none border-none bg-gray-300/60 px-3 py-1 text-gray-900 rounded hover:bg-gray-300 cursor-pointer"
                 >Okay</button>
               </div>
             </div>

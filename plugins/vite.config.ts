@@ -30,7 +30,8 @@ export default defineConfig(({ command, mode }) => {
     },
     css: {
       postcss: {
-        plugins: [
+        plugins: [,
+          // @ts-ignore
           tailwind(),
           autoprefixer(),
           !dev && cssnano(),

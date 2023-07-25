@@ -1,27 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&display=swap');
 
-/* @tailwind base; */
-@tailwind components;
+@tailwind base;
 @tailwind utilities;
+@tailwind components;
 
 body {
   position: relative;
 }
 
-#pengu-root-layer {
-  font-size: 14px;
-  font-family: 'Open Sans', sans-serif;
+#pengu * {
+  box-sizing: border-box;
 }
 
-#pengu-root-layer * {
-  box-sizing: border-box;
+#pengu {
+  font-size: 14px;
+  font-family: 'Open Sans', sans-serif;
 }
 
 div[id^=index_loading_div] {
   background-color: #010a13;
 }
 
-div[id^=index_loading_div] > img {
+div[id^=index_loading_div]>img {
   display: none;
 }
 

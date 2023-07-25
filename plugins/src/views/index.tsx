@@ -4,7 +4,7 @@ import App from './App.tsx';
 import './style.css';
 
 function mount() {
-  const rootId = 'pengu-root-layer';
+  const rootId = 'pengu';
   let root = document.getElementById(rootId);
 
   if (!root) {
