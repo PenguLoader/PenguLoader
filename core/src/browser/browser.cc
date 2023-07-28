@@ -102,7 +102,7 @@ static void HookMainBrowserClient(cef_client_t *client)
     };
 }
 
-static hook::Hook<decltype(cef_browser_host_create_browser)> CefBrowserHost_CreateBrowser;
+static hook::Hook<decltype(&cef_browser_host_create_browser)> CefBrowserHost_CreateBrowser;
 static int Hooked_CefBrowserHost_CreateBrowser(
     const cef_window_info_t* windowInfo,
     struct _cef_client_t* client,
@@ -214,7 +214,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     }
 }
 
-static hook::Hook<decltype(cef_initialize)> CefInitialize;
+static hook::Hook<decltype(&cef_initialize)> CefInitialize;
 static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     const struct _cef_settings_t* settings, cef_app_t* app, void* windows_sandbox_info)
 {

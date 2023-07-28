@@ -18,7 +18,7 @@ static void LoadData(str &json)
     if (stream.good())
     {
         stream.seekg(0, std::ios::end);
-        size_t fileSize = stream.tellg();
+        size_t fileSize = (size_t)stream.tellg();
         stream.seekg(0, std::ios::beg);
 
         vec<char> buffer(fileSize);

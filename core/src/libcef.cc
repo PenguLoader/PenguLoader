@@ -50,7 +50,7 @@ static void WarnInvalidVersion()
 #define THISCALL_PARAMS void *, void *  // ecx edx
 #endif
 
-static cef_color_t __fastcall
+static cef_color_t
 Hooked_GetBackgroundColor(THISCALL_PARAMS, cef_browser_settings_t *, cef_state_t)
 {
     return 0; // SK_ColorTRANSPARENT
@@ -78,7 +78,7 @@ bool LoadLibcefDll(bool is_browser)
             const char *pattern = "55 89 E5 53 56 8B 55 0C 8B 45 08 83 FA 01 74 09";
 #endif
 
-            static hook::Hook<decltype(Hooked_GetBackgroundColor)> GetBackgroundColor;
+            static hook::Hook<decltype(&Hooked_GetBackgroundColor)> GetBackgroundColor;
             auto delegate = (decltype(&Hooked_GetBackgroundColor))utils::patternScan(module, pattern);
 
             // Hook CefContext::GetBackgroundColor().

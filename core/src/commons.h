@@ -281,7 +281,7 @@ namespace hook
     class Hook;
 
     template<typename R, typename ...Args>
-    class Hook<R(Args...)>
+    class Hook<R(*)(Args...)>
     {
     public:
         using Fn = R(*)(Args...);
@@ -335,7 +335,7 @@ namespace hook
             }
         }
 
-    private:
+    protected:
 #       pragma pack(push, 1)
         struct Shellcode
         {
@@ -382,4 +382,34 @@ namespace hook
             uint8_t backup_[size];
         };
     };
+
+#ifndef _WIN64
+    template<typename R, typename ...Args>
+    class Hook<R(__stdcall*)(Args...)> : public Hook<R(*)(Args...)>
+    {
+    public:
+        using FnStd = R(__stdcall*)(Args...);
+
+        bool hook(FnStd orig, FnStd hook)
+        {
+            return Hook<R(*)(Args...)>::hook((Fn)orig, (Fn)hook);
+        }
+
+        bool hook(const char *lib, const char *proc, FnStd hook)
+        {
+            return Hook<R(*)(Args...)>::hook(lib, proc, (Fn)hook);
+        }
+
+        R operator ()(Args ...args)
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            {
+                RestoreGuard<sizeof(Shellcode)> _t(orig_func_, orig_code_);
+                {
+                    return reinterpret_cast<FnStd>(orig_func_)(args...);
+                }
+            }
+        }
+    };
+#endif
 }

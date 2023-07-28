@@ -180,7 +180,7 @@ static void LoadPlugins(V8Object *window)
     auto entries = GetPluginEntries();
     auto pluginEntries = V8Array::create((int)entries.size());
 
-    for (int index = 0; index < entries.size(); index++)
+    for (int index = 0; index < (int)entries.size(); index++)
     {
         auto entry = V8Value::string(&CefStr(entries[index]));
         pluginEntries->set(index, entry);
@@ -293,7 +293,7 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
     return OnProcessMessageReceived(self, browser, frame, source_process, message);
 }
 
-static hook::Hook<decltype(cef_execute_process)> CefExecuteProcess;
+static hook::Hook<decltype(&cef_execute_process)> CefExecuteProcess;
 static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app, void* windows_sandbox_info)
 {
     // Hook RenderProcessHandler.

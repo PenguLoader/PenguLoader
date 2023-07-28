@@ -8,7 +8,7 @@ void HookBrowserProcess();
 void HookRendererProcess();
 void InjectThisDll(HANDLE hProcess);
 
-static hook::Hook<decltype(CreateProcessW)> Old_CreateProcessW;
+static hook::Hook<decltype(&CreateProcessW)> Old_CreateProcessW;
 static BOOL WINAPI Hooked_CreateProcessW(
     _In_opt_ LPCWSTR lpApplicationName,
     _Inout_opt_ LPWSTR lpCommandLine,
