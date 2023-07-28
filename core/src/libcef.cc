@@ -50,7 +50,7 @@ static void WarnInvalidVersion()
 #define THISCALL_PARAMS void *, void *  // ecx edx
 #endif
 
-static cef_color_t
+static cef_color_t __fastcall
 Hooked_GetBackgroundColor(THISCALL_PARAMS, cef_browser_settings_t *, cef_state_t)
 {
     return 0; // SK_ColorTRANSPARENT

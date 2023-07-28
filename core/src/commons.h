@@ -275,22 +275,15 @@ namespace utils
 
 namespace hook
 {
-    // Special thanks to https://github.com/nbqofficial/divert/
-
-    template<typename>
-    class Hook;
-
-    template<typename R, typename ...Args>
-    class Hook<R(*)(Args...)>
+    template<typename Fn, typename R, typename ...Args>
+    class HookBase
     {
     public:
-        using Fn = R(*)(Args...);
-
-        Hook() : orig_func_(nullptr), mutex_{}
+        HookBase() : orig_func_(nullptr), mutex_{}
         {
         }
 
-        ~Hook()
+        ~HookBase()
         {
             if (orig_func_ != nullptr)
             {
@@ -339,6 +332,7 @@ namespace hook
 #       pragma pack(push, 1)
         struct Shellcode
         {
+        // Special thanks to https://github.com/nbqofficial/divert/
 #       ifdef _WIN64
             uint8_t movabs = 0x48;      // x86                  x86_64                 
 #       endif                           //
@@ -383,33 +377,28 @@ namespace hook
         };
     };
 
-#ifndef _WIN64
+    template<typename>
+    class Hook;
+
     template<typename R, typename ...Args>
-    class Hook<R(__stdcall*)(Args...)> : public Hook<R(*)(Args...)>
+    class Hook<R(*)(Args...)>
+        : public HookBase<R(*)(Args...), R, Args...>
     {
-    public:
-        using FnStd = R(__stdcall*)(Args...);
+    };
 
-        bool hook(FnStd orig, FnStd hook)
-        {
-            return Hook<R(*)(Args...)>::hook((Fn)orig, (Fn)hook);
-        }
+#ifndef _WIN64
+    // stdcall and fastcall are ignored on x64
 
-        bool hook(const char *lib, const char *proc, FnStd hook)
-        {
-            return Hook<R(*)(Args...)>::hook(lib, proc, (Fn)hook);
-        }
+    template<typename R, typename ...Args>
+    class Hook<R(__stdcall*)(Args...)>
+        : public HookBase<R(__stdcall*)(Args...), R, Args...>
+    {
+    };
 
-        R operator ()(Args ...args)
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            {
-                RestoreGuard<sizeof(Shellcode)> _t(orig_func_, orig_code_);
-                {
-                    return reinterpret_cast<FnStd>(orig_func_)(args...);
-                }
-            }
-        }
+    template<typename R, typename ...Args>
+    class Hook<R(__fastcall*)(Args...)>
+        : public HookBase<R(__fastcall*)(Args...), R, Args...>
+    {
     };
 #endif
 }
