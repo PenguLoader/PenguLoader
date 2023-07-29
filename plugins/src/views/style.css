@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
 @tailwind base;
 @tailwind utilities;
@@ -13,8 +13,8 @@ body {
 }
 
 #pengu {
-  font-size: 14px;
-  font-family: 'Open Sans', sans-serif;
+  font-size: .875rem;
+  font-family: 'Inter', sans-serif;
 }
 
 div[id^=index_loading_div] {
@@ -40,6 +40,6 @@ div[id^=index_loading_div]:after {
   content: "Pengu-Powered";
   color: #e2e1e1;
   font-family: 'Open Sans', sans-serif;
-  font-size: 14px;
+  font-size: 1rem;
   text-transform: uppercase;
 }
