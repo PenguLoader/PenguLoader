@@ -16,8 +16,11 @@ static int CEF_CALLBACK Hooked_OnPreKeyEvent(
     int* is_keyboard_shortcut)
 {
     int code = event->windows_key_code;
-    bool ctrl_shift = event->modifiers
-        & (EVENTFLAG_CONTROL_DOWN | EVENTFLAG_SHIFT_DOWN);
+    bool ctrl_shift = (event->modifiers & EVENTFLAG_CONTROL_DOWN)
+        && (event->modifiers & EVENTFLAG_SHIFT_DOWN);
+
+    if (event->focus_on_editable_field)
+        goto _next;
 
     if (code == VK_F12 || (ctrl_shift && code == 'I'))
     {
@@ -54,6 +57,7 @@ static int CEF_CALLBACK Hooked_OnPreKeyEvent(
         }
     }
 
+_next:
     return OnPreKeyEvent(self, browser, event, os_event, is_keyboard_shortcut);
 }
 
