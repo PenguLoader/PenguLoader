@@ -275,21 +275,77 @@ namespace utils
 
 namespace hook
 {
+#   pragma pack(push, 1)
+    struct Shellcode
+    {
+        Shellcode(intptr_t addr) : addr(addr) {}
+
+    private:
+        // Special thanks to https://github.com/nbqofficial/divert/
+#   ifdef _WIN64
+        uint8_t movabs = 0x48;      // x86                  x86_64                 
+#   endif                           //
+        uint8_t mov_eax = 0xB8;     // mov eax [addr]   |   movabs rax [addr]
+        intptr_t addr;              //
+        uint8_t push_eax = 0x50;    // push eax         |   push rax
+        uint8_t ret = 0xC3;         // ret              |   ret
+    };
+#   pragma pack(pop)
+
+    struct Restorable
+    {
+        Restorable(void *func, const void *code, size_t size)
+            : func_(func)
+            , backup_(new uint8_t[size]{})
+            , size_(size)
+        {
+            memcpy(backup_, func, size);
+            memcpy_safe(func, code, size);
+        }
+
+        ~Restorable()
+        {
+            memcpy_safe(func_, backup_, size_);
+            delete[] backup_;
+        }
+
+        Restorable swap()
+        {
+            return Restorable(func_, backup_, size_);
+        }
+
+    private:
+        void *func_;
+        uint8_t *backup_;
+        size_t size_;
+
+        static void memcpy_safe(void *dst, const void *src, size_t size)
+        {
+            DWORD op;
+            VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &op);
+            memcpy(dst, src, size);
+            VirtualProtect(dst, size, op, &op);
+        }
+    };
+
     template<typename Fn, typename R, typename ...Args>
     class HookBase
     {
     public:
-        HookBase() : orig_func_(nullptr), mutex_{}
+        HookBase()
+            : orig_(nullptr)
+            , rest_(nullptr)
+            , mutex_{}
         {
         }
 
         ~HookBase()
         {
-            if (orig_func_ != nullptr)
+            if (rest_ != nullptr)
             {
                 std::lock_guard<std::mutex> lock(mutex_);
                 {
-                    memcpy_safe(orig_func_, orig_code_, sizeof(Shellcode));
+                    delete rest_;
                 }
             }
         }
@@ -299,11 +355,10 @@ namespace hook
             if (orig == nullptr || hook == nullptr)
                 return false;
 
-            orig_func_ = orig;
-            memcpy(orig_code_, orig, sizeof(Shellcode));
+            orig_ = orig;
 
             Shellcode code(reinterpret_cast<intptr_t>(hook));
-            memcpy_safe(orig, &code, sizeof(Shellcode));
+            rest_ = new Restorable(orig, &code, sizeof(code));
 
             return true;
         }
@@ -321,60 +376,17 @@ namespace hook
         {
             std::lock_guard<std::mutex> lock(mutex_);
             {
-                RestoreGuard<sizeof(Shellcode)> _t(orig_func_, orig_code_);
+                auto _t = rest_->swap();
                 {
-                    return orig_func_(args...);
+                    return orig_(args...);
                 }
             }
         }
 
     protected:
-#       pragma pack(push, 1)
-        struct Shellcode
-        {
-        // Special thanks to https://github.com/nbqofficial/divert/
-#       ifdef _WIN64
-            uint8_t movabs = 0x48;      // x86                  x86_64                 
-#       endif                           //
-            uint8_t mov_eax = 0xB8;     // mov eax [addr]   |   movabs rax [addr]
-            intptr_t addr;              //
-            uint8_t push_eax = 0x50;    // push eax         |   push rax
-            uint8_t ret = 0xC3;         // ret              |   ret
-
-            Shellcode(intptr_t addr) : addr(addr) {}
-        };
-#       pragma pack(pop)
-
-        Fn orig_func_;
-        uint8_t orig_code_[sizeof(Shellcode)];
+        Fn orig_;
+        Restorable *rest_;
         std::mutex mutex_;
-
-        static void memcpy_safe(void *dst, const void *src, size_t size)
-        {
-            DWORD op;
-            VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &op);
-            memcpy(dst, src, size);
-            VirtualProtect(dst, size, op, &op);
-        }
-
-        template<int size>
-        struct RestoreGuard
-        {
-            RestoreGuard(void *func, const void *code) : func_(func)
-            {
-                memcpy(backup_, func, size);
-                memcpy_safe(func, code, size);
-            }
-
-            ~RestoreGuard()
-            {
-                memcpy_safe(func_, backup_, size);
-            }
-
-        private:
-            void *func_;
-            uint8_t backup_[size];
-        };
     };
 
     template<typename>
