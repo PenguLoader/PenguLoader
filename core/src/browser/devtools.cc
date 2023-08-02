@@ -67,6 +67,51 @@ struct DevToolsLifeSpan : CefRefCount<cef_life_span_handler_t>
     int parent_id_;
 };
 
+struct DevToolsKeyboardHandler : CefRefCount<cef_keyboard_handler_t>
+{
+    DevToolsKeyboardHandler() : CefRefCount(this)
+    {
+        cef_keyboard_handler_t::on_pre_key_event = []
+        (struct _cef_keyboard_handler_t* self,
+            struct _cef_browser_t* browser,
+            const struct _cef_key_event_t* event,
+            cef_event_handle_t os_event,
+            int* is_keyboard_shortcut) -> int
+        {
+            if (event->modifiers & EVENTFLAG_CONTROL_DOWN)
+            {
+                cef_browser_host_t *host = nullptr;
+
+                if (event->windows_key_code == VK_OEM_PLUS)
+                {
+                    host = browser->get_host(browser);
+                    host->set_zoom_level(host,
+                        host->get_zoom_level(host) + 0.1);
+                }
+                else if (event->windows_key_code == VK_OEM_MINUS)
+                {
+                    host = browser->get_host(browser);
+                    host->set_zoom_level(host,
+                        host->get_zoom_level(host) - 0.1);
+                }
+                else if (event->windows_key_code == '0')
+                {
+                    host = browser->get_host(browser);
+                    host->set_zoom_level(host, 0);
+                }
+
+                if (host != nullptr)
+                {
+                    host->base.release(&host->base);
+                    return true;
+                }
+            }
+
+            return false;
+        };
+    }
+};
+
 struct DevToolsClient : CefRefCount<cef_client_t>
 {
     DevToolsClient(int parent_id)
@@ -77,6 +122,12 @@ struct DevToolsClient : CefRefCount<cef_client_t>
         {
             auto self = static_cast<DevToolsClient *>(_);
             return new DevToolsLifeSpan(self->parent_id_);
+        };
+
+        cef_client_t::get_keyboard_handler = []
+        (cef_client_t *_) -> cef_keyboard_handler_t *
+        {
+            return new DevToolsKeyboardHandler();
         };
     }
 
