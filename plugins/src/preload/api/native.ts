@@ -2,6 +2,7 @@ interface Native {
   OpenDevTools: (remote: boolean) => void;
   OpenAssetsFolder: () => void;
   OpenPluginsFolder: () => void;
+  OpenSpecifiedPluginFodler: (pluginName:string, relativePath:string)=> boolean;
   ReloadClient: () => void;
 
   GetWindowEffect: () => string;

@@ -48,6 +48,7 @@ declare const Effect: Effect;
 declare const openDevTools: (remote?: boolean) => void;
 declare const openAssetsFolder: () => void;
 declare const openPluginsFolder: () => void;
+declare const openSpecifiedPluginFodler: (pluginName:string, relativePath:string) => boolean;
 declare const reloadClient: () => void;
 declare const restartClient: () => void;
 declare const getScriptPath: () => string | undefined;
@@ -62,6 +63,7 @@ declare interface Window {
   openDevTools: typeof openDevTools;
   openAssetsFolder: typeof openAssetsFolder;
   openPluginsFolder: typeof openPluginsFolder;
+  openSpecifiedPluginFodler: typeof openSpecifiedPluginFodler;
   reloadClient: typeof reloadClient;
   restartClient: typeof restartClient;
   getScriptPath: typeof getScriptPath;

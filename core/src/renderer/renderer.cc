@@ -78,6 +78,19 @@ static V8Value *native_OpenPluginsFolder(const vec<V8Value *> &args)
     return nullptr;
 }
 
+static V8Value* native_OpenSpecifiedPluginFodler(const vec<V8Value*>& args)
+{
+    wstr path = config::pluginsDir();
+    for (V8Value* arg : args) {
+        path = path + L"\\" + arg->asString()->str;
+    }
+    if (utils::isDir(path)) {
+        utils::openLink(path);
+        return V8Value::boolean(true);
+    }
+    return V8Value::boolean(false);
+}
+
 static V8Value *native_ReloadClient(const vec<V8Value *> &args)
 {
     auto context = cef_v8context_get_current_context();
@@ -95,6 +108,7 @@ static map<wstr, V8FunctionHandler> m_nativeDelegateMap
     { L"OpenDevTools", native_OpenDevTools },
     { L"OpenAssetsFolder", native_OpenAssetsFolder },
     { L"OpenPluginsFolder", native_OpenPluginsFolder },
+    { L"OpenSpecifiedPluginFodler", native_OpenSpecifiedPluginFodler },
     { L"ReloadClient", native_ReloadClient },
 
     { L"LoadDataStore", native_LoadDataStore },
