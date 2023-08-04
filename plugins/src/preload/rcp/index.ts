@@ -96,3 +96,5 @@ export const rcp = {
   postInit,
   whenReady,
 };
+
+window['rcp'] = Object.freeze(rcp);
