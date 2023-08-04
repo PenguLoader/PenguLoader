@@ -3,6 +3,7 @@ interface Callback {
   callback: Function,
 }
 
+const pluginMap = new Map<string, any>();
 const callbacksMap = new Map<string, Callback[]>();
 
 function subscribeRcp(name: string) {
@@ -10,16 +11,16 @@ function subscribeRcp(name: string) {
     const handler = event.registrationHandler;
 
     event.registrationHandler = function (registrar) {
-      handler(async (context) => {
+      handler(async (provider) => {
         const callbacks = callbacksMap.get(name)!;
 
         await Promise.allSettled(
           callbacks.filter(c => c.pre)
-            .map(c => c.callback())
+            .map(c => c.callback(provider))
         );
 
-        // console.log(context);
-        const api = await registrar(context);
+        const api = await registrar(provider);
+        pluginMap.set(name, api);
 
         callbacks.filter(c => !c.pre)
           .forEach(c => c.callback(api));
@@ -52,7 +53,7 @@ function addHook(name: string, pre: boolean, callback: Function) {
   });
 }
 
-function preInit(name: string, callback: () => any) {
+function preInit(name: string, callback: (provider: any) => any) {
   if (typeof name === 'string' && typeof callback === 'function') {
     addHook(name, true, callback);
   }
@@ -64,6 +65,7 @@ function postInit(name: string, callback: (api: any) => any) {
   }
 }
 
+// Wait for plugin(s) loaded asynchronously
 function whenReady(name: string): Promise<any>;
 function whenReady(names: string[]): Promise<any[]>;
 function whenReady(param) {
@@ -80,7 +82,16 @@ function whenReady(param) {
   }
 }
 
+// Get a plugin sunchronously, returns undefined if it's not loaded
+function get(name: string): object | undefined {
+  name = String(name).toLowerCase();
+  if (!name.startsWith('rcp-'))
+    name = 'rcp-' + name;
+  return pluginMap.get(name);
+}
+
 export const rcp = {
+  get,
   preInit,
   postInit,
   whenReady,
