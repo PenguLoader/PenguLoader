@@ -8,7 +8,7 @@
 static wstr origin_;
 static wstr authorization_;
 
-static int min_(int a, int b)
+static inline int min_(int a, int b)
 {
     return a < b ? a : b;
 }
@@ -73,11 +73,10 @@ struct RiotClientResourceHandler : CefRefCount<cef_resource_handler_t>
         , client_(nullptr)
         , data_{}
     {
-        cef_resource_handler_t::open = _open;
-        cef_resource_handler_t::process_request = _process_request;
-        cef_resource_handler_t::get_response_headers = _get_response_headers;
-        cef_resource_handler_t::skip = _skip;
-        cef_resource_handler_t::read = _read;
+        cef_bind_method(RiotClientResourceHandler, open);
+        cef_bind_method(RiotClientResourceHandler, process_request);
+        cef_bind_method(RiotClientResourceHandler, get_response_headers);
+        cef_bind_method(RiotClientResourceHandler, read);
     }
 
 private:
@@ -88,19 +87,15 @@ private:
     wstr path_;
     int64 bytes_read_;
 
-    static int CEF_CALLBACK _open(cef_resource_handler_t *_,
-        struct _cef_request_t* request, int* handle_request, struct _cef_callback_t* callback)
+    int _open(struct _cef_request_t* request, int* handle_request, struct _cef_callback_t* callback)
     {
         *handle_request = 0;
         return 0;
     }
 
-    static int CEF_CALLBACK _process_request(cef_resource_handler_t *_,
-        struct _cef_request_t* request, struct _cef_callback_t* callback)
+    int _process_request(struct _cef_request_t* request, struct _cef_callback_t* callback)
     {
-        auto self = static_cast<RiotClientResourceHandler *>(_);
-
-        CefStr url{ origin_ + self->path_ };
+        CefStr url{ origin_ + path_ };
         CefScopedStr method = request->get_method(request);
         auto body = request->get_post_data(request);
         auto headers = cef_string_multimap_alloc();
@@ -110,20 +105,17 @@ private:
         request_->set(request_, &url, &method, body, headers);
         request_->set_header_by_name(request_, &L"Authorization"_s, &CefStr(authorization_), 1);
 
-        self->client_ = new RiotClientURLRequestClient(&self->data_, callback);
-        self->url_request_ = self->frame_->create_urlrequest(self->frame_, request_, self->client_);
+        client_ = new RiotClientURLRequestClient(&data_, callback);
+        url_request_ = frame_->create_urlrequest(frame_, request_, client_);
 
         cef_string_multimap_free(headers);
         return 1;
     }
 
-    static void CEF_CALLBACK _get_response_headers(cef_resource_handler_t *_,
-        struct _cef_response_t* response, int64* response_length, cef_string_t* redirectUrl)
+    void _get_response_headers(struct _cef_response_t* response, int64* response_length, cef_string_t* redirectUrl)
     {
-        auto self = static_cast<RiotClientResourceHandler *>(_);
-        
         // Forward response
-        if (auto res = self->url_request_->get_response(self->url_request_))
+        if (auto res = url_request_->get_response(url_request_))
         {
             auto status = res->get_status(res);
             auto error = res->get_error(res);
@@ -138,15 +130,15 @@ private:
 
         // Bypass cors
         response->set_header_by_name(response, &L"Access-Control-Allow-Origin"_s, &L"*"_s, 1);
-        *response_length = self->client_->response_length_;
+        *response_length = client_->response_length_;
     }
 
-    bool Read(void *data_out, int bytes_to_read, int &bytes_read, cef_resource_read_callback_t *callback)
+    int _read(void *data_out, int bytes_to_read, int *bytes_read, cef_resource_read_callback_t *callback)
     {
         if ((client_->response_length_ > 0 && bytes_read_ >= client_->response_length_)
             || (bytes_read_ >= (int64)data_.length() && client_->done_))
         {
-            bytes_read = 0;
+            *bytes_read = 0;
             return false;
         }
 
@@ -154,22 +146,8 @@ private:
         memcpy(data_out, data_.c_str() + bytes_read_, read);
 
         bytes_read_ += read;
-        bytes_read = read;
+        *bytes_read = read;
         return true;
-    }
-
-    static int CEF_CALLBACK _read(cef_resource_handler_t *_,
-        void* data_out, int bytes_to_read, int* bytes_read, struct _cef_resource_read_callback_t* callback)
-    {
-        return static_cast<RiotClientResourceHandler *>(_)
-            ->Read(data_out, bytes_to_read, *bytes_read, callback);
-    }
-
-    static int CEF_CALLBACK _skip(cef_resource_handler_t *_,
-        int64 bytes_to_skip, int64* bytes_skipped, struct _cef_resource_skip_callback_t* callback)
-    {
-        *bytes_skipped = 0;
-        return 1;
     }
 };
 

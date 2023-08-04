@@ -38,100 +38,102 @@ static void SetUpDevToolsWindow(HWND window)
 
 struct DevToolsLifeSpan : CefRefCount<cef_life_span_handler_t>
 {
+    int parent_id_;
+
     DevToolsLifeSpan(int parent_id)
-        : CefRefCount(this), parent_id_(parent_id)
+        : CefRefCount(this)
+        , parent_id_(parent_id)
     {
-        cef_life_span_handler_t::on_after_created = []
-        (cef_life_span_handler_t* _, cef_browser_t* browser)
-        {
-            auto self = static_cast<DevToolsLifeSpan *>(_);
-            auto host = browser->get_host(browser);
-
-            // Save devtools handle.
-            HWND window = host->get_window_handle(host);
-            devtools_map_.emplace(self->parent_id_, window);
-
-            SetUpDevToolsWindow(window);
-            host->base.release(&host->base);
-        };
-
-        cef_life_span_handler_t::on_before_close = []
-        (cef_life_span_handler_t* _, cef_browser_t* browser)
-        {
-            auto self = static_cast<DevToolsLifeSpan *>(_);
-            // Remove devtools handle.
-            devtools_map_.erase(self->parent_id_);
-        };
+        cef_bind_method(DevToolsLifeSpan, on_after_created);
+        cef_bind_method(DevToolsLifeSpan, on_before_close);
     }
 
-    int parent_id_;
+    void _on_after_created(cef_browser_t* browser)
+    {
+        auto host = browser->get_host(browser);
+
+        // Save devtools handle.
+        HWND window = host->get_window_handle(host);
+        devtools_map_.emplace(parent_id_, window);
+
+        SetUpDevToolsWindow(window);
+        host->base.release(&host->base);
+    };
+
+    void _on_before_close(cef_browser_t* browser)
+    {
+        // Remove devtools handle.
+        devtools_map_.erase(parent_id_);
+    };
 };
 
 struct DevToolsKeyboardHandler : CefRefCount<cef_keyboard_handler_t>
 {
     DevToolsKeyboardHandler() : CefRefCount(this)
     {
-        cef_keyboard_handler_t::on_pre_key_event = []
-        (struct _cef_keyboard_handler_t* self,
-            struct _cef_browser_t* browser,
-            const struct _cef_key_event_t* event,
-            cef_event_handle_t os_event,
-            int* is_keyboard_shortcut) -> int
+        cef_bind_method(DevToolsKeyboardHandler, on_pre_key_event);
+    }
+
+    int _on_pre_key_event(
+        struct _cef_browser_t* browser,
+        const struct _cef_key_event_t* event,
+        cef_event_handle_t os_event,
+        int* is_keyboard_shortcut)
+    {
+        if (event->modifiers & EVENTFLAG_CONTROL_DOWN)
         {
-            if (event->modifiers & EVENTFLAG_CONTROL_DOWN)
+            cef_browser_host_t *host = nullptr;
+
+            if (event->windows_key_code == VK_OEM_PLUS)
             {
-                cef_browser_host_t *host = nullptr;
-
-                if (event->windows_key_code == VK_OEM_PLUS)
-                {
-                    host = browser->get_host(browser);
-                    host->set_zoom_level(host,
-                        host->get_zoom_level(host) + 0.1);
-                }
-                else if (event->windows_key_code == VK_OEM_MINUS)
-                {
-                    host = browser->get_host(browser);
-                    host->set_zoom_level(host,
-                        host->get_zoom_level(host) - 0.1);
-                }
-                else if (event->windows_key_code == '0')
-                {
-                    host = browser->get_host(browser);
-                    host->set_zoom_level(host, 0);
-                }
-
-                if (host != nullptr)
-                {
-                    host->base.release(&host->base);
-                    return true;
-                }
+                host = browser->get_host(browser);
+                host->set_zoom_level(host,
+                    host->get_zoom_level(host) + 0.1);
+            }
+            else if (event->windows_key_code == VK_OEM_MINUS)
+            {
+                host = browser->get_host(browser);
+                host->set_zoom_level(host,
+                    host->get_zoom_level(host) - 0.1);
+            }
+            else if (event->windows_key_code == '0')
+            {
+                host = browser->get_host(browser);
+                host->set_zoom_level(host, 0);
             }
 
-            return false;
-        };
-    }
+            if (host != nullptr)
+            {
+                host->base.release(&host->base);
+                return true;
+            }
+        }
+
+        return false;
+    };
 };
 
 struct DevToolsClient : CefRefCount<cef_client_t>
 {
-    DevToolsClient(int parent_id)
-        : CefRefCount(this), parent_id_(parent_id)
-    {
-        cef_client_t::get_life_span_handler = []
-        (cef_client_t *_) -> cef_life_span_handler_t *
-        {
-            auto self = static_cast<DevToolsClient *>(_);
-            return new DevToolsLifeSpan(self->parent_id_);
-        };
+    int parent_id_;
 
-        cef_client_t::get_keyboard_handler = []
-        (cef_client_t *_) -> cef_keyboard_handler_t *
-        {
-            return new DevToolsKeyboardHandler();
-        };
+    DevToolsClient(int parent_id)
+        : CefRefCount(this)
+        , parent_id_(parent_id)
+    {
+        cef_bind_method(DevToolsClient, get_life_span_handler);
+        cef_bind_method(DevToolsClient, get_keyboard_handler);
     }
 
-    int parent_id_;
+    cef_life_span_handler_t *_get_life_span_handler()
+    {
+        return new DevToolsLifeSpan(parent_id_);
+    }
+
+    cef_keyboard_handler_t *_get_keyboard_handler()
+    {
+        return new DevToolsKeyboardHandler();
+    }
 };
 
 void OpenDevTools(cef_browser_t *browser)

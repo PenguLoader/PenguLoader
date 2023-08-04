@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <windows.h>
 
+#include <type_traits>
 #include <atomic>
 #include <mutex>
 #include <string>
@@ -41,30 +42,100 @@ using set = std::unordered_set<V>;
 template <typename K, typename V>
 using map = std::unordered_map<K, V>;
 
+template<typename T>
+struct remove_arg1;
+
+template<typename R, typename Arg1, typename... Args>
+struct remove_arg1<R(*)(Arg1, Args...)>
+{
+    using type = R(*)(Args...);
+    using self = Arg1;
+};
+
+#if defined(_WIN32) && !defined(_WIN64)
+template<typename R, typename Arg1, typename... Args>
+struct remove_arg1<R(CALLBACK*)(Arg1, Args...)>
+{
+    using type = R(*)(Args...);
+    using self = Arg1;
+};
+#endif
+
+template <typename T>
+struct method_traits;
+
+template <typename T, typename R, typename... Args>
+struct method_traits<R(T::*)(Args...)>
+{
+    using type = R(*)(Args...);
+    using klass = T;
+};
+
+template <int id, typename This, typename M, typename R, typename Self, typename... Args>
+struct self_bind_traits_base
+{
+    static M m_;
+
+    static inline R CALLBACK invoke(Self self, Args ...args) noexcept {
+        return (reinterpret_cast<This *>(self)->*m_)(args...);
+    }
+};
+
+template <int id, typename This, typename M, typename R, typename Self, typename... Args>
+typename M self_bind_traits_base<id, This, M, R, Self, Args...>::m_ = nullptr;
+
+template <int id, typename, typename, typename>
+struct self_bind_traits;
+
+template <int id, typename This, typename M, typename R, typename Self, typename... Args>
+struct self_bind_traits<id, This, M, R(*)(Self, Args...)>
+    : self_bind_traits_base<id, This, M, R, Self, Args...> {};
+
+#if defined(_WIN32) && !defined(_WIN64)
+template <int id, typename This, typename M, typename R, typename Self, typename... Args>
+struct self_bind_traits<id, This, M, R(CALLBACK*)(Self, Args...)>
+    : self_bind_traits_base<id, This, M, R, Self, Args...> {};
+#endif
+
+template <int id, typename M, typename To>
+static inline void self_bind(M from, To &to) noexcept
+{
+    using traits = self_bind_traits<id, method_traits<M>::klass, M, To>;
+    if (traits::m_ == nullptr) traits::m_ = from;
+    to = traits::invoke;
+}
+
+#define cef_bind_method(klass, m)                                                   \
+    do {                                                                            \
+        static_assert(std::is_same<method_traits<decltype(&klass::_##m)>::type,     \
+            remove_arg1<decltype(m)>::type>::value, "Invalid method.");        \
+        self_bind<__COUNTER__>(&klass::_##m, m);                                    \
+    } while (0)
+
 template <typename T>
 struct CefRefCount : public T
 {
     template <typename U>
-    CefRefCount(const U *) : T{}, ref_(1) {
+    CefRefCount(const U *) noexcept : T{}, ref_(1) {
         base.size = sizeof(U);
         base.add_ref = _Base_AddRef;
         base.release = _Base_Release;
         base.has_one_ref = _Base_HasOneRef;
         base.has_at_least_one_ref = _Base_HasAtLeastOneRef;
-        self_delete_ = [](void *self) { delete static_cast<U *>(self); };
+        self_delete_ = [](void *self) noexcept { delete static_cast<U *>(self); };
     }
 
-    CefRefCount(nullptr_t) : CefRefCount(static_cast<T *>(nullptr)) {}
+    CefRefCount(nullptr_t) noexcept : CefRefCount(static_cast<T *>(nullptr)) {}
 
 private:
     void(*self_delete_)(void *);
     std::atomic<size_t> ref_;
 
-    static void CALLBACK _Base_AddRef(cef_base_ref_counted_t *_) {
+    static void CALLBACK _Base_AddRef(cef_base_ref_counted_t *_) noexcept {
         ++reinterpret_cast<CefRefCount *>(_)->ref_;
     }
 
-    static int CALLBACK _Base_Release(cef_base_ref_counted_t *_) {
+    static int CALLBACK _Base_Release(cef_base_ref_counted_t *_) noexcept {
         CefRefCount *self = reinterpret_cast<CefRefCount *>(_);
         if (--self->ref_ == 0) {
             self->self_delete_(_);
@@ -73,11 +144,11 @@ private:
         return 0;
     }
 
-    static int CALLBACK _Base_HasOneRef(cef_base_ref_counted_t *_) {
+    static int CALLBACK _Base_HasOneRef(cef_base_ref_counted_t *_) noexcept {
         return reinterpret_cast<CefRefCount *>(_)->ref_ == 1;
     }
 
-    static int CALLBACK _Base_HasAtLeastOneRef(cef_base_ref_counted_t *_) {
+    static int CALLBACK _Base_HasAtLeastOneRef(cef_base_ref_counted_t *_) noexcept {
         return reinterpret_cast<CefRefCount *>(_)->ref_ > 0;
     }
 };
@@ -394,23 +465,17 @@ namespace hook
 
     template<typename R, typename ...Args>
     class Hook<R(*)(Args...)>
-        : public HookBase<R(*)(Args...), R, Args...>
-    {
-    };
+        : public HookBase<R(*)(Args...), R, Args...> {};
 
-#ifndef _WIN64
+#if defined(_WIN32) && !defined(_WIN64)
     // stdcall and fastcall are ignored on x64
 
     template<typename R, typename ...Args>
     class Hook<R(__stdcall*)(Args...)>
-        : public HookBase<R(__stdcall*)(Args...), R, Args...>
-    {
-    };
+        : public HookBase<R(__stdcall*)(Args...), R, Args...> {};
 
     template<typename R, typename ...Args>
     class Hook<R(__fastcall*)(Args...)>
-        : public HookBase<R(__fastcall*)(Args...), R, Args...>
-    {
-    };
+        : public HookBase<R(__fastcall*)(Args...), R, Args...> {};
 #endif
 }

@@ -80,16 +80,30 @@ enum ImportType
     IMPORT_URL
 };
 
+template <typename T>
+struct MethodPointerTraits;
+
+// Partial specialization for non-const member function pointers
+template <typename T, typename ReturnType, typename... Args>
+struct MethodPointerTraits<ReturnType(T::*)(Args...)> {
+    using ClassType = T;
+    using Delegate = ReturnType(*)(Args...);
+    using ReturnTypeType = ReturnType;
+    using ParameterTypes = std::tuple<Args...>;
+};
+
 class ModuleStreamReader : public CefRefCount<cef_stream_reader_t>
 {
 public:
-    ModuleStreamReader(ImportType type) : CefRefCount(this), data_{}
+    ModuleStreamReader(ImportType type) : CefRefCount(this)
     {
-        cef_stream_reader_t::read = _read;
-        cef_stream_reader_t::seek = _seek;
-        cef_stream_reader_t::tell = _tell;
-        cef_stream_reader_t::eof = _eof;
-        cef_stream_reader_t::may_block = _may_block;
+        cef_bind_method(ModuleStreamReader, read);
+        cef_bind_method(ModuleStreamReader, seek);
+        cef_bind_method(ModuleStreamReader, tell);
+        cef_bind_method(ModuleStreamReader, eof);
+        cef_bind_method(ModuleStreamReader, may_block);
+
+        data_.clear();
 
         switch (type)
         {
@@ -129,39 +143,29 @@ private:
     cef_stream_reader_t *stream_;
     str data_;
 
-    static size_t CEF_CALLBACK _read(struct _cef_stream_reader_t* _,
-        void* ptr,
-        size_t size,
-        size_t n)
+    size_t _read(void* ptr, size_t size, size_t n)
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->read(self->stream_, ptr, size, n);
+        return stream_->read(stream_, ptr, size, n);
     }
 
-    static int CEF_CALLBACK _seek(struct _cef_stream_reader_t* _,
-        int64 offset,
-        int whence)
+    int _seek(int64 offset, int whence)
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->seek(self->stream_, offset, whence);
+        return stream_->seek(stream_, offset, whence);
     }
 
-    static int64 CEF_CALLBACK _tell(struct _cef_stream_reader_t* _)
+    int64 _tell()
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->tell(self->stream_);
+        return stream_->tell(stream_);
     }
 
-    static int CEF_CALLBACK _eof(struct _cef_stream_reader_t* _)
+    int _eof()
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->eof(self->stream_);
+        return stream_->eof(stream_);
     }
 
-    static int CEF_CALLBACK _may_block(struct _cef_stream_reader_t* _)
+    int _may_block()
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->may_block(self->stream_);
+        return stream_->may_block(stream_);
     }
 };
 
@@ -178,9 +182,9 @@ public:
         , is_plugin_(plugin)
         , no_cache_(false)
     {
-        cef_resource_handler_t::open = _Open;
-        cef_resource_handler_t::get_response_headers = _GetResponseHeaders;
-        cef_resource_handler_t::read = _Read;
+        cef_bind_method(AssetsResourceHandler, open);
+        cef_bind_method(AssetsResourceHandler, get_response_headers);
+        cef_bind_method(AssetsResourceHandler, read);
     }
 
     ~AssetsResourceHandler()
@@ -197,7 +201,7 @@ private:
     bool is_plugin_;
     bool no_cache_;
 
-    int CEF_CALLBACK Open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
+    int _open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
     {
         size_t pos;
         wstr query_part{};
@@ -325,15 +329,10 @@ private:
         return true;
     }
 
-    static void CEF_CALLBACK _GetResponseHeaders(cef_resource_handler_t* _,
-        struct _cef_response_t* response,
-        int64* response_length,
-        cef_string_t* redirectUrl)
+    void _get_response_headers(struct _cef_response_t* response, int64* response_length, cef_string_t* redirectUrl)
     {
-        auto self = static_cast<AssetsResourceHandler *>(_);
-
         // File not found.
-        if (self->stream_ == nullptr)
+        if (stream_ == nullptr)
         {
             response->set_status(response, 404);
             response->set_error(response, ERR_FILE_NOT_FOUND);
@@ -346,47 +345,33 @@ private:
             response->set_error(response, ERR_NONE);
 
             // Set MIME type.
-            if (!self->mime_.empty())
-                response->set_mime_type(response, &CefStr(self->mime_));
+            if (!mime_.empty())
+                response->set_mime_type(response, &CefStr(mime_));
 
             response->set_header_by_name(response, &L"Access-Control-Allow-Origin"_s, &L"*"_s, 1);
 
-            if (self->no_cache_ || self->mime_ == L"text/javascript")
+            if (no_cache_ || mime_ == L"text/javascript")
                 response->set_header_by_name(response, &L"Cache-Control"_s, &L"no-cache, no-store, must-revalidate"_s, 1);
             else
                 response->set_header_by_name(response, &L"Cache-Control"_s, &L"public, max-age=86400"_s, 1);
 
-            *response_length = self->length_;
+            *response_length = length_;
         }
     }
 
-    static int CEF_CALLBACK _Read(cef_resource_handler_t* _,
-        void* data_out,
-        int bytes_to_read,
-        int* bytes_read,
-        struct _cef_resource_read_callback_t* callback)
+    int _read(void* data_out, int bytes_to_read, int* bytes_read, struct _cef_resource_read_callback_t* callback)
     {
-        auto self = static_cast<AssetsResourceHandler *>(_);
-
         int read = 0;
-        auto stream = self->stream_;
         *bytes_read = 0;
 
         do
         {
-            read = static_cast<int>(stream->read(stream, static_cast<char*>(data_out) + *bytes_read, 1, bytes_to_read - *bytes_read));
+            read = static_cast<int>(stream_->read(stream_,
+                static_cast<char*>(data_out) + *bytes_read, 1, bytes_to_read - *bytes_read));
             *bytes_read += read;
         } while (read != 0 && *bytes_read < bytes_to_read);
 
         return (*bytes_read > 0);
-    }
-
-    static int CEF_CALLBACK _Open(cef_resource_handler_t* _,
-        struct _cef_request_t* request,
-        int* handle_request,
-        struct _cef_callback_t* callback)
-    {
-        return static_cast<AssetsResourceHandler *>(_)->Open(request, handle_request, callback);
     }
 };
 
