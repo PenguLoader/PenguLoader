@@ -1,7 +1,23 @@
 #pragma once
 
-#ifndef _WIN64
-#error "Build 64-bit only."
+#if defined(_WIN32) || defined(_WIN64)
+#ifndef OS_WIN
+#define OS_WIN 1
+#endif
+#elif defined(__APPLE__) || defined(__MACH__)
+#ifndef OS_MAC
+#define OS_MAC 1
+#endif
+#else
+#error "Your platform is not supported."
+#endif
+
+#if defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__) || defined(__amd64__)
+#ifndef X86_64
+#define X86_64 1
+#endif
+#elif !(defined(_WIN32) && !defined(_WIN64))
+#error "Your CPU arch is not supported."
 #endif
 
 #ifdef _MSC_VER
@@ -52,7 +68,7 @@ struct remove_arg1<R(*)(Arg1, Args...)>
     using self = Arg1;
 };
 
-#if defined(_WIN32) && !defined(_WIN64)
+#if defined(OS_WIN) && !defined(X86_64)
 template<typename R, typename Arg1, typename... Args>
 struct remove_arg1<R(CALLBACK*)(Arg1, Args...)>
 {
@@ -91,7 +107,7 @@ template <int id, typename This, typename M, typename R, typename Self, typename
 struct self_bind_traits<id, This, M, R(*)(Self, Args...)>
     : self_bind_traits_base<id, This, M, R, Self, Args...> {};
 
-#if defined(_WIN32) && !defined(_WIN64)
+#if defined(OS_WIN) && !defined(X86_64)
 template <int id, typename This, typename M, typename R, typename Self, typename... Args>
 struct self_bind_traits<id, This, M, R(CALLBACK*)(Self, Args...)>
     : self_bind_traits_base<id, This, M, R, Self, Args...> {};
@@ -353,7 +369,7 @@ namespace hook
 
     private:
         // Special thanks to https://github.com/nbqofficial/divert/
-#   ifdef _WIN64
+#   ifdef X86_64
         uint8_t movabs = 0x48;      // x86                  x86_64                 
 #   endif                           //
         uint8_t mov_eax = 0xB8;     // mov eax [addr]   |   movabs rax [addr]
@@ -467,7 +483,7 @@ namespace hook
     class Hook<R(*)(Args...)>
         : public HookBase<R(*)(Args...), R, Args...> {};
 
-#if defined(_WIN32) && !defined(_WIN64)
+#if defined(OS_WIN) && !defined(X86_64)
     // stdcall and fastcall are ignored on x64
 
     template<typename R, typename ...Args>
