@@ -47,7 +47,7 @@ declare const Effect: Effect;
 
 declare const openDevTools: (remote?: boolean) => void;
 declare const openAssetsFolder: () => void;
-declare const openPluginsFolder: () => void;
+declare const openPluginsFolder: (path?: string) => boolean;
 declare const reloadClient: () => void;
 declare const restartClient: () => void;
 declare const getScriptPath: () => string | undefined;

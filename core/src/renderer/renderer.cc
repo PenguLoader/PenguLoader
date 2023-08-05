@@ -72,10 +72,17 @@ static V8Value *native_OpenAssetsFolder(const vec<V8Value *> &args)
 }
 
 static V8Value *native_OpenPluginsFolder(const vec<V8Value *> &args)
-{
-    utils::openLink(config::pluginsDir());
+{   
+    wstr destPath = config::pluginsDir();
+    if (args.size()) {
+        destPath = destPath + L"\\" + args[0]->asString()->str;
+        if (!utils::isDir(destPath)) {
+            return V8Value::boolean(false);
+        }
+    }
+    utils::openLink(destPath);
 
-    return nullptr;
+    return V8Value::boolean(true);
 }
 
 static V8Value *native_ReloadClient(const vec<V8Value *> &args)

@@ -12,8 +12,15 @@ window.openAssetsFolder = function () {
   native.OpenAssetsFolder();
 };
 
-window.openPluginsFolder = function () {
-  native.OpenPluginsFolder();
+window.openPluginsFolder = function (path?: string) {
+  if(arguments.length > 1) return false;
+  if (path === undefined) return native.OpenPluginsFolder();
+  if(typeof path !== 'string') return false;
+
+  if(path.includes('..')) return false;
+  if(path === "") path = ".";
+
+  return native.OpenPluginsFolder(path);
 };
 
 window.reloadClient = function () {
