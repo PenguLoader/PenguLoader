@@ -29,6 +29,7 @@
     <ClCompile Include="src\dllproxy.cc" />
     <ClCompile Include="src\dllmain.cc" />
     <ClCompile Include="src\renderer\datastore.cc" />
+    <ClCompile Include="src\renderer\fs.cc" />
     <ClCompile Include="src\renderer\winbrancy.cc" />
     <ClCompile Include="src\renderer\renderer.cc" />
     <ClCompile Include="src\utils\cefstr.cc" />

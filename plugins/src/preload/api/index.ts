@@ -3,6 +3,7 @@ import native from './native';
 import './AuthCallback';
 import './DataStore';
 import './Effect';
+import './PluginFs';
 
 window.openDevTools = function (remote?: boolean) {
   native.OpenDevTools(Boolean(remote));
