@@ -265,7 +265,7 @@ struct V8Value : V8ValueBase
     inline struct V8Object *asObject() { return reinterpret_cast<struct V8Object *>(&_); }
 
     static inline V8Value *undefined() {
-        return (V8Value *)cef_v8value_create_null();
+        return (V8Value *)cef_v8value_create_undefined();
     }
 
     static inline V8Value *null() {

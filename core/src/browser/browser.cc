@@ -12,7 +12,6 @@ extern int remote_debugging_port_;
 void OpenDevTools(cef_browser_t *browser);
 void OpenRemoteDevTools();
 void PrepareRemoteDevTools();
-void SetUpBrowserWindow(cef_browser_t *browser, cef_frame_t *frame);
 
 void RegisterAssetsSchemeHandlerFactory();
 void RegisterRiotClientSchemeHandlerFactory();

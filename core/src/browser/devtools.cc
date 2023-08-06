@@ -21,10 +21,10 @@ static void SetUpDevToolsWindow(HWND window)
     SendMessageW(window, WM_SETICON, ICON_SMALL, (LPARAM)icon_sm);
     SendMessageW(window, WM_SETICON, ICON_BIG, (LPARAM)icon_bg);
 
-    bool IsWindowsLightTheme();
+    bool IsWindowsDarkTheme();
     void ForceDarkTheme(HWND);
 
-    if (!IsWindowsLightTheme())
+    if (IsWindowsDarkTheme())
     {
         // Force dark theme.
         ForceDarkTheme(window);

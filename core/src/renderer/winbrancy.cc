@@ -194,7 +194,7 @@ void ClearAcrylic(HWND hwnd, bool unified)
     //return Err(VibeError::UnsupportedPlatform("\"clear_acrylic()\" is only available on Windows 7+"));
 }
 
-bool IsWindowsLightTheme()
+bool IsWindowsDarkTheme()
 {
     // based on https://stackoverflow.com/questions/51334674/how-to-detect-windows-10-light-dark-mode-in-win32-application
 
@@ -211,7 +211,7 @@ bool IsWindowsLightTheme()
         &cbData);
 
     if (res != ERROR_SUCCESS)
-        return true;
+        return false;
 
     // convert bytes written to our buffer to an int, assuming little-endian
     auto i = int(buffer[3] << 24 |
@@ -219,7 +219,7 @@ bool IsWindowsLightTheme()
         buffer[1] << 8 |
         buffer[0]);
 
-    return i == 1;
+    return i != 1;
 }
 
 void ForceDarkTheme(HWND hwnd)
@@ -287,7 +287,8 @@ void ClearMica(HWND hwnd)
         ResetClientArea(hwnd);
         DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &value, sizeof(value));
     }
-    else if (IsWin11()) {
+    else if (IsWin11())
+    {
         DWORD value = 0;
         ResetClientArea(hwnd);
         DwmSetWindowAttribute(hwnd, DWMWA_MICA_EFFECT, &value, sizeof(value));
@@ -295,7 +296,6 @@ void ClearMica(HWND hwnd)
 
     //throw "Mica effect is only available on Windows 11.";
 }
-
 
 bool ApplyEffect(std::wstring name, uint32_t option_color)
 {
@@ -412,7 +412,7 @@ V8Value *native_SetWindowEffect(const vec<V8Value *> &args)
         }
         else if (args[0]->isString())
         {
-            CefScopedStr name{ args[0]->asString() };
+            CefScopedStr name = args[0]->asString();
             uint32_t tintColor = 0;
 
             if (args.size() >= 2 && args[1]->isObject())
@@ -429,8 +429,8 @@ V8Value *native_SetWindowEffect(const vec<V8Value *> &args)
                 }
             }
 
-            //if (ClearEffect(m_current))
-            //    m_current = L"";
+            if (ClearEffect(m_current))
+                m_current = L"";
 
             if (success = ApplyEffect(name.str, tintColor))
                 m_current.assign(name.str, name.length);

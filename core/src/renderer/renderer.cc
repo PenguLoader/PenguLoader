@@ -74,14 +74,17 @@ static V8Value *native_OpenAssetsFolder(const vec<V8Value *> &args)
 static V8Value *native_OpenPluginsFolder(const vec<V8Value *> &args)
 {   
     wstr destPath = config::pluginsDir();
-    if (args.size()) {
-        destPath = destPath + L"\\" + args[0]->asString()->str;
-        if (!utils::isDir(destPath)) {
-            return V8Value::boolean(false);
-        }
-    }
-    utils::openLink(destPath);
 
+    if (args.size() > 0)
+    {
+        CefScopedStr path = args[0]->asString();
+        destPath += L"\\" + path.cstr();
+
+        if (!utils::isDir(destPath))
+            return V8Value::boolean(false);
+    }
+
+    utils::openLink(destPath);
     return V8Value::boolean(true);
 }
 
