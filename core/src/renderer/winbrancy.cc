@@ -13,6 +13,7 @@ struct MARGINS
 enum ACCENT_STATE
 {
     ACCENT_DISABLED = 0,
+	ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
     ACCENT_ENABLE_BLURBEHIND = 3,
     ACCENT_ENABLE_ACRYLICBLURBEHIND = 4
 };
@@ -258,6 +259,18 @@ void ForceLightTheme(HWND hwnd)
     }
 }
 
+void EnableWindowShadow(HWND hwnd)
+{
+	DWORD policy = 2;
+	DwmSetWindowAttribute(hwnd, 2, &policy, sizeof(DWORD));
+
+	MARGINS margins = { 0, 0, 1, 0 };
+	DwmExtendFrameIntoClientArea(hwnd, &margins);
+
+	SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+		SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME | SWP_NOACTIVATE);
+}
+
 bool ApplyMica(HWND hwnd)
 {
     if (IsWin11_22H2())
@@ -310,6 +323,11 @@ bool ApplyEffect(std::wstring name, uint32_t option_color)
         return ApplyAcrylic(RCLIENT_WINDOW, true, true, option_color);
     else if (name == L"blurbehind")
         return ApplyAcrylic(RCLIENT_WINDOW, true, false, option_color);
+	else if (name == L"transparent")
+	{
+		SetAccentPolicy(RCLIENT_WINDOW, ACCENT_ENABLE_TRANSPARENTGRADIENT, option_color);
+		return true;
+	}
 
     return false;
 }
@@ -334,6 +352,11 @@ bool ClearEffect(const std::wstring &name)
         ClearAcrylic(RCLIENT_WINDOW, true);
         return true;
     }
+	else if (name == L"transparent")
+	{
+		SetAccentPolicy(RCLIENT_WINDOW, ACCENT_DISABLED, 0);
+		return true;
+	}
 
     return false;
 }

@@ -49,6 +49,9 @@ static void SetUpBrowserWindow(cef_browser_t *browser)
     args->base.release(&args->base);
     host->base.release(&host->base);
 
+	void EnableWindowShadow(HWND);
+	EnableWindowShadow(rclient);
+
     PrepareRemoteDevTools();
 }
 
