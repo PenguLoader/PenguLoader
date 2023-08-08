@@ -20,5 +20,14 @@ window.Effect = {
   clear() {
     native.SetWindowEffect(false);
     window.dispatchEvent(new CustomEvent('effect-changed'));
-  }
+  },
+
+  setTheme(theme) {
+    theme = <ThemeName>theme.toLowerCase();
+    if (theme === 'dark' || theme === 'light') {
+      native.SetWindowTheme(theme);
+      return true;
+    }
+    return false;
+  },
 };

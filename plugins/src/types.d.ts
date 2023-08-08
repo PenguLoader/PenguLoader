@@ -23,12 +23,14 @@ interface DataStore {
   remove: (key: string) => boolean
 }
 
+type ThemeName = 'light' | 'dark';
 type EffectName = 'mica' | 'blurbehind' | 'acrylic' | 'unified';
 
 interface Effect {
   get current(): EffectName | null
   apply: (name: EffectName, options?: any) => boolean
   clear: () => void
+  setTheme: (theme: ThemeName) => boolean
 }
 
 // globals

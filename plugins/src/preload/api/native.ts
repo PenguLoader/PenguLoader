@@ -12,6 +12,7 @@ interface Native {
 
   GetWindowEffect: () => string;
   SetWindowEffect: (name: string | false, options?: any) => boolean;
+  SetWindowTheme: (theme: string) => void;
 
   LoadDataStore: () => string;
   SaveDataStore: (data: string) => void;

@@ -16,6 +16,7 @@ V8Value *native_SaveDataStore(const vec<V8Value *> &args);
 
 V8Value *native_GetWindowEffect(const vec<V8Value *> &args);
 V8Value *native_SetWindowEffect(const vec<V8Value *> &args);
+V8Value *native_SetWindowTheme(const vec<V8Value *> &args);
 
 static vec<wstr> GetPluginEntries()
 {
@@ -112,6 +113,7 @@ static map<wstr, V8FunctionHandler> m_nativeDelegateMap
 
     { L"GetWindowEffect", native_GetWindowEffect },
     { L"SetWindowEffect", native_SetWindowEffect },
+    { L"SetWindowTheme", native_SetWindowTheme },
 };
 
 struct NativeV8Handler : CefRefCount<cef_v8handler_t>

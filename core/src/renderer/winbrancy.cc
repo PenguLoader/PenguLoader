@@ -462,3 +462,22 @@ V8Value *native_SetWindowEffect(const vec<V8Value *> &args)
 
     return V8Value::boolean(success);
 }
+
+V8Value *native_SetWindowTheme(const vec<V8Value *> &args)
+{
+	if (args.size() > 0 && args[0]->isString())
+	{
+		CefScopedStr theme = args[0]->asString();
+
+		if (theme.equal(L"light"))
+		{
+			ForceLightTheme(RCLIENT_WINDOW);
+		}
+		else if (theme.equal(L"dark"))
+		{
+			ForceDarkTheme(RCLIENT_WINDOW);
+		}
+	}
+
+	return nullptr;
+}
