@@ -1,4 +1,4 @@
-import native from './native';
+import { native } from './native';
 
 window.Effect = {
 

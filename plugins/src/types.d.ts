@@ -1,5 +1,3 @@
-/// <reference types="vite/client" />
-
 interface Plugin {
   init?: (context: any) => any
   load?: () => any

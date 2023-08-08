@@ -1,3 +1,9 @@
+// @ts-ignore
+export const native: Native = window.__native;
+
+// @ts-ignore
+delete window.__native;
+
 interface Native {
   OpenDevTools: (remote: boolean) => void;
   OpenAssetsFolder: () => void;
@@ -14,8 +20,3 @@ interface Native {
   AddAuthCallback: (url: string, cb: Function) => void;
   RemoveAuthCallback: (url: string) => void;
 }
-
-const native = window['__native'];
-delete window['__native'];
-
-export default <Native>native;
