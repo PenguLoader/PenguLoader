@@ -321,7 +321,7 @@ bool ApplyEffect(std::wstring name, uint32_t option_color)
         return ApplyAcrylic(RCLIENT_WINDOW, false, true, option_color);
     else if (name == L"unified")
         return ApplyAcrylic(RCLIENT_WINDOW, true, true, option_color);
-    else if (name == L"blurbehind")
+    else if (name == L"aero" || name == L"blurbehind")
         return ApplyAcrylic(RCLIENT_WINDOW, true, false, option_color);
 	else if (name == L"transparent")
 	{
@@ -347,7 +347,7 @@ bool ClearEffect(const std::wstring &name)
         ClearAcrylic(RCLIENT_WINDOW, false);
         return true;
     }
-    else if (name == L"unified" || name == L"blurbehind")
+    else if (name == L"unified" || name == L"aero" || name == L"blurbehind")
     {
         ClearAcrylic(RCLIENT_WINDOW, true);
         return true;
