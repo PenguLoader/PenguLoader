@@ -409,7 +409,7 @@ uint32_t ParseHexColor(std::wstring value)
             a = 0xFF;
     }
 
-    return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
+    return ((a & 0xFF) << 24) | ((b & 0xFF) << 16) | ((g & 0xFF) << 8) | (r & 0xFF);
 }
 
 static wstr m_current = L"";
