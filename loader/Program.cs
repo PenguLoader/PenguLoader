@@ -17,24 +17,30 @@ namespace PenguLoader
         [STAThread]
         static int Main(string[] args)
         {
-            bool isUninstall = false;
+            var arg = args.Length > 0 ? args[0] : null;
 
-            if (args.Length > 0)
+            if (DataStore.IsDataStore(arg))
             {
-                if (DataStore.IsDataStore(args[0]))
-                {
-                    DataStore.DumpDataStore(args[0]);
-                    return 0;
-                }
-                else if (args[0].Equals("--uninstall"))
-                {
-                    isUninstall = true;
-                }
+                DataStore.DumpDataStore(arg);
+                return 0;
             }
 
             using (var mutex = new Mutex(true, "989d2110-46da-4c8d-84c1-c4a42e43c424", out var createdNew))
             {
-                return isUninstall ? HandleUninstall(createdNew) : RunApplication(createdNew);
+                if (arg != null)
+                {
+                    switch (arg)
+                    {
+                        case "--install":
+                            return HandleInstall(createdNew, true);
+                        case "--uninstall":
+                            return HandleInstall(createdNew, false);
+                        default:
+                            break;
+                    }
+                }
+
+                return RunApplication(createdNew);
             }
         }
 
@@ -58,16 +64,17 @@ namespace PenguLoader
             return 0;
         }
 
-        static int HandleUninstall(bool createdNew)
+        static int HandleInstall(bool createdNew, bool active)
         {
             if (!createdNew || Module.IsLoaded)
             {
-                MessageBox.Show("Please close the running League Client and Loader menu before uninstalling it.",
+                var action = active ? "installing" : "uninstalling";
+                MessageBox.Show($"Please close the running League Client and Loader menu before {action} it.",
                     Name, MessageBoxButton.OK, MessageBoxImage.Information);
                 return -1;
             }
 
-            Module.SetActive(false);
+            Module.SetActive(active);
             return 0;
         }
 
