@@ -1,18 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
-@tailwind base;
-@tailwind utilities;
-@tailwind components;
-
 body {
   position: relative;
 }
 
-#pengu * {
-  box-sizing: border-box;
-}
-
-#pengu {
+#pengu-root {
   font-size: .875rem;
   font-family: 'Inter', sans-serif;
 }
