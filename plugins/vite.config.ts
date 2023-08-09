@@ -9,11 +9,6 @@ import solidPlugin from 'vite-plugin-solid';
 import bundleCssInJs from 'vite-plugin-css-injected-by-js';
 import viteRestart from 'vite-plugin-restart';
 
-// PostCSS plugins
-import tailwind from 'tailwindcss';
-import autoprefixer from 'autoprefixer';
-import cssnano from 'cssnano';
-
 const port = 3001;
 const root = (...args: string[]) => path.join(__dirname, ...args);
 
@@ -27,16 +22,6 @@ export default defineConfig(({ command, mode }) => {
     server: {
       https: true,
       port: port
-    },
-    css: {
-      postcss: {
-        plugins: [,
-          // @ts-ignore
-          tailwind(),
-          autoprefixer(),
-          !dev && cssnano(),
-        ].filter(x => !!x) as any
-      }
     },
     build: {
       assetsInlineLimit: 1024 * 64,
@@ -107,7 +92,7 @@ export default defineConfig(({ command, mode }) => {
 });
 
 function generateDevLoader(port: number) {
-  const fn = function (port) {
+  const template = function (port) {
     document.addEventListener('DOMContentLoaded', async () => {
       // @ts-ignore
       await import(`https://localhost:${port}/@vite/client`);
@@ -115,7 +100,7 @@ function generateDevLoader(port: number) {
       await import(`https://localhost:${port}/src/views/index.tsx`);
     });
   }
-  return `!(${fn.toString()})(${port});`;
+  return `!(${template.toString()})(${port});`;
 }
 
 function generateHeader(code: string, name: string, lineLength = 12) {
