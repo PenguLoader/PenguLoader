@@ -7,16 +7,19 @@ settings:
 dependencies:
   '@twind/core':
     specifier: ^1.1.3
-    version: 1.1.3(typescript@4.9.4)
+    version: 1.1.3(typescript@5.1.6)
   '@twind/preset-autoprefix':
     specifier: ^1.0.7
-    version: 1.0.7(@twind/core@1.1.3)(typescript@4.9.4)
+    version: 1.0.7(@twind/core@1.1.3)(typescript@5.1.6)
   '@twind/preset-tailwind':
     specifier: ^1.1.4
-    version: 1.1.4(@twind/core@1.1.3)(typescript@4.9.4)
+    version: 1.1.4(@twind/core@1.1.3)(typescript@5.1.6)
   '@twind/with-web-components':
     specifier: ^1.1.3
-    version: 1.1.3(@twind/core@1.1.3)(typescript@4.9.4)
+    version: 1.1.3(@twind/core@1.1.3)(typescript@5.1.6)
+  fuse.js:
+    specifier: ^6.6.2
+    version: 6.6.2
   solid-js:
     specifier: ^1.7.8
     version: 1.7.8
@@ -32,8 +35,8 @@ devDependencies:
     specifier: ^0.18.12
     version: 0.18.12
   typescript:
-    specifier: ^4.9.4
-    version: 4.9.4
+    specifier: ^5.1.6
+    version: 5.1.6
   vite:
     specifier: ^4.4.4
     version: 4.4.4(@types/node@18.16.19)
@@ -738,7 +741,7 @@ packages:
       '@octokit/openapi-types': 18.0.0
     dev: true
 
-  /@twind/core@1.1.3(typescript@4.9.4):
+  /@twind/core@1.1.3(typescript@5.1.6):
     resolution: {integrity: sha512-/B/aNFerMb2IeyjSJy3SJxqVxhrT77gBDknLMiZqXIRr4vNJqiuhx7KqUSRzDCwUmyGuogkamz+aOLzN6MeSLw==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
@@ -748,10 +751,10 @@ packages:
         optional: true
     dependencies:
       csstype: 3.1.2
-      typescript: 4.9.4
+      typescript: 5.1.6
     dev: false
 
-  /@twind/preset-autoprefix@1.0.7(@twind/core@1.1.3)(typescript@4.9.4):
+  /@twind/preset-autoprefix@1.0.7(@twind/core@1.1.3)(typescript@5.1.6):
     resolution: {integrity: sha512-3wmHO0pG/CVxYBNZUV0tWcL7CP0wD5KpyWAQE/KOalWmOVBj+nH6j3v6Y3I3pRuMFaG5DC78qbYbhA1O11uG3w==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
@@ -761,12 +764,12 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@twind/core': 1.1.3(typescript@4.9.4)
+      '@twind/core': 1.1.3(typescript@5.1.6)
       style-vendorizer: 2.2.3
-      typescript: 4.9.4
+      typescript: 5.1.6
     dev: false
 
-  /@twind/preset-tailwind@1.1.4(@twind/core@1.1.3)(typescript@4.9.4):
+  /@twind/preset-tailwind@1.1.4(@twind/core@1.1.3)(typescript@5.1.6):
     resolution: {integrity: sha512-zv85wrP/DW4AxgWrLfH7kyGn/KJF3K04FMLVl2AjoxZGYdCaoZDkL8ma3hzaKQ+WGgBFRubuB/Ku2Rtv/wjzVw==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
@@ -776,11 +779,11 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@twind/core': 1.1.3(typescript@4.9.4)
-      typescript: 4.9.4
+      '@twind/core': 1.1.3(typescript@5.1.6)
+      typescript: 5.1.6
     dev: false
 
-  /@twind/with-web-components@1.1.3(@twind/core@1.1.3)(typescript@4.9.4):
+  /@twind/with-web-components@1.1.3(@twind/core@1.1.3)(typescript@5.1.6):
     resolution: {integrity: sha512-pM2Ps58pkLQva2HsC/cm2y5kTIwojJ6896w4+kXIMCOhuoOfTeyNOkYvBdr8Cpkvm+vR+ggPITNdvpzAOXa+Dg==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
@@ -790,8 +793,8 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@twind/core': 1.1.3(typescript@4.9.4)
-      typescript: 4.9.4
+      '@twind/core': 1.1.3(typescript@5.1.6)
+      typescript: 5.1.6
     dev: false
 
   /@types/babel__core@7.20.1:
@@ -1030,6 +1033,11 @@ packages:
     dev: true
     optional: true
 
+  /fuse.js@6.6.2:
+    resolution: {integrity: sha512-cJaJkxCCxC8qIIcPBF9yGxY0W/tVZS3uEISDxhYIdtk8OL93pe+6Zj7LjCqVV4dzbqcriOZ+kQ/NE4RXZHsIGA==}
+    engines: {node: '>=10'}
+    dev: false
+
   /gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
     engines: {node: '>=6.9.0'}
@@ -1241,9 +1249,9 @@ packages:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
     dev: true
 
-  /typescript@4.9.4:
-    resolution: {integrity: sha512-Uz+dTXYzxXXbsFpM86Wh3dKCxrQqUcVMxwU54orwlJjOpO3ao8L7j5lH+dWfTwgCwIuM9GQ2kvVotzYJMXTBZg==}
-    engines: {node: '>=4.2.0'}
+  /typescript@5.1.6:
+    resolution: {integrity: sha512-zaWCozRZ6DLEWAWFrVDz1H6FVXzUSfTy5FUMWsQlU8Ym5JP9eO4xkTIROFCQvhQf61z6O/G6ugw3SgAnvvm+HA==}
+    engines: {node: '>=14.17'}
     hasBin: true
 
   /universal-user-agent@6.0.0:
