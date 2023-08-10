@@ -29,11 +29,6 @@ export function CommandBar() {
       .map(item => item.item);
   });
 
-  createEffect(on(filteredItems, () => {
-    setActiveIndex(0);
-    scrollToActiveItem();
-  }));
-
   function shouldShowCategory(item, index) {
     if (index == 0) return true;
     if (typeof filteredItems()[index - 1] === 'undefined') return false;
@@ -41,6 +36,7 @@ export function CommandBar() {
   }
 
   function scrollToActiveItem() {
+    if (!visible() || !itemsList) return;
     const activeElement: HTMLElement = itemsList.querySelector(`div[data-index="${activeIndex()}"]`)!;
     if (!activeElement) return;
     const newScrollPos = (activeElement.offsetTop + activeElement.offsetHeight) - itemsList.offsetHeight;
@@ -52,6 +48,7 @@ export function CommandBar() {
   }
 
   function execute(index: number) {
+    if (!visible()) return;
     const item = filteredItems()[index];
     setActiveIndex(index);
     setVisible(false);
@@ -77,6 +74,11 @@ export function CommandBar() {
   }
 
   onMount(() => {
+    createEffect(on(filteredItems, () => {
+      setActiveIndex(0);
+      scrollToActiveItem();
+    }));
+
     window.addEventListener('keydown', e => {
       if (e.ctrlKey && e.code === 'KeyK') {
         e.preventDefault();
