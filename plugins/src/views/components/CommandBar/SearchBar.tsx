@@ -3,12 +3,19 @@ import { useRoot } from './root';
 
 export function SearchBar() {
   let input: HTMLInputElement;
-  const { search, setSearch } = useRoot();
+  const { search, setSearch, setActiveIndex } = useRoot();
 
   onMount(() => {
     setSearch('');
+    setActiveIndex(0);
     input.focus();
   });
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+    }
+  };
 
   return (
     <div class="flex items-center px-3 border-b border-gray-300 bg-white/90">
@@ -23,6 +30,7 @@ export function SearchBar() {
       <input
         ref={input!}
         type="text" value={search()}
+        onKeyDown={onKeyDown}
         onInput={e => setSearch(e.target.value)}
         onBlur={() => setTimeout(() => input.focus(), 50)}
         class="flex w-full px-2 py-3 text-sm bg-transparent border-none rounded-md outline-none

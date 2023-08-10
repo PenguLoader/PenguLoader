@@ -17,6 +17,8 @@ export function CommandBar() {
     }
 
     const fuse = new Fuse(DEFAULT_ACTIONS, {
+      distance: 200,
+      threshold: 0.4,
       includeScore: true,
       keys: ['name', 'tags', 'group']
     });
@@ -61,12 +63,15 @@ export function CommandBar() {
   function handleKeydown(e: KeyboardEvent) {
     if (e.isComposing) return;
     if (e.key === 'ArrowUp') {
+      e.preventDefault();
       setActiveIndex(index => index && index - 1);
       scrollToActiveItem();
     } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
       setActiveIndex(index => index < filteredItems().length - 1 ? index + 1 : index);
       scrollToActiveItem();
     } else if (e.key === 'Enter') {
+      e.preventDefault();
       execute(activeIndex());
     }
   }
