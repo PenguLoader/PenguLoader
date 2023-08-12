@@ -22,6 +22,7 @@ jobs:
       - name: Update project files
         run: |
           (Get-Content core\core.vcxproj) -replace "Version>8.1", "Version>10.0.17763.0" | Out-File core\core.vcxproj
+          (Get-Content loader\Version.cs) -replace 'CommitSha1.*;', 'CommitSha1 = "${{ env.SHORT_SHA }}";' | Out-File loader\Version.cs
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
@@ -55,7 +56,7 @@ jobs:
       - name: Upload build outputs
         uses: actions/upload-artifact@v3
         with:
-          name: pengu-loader-v${{ env.APP_VERSION }}-beta.${{ env.SHORT_SHA }}
+          name: pengu-loader-v${{ env.APP_VERSION }}-beta-${{ env.SHORT_SHA }}
           path: |
             bin/*.exe
             bin/*.dll
