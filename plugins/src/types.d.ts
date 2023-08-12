@@ -11,9 +11,10 @@ interface RcpAnnouceEvent extends CustomEvent {
 
 // built-in types
 
-interface AuthCallback {
-  createURL: () => string
-  readResponse: (url: string, timeout?: number) => Promise<string | null>
+interface CommandBar {
+  addAction: (action) => void
+  show: () => void
+  update: () => void
 }
 
 interface DataStore {
@@ -41,8 +42,8 @@ namespace Pengu {
   const plugins: string[];
 }
 
-// declare const AuthCallback: AuthCallback;
 declare const DataStore: DataStore;
+declare const CommandBar: CommandBar;
 declare const Effect: Effect;
 
 declare const openDevTools: (remote?: boolean) => void;
@@ -55,8 +56,8 @@ declare const __llver: string;
 
 declare interface Window {
 
-  // AuthCallback: AuthCallback;
   DataStore: DataStore;
+  CommandBar: CommandBar;
   Effect: Effect;
 
   openDevTools: typeof openDevTools;
