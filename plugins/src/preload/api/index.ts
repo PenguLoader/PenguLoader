@@ -1,6 +1,5 @@
 import { native } from './native';
 
-import './AuthCallback';
 import './DataStore';
 import './Effect';
 

@@ -1,6 +1,5 @@
 import { Show } from 'solid-js';
 import { useRoot } from './root';
-import { Action } from './types';
 
 interface Props {
   item: Action
