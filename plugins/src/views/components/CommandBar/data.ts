@@ -1,5 +1,3 @@
-import type { Action } from './types';
-
 const ACTIONS: Record<string, Action[]> = {
   pengu: [
     {

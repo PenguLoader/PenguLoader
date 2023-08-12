@@ -1,8 +1,14 @@
 import { createMemo, createRoot, createSignal, on } from 'solid-js';
-import { Action, VisualState } from './types';
 import { DEFAULT_ACTIONS } from './data';
 
 const ACTION_LIST = [...DEFAULT_ACTIONS];
+
+export enum VisualState {
+  Hidden = 0,
+  AnimatingIn,
+  Showing,
+  AnimatingOut,
+}
 
 const root = createRoot(() => {
   const [updated, triggerUpdate] = createSignal(undefined, { equals: false });
@@ -21,7 +27,7 @@ const root = createRoot(() => {
 
     const action = { ...item };
 
-    if (!action.group || typeof(action.group) === 'string') {
+    if (!action.group || typeof action.group === 'string') {
       action.group = 'uncategorized';
     }
 

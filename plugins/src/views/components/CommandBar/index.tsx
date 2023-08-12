@@ -1,8 +1,7 @@
 import { Show, onMount } from 'solid-js';
-import { useRoot } from './root';
+import { useRoot, VisualState } from './root';
 import { SearchBar } from './SearchBar';
 import { SearchResults } from './SearchResults';
-import { VisualState } from './types';
 import { Animator } from './Animator';
 
 export function CommandBar() {

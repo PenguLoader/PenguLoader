@@ -1,3 +1,5 @@
+// internal types
+
 interface Plugin {
   init?: (context: any) => any
   load?: () => any
@@ -10,6 +12,17 @@ interface RcpAnnouceEvent extends CustomEvent {
 }
 
 // built-in types
+
+interface Action {
+  id?: string
+  name: string
+  legend?: string
+  tags?: string[]
+  icon?: string
+  group?: string
+  hidden?: boolean
+  perform?: (id?: string) => any
+}
 
 interface CommandBar {
   addAction: (action) => void

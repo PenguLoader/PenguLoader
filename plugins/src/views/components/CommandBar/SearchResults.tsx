@@ -1,7 +1,6 @@
 import { For, Show, createEffect, createMemo, on, onCleanup, onMount } from 'solid-js';
-import { useRoot } from './root';
 import Fuse from 'fuse.js';
-import { Action, VisualState } from './types';
+import { useRoot, VisualState } from './root';
 import { SearchItem } from './SearchItem';
 
 export function SearchResults() {

@@ -1,6 +1,5 @@
 import { children, createEffect, createSignal, on, onCleanup } from 'solid-js';
-import { useRoot } from './root';
-import { VisualState } from './types';
+import { useRoot, VisualState } from './root';
 
 const appearanceAnimationKeyframes = [
   { opacity: '0', transform: 'scale(.95)', },
@@ -18,7 +17,7 @@ export function Animator(props) {
 
   let outerRef: HTMLDivElement;
   let innerRef: HTMLDivElement;
-  
+
   const resolved = children(() => props.children);
 
   const { visualState, setVisualState } = useRoot();
