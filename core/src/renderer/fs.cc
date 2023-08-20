@@ -1,7 +1,5 @@
 #include "commons.h"
 #include <fstream>
-#include <vector>
-#include <locale>
 #include <filesystem>
 
 namespace PluginFS {
@@ -29,9 +27,9 @@ namespace PluginFS {
         }
     }
 
-    static vec<wstr> ReadFile(wstr path)
+    static str ReadFile(wstr path)
     {
-        std::wfstream inputStream;
+        std::fstream inputStream;
         inputStream.open(path, std::ios::in);
 
         if (!inputStream.good())
@@ -39,24 +37,15 @@ namespace PluginFS {
             return {};
         }
 
-        PluginFS::StreamGuard<std::wfstream> guard(inputStream);
+        PluginFS::StreamGuard<std::fstream> guard(inputStream);
 
-        std::locale utf8_locale = std::locale("en_US.UTF-8");
-        inputStream.imbue(utf8_locale);
-
-        vec<wstr> lines;
-        wstr line;
-        while (std::getline(inputStream, line))
-        {
-            lines.push_back(line);
-        }
-
-        return std::move(lines);
+        str content(std::istreambuf_iterator<char>{inputStream}, {});
+        return std::move(content);
     }
 
-    static bool WriteFile(wstr path, wstr& content, bool enableAppendMode)
+    static bool WriteFile(wstr path, str& content, bool enableAppendMode)
     {
-        std::wfstream outputStream;
+        std::fstream outputStream;
         if (enableAppendMode) {
             outputStream.open(path, std::ios::out | std::ios::app);
         }
@@ -69,10 +58,7 @@ namespace PluginFS {
             return false;
         }
 
-        PluginFS::StreamGuard<std::wfstream> guard(outputStream);
-
-        std::locale utf8_locale = std::locale("en_US.UTF-8");
-        outputStream.imbue(utf8_locale);
+        PluginFS::StreamGuard<std::fstream> guard(outputStream);
 
         outputStream << content;
         if (outputStream.fail() || outputStream.bad())
@@ -133,7 +119,7 @@ namespace PluginFS {
 
         auto isDir = std::filesystem::is_directory(path);
         if (recursively && isDir) {
-            return static_cast<int>(std::filesystem::remove_all(path)); 
+            return static_cast<int>(std::filesystem::remove_all(path));
         }
         else {
             return std::filesystem::remove(path);
@@ -145,18 +131,8 @@ V8Value* native_ReadFile(const vec<V8Value*>& args)
 {
     wstr destPath = config::pluginsDir() + L"\\" + args[0]->asString()->str;
     if (std::filesystem::is_regular_file(destPath)) {
-        vec<wstr> lines = PluginFS::ReadFile(destPath);
-        wstr content;
-        for (wstr line : lines)
-        {
-            content += line + L"\n";
-        }
-        if (!content.empty())
-        {
-            content.erase(content.size() - 1);
-        }
-        CefStr content_cef_string{ content };
-        return V8Value::string(&content_cef_string);
+        str content = PluginFS::ReadFile(destPath);
+        return V8Value::string(&CefStr{ content });
     }
     return V8Value::undefined();
 }
@@ -164,7 +140,7 @@ V8Value* native_ReadFile(const vec<V8Value*>& args)
 V8Value* native_WriteFile(const vec<V8Value*>& args)
 {
     wstr destPath = config::pluginsDir() + L"\\" + args[0]->asString()->str;
-    wstr content = args[1]->asString()->str;
+    str content = CefString(args[1]->asString()).ToString();
     bool enableAppMode = args[2]->asBool();
 
     if (PluginFS::WriteFile(destPath, std::move(content), enableAppMode)) {
@@ -176,13 +152,13 @@ V8Value* native_WriteFile(const vec<V8Value*>& args)
 V8Value* native_MkDir(const vec<V8Value*>& args)
 {
     wstr pluginsDir = config::pluginsDir();
-	wstr pluginName = args[0]->asString()->str;
+    wstr pluginName = args[0]->asString()->str;
     wstr relativePath = args[1]->asString()->str;
 
-	if (PluginFS::MkDir(pluginsDir + L"\\" + pluginName, relativePath)) {
-		return V8Value::boolean(true);
-	}
-	return V8Value::boolean(false);
+    if (PluginFS::MkDir(pluginsDir + L"\\" + pluginName, relativePath)) {
+        return V8Value::boolean(true);
+    }
+    return V8Value::boolean(false);
 }
 
 V8Value* native_Stat(const vec<V8Value*>& args) {
@@ -193,7 +169,7 @@ V8Value* native_Stat(const vec<V8Value*>& args) {
     PluginFS::FileStat fileStat = PluginFS::Stat(destPath);
 
     V8Object* v8Obj = V8Object::create();
-    v8Obj->set(&L"length"_s, V8Value::number(fileStat.size),V8_PROPERTY_ATTRIBUTE_READONLY);
+    v8Obj->set(&L"length"_s, V8Value::number(fileStat.size), V8_PROPERTY_ATTRIBUTE_READONLY);
     v8Obj->set(&L"isDir"_s, V8Value::boolean(fileStat.isDir), V8_PROPERTY_ATTRIBUTE_READONLY);
     v8Obj->set(&L"fileName"_s, V8Value::string(&CefStr{ fileStat.fileName }), V8_PROPERTY_ATTRIBUTE_READONLY);
 
@@ -201,25 +177,25 @@ V8Value* native_Stat(const vec<V8Value*>& args) {
 }
 
 V8Value* native_ReadDir(const vec<V8Value*>& args) {
-	wstr destPath = config::pluginsDir() + L"\\" + args[0]->asString()->str;
-	if (!std::filesystem::exists(destPath)) {
-		return V8Value::undefined();
-	}
-	vec<wstr> fileNames = PluginFS::ReadDir(destPath);
+    wstr destPath = config::pluginsDir() + L"\\" + args[0]->asString()->str;
+    if (!std::filesystem::exists(destPath)) {
+        return V8Value::undefined();
+    }
+    vec<wstr> fileNames = PluginFS::ReadDir(destPath);
 
-	V8Array* v8Array = V8Array::create(fileNames.size());
+    V8Array* v8Array = V8Array::create(fileNames.size());
     for (size_t i = 0; i < fileNames.size(); i++)
-	{
-		wstr fileName = fileNames[i];
+    {
+        wstr fileName = fileNames[i];
         auto fileNameV8Str = V8Value::string(&CefStr{ fileName });
-		v8Array->set(i, fileNameV8Str);
-	}
-	return (V8Value*)v8Array;
+        v8Array->set(i, fileNameV8Str);
+    }
+    return (V8Value*)v8Array;
 }
 
 V8Value* native_Remove(const vec<V8Value*>& args) {
-	wstr destPath = config::pluginsDir() + L"\\" + args[0]->asString()->str;
-	bool recursively = args[1]->asBool();
+    wstr destPath = config::pluginsDir() + L"\\" + args[0]->asString()->str;
+    bool recursively = args[1]->asBool();
 
     int ret = PluginFS::RemoveFile(destPath, recursively);
     return V8Value::number(ret);
