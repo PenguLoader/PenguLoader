@@ -2,6 +2,7 @@ import { native } from './native';
 
 import './DataStore';
 import './Effect';
+import './PluginFs';
 
 window.openDevTools = function (remote?: boolean) {
   native.OpenDevTools(Boolean(remote));

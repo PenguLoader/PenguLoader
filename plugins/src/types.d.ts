@@ -47,6 +47,21 @@ interface Effect {
   setTheme: (theme: ThemeName) => boolean
 }
 
+interface FileStat{
+  fileName: string
+  length: number
+  isDir: boolean
+}
+
+interface PluginFS {
+  read: (path: string) => Promise<string | undefined>
+  write: (path: string, content: string, enableAppendMode: boolean) => Promise<boolean>
+  mkdir: (path: string) => Promise<boolean>
+  stat: (path: string) => Promise<FileStat | undefined>
+  ls: (path: string) => Promise<string[] | undefined>
+  rm: (path: string, recursively:boolean) => Promise<number>
+}
+
 // globals
 
 namespace Pengu {
@@ -58,6 +73,7 @@ namespace Pengu {
 declare const DataStore: DataStore;
 declare const CommandBar: CommandBar;
 declare const Effect: Effect;
+declare const PluginFS: PluginFS;
 
 declare const openDevTools: (remote?: boolean) => void;
 declare const openAssetsFolder: () => void;
@@ -72,6 +88,7 @@ declare interface Window {
   DataStore: DataStore;
   CommandBar: CommandBar;
   Effect: Effect;
+  PluginFS:PluginFS;
 
   openDevTools: typeof openDevTools;
   openAssetsFolder: typeof openAssetsFolder;
