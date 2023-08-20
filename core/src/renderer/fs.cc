@@ -100,7 +100,7 @@ namespace PluginFS {
         };
     }
 
-    static vec<wstr> ReadDir(wstr path) {
+    static vec<wstr> Ls(wstr path) {
         PluginFS::removeTailingSlash(path);
 
         vec<wstr> fileNames;
@@ -176,12 +176,12 @@ V8Value* native_Stat(const vec<V8Value*>& args) {
     return (V8Value*)v8Obj;
 }
 
-V8Value* native_ReadDir(const vec<V8Value*>& args) {
+V8Value* native_Ls(const vec<V8Value*>& args) {
     wstr destPath = config::pluginsDir() + L"\\" + args[0]->asString()->str;
     if (!std::filesystem::exists(destPath)) {
         return V8Value::undefined();
     }
-    vec<wstr> fileNames = PluginFS::ReadDir(destPath);
+    vec<wstr> fileNames = PluginFS::Ls(destPath);
 
     V8Array* v8Array = V8Array::create(fileNames.size());
     for (size_t i = 0; i < fileNames.size(); i++)

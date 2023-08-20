@@ -32,10 +32,10 @@ window.PluginFS = {
             resolve(result);
         });
     },
-    readDir(path: string) {
+    ls(path: string) {
         return new Promise<string[] | undefined>((resolve) => {
             const pluginName = getScriptPath()?.match(/\/([^/]+)\/index\.js$/)?.[1]
-            const result = native.ReadDir(pluginName + "/" + path);
+            const result = native.Ls(pluginName + "/" + path);
             resolve(result);
         });
     },
