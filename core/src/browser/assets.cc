@@ -348,12 +348,12 @@ private:
             if (!mime_.empty())
                 response->set_mime_type(response, &CefStr(mime_));
 
-            response->set_header_by_name(response, &L"Access-Control-Allow-Origin"_s, &L"*"_s, 1);
+            response->set_header_by_name(response, &u"Access-Control-Allow-Origin"_s, &u"*"_s, 1);
 
             if (no_cache_ || mime_ == L"text/javascript")
-                response->set_header_by_name(response, &L"Cache-Control"_s, &L"no-cache, no-store, must-revalidate"_s, 1);
+                response->set_header_by_name(response, &u"Cache-Control"_s, &u"no-cache, no-store, must-revalidate"_s, 1);
             else
-                response->set_header_by_name(response, &L"Cache-Control"_s, &L"public, max-age=86400"_s, 1);
+                response->set_header_by_name(response, &u"Cache-Control"_s, &u"public, max-age=86400"_s, 1);
 
             *response_length = length_;
         }
@@ -399,9 +399,9 @@ struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
 
 void RegisterAssetsSchemeHandlerFactory()
 {
-    cef_register_scheme_handler_factory(&L"https"_s,
-        &L"assets"_s, new AssetsSchemeHandlerFactory());
+    cef_register_scheme_handler_factory(&u"https"_s,
+        &u"assets"_s, new AssetsSchemeHandlerFactory());
 
-    cef_register_scheme_handler_factory(&L"https"_s,
-        &L"plugins"_s, new AssetsSchemeHandlerFactory());
+    cef_register_scheme_handler_factory(&u"https"_s,
+        &u"plugins"_s, new AssetsSchemeHandlerFactory());
 }

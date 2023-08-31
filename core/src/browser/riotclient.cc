@@ -103,7 +103,7 @@ private:
 
         auto request_ = cef_request_create();
         request_->set(request_, &url, &method, body, headers);
-        request_->set_header_by_name(request_, &L"Authorization"_s, &CefStr(authorization_), 1);
+        request_->set_header_by_name(request_, &u"Authorization"_s, &CefStr(authorization_), 1);
 
         client_ = new RiotClientURLRequestClient(&data_, callback);
         url_request_ = frame_->create_urlrequest(frame_, request_, client_);
@@ -129,7 +129,7 @@ private:
         }
 
         // Bypass cors
-        response->set_header_by_name(response, &L"Access-Control-Allow-Origin"_s, &L"*"_s, 1);
+        response->set_header_by_name(response, &u"Access-Control-Allow-Origin"_s, &u"*"_s, 1);
         *response_length = client_->response_length_;
     }
 
@@ -174,7 +174,7 @@ struct RiotClientSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t
 
 void RegisterRiotClientSchemeHandlerFactory()
 {
-    cef_register_scheme_handler_factory(&L"https"_s,
+    cef_register_scheme_handler_factory(&u"https"_s,
         &CefStr("riotclient"), new RiotClientSchemeHandlerFactory());
 }
 

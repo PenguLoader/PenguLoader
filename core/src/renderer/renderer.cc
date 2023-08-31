@@ -65,7 +65,7 @@ static V8Value *native_OpenDevTools(const vec<V8Value *> &args)
     auto frame = context->get_frame(context);
 
     // IPC to browser process.
-    auto name = remote ? L"__open_remote_devtools"_s : L"__open_devtools"_s;
+    auto name = remote ? u"__open_remote_devtools"_s : u"__open_devtools"_s;
     auto msg = cef_process_message_create(&name);
     frame->send_process_message(frame, PID_BROWSER, msg);
 
@@ -182,9 +182,9 @@ static void ExposeNativeFunctions(V8Object *window)
         native->set(&name, function, V8_PROPERTY_ATTRIBUTE_READONLY);
     }
 
-    window->set(&L"__native"_s, native, V8_PROPERTY_ATTRIBUTE_READONLY);
+    window->set(&u"__native"_s, native, V8_PROPERTY_ATTRIBUTE_READONLY);
 
-    window->set(&L"__llver"_s, V8Value::string(&CefStr(PL_VERSION)), V8_PROPERTY_ATTRIBUTE_READONLY);
+    window->set(&u"__llver"_s, V8Value::string(&CefStr(PL_VERSION)), V8_PROPERTY_ATTRIBUTE_READONLY);
 }
 
 static void LoadPlugins(V8Object *window)
@@ -193,14 +193,14 @@ static void LoadPlugins(V8Object *window)
 
     // Pengu.version
     auto version = V8Value::string(&CefStr(PL_VERSION));
-    pengu->set(&L"version"_s, version, V8_PROPERTY_ATTRIBUTE_READONLY);
+    pengu->set(&u"version"_s, version, V8_PROPERTY_ATTRIBUTE_READONLY);
 
     // Pengu.superPotato
     auto superPotato = V8Value::boolean(config::getConfigValueBool(L"SuperLowSpecMode", false));
-    pengu->set(&L"superPotato"_s, superPotato, V8_PROPERTY_ATTRIBUTE_READONLY);
+    pengu->set(&u"superPotato"_s, superPotato, V8_PROPERTY_ATTRIBUTE_READONLY);
 
-    pengu->set(&L"os"_s, V8Value::string(&L"win"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
-    pengu->set(&L"osVersion"_s, V8Value::string(&L"10"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
+    pengu->set(&u"os"_s, V8Value::string(&u"win"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
+    pengu->set(&u"osVersion"_s, V8Value::string(&u"10"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
 
     // Pengu.entries
     auto entries = GetPluginEntries();
@@ -213,10 +213,10 @@ static void LoadPlugins(V8Object *window)
     }
 
     // Should add to parent objet after init.
-    pengu->set(&L"plugins"_s, pluginEntries, V8_PROPERTY_ATTRIBUTE_READONLY);
+    pengu->set(&u"plugins"_s, pluginEntries, V8_PROPERTY_ATTRIBUTE_READONLY);
 
     // Add Pengu to window.
-    window->set(&L"Pengu"_s, pengu, V8_PROPERTY_ATTRIBUTE_READONLY);
+    window->set(&u"Pengu"_s, pengu, V8_PROPERTY_ATTRIBUTE_READONLY);
 }
 
 static void ExecutePreloadScript(cef_frame_t *frame)
@@ -226,7 +226,7 @@ static void ExecutePreloadScript(cef_frame_t *frame)
     if (utils::readFile(config::loaderDir() + L"\\..\\plugins\\dist\\preload.js", script))
     {
         CefStr code{ script.c_str(), script.length() };
-        frame->execute_java_script(frame, &code, &L"https://plugins/@/preload"_s, 1);
+        frame->execute_java_script(frame, &code, &u"https://plugins/@/preload"_s, 1);
     }
     else
     {
@@ -290,7 +290,7 @@ static void CEF_CALLBACK Hooked_OnBrowserCreated(
     struct _cef_dictionary_value_t* extra_info)
 {
     // Detect main browser.
-    is_main_ = extra_info && extra_info->has_key(extra_info, &L"is_main"_s);
+    is_main_ = extra_info && extra_info->has_key(extra_info, &u"is_main"_s);
 
     OnBrowserCreated(self, browser, extra_info);
 }

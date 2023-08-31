@@ -46,7 +46,7 @@ static int CEF_CALLBACK Hooked_OnPreKeyEvent(
                 {
                     auto frame = browser->get_main_frame(browser);
                     frame->execute_java_script(frame,
-                        &L"fetch('/riotclient/kill-and-restart-ux', { method: 'POST' })"_s, nullptr, 1);
+                        &u"fetch('/riotclient/kill-and-restart-ux', { method: 'POST' })"_s, nullptr, 1);
                 }
 
                 return 0;

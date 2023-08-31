@@ -441,9 +441,9 @@ V8Value *native_SetWindowEffect(const vec<V8Value *> &args)
             if (args.size() >= 2 && args[1]->isObject())
             {
                 auto options = args[1]->asObject();
-                if (options->has(&L"color"_s))
+                if (options->has(&u"color"_s))
                 {
-                    auto color = options->get(&L"color"_s);
+                    auto color = options->get(&u"color"_s);
                     if (color->isString())
                     {
                         CefScopedStr value{ color->asString() };

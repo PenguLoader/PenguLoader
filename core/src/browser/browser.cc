@@ -41,7 +41,7 @@ static void SetUpBrowserWindow(cef_browser_t *browser)
 
     // Send RCLIENT HWND to renderer.
     auto frame = browser->get_main_frame(browser);
-    auto msg = cef_process_message_create(&L"__rclient"_s);
+    auto msg = cef_process_message_create(&u"__rclient"_s);
     auto args = msg->get_argument_list(msg);
     args->set_int(args, 0, (int32_t)reinterpret_cast<intptr_t>(rclient));
     frame->send_process_message(frame, PID_RENDERER, msg);
@@ -124,7 +124,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
             extra_info = cef_dictionary_value_create();
 
         // Set as main browser.
-        extra_info->set_null(extra_info, &L"is_main"_s);
+        extra_info->set_null(extra_info, &u"is_main"_s);
 
         // Hook client.
         HookMainBrowserClient(client);
@@ -139,8 +139,8 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     const cef_string_t* process_type,
     struct _cef_command_line_t* command_line)
 {
-    CefScopedStr rc_port = command_line->get_switch_value(command_line, &L"riotclient-app-port"_s);
-    CefScopedStr rc_token = command_line->get_switch_value(command_line, &L"riotclient-auth-token"_s);
+    CefScopedStr rc_port = command_line->get_switch_value(command_line, &u"riotclient-app-port"_s);
+    CefScopedStr rc_token = command_line->get_switch_value(command_line, &u"riotclient-auth-token"_s);
     SetRiotClientCredentials(rc_port.cstr(), rc_token.cstr());
 
     // Extract args string.
@@ -169,50 +169,50 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     {
         // Set remote debugging port.
         command_line->append_switch_with_value(command_line,
-            &L"remote-debugging-port"_s, &CefStr(std::to_string(remote_debugging_port_)));
+            &u"remote-debugging-port"_s, &CefStr(std::to_string(remote_debugging_port_)));
     }
 
     if (config::getConfigValueBool(L"DisableWebSecurity", false))
     {
         // Disable web security.
-        command_line->append_switch(command_line, &L"disable-web-security"_s);
+        command_line->append_switch(command_line, &u"disable-web-security"_s);
     }
 
     if (config::getConfigValueBool(L"IgnoreCertificateErrors", false))
     {
         // Ignore invalid certs.
-        command_line->append_switch(command_line, &L"ignore-certificate-errors"_s);
+        command_line->append_switch(command_line, &u"ignore-certificate-errors"_s);
     }
 
     if (config::getConfigValueBool(L"OptimizeClient", true))
     {
         // Optimize Client.
-        command_line->append_switch(command_line, &L"disable-async-dns"_s);
-        command_line->append_switch(command_line, &L"disable-plugins"_s);
-        command_line->append_switch(command_line, &L"disable-extensions"_s);
-        command_line->append_switch(command_line, &L"disable-background-networking"_s);
-        command_line->append_switch(command_line, &L"disable-background-timer-throttling"_s);
-        command_line->append_switch(command_line, &L"disable-backgrounding-occluded-windows"_s);
-        command_line->append_switch(command_line, &L"disable-renderer-backgrounding"_s);
-        command_line->append_switch(command_line, &L"disable-metrics"_s);
-        command_line->append_switch(command_line, &L"disable-component-update"_s);
-        command_line->append_switch(command_line, &L"disable-domain-reliability"_s);
-        command_line->append_switch(command_line, &L"disable-translate"_s);
-        command_line->append_switch(command_line, &L"disable-gpu-watchdog"_s);
-        command_line->append_switch(command_line, &L"disable-renderer-accessibility"_s);
-        command_line->append_switch(command_line, &L"enable-parallel-downloading"_s);
-        command_line->append_switch(command_line, &L"enable-new-download-backend"_s);
-        command_line->append_switch(command_line, &L"enable-quic"_s);
-        command_line->append_switch(command_line, &L"no-pings"_s);
-        command_line->append_switch(command_line, &L"no-sandbox"_s);
+        command_line->append_switch(command_line, &u"disable-async-dns"_s);
+        command_line->append_switch(command_line, &u"disable-plugins"_s);
+        command_line->append_switch(command_line, &u"disable-extensions"_s);
+        command_line->append_switch(command_line, &u"disable-background-networking"_s);
+        command_line->append_switch(command_line, &u"disable-background-timer-throttling"_s);
+        command_line->append_switch(command_line, &u"disable-backgrounding-occluded-windows"_s);
+        command_line->append_switch(command_line, &u"disable-renderer-backgrounding"_s);
+        command_line->append_switch(command_line, &u"disable-metrics"_s);
+        command_line->append_switch(command_line, &u"disable-component-update"_s);
+        command_line->append_switch(command_line, &u"disable-domain-reliability"_s);
+        command_line->append_switch(command_line, &u"disable-translate"_s);
+        command_line->append_switch(command_line, &u"disable-gpu-watchdog"_s);
+        command_line->append_switch(command_line, &u"disable-renderer-accessibility"_s);
+        command_line->append_switch(command_line, &u"enable-parallel-downloading"_s);
+        command_line->append_switch(command_line, &u"enable-new-download-backend"_s);
+        command_line->append_switch(command_line, &u"enable-quic"_s);
+        command_line->append_switch(command_line, &u"no-pings"_s);
+        command_line->append_switch(command_line, &u"no-sandbox"_s);
     }
 
     if (config::getConfigValueBool(L"SuperLowSpecMode", false))
     {
         // Super Low Spec Mode.
-        command_line->append_switch(command_line, &L"disable-smooth-scrolling"_s);
-        command_line->append_switch(command_line, &L"wm-window-animations-disabled"_s);
-        command_line->append_switch_with_value(command_line, &L"animation-duration-scale"_s, &L"0"_s);
+        command_line->append_switch(command_line, &u"disable-smooth-scrolling"_s);
+        command_line->append_switch(command_line, &u"wm-window-animations-disabled"_s);
+        command_line->append_switch_with_value(command_line, &u"animation-duration-scale"_s, &u"0"_s);
     }
 }
 

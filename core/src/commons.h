@@ -38,6 +38,7 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#define CEF_STRING_TYPE_UTF16 1
 #include "include/internal/cef_string.h"
 #include "include/capi/cef_base_capi.h"
 #include "include/capi/cef_v8_capi.h"
@@ -201,11 +202,6 @@ struct CefScopedStr : CefStrBase
 private:
     cef_string_userfree_t str_;
 };
-
-static inline cef_string_t operator""_s(const wchar_t *s, size_t l)
-{
-    return cef_string_t{ (char16 *)s, l, nullptr };
-}
 
 static inline cef_string_t operator""_s(const char16_t *s, size_t l)
 {
