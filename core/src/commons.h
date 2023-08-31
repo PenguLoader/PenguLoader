@@ -12,12 +12,8 @@
 #error "Your platform is not supported."
 #endif
 
-#if defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__) || defined(__amd64__)
-#ifndef X86_64
-#define X86_64 1
-#endif
-#elif !(defined(_WIN32) && !defined(_WIN64))
-#error "Your CPU arch is not supported."
+#if !(defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__) || defined(__amd64__))
+#error "Target 64-bit (x86-64/AMD64) only."
 #endif
 
 #ifdef _MSC_VER
@@ -68,15 +64,6 @@ struct remove_arg1<R(*)(Arg1, Args...)>
     using self = Arg1;
 };
 
-#if defined(OS_WIN) && !defined(X86_64)
-template<typename R, typename Arg1, typename... Args>
-struct remove_arg1<R(CALLBACK*)(Arg1, Args...)>
-{
-    using type = R(*)(Args...);
-    using self = Arg1;
-};
-#endif
-
 template <typename T>
 struct method_traits;
 
@@ -106,12 +93,6 @@ struct self_bind_traits;
 template <int id, typename This, typename M, typename R, typename Self, typename... Args>
 struct self_bind_traits<id, This, M, R(*)(Self, Args...)>
     : self_bind_traits_base<id, This, M, R, Self, Args...> {};
-
-#if defined(OS_WIN) && !defined(X86_64)
-template <int id, typename This, typename M, typename R, typename Self, typename... Args>
-struct self_bind_traits<id, This, M, R(CALLBACK*)(Self, Args...)>
-    : self_bind_traits_base<id, This, M, R, Self, Args...> {};
-#endif
 
 template <int id, typename M, typename To>
 static inline void self_bind(M from, To &to) noexcept
@@ -369,13 +350,11 @@ namespace hook
 
     private:
         // Special thanks to https://github.com/nbqofficial/divert/
-#   ifdef X86_64
-        uint8_t movabs = 0x48;      // x86                  x86_64                 
-#   endif                           //
-        uint8_t mov_eax = 0xB8;     // mov eax [addr]   |   movabs rax [addr]
+        uint8_t movabs = 0x48;      //                 
+        uint8_t mov_rax = 0xB8;     // movabs rax [addr]
         intptr_t addr;              //
-        uint8_t push_eax = 0x50;    // push eax         |   push rax
-        uint8_t ret = 0xC3;         // ret              |   ret
+        uint8_t push_rax = 0x50;    // push rax
+        uint8_t ret = 0xC3;         // ret
     };
 #   pragma pack(pop)
 
@@ -483,15 +462,4 @@ namespace hook
     class Hook<R(*)(Args...)>
         : public HookBase<R(*)(Args...), R, Args...> {};
 
-#if defined(OS_WIN) && !defined(X86_64)
-    // stdcall and fastcall are ignored on x64
-
-    template<typename R, typename ...Args>
-    class Hook<R(__stdcall*)(Args...)>
-        : public HookBase<R(__stdcall*)(Args...), R, Args...> {};
-
-    template<typename R, typename ...Args>
-    class Hook<R(__fastcall*)(Args...)>
-        : public HookBase<R(__fastcall*)(Args...), R, Args...> {};
-#endif
 }
