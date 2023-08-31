@@ -1,10 +1,8 @@
 #include "commons.h"
 #include "include/cef_version.h"
 
-#ifdef _WIN64
+#ifdef _MSC_VER
 #pragma comment(lib, "libcef.lib")
-#else
-#pragma comment(lib, "libcef32.lib")
 #endif
 
 static int GetFileMajorVersion(LPCWSTR path)
