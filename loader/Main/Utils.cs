@@ -1,14 +1,19 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 
 namespace PenguLoader.Main
 {
-    static class Utils
+    internal static class Utils
     {
-        public static void OpenFolder(string path) => Process.Start("explorer.exe", $"\"{path}\"");
+        public static void OpenFolder(string path)
+        {
+            Process.Start("explorer.exe", $"\"{path}\"");
+        }
 
-        public static void OpenLink(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        public static void OpenLink(string url)
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
 
         public static bool IsFileInUse(string path)
         {
@@ -16,7 +21,9 @@ namespace PenguLoader.Main
 
             try
             {
-                using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+                using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                }
             }
             catch
             {
@@ -33,7 +40,10 @@ namespace PenguLoader.Main
                 if (isDir) Directory.Delete(path, true);
                 else File.Delete(path);
             }
-            catch { }
+            catch
+            {
+                // ignored
+            }
         }
 
         public static void EnsureDirectoryExists(string path)

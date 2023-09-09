@@ -1,28 +1,29 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls;
-
 using PenguLoader.Main;
 
 namespace PenguLoader.Views
 {
-    public partial class MainPage : Page, INotifyPropertyChanged
+    public partial class MainPage : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-        void TriggerPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        public MainPage()
+        {
+            InitializeComponent();
+            DataContext = this;
+        }
 
-        Window Owner => Window.GetWindow(this);
+        private Window Owner => Window.GetWindow(this);
 
         public bool OptimizeClient
         {
             get => Config.OptimizeClient;
             set
             {
-                if (value == true)
+                if (value)
                 {
-                    var caption = App.GetTranslation("t_optimize_client");
-                    var message = App.GetTranslation("t_msg_optimize_client_prompt");
+                    var caption = App.GetTranslation("TOptimizeClient");
+                    var message = App.GetTranslation("TMsgOptimizeClientPrompt");
 
                     value = MessageBox.Show(Owner, message, caption,
                         MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes;
@@ -38,10 +39,10 @@ namespace PenguLoader.Views
             get => Config.SuperLowSpecMode;
             set
             {
-                if (value == true)
+                if (value)
                 {
-                    var caption = App.GetTranslation("t_super_potato_mode");
-                    var message = App.GetTranslation("t_msg_super_potato_mode_prompt");
+                    var caption = App.GetTranslation("TSuperPotatoMode");
+                    var message = App.GetTranslation("TMsgSuperPotatoModePrompt");
 
                     value = MessageBox.Show(Owner, message, caption,
                         MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes;
@@ -61,46 +62,42 @@ namespace PenguLoader.Views
                 {
                     if (!Module.IsFound)
                     {
-                        MessageBox.Show(Owner, App.GetTranslation("t_msg_module_not_found"),
-                             Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show(Owner, App.GetTranslation("TMsgModuleNotFound"),
+                            Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                     else
                     {
                         Module.SetActive(value);
                         TriggerPropertyChanged(nameof(IsActivated));
 
-                        if ((value && LCU.IsRunning) || (!value && Module.IsLoaded))
-                        {
-                            if (MessageBox.Show(Owner, App.GetTranslation("t_msg_restart_client"),
-                                Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                            {
-                                LCU.KillUxAndRestart();
-                            }
-                        }
+                        if ((!value || !Lcu.IsRunning) && (value || !Module.IsLoaded)) return;
+                        if (MessageBox.Show(Owner, App.GetTranslation("TMsgRestartClient"),
+                                Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) ==
+                            MessageBoxResult.Yes)
+                            Lcu.KillUxAndRestart();
                     }
                 }
                 catch (Exception ex)
                 {
-                    var msg = App.GetTranslation("t_msg_activation_fail");
-                    msg += string.Format("\n\nERR: {0}\n{1}", ex.Message, ex.StackTrace);
+                    var msg = App.GetTranslation("TMsgActivationFail");
+                    msg += $"\n\nERR: {ex.Message}\n{ex.StackTrace}";
 
                     if (ex.InnerException != null)
-                        msg += string.Format("\n\nERR2: {0}\n{1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                        msg += $"\n\nERR2: {ex.InnerException.Message}\n{ex.InnerException.StackTrace}";
 
                     msg += "\n\n";
 
-                    if (MessageBox.Show(Owner, msg, Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
-                    {
-                        Utils.OpenLink(Program.GithubIssuesUrl);
-                    }
+                    if (MessageBox.Show(Owner, msg, Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning) ==
+                        MessageBoxResult.Yes) Utils.OpenLink(Program.GithubIssuesUrl);
                 }
             }
         }
 
-        public MainPage()
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void TriggerPropertyChanged(string name)
         {
-            InitializeComponent();
-            DataContext = this;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         private void DiscordButtonClick(object sender, RoutedEventArgs e)

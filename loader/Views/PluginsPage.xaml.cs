@@ -1,19 +1,24 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using PenguLoader.Main;
 
 namespace PenguLoader.Views
 {
-    public partial class PluginsPage : Page, INotifyPropertyChanged
+    public partial class PluginsPage : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-        void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        private bool _loading;
 
-        bool _loading = false;
+        public PluginsPage()
+        {
+            InitializeComponent();
+            Loaded += RefreshPluginsClick;
+            DataContext = this;
+        }
+
         public bool IsDone => !_loading;
+
         public bool IsLoading
         {
             get => _loading;
@@ -25,11 +30,11 @@ namespace PenguLoader.Views
             }
         }
 
-        public PluginsPage()
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void OnPropertyChanged(string name)
         {
-            InitializeComponent();
-            Loaded += RefreshPluginsClick;
-            DataContext = this;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         private void ShowFolderClick(object sender, RoutedEventArgs e)
@@ -42,18 +47,14 @@ namespace PenguLoader.Views
             if (IsLoading) return;
 
             IsLoading = true;
-            _plugins.Items.Clear();
+            Plugins.Items.Clear();
 
-            var plugins = Plugins.All();
-            _count.Text = plugins.Count.ToString();
+            var plugins = Main.Plugins.All();
+            Count.Text = plugins.Count.ToString();
 
             await Task.Delay(500);
 
-            foreach (var plugin in plugins)
-            {
-                var item = new PluginItem(plugin);
-                _plugins.Items.Add(item);
-            }
+            foreach (var item in plugins.Select(plugin => new PluginItem(plugin))) Plugins.Items.Add(item);
 
             IsLoading = false;
         }

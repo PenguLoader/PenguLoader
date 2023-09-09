@@ -4,67 +4,67 @@ using Microsoft.Win32;
 
 namespace PenguLoader.Main
 {
-    static class IFEO
+    internal static class Ifeo
     {
-        private const string IFEO_PATH = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
-        private const string VALUE_NAME = "Debugger";
+        private const string IfeoPath = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
+        private const string ValueName = "Debugger";
 
         public static string GetDebugger(string target)
         {
-            using (var key = OpenIFEOKey())
+            using (var key = OpenIfeoKey())
             {
                 using (var image = key?.OpenSubKey(target))
                 {
-                    return image?.GetValue(VALUE_NAME) as string;
+                    return image?.GetValue(ValueName) as string;
                 }
             }
         }
 
-        public static bool SetDebugger(string target, string debugger)
+        public static void SetDebugger(string target, string debugger)
         {
-            using (var key = OpenIFEOKey(writable: true))
+            using (var key = OpenIfeoKey(true))
             {
-                if (key == null) return false;
+                if (key == null) return;
 
                 using (var image = key.CreateSubKey(target, RegistryKeyPermissionCheck.ReadWriteSubTree))
                 {
-                    if (image == null) return false;
+                    if (image == null) return;
 
                     try
                     {
                         var user = Environment.UserDomainName + "\\" + Environment.UserName;
-                        RegistryAccessRule rule = new RegistryAccessRule(user, RegistryRights.FullControl, AccessControlType.Allow);
-                        RegistrySecurity security = new RegistrySecurity();
+                        var rule = new RegistryAccessRule(user, RegistryRights.FullControl, AccessControlType.Allow);
+                        var security = new RegistrySecurity();
                         security.AddAccessRule(rule);
                         image.SetAccessControl(security);
                     }
                     catch
                     {
+                        // ignored
                     }
 
-                    image.SetValue(VALUE_NAME, debugger, RegistryValueKind.String);
-                    return true;
+                    image.SetValue(ValueName, debugger, RegistryValueKind.String);
                 }
             }
         }
 
         public static void RemoveDebugger(string target)
         {
-            using (var key = OpenIFEOKey(writable: true))
+            using (var key = OpenIfeoKey(true))
             {
                 using (var image = key?.OpenSubKey(target, true))
                 {
                     if (image == null) return;
 
-                    image.DeleteValue(VALUE_NAME);
+                    image.DeleteValue(ValueName);
                     key.DeleteSubKey(target, false);
                 }
             }
         }
 
-        static RegistryKey OpenIFEOKey(bool writable = false)
+        private static RegistryKey OpenIfeoKey(bool writable = false)
         {
-            return Registry.LocalMachine.OpenSubKey(IFEO_PATH, writable);
+            return Registry.LocalMachine.OpenSubKey(IfeoPath, writable);
         }
     }
 }

@@ -5,7 +5,7 @@ using System.Windows;
 
 namespace PenguLoader.Main
 {
-    static class DataStore
+    internal static class DataStore
     {
         public static bool IsDataStore(string path)
         {
@@ -13,7 +13,7 @@ namespace PenguLoader.Main
                 return false;
 
             return Path.GetFileName(path).Equals("datastore", StringComparison.OrdinalIgnoreCase)
-                && File.Exists(path);
+                   && File.Exists(path);
         }
 
         public static void DumpDataStore(string path)
@@ -46,17 +46,12 @@ namespace PenguLoader.Main
             }
         }
 
-        static byte[] Transform(byte[] bytes)
+        private static byte[] Transform(byte[] bytes)
         {
-            if (bytes != null && bytes.Length > 0)
-            {
-                const string key = "A5dgY6lz9fpG9kGNiH1mZ";
+            if (bytes == null || bytes.Length <= 0) return bytes;
+            const string key = "A5dgY6lz9fpG9kGNiH1mZ";
 
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    bytes[i] ^= (byte)key[i % key.Length];
-                }
-            }
+            for (var i = 0; i < bytes.Length; i++) bytes[i] ^= (byte)key[i % key.Length];
 
             return bytes;
         }

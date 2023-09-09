@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace PenguLoader.Main
 {
-    static class LCU
+    internal static class Lcu
     {
         private static readonly HttpClient Http;
 
-        static LCU()
+        static Lcu()
         {
             Http = new HttpClient();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
@@ -21,17 +21,18 @@ namespace PenguLoader.Main
 
         public static bool IsRunning => Process.GetProcessesByName("LeagueClientUx").Length > 0;
 
-        public static string GetDir()
+        private static string GetDir()
         {
-            var procs = Process.GetProcessesByName("LeagueClientUx");
+            var proc = Process.GetProcessesByName("LeagueClientUx");
 
-            if (procs.Length == 0) return "";
+            if (proc.Length == 0) return "";
 
-            var lcux = procs[0];
-            return Directory.GetParent(lcux.MainModule.FileName).FullName;
+            var lcux = proc[0];
+
+            return lcux?.MainModule?.FileName ?? "";
         }
 
-        public static async Task<string> Request(string api, string method, string body = null)
+        private static async Task<string> Request(string api, string method, string body = null)
         {
             var lcPath = GetDir();
 
@@ -63,7 +64,10 @@ namespace PenguLoader.Main
             }
         }
 
-        public static Task KillUxAndRestart() => Request("/riotclient/kill-and-restart-ux", "POST");
+        public static void KillUxAndRestart()
+        {
+            _ = Request("/riotclient/kill-and-restart-ux", "POST");
+        }
 
         private static bool GetCredentials(string lcPath, out string port, out string pass)
         {
@@ -71,7 +75,8 @@ namespace PenguLoader.Main
             {
                 var lockfilePath = Path.Combine(lcPath, "lockfile");
 
-                using (var fileStream = new FileStream(lockfilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var fileStream =
+                       new FileStream(lockfilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     using (var reader = new StreamReader(fileStream))
                     {
@@ -89,6 +94,7 @@ namespace PenguLoader.Main
             }
             catch
             {
+                // ignored
             }
 
             port = pass = string.Empty;

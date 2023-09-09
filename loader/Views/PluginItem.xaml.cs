@@ -1,14 +1,12 @@
-﻿using System;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows;
-
 using PenguLoader.Main;
 
 namespace PenguLoader.Views
 {
-    public partial class PluginItem : UserControl
+    public partial class PluginItem
     {
         public PluginItem()
         {
@@ -19,31 +17,22 @@ namespace PenguLoader.Views
         {
             InitializeComponent();
 
-            tName.IsChecked = plugin.Enabled;
-            (tName.Content as TextBlock).Text = plugin.Name;
-            tName.Click += delegate { Plugins.Toggle(plugin); };
+            TName.IsChecked = plugin.Enabled;
+            ((TextBlock)TName.Content).Text = plugin.Name;
+            TName.Click += delegate { Plugins.Toggle(plugin); };
 
             if (string.IsNullOrEmpty(plugin.Author) && string.IsNullOrEmpty(plugin.Link))
             {
-                tLink.Visibility = Visibility.Collapsed;
+                TLink.Visibility = Visibility.Collapsed;
             }
             else
             {
-                if (!string.IsNullOrEmpty(plugin.Author))
-                {
-                    tLink.Text = plugin.Author;
-                }
-                else
-                {
-                    tLink.Text = "Source";
-                }
+                TLink.Text = !string.IsNullOrEmpty(plugin.Author) ? plugin.Author : "Source";
 
-                if (!string.IsNullOrEmpty(plugin.Link))
-                {
-                    tLink.Cursor = Cursors.Hand;
-                    tLink.MouseUp += delegate { Utils.OpenLink(plugin.Link); };
-                    tLink.Foreground = new SolidColorBrush(Colors.SeaGreen);
-                }
+                if (string.IsNullOrEmpty(plugin.Link)) return;
+                TLink.Cursor = Cursors.Hand;
+                TLink.MouseUp += delegate { Utils.OpenLink(plugin.Link); };
+                TLink.Foreground = new SolidColorBrush(Colors.SeaGreen);
             }
         }
     }

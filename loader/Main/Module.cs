@@ -3,16 +3,17 @@ using System.IO;
 
 namespace PenguLoader.Main
 {
-    static class Module
+    internal static class Module
     {
-        const string ModuleName = "core.dll";
-        const string TargetName = "LeagueClientUx.exe";
-        static string ModulePath => Path.Combine(Directory.GetCurrentDirectory(), ModuleName);
-        static string DebuggerValue => $"rundll32 \"{ModulePath}\", #6000 ";
+        private const string ModuleName = "core.dll";
+        private const string TargetName = "LeagueClientUx.exe";
+        private static string ModulePath => Path.Combine(Directory.GetCurrentDirectory(), ModuleName);
+        private static string DebuggerValue => $"rundll32 \"{ModulePath}\", #6000 ";
 
         public static bool IsLoaded => Utils.IsFileInUse(ModulePath);
 
-        public static bool IsActivated => DebuggerValue.Equals(IFEO.GetDebugger(TargetName), StringComparison.OrdinalIgnoreCase);
+        public static bool IsActivated =>
+            DebuggerValue.Equals(Ifeo.GetDebugger(TargetName), StringComparison.OrdinalIgnoreCase);
 
         public static bool IsFound => File.Exists(ModulePath);
 
@@ -20,14 +21,11 @@ namespace PenguLoader.Main
         {
             if (active)
             {
-                if (IsFound)
-                {
-                    IFEO.SetDebugger(TargetName, DebuggerValue);
-                }
+                if (IsFound) Ifeo.SetDebugger(TargetName, DebuggerValue);
             }
             else
             {
-                IFEO.RemoveDebugger(TargetName);
+                Ifeo.RemoveDebugger(TargetName);
             }
         }
     }

@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
-
 using ModernWpf;
 using PenguLoader.Main;
 
 namespace PenguLoader
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
-        public static MainWindow Instance { get; private set; }
-
         public MainWindow()
         {
             Instance = this;
@@ -20,6 +18,8 @@ namespace PenguLoader
             WindowStyle = WindowStyle.SingleBorderWindow;
             Loaded += WindowLoaded;
         }
+
+        public static MainWindow Instance { get; private set; }
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
@@ -51,32 +51,27 @@ namespace PenguLoader
 
             var hwnd = new WindowInteropHelper(this).EnsureHandle();
             var source = HwndSource.FromHwnd(hwnd);
-            source.AddHook(new HwndSourceHook(WndProc));
+            source?.AddHook(WndProc);
         }
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wp, IntPtr lp, ref bool handled)
         {
-            if (msg == Native.WM_SHOWME)
-            {
-                if (WindowState == WindowState.Minimized)
-                    WindowState = WindowState.Normal;
+            if (msg != Native.WmShowme) return IntPtr.Zero;
+            if (WindowState == WindowState.Minimized)
+                WindowState = WindowState.Normal;
 
-                if (!IsVisible)
-                    Show();
+            if (!IsVisible)
+                Show();
 
-                Activate();
-                handled = true;
-            }
+            Activate();
+            handled = true;
 
             return IntPtr.Zero;
         }
 
-        private void MouseDragMove(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void MouseDragMove(object sender, MouseEventArgs e) // UnusedParameter.Local?
         {
-            if (e.Source is TabControl && e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
-            {
-                DragMove();
-            }
+            if (e.Source is TabControl && e.LeftButton == MouseButtonState.Pressed) DragMove();
         }
     }
 }

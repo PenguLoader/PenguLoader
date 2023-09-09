@@ -5,26 +5,25 @@ using PenguLoader.Main;
 
 namespace PenguLoader
 {
-    public partial class App : Application
+    public partial class App
     {
-        protected override void OnStartup(StartupEventArgs e)
+        private static readonly Dictionary<string, string> LanguageMap = new Dictionary<string, string>
         {
-            base.OnStartup(e);
-            SetLanguage(Config.Language);
-        }
+            { "English", "en-US.xaml" },
+            { "Tiếng Việt", "vi-VN.xaml" },
+            { "日本語", "ja-JP.xaml" },
+            { "中文", "zh-CN.xaml" }
+        };
 
-        public static event EventHandler LanguageChanged;
         public static string Language
         {
             get => Config.Language;
             set
             {
-                if (value != Config.Language)
-                {
-                    Config.Language = value;
-                    SetLanguage(value);
-                    LanguageChanged?.Invoke(null, EventArgs.Empty);
-                }
+                if (value == Config.Language) return;
+                Config.Language = value;
+                SetLanguage(value);
+                LanguageChanged?.Invoke(null, EventArgs.Empty);
             }
         }
 
@@ -39,15 +38,15 @@ namespace PenguLoader
             }
         }
 
-        static readonly Dictionary<string, string> LanguageMap = new Dictionary<string, string>
+        protected override void OnStartup(StartupEventArgs e)
         {
-            { "English", "en-US.xaml" },
-            { "Tiếng Việt", "vi-VN.xaml" },
-            { "日本語", "ja-JP.xaml" },
-            { "中文", "zh-CN.xaml" },
-        };
+            base.OnStartup(e);
+            SetLanguage(Config.Language);
+        }
 
-        public static void SetLanguage(string lang)
+        public static event EventHandler LanguageChanged;
+
+        private static void SetLanguage(string lang)
         {
             if (!LanguageMap.ContainsKey(lang))
                 lang = "English";
@@ -64,14 +63,15 @@ namespace PenguLoader
             try
             {
                 var trans = Current.FindResource(key);
-                if (trans != null && trans is string)
-                    return trans as string;
+                if (trans is string s)
+                    return s;
             }
             catch
             {
+                // ignored
             }
 
-            return string.Format("%{0}", key);
+            return $"%{key}";
         }
     }
 }

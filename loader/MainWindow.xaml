@@ -7,7 +7,6 @@
     xmlns:ui="http://schemas.modernwpf.com/2019"
     xmlns:fa5="http://schemas.fontawesome.com/icons/"
     xmlns:local="clr-namespace:PenguLoader"
-    xmlns:views="clr-namespace:PenguLoader.Views"
     mc:Ignorable="d"
     Height="280" Width="460"
     ResizeMode="CanMinimize"
@@ -16,12 +15,11 @@
     WindowStartupLocation="CenterScreen"
     ui:WindowHelper.UseModernWindowStyle="True"
     ui:TitleBar.ExtendViewIntoTitleBar="True"
-    WindowChrome.IsHitTestVisibleInChrome="True"
->
+    WindowChrome.IsHitTestVisibleInChrome="True">
     <Window.Title>
         <MultiBinding StringFormat=" {0} v{1}">
             <Binding Source="{x:Static local:Program.Name}" Path="." />
-            <Binding Source="{x:Static local:Program.VERSION}" Path="." />
+            <Binding Source="{x:Static local:Program.Version}" Path="." />
         </MultiBinding>
     </Window.Title>
     <Grid>
@@ -30,16 +28,14 @@
             Icon="icon.ico"
             IsIconVisible="False"
             IsActive="True"
-            Background="{DynamicResource SystemControlForegroundChromeMediumBrush}"
-        />
+            Background="{DynamicResource SystemControlForegroundChromeMediumBrush}" />
 
         <TabControl
             Mouse.MouseDown="MouseDragMove"
             Background="Transparent"
             Margin="0,-6,0,0"
             SelectedIndex="0"
-            Focusable="False"
-        >
+            Focusable="False"><!-- MouseDragMove - Field or template field is expected -->
             <TabControl.Items>
                 <TabItem Header="Loader">
                     <ui:TabItemHelper.Icon>
@@ -61,9 +57,9 @@
             Margin="0,0,138,0"
             ToolTip="Change theme"
             VerticalAlignment="Top"
-            HorizontalAlignment="Right"
-        >
-            <fa5:ImageAwesome Icon="Solid_Adjust" Width="12" Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" />
+            HorizontalAlignment="Right">
+            <fa5:ImageAwesome Icon="Solid_Adjust" Width="12"
+                              Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" />
         </ui:TitleBarButton>
     </Grid>
 </Window>

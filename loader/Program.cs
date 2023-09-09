@@ -7,6 +7,11 @@ namespace PenguLoader
 {
     public static partial class Program
     {
+        static Program()
+        {
+            CosturaUtility.Initialize();
+        }
+
         public static string Name => "Pengu Loader";
         public static string HomePageUrl => "https://pengu.lol";
         public static string DiscordUrl => "https://chat.pengu.lol";
@@ -15,7 +20,7 @@ namespace PenguLoader
         public static string GithubIssuesUrl => $"https://github.com/{GithubRepo}/issues";
 
         [STAThread]
-        static int Main(string[] args)
+        private static int Main(string[] args)
         {
             var arg = args.Length > 0 ? args[0] : null;
 
@@ -25,26 +30,22 @@ namespace PenguLoader
                 return 0;
             }
 
-            using (var mutex = new Mutex(true, "989d2110-46da-4c8d-84c1-c4a42e43c424", out var createdNew))
+            using (new Mutex(true, "989d2110-46da-4c8d-84c1-c4a42e43c424", out var createdNew))
             {
-                if (arg != null)
+                if (arg == null) return RunApplication(createdNew);
+                switch (arg)
                 {
-                    switch (arg)
-                    {
-                        case "--install":
-                            return HandleInstall(createdNew, true);
-                        case "--uninstall":
-                            return HandleInstall(createdNew, false);
-                        default:
-                            break;
-                    }
+                    case "--install":
+                        return HandleInstall(createdNew, true);
+                    case "--uninstall":
+                        return HandleInstall(createdNew, false);
                 }
 
                 return RunApplication(createdNew);
             }
         }
 
-        static int RunApplication(bool createdNew)
+        private static int RunApplication(bool createdNew)
         {
             if (!createdNew)
             {
@@ -55,7 +56,7 @@ namespace PenguLoader
             if (!Environment.Is64BitOperatingSystem)
             {
                 MessageBox.Show("32-BIT CLIENT DEPRECATION\n\n" +
-                    "Starting with LoL patch 13.8, 32-bit Windows is no longer supported. Please upgrade your Windows to 64-bit.",
+                                "Starting with LoL patch 13.8, 32-bit Windows is no longer supported. Please upgrade your Windows to 64-bit.",
                     Name, MessageBoxButton.OK, MessageBoxImage.Warning);
                 return 1;
             }
@@ -64,7 +65,7 @@ namespace PenguLoader
             return 0;
         }
 
-        static int HandleInstall(bool createdNew, bool active)
+        private static int HandleInstall(bool createdNew, bool active)
         {
             if (!createdNew || Module.IsLoaded)
             {
@@ -76,11 +77,6 @@ namespace PenguLoader
 
             Module.SetActive(active);
             return 0;
-        }
-
-        static Program()
-        {
-            CosturaUtility.Initialize();
         }
     }
 }

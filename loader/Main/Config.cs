@@ -1,17 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-
 using MadMilkman.Ini;
 
 namespace PenguLoader.Main
 {
-    static class Config
+    internal static class Config
     {
-        public static string ConfigPath => GetPath("config");
-        public static string DataStorePath => GetPath("datastore");
-        public static string AssetsDir => GetPath("assets");
-        public static string PluginsDir => GetPath("plugins");
+        private static readonly IniFile Ini;
 
         static Config()
         {
@@ -27,6 +23,11 @@ namespace PenguLoader.Main
 
             Ini.Load(ConfigPath);
         }
+
+        private static string ConfigPath => GetPath("config");
+        private static string DataStorePath => GetPath("datastore");
+        private static string AssetsDir => GetPath("assets");
+        public static string PluginsDir => GetPath("plugins");
 
         public static string Language
         {
@@ -51,8 +52,6 @@ namespace PenguLoader.Main
             return Path.Combine(Environment.CurrentDirectory, folderName);
         }
 
-        static IniFile Ini;
-
         private static string Get(string key, string @default = "")
         {
             try
@@ -67,29 +66,33 @@ namespace PenguLoader.Main
 
         private static void Set(string key, string value)
         {
-            var main = Ini.Sections["Main"];
-            if (main == null)
-                main = Ini.Sections.Add("Main");
+            var main = Ini.Sections["Main"] ?? Ini.Sections.Add("Main");
 
-            var k = main.Keys[key];
-            if (k == null)
-                k = main.Keys.Add(key);
+            var k = main.Keys[key] ?? main.Keys.Add(key);
 
             k.Value = value;
             Ini.Save(ConfigPath);
         }
 
-        static bool GetBool(string key, bool @default)
+        private static bool GetBool(string key, bool @default)
         {
             var value = Get(key);
-            if (value == "true" || value == "1")
-                return true;
-            else if (value == "false" || value == "0")
-                return false;
-
-            return @default;
+            switch (value)
+            {
+                case "true":
+                case "1":
+                    return true;
+                case "false":
+                case "0":
+                    return false;
+                default:
+                    return @default;
+            }
         }
 
-        static void SetBool(string key, bool value) => Set(key, value ? "true" : "false");
+        private static void SetBool(string key, bool value)
+        {
+            Set(key, value ? "true" : "false");
+        }
     }
 }

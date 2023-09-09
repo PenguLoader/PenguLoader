@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -8,22 +7,38 @@ namespace PenguLoader.Main
 {
     public static class Plugins
     {
-        public class PluginInfo
-        {
-            public string Name;
-            public string Path;
-            public bool Enabled;
-
-            public string Author = string.Empty;
-            public string Link = string.Empty;
-        }
-
         public static List<PluginInfo> All()
         {
             var pluginsDir = Config.PluginsDir;
             var plugins = new List<PluginInfo>();
 
-            void addPlugin(string name, string path, bool enabled)
+            // sub-folders plugins.
+            foreach (var dir in Directory.GetDirectories(pluginsDir))
+            {
+                var dirName = Path.GetFileName(dir);
+                if (!FilterName(dirName)) continue;
+                var disabled = false;
+                string indexPath;
+
+                if (File.Exists(indexPath = Path.Combine(dir, "index.js")) ||
+                    (disabled = File.Exists(indexPath = Path.Combine(dir, "index.js_"))))
+                    AddPlugin(dirName, indexPath, !disabled);
+            }
+
+            // top-level plugins.
+            foreach (var path in Directory.GetFiles(pluginsDir, "*.*", SearchOption.TopDirectoryOnly))
+            {
+                var fileName = Path.GetFileName(path);
+                var disabled = false;
+
+                if (FilterName(fileName) &&
+                    (fileName.EndsWith(".js") || (disabled = fileName.EndsWith(".js_"))))
+                    AddPlugin(fileName.TrimEnd('_'), path, !disabled);
+            }
+
+            return plugins;
+
+            void AddPlugin(string name, string path, bool enabled)
             {
                 var plugin = new PluginInfo
                 {
@@ -35,38 +50,6 @@ namespace PenguLoader.Main
                 ParsePluginEntry(path, plugin);
                 plugins.Add(plugin);
             }
-
-            // sub-folders plugins.
-            foreach (var dir in Directory.GetDirectories(pluginsDir))
-            {
-                var dirName = Path.GetFileName(dir);
-                if (FilterName(dirName))
-                {
-                    var disabled = false;
-                    var indexPath = string.Empty;
-
-                    if (File.Exists(indexPath = Path.Combine(dir, "index.js")) ||
-                        (disabled = File.Exists(indexPath = Path.Combine(dir, "index.js_"))))
-                    {
-                        addPlugin(dirName, indexPath, !disabled);
-                    }
-                }
-            }
-
-            // top-level plugins.
-            foreach (var path in Directory.GetFiles(pluginsDir, "*.*", SearchOption.TopDirectoryOnly))
-            {
-                var fileName = Path.GetFileName(path);
-                var disabled = false;
-
-                if (FilterName(fileName) &&
-                    (fileName.EndsWith(".js") || (disabled = fileName.EndsWith(".js_"))))
-                {
-                    addPlugin(fileName.TrimEnd('_'), path, !disabled);
-                }
-            }
-
-            return plugins;
         }
 
         public static void Toggle(PluginInfo plugin)
@@ -89,31 +72,41 @@ namespace PenguLoader.Main
         }
 
         // Ignore name starts with . or _
-        static bool FilterName(string name) => !(name.StartsWith(".") || name.StartsWith("_"));
+        private static bool FilterName(string name)
+        {
+            return !(name.StartsWith(".") || name.StartsWith("_"));
+        }
 
         // Get @author and @link.
-        static void ParsePluginEntry(string path, PluginInfo plugin)
+        private static void ParsePluginEntry(string path, PluginInfo plugin)
         {
-            if (File.Exists(path))
-            {
-                var content = File.ReadAllText(path, Encoding.UTF8);
+            if (!File.Exists(path)) return;
+            var content = File.ReadAllText(path, Encoding.UTF8);
 
-                var author = GetTagValue(content, "author");
-                if (!string.IsNullOrEmpty(author))
-                    plugin.Author = author.Contains("#") ? author : '@' + author;
+            var author = GetTagValue(content, "author");
+            if (!string.IsNullOrEmpty(author))
+                plugin.Author = author.Contains("#") ? author : '@' + author;
 
-                var link = GetTagValue(content, "link");
-                if (link.StartsWith("http://") || link.StartsWith("https://"))
-                    plugin.Link = link;
-            }
+            var link = GetTagValue(content, "link");
+            if (link.StartsWith("http://") || link.StartsWith("https://"))
+                plugin.Link = link;
         }
 
         // Parse @tag in jsdoc
-        static string GetTagValue(string jsdoc, string tagName)
+        private static string GetTagValue(string jsdoc, string tagName)
         {
             var pattern = $"@{tagName}\\s+(.+)";
             var match = Regex.Match(jsdoc, pattern);
             return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
+        }
+
+        public class PluginInfo
+        {
+            public string Author = string.Empty;
+            public bool Enabled;
+            public string Link = string.Empty;
+            public string Name;
+            public string Path;
         }
     }
 }
