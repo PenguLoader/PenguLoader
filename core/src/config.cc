@@ -1,12 +1,11 @@
-#include "internal.h"
-#include <unordered_map>
+#include "commons.h"
 #include <fstream>
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
-wstring config::getLoaderDir()
+wstr config::loaderDir()
 {
-    static wstring cachedPath{};
+    static wstr cachedPath{};
     if (!cachedPath.empty()) return cachedPath;
 
     // Get this dll path.
@@ -27,7 +26,7 @@ wstring config::getLoaderDir()
     DWORD pathLength = GetFinalPathNameByHandleW(file, finalPath, 2048, FILE_NAME_OPENED);
     CloseHandle(file);
 
-    wstring dir(finalPath, pathLength);
+    wstr dir{ finalPath, pathLength };
 
     // Remove prepended '\\?\' by GetFinalPathNameByHandle()
     if (dir.rfind(L"\\\\?\\", 0) == 0)
@@ -37,24 +36,50 @@ wstring config::getLoaderDir()
     return cachedPath = dir.substr(0, dir.find_last_of(L"/\\"));
 }
 
-wstring config::getAssetsDir()
+wstr config::assetsDir()
 {
-    return getLoaderDir() + L"\\assets";
+    return loaderDir() + L"\\assets";
 }
 
-wstring config::getPluginsDir()
+wstr config::pluginsDir()
 {
-    return getLoaderDir() + L"\\plugins";
+    return loaderDir() + L"\\plugins";
 }
 
-static auto getConfigMap()
+wstr config::datastorePath()
+{
+    return loaderDir() + L"\\datastore";
+}
+
+wstr config::cacheDir()
+{
+    wchar_t path[2048];
+    size_t length = GetEnvironmentVariableW(L"LOCALAPPDATA", path, _countof(path));
+
+    if (length == 0)
+        return leagueDir() + L"\\Cache";
+
+    lstrcatW(path, L"\\Riot Games\\League of Legends\\Cache");
+    return path;
+}
+
+wstr config::leagueDir()
+{
+    wchar_t buf[2048];
+    size_t length = GetModuleFileNameW(nullptr, buf, _countof(buf));
+
+    wstr path(buf, length);
+    return path.substr(0, path.find_last_of(L"/\\"));
+}
+
+static map<wstr, wstr> getConfigMap()
 {
     static bool cached = false;
-    static std::unordered_map<wstring, wstring> map;
+    static map<wstr, wstr> map{};
 
     if (!cached)
     {
-        auto path = config::getLoaderDir() + L"\\config";
+        auto path = config::loaderDir() + L"\\config";
         std::wifstream file(path);
 
         if (file.is_open())
@@ -82,7 +107,7 @@ static auto getConfigMap()
     return map;
 }
 
-wstring config::getConfigValue(const wstring &key, const wstring &fallback)
+wstr config::getConfigValue(const wstr &key, const wstr &fallback)
 {
     auto map = getConfigMap();
     auto it = map.find(key);
@@ -98,7 +123,7 @@ wstring config::getConfigValue(const wstring &key, const wstring &fallback)
     return value;
 }
 
-bool config::getConfigValueBool(const wstring &key, bool fallback)
+bool config::getConfigValueBool(const wstr &key, bool fallback)
 {
     auto map = getConfigMap();
     auto it = map.find(key);
@@ -119,7 +144,7 @@ bool config::getConfigValueBool(const wstring &key, bool fallback)
     return value;
 }
 
-int config::getConfigValueInt(const wstring &key, int fallback)
+int config::getConfigValueInt(const wstr &key, int fallback)
 {
     auto map = getConfigMap();
     auto it = map.find(key);

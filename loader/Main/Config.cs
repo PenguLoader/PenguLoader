@@ -1,7 +1,8 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
+
+using MadMilkman.Ini;
 
 namespace PenguLoader.Main
 {
@@ -18,11 +19,18 @@ namespace PenguLoader.Main
             Utils.EnsureDirectoryExists(PluginsDir);
             Utils.EnsureFileExists(ConfigPath);
             Utils.EnsureFileExists(DataStorePath);
+
+            Ini = new IniFile(new IniOptions
+            {
+                Encoding = Encoding.UTF8
+            });
+
+            Ini.Load(ConfigPath);
         }
 
         public static string Language
         {
-            get => Get("Language");
+            get => Get("Language", "English");
             set => Set("Language", value);
         }
 
@@ -38,27 +46,38 @@ namespace PenguLoader.Main
             set => SetBool("SuperLowSpecMode", value);
         }
 
-        [DllImport("kernel32", CharSet = CharSet.Unicode)]
-        private static extern long WritePrivateProfileString(string section, string key, string value, string file);
-
-        [DllImport("kernel32", CharSet = CharSet.Unicode)]
-        private static extern int GetPrivateProfileString(string section, string key, string @default, StringBuilder retval, int size, string file);
-
         private static string GetPath(string folderName)
         {
-            return Path.Combine(Directory.GetCurrentDirectory(), folderName);
+            return Path.Combine(Environment.CurrentDirectory, folderName);
         }
+
+        static IniFile Ini;
 
         private static string Get(string key, string @default = "")
         {
-            var value = new StringBuilder(2048);
-            GetPrivateProfileString("Main", key, @default, value, 2048, ConfigPath);
-            return value.ToString();
+            try
+            {
+                return Ini.Sections["Main"].Keys[key].Value;
+            }
+            catch
+            {
+                return @default;
+            }
         }
 
-        private static void Set(string key, string value) => WritePrivateProfileString("Main", key, value, ConfigPath);
+        private static void Set(string key, string value)
+        {
+            var main = Ini.Sections["Main"];
+            if (main == null)
+                main = Ini.Sections.Add("Main");
 
-        private static int GetInt(string key, int @default = 0) => int.TryParse(Get(key), out int result) ? result : @default;
+            var k = main.Keys[key];
+            if (k == null)
+                k = main.Keys.Add(key);
+
+            k.Value = value;
+            Ini.Save(ConfigPath);
+        }
 
         static bool GetBool(string key, bool @default)
         {

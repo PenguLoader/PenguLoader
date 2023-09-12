@@ -1,0 +1,100 @@
+// internal types
+
+interface Plugin {
+  init?: (context: any) => any
+  load?: () => any
+  default?: Function | any
+}
+
+interface RcpAnnouceEvent extends CustomEvent {
+  errorHandler: () => any
+  registrationHandler: (registrar: (e) => Promise<any>) => Promise<any> | void
+}
+
+// built-in types
+
+interface Action {
+  id?: string
+  name: string
+  legend?: string
+  tags?: string[]
+  icon?: string
+  group?: string
+  hidden?: boolean
+  perform?: (id?: string) => any
+}
+
+interface CommandBar {
+  addAction: (action) => void
+  show: () => void
+  update: () => void
+}
+
+interface DataStore {
+  has: (key: string) => boolean
+  get: <T>(key: string, fallback?: T) => T | undefined
+  set: (key: string, value: any) => boolean
+  remove: (key: string) => boolean
+}
+
+type ThemeName = 'light' | 'dark';
+type EffectName = 'mica' | 'blurbehind' | 'acrylic' | 'unified';
+
+interface Effect {
+  get current(): EffectName | null
+  apply: (name: EffectName, options?: any) => boolean
+  clear: () => void
+  setTheme: (theme: ThemeName) => boolean
+}
+
+interface FileStat{
+  fileName: string
+  length: number
+  isDir: boolean
+}
+
+interface PluginFS {
+  read: (path: string) => Promise<string | undefined>
+  write: (path: string, content: string, enableAppendMode: boolean) => Promise<boolean>
+  mkdir: (path: string) => Promise<boolean>
+  stat: (path: string) => Promise<FileStat | undefined>
+  ls: (path: string) => Promise<string[] | undefined>
+  rm: (path: string, recursively:boolean) => Promise<number>
+}
+
+// globals
+
+namespace Pengu {
+  const version: string;
+  const superPotato: boolean;
+  const plugins: string[];
+}
+
+declare const DataStore: DataStore;
+declare const CommandBar: CommandBar;
+declare const Effect: Effect;
+declare const PluginFS: PluginFS;
+
+declare const openDevTools: (remote?: boolean) => void;
+declare const openAssetsFolder: () => void;
+declare const openPluginsFolder: (path?: string) => boolean;
+declare const reloadClient: () => void;
+declare const restartClient: () => void;
+declare const getScriptPath: () => string | undefined;
+declare const __llver: string;
+
+declare interface Window {
+
+  DataStore: DataStore;
+  CommandBar: CommandBar;
+  Effect: Effect;
+  PluginFS:PluginFS;
+
+  openDevTools: typeof openDevTools;
+  openAssetsFolder: typeof openAssetsFolder;
+  openPluginsFolder: typeof openPluginsFolder;
+  reloadClient: typeof reloadClient;
+  restartClient: typeof restartClient;
+  getScriptPath: typeof getScriptPath;
+  __llver: string;
+}

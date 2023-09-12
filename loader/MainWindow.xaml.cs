@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
+
 using ModernWpf;
 using PenguLoader.Main;
 
@@ -14,98 +16,24 @@ namespace PenguLoader
         {
             Instance = this;
             InitializeComponent();
-            ConfigureWindow();
-            InitializeButtons();
-            Loaded += OnMainWindowLoaded;
-            SourceInitialized += InitializeWindowHook;
-        }
-
-        private void ConfigureWindow()
-        {
-            WindowStyle = WindowStyle.ToolWindow;
             ShowInTaskbar = true;
-
-            btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
-            txtVersion.Text = $"v{Version.VERSION}.{Version.BUILD_NUMBER}";
-
-            chkOptimizeClient.IsChecked = Config.OptimizeClient;
-            chkSuperLowSpecMode.IsChecked = Config.SuperLowSpecMode;
+            WindowStyle = WindowStyle.SingleBorderWindow;
+            Loaded += WindowLoaded;
         }
 
-        private void InitializeButtons()
+        private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            btnGitHub.Click += (sender, args) => Utils.OpenLink(Program.GithubUrl);
-            btnDiscord.Click += (sender, args) => Utils.OpenLink(Program.DiscordUrl);
-            btnHomepage.Click += (sender, args) => Utils.OpenLink(Program.HomepageUrl);
-            btnTheme.Click += BtnTheme_Click;
-            btnAssets.Click += BtnAssets_Click;
-            btnPlugins.Click += BtnPlugins_Click;
-            btnDataStore.Click += BtnDataStore_Click;
-            btnActivate.Toggled += BtnActivate_Toggled;
-            chkOptimizeClient.Click += ChkOptimizeClient_Click;
-            chkSuperLowSpecMode.Click += ChkSuperLowSpecMode_Click;
-        }
+            Loaded -= WindowLoaded;
 
-        private void ChkOptimizeClient_Click(object sender, RoutedEventArgs e)
-        {
-            if (chkOptimizeClient.IsChecked.Value)
-            {
-                // Prevent checked flickering.
-                chkOptimizeClient.IsChecked = false;
-
-                if (MessageBox.Show(this,
-                    "Optimize Client\n\n" +
-                    "It is recommended to enable this option. Enabling it will disable some unused things, " +
-                    "unused background tasks, and reduce lag.\n\n" +
-                    "Do you want to continue?",
-                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
-                {
-                    chkOptimizeClient.IsChecked = true;
-                }
-            }
-
-            Config.OptimizeClient = chkOptimizeClient.IsChecked.Value;
-        }
-
-        private void ChkSuperLowSpecMode_Click(object sender, RoutedEventArgs e)
-        {
-            if (chkSuperLowSpecMode.IsChecked.Value)
-            {
-                // Prevent checked flickering.
-                chkSuperLowSpecMode.IsChecked = false;
-
-                if (MessageBox.Show(this,
-                    "Super Low Spec Mode\n\n" +
-                    "This option extends the default Low Spec Mode. " +
-                    "Enabling it will disable all transition and animation effects, " +
-                    "also greatly reduce lag and increase response speed.\n\n" +
-                    "It's very helpful for low PC, but may cause bug. Please report your issues to help us improve this mode.\n\n" +
-                    "Do you want to continue?",
-                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
-                {
-                    chkSuperLowSpecMode.IsChecked = true;
-                }
-            }
-
-            Config.SuperLowSpecMode = chkSuperLowSpecMode.IsChecked.Value;
-        }
-
-        private void OnMainWindowLoaded(object sender, RoutedEventArgs e)
-        {
-            Loaded -= OnMainWindowLoaded;
-
-            UpdateActiveState();
+            Topmost = true;
             Show();
+            Topmost = false;
 
-            // Fix window style issue.
-            var hwnd = new WindowInteropHelper(this).Handle;
-            var oldEx = Native.GetWindowLongPtr(hwnd, -0x14).ToInt32();
-            Native.SetWindowLongPtr(hwnd, -0x14, (IntPtr)(oldEx & ~0x80));
-
+            GC.Collect();
             Updater.CheckUpdate();
         }
 
-        private void BtnTheme_Click(object sender, RoutedEventArgs e)
+        private void ThemeButtonClick(object sender, RoutedEventArgs e)
         {
             var tm = ThemeManager.Current;
             var isLight = tm.ApplicationTheme == null
@@ -117,85 +45,12 @@ namespace PenguLoader
                 : ApplicationTheme.Light;
         }
 
-        private void BtnAssets_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.AssetsDir);
-
-        private void BtnPlugins_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.PluginsDir);
-
-        private void BtnDataStore_Click(object sender, RoutedEventArgs e) => DataStore.Dump();
-
-        private void BtnActivate_Toggled(object sender, RoutedEventArgs e)
+        protected override void OnSourceInitialized(EventArgs e)
         {
-            try
-            {
-                ToggleActivation();
-            }
-            catch (Exception ex)
-            {
-                var message = $"Failed to perform activation.\nError: {ex.Message}\n\nPlease capture the error message and click Yes to report it.";
-                var result = MessageBox.Show(message, Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            base.OnSourceInitialized(e);
 
-                if (result == MessageBoxResult.Yes)
-                {
-                    Utils.OpenLink(Program.GithubIssuesUrl);
-                }
-            }
-            finally
-            {
-                UpdateActiveState();
-            }
-        }
-
-        private void ToggleActivation()
-        {
-            if (!Module.IsActivated())
-            {
-                if (!Module.Exists())
-                {
-                    MessageBox.Show("Failed to activate the Loader: \"core.dll\" not found.", Program.Name, MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                else if (Module.Activate())
-                {
-                    PromptRestart("The Loader has been ACTIVATED successfully.", false);
-                }
-                else
-                {
-                    MessageBox.Show("Failed to activate the Loader.", Program.Name, MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                Module.Deactivate();
-                PromptRestart("The Loader has been DEACTIVATED successfully.", true);
-            }
-        }
-
-        private void PromptRestart(string message, bool isDeactivaed)
-        {
-            if ((LCU.IsRunning() && !isDeactivaed) || (Module.IsLoaded() && isDeactivaed))
-            {
-                if (MessageBox.Show(this, "Do you want to restart the running League of Legends Client now?",
-                    Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                {
-                    LCU.KillUxAndRestart();
-                    MessageBox.Show(message, Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            else
-            {
-                MessageBox.Show(message, Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        void UpdateActiveState()
-        {
-            btnActivate.Toggled -= BtnActivate_Toggled;
-            btnActivate.IsOn = Module.IsActivated();
-            btnActivate.Toggled += BtnActivate_Toggled;
-        }
-
-        private void InitializeWindowHook(object sender, EventArgs e)
-        {
-            var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+            var hwnd = new WindowInteropHelper(this).EnsureHandle();
+            var source = HwndSource.FromHwnd(hwnd);
             source.AddHook(new HwndSourceHook(WndProc));
         }
 
@@ -204,21 +59,24 @@ namespace PenguLoader
             if (msg == Native.WM_SHOWME)
             {
                 if (WindowState == WindowState.Minimized)
-                {
                     WindowState = WindowState.Normal;
-                }
 
                 if (!IsVisible)
-                {
                     Show();
-                }
 
                 Activate();
-
                 handled = true;
             }
 
             return IntPtr.Zero;
+        }
+
+        private void MouseDragMove(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.Source is TabControl && e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                DragMove();
+            }
         }
     }
 }

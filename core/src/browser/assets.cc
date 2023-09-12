@@ -1,10 +1,12 @@
-#include "../internal.h"
-#include <regex>
-#include <unordered_set>
+#include "commons.h"
+#include "include/capi/cef_parser_capi.h"
+#include "include/capi/cef_scheme_capi.h"
+#include "include/capi/cef_stream_capi.h"
+#include "include/capi/cef_resource_handler_capi.h"
 
 // BROWSER PROCESS ONLY.
 
-static const std::unordered_set<wstring> known_assets
+static const set<wstr> KNOWN_ASSETS
 {
     // images
     L"bmp", L"png",
@@ -25,7 +27,7 @@ static const std::unordered_set<wstring> known_assets
 static const auto SCRIPT_IMPORT_CSS = u8R"(
 (async function () {
     if (document.readyState !== 'complete')
-        await new Promise(res => window.addEventListener('load', res));
+        await new Promise(res => document.addEventListener('DOMContentLoaded', res));
 
     const url = import.meta.url.replace(/\?.*$/, '');
     const link = document.createElement('link');
@@ -38,13 +40,27 @@ static const auto SCRIPT_IMPORT_CSS = u8R"(
 
 static const auto SCRIPT_IMPORT_JSON = u8R"(
 const url = import.meta.url.replace(/\?.*$/, '');
-const content = window.requireFile(url);
+const content = await fetch(url).then(r => r.text());
 export default JSON.parse(content);
+)";
+
+static const auto SCRIPT_IMPORT_TOML = u8R"(
+import { parse } from 'https://esm.sh/smol-toml@1.1.1';
+const url = import.meta.url.replace(/\?.*$/, '');
+const content = await fetch(url).then(r => r.text());
+export default parse(content);
+)";
+
+static const auto SCRIPT_IMPORT_YAML = u8R"(
+import { load } from 'https://esm.sh/js-yaml@4.1.0';
+const url = import.meta.url.replace(/\?.*$/, '');
+const content = await fetch(url).then(r => r.text());
+export default load(content);
 )";
 
 static const auto SCRIPT_IMPORT_RAW = u8R"(
 const url = import.meta.url.replace(/\?.*$/, '');
-const content = window.requireFile(url);
+const content = await fetch(url).then(r => r.text());
 export default content;
 )";
 
@@ -58,20 +74,36 @@ enum ImportType
     IMPORT_DEFAULT = 0,
     IMPORT_CSS,
     IMPORT_JSON,
+    IMPORT_TOML,
+    IMPORT_YAML,
     IMPORT_RAW,
     IMPORT_URL
+};
+
+template <typename T>
+struct MethodPointerTraits;
+
+// Partial specialization for non-const member function pointers
+template <typename T, typename ReturnType, typename... Args>
+struct MethodPointerTraits<ReturnType(T::*)(Args...)> {
+    using ClassType = T;
+    using Delegate = ReturnType(*)(Args...);
+    using ReturnTypeType = ReturnType;
+    using ParameterTypes = std::tuple<Args...>;
 };
 
 class ModuleStreamReader : public CefRefCount<cef_stream_reader_t>
 {
 public:
-    ModuleStreamReader(ImportType type) : CefRefCount(this), data_{}
+    ModuleStreamReader(ImportType type) : CefRefCount(this)
     {
-        cef_stream_reader_t::read = _read;
-        cef_stream_reader_t::seek = _seek;
-        cef_stream_reader_t::tell = _tell;
-        cef_stream_reader_t::eof = _eof;
-        cef_stream_reader_t::may_block = _may_block;
+        cef_bind_method(ModuleStreamReader, read);
+        cef_bind_method(ModuleStreamReader, seek);
+        cef_bind_method(ModuleStreamReader, tell);
+        cef_bind_method(ModuleStreamReader, eof);
+        cef_bind_method(ModuleStreamReader, may_block);
+
+        data_.clear();
 
         switch (type)
         {
@@ -81,6 +113,12 @@ public:
             case IMPORT_JSON:
                 data_.assign(SCRIPT_IMPORT_JSON);
                 break;
+            case IMPORT_TOML:
+                data_.assign(SCRIPT_IMPORT_TOML);
+                break;
+            case IMPORT_YAML:
+                data_.assign(SCRIPT_IMPORT_YAML);
+                break;
             case IMPORT_RAW:
                 data_.assign(SCRIPT_IMPORT_RAW);
                 break;
@@ -89,7 +127,7 @@ public:
                 break;
         }
 
-        stream_ = CefStreamReader_CreateForData(
+        stream_ = cef_stream_reader_create_for_data(
             const_cast<char *>(data_.c_str()), data_.length());
     }
 
@@ -103,41 +141,31 @@ public:
 
 private:
     cef_stream_reader_t *stream_;
-    string data_;
+    str data_;
 
-    static size_t CEF_CALLBACK _read(struct _cef_stream_reader_t* _,
-        void* ptr,
-        size_t size,
-        size_t n)
+    size_t _read(void* ptr, size_t size, size_t n)
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->read(self->stream_, ptr, size, n);
+        return stream_->read(stream_, ptr, size, n);
     }
 
-    static int CEF_CALLBACK _seek(struct _cef_stream_reader_t* _,
-        int64 offset,
-        int whence)
+    int _seek(int64 offset, int whence)
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->seek(self->stream_, offset, whence);
+        return stream_->seek(stream_, offset, whence);
     }
 
-    static int64 CEF_CALLBACK _tell(struct _cef_stream_reader_t* _)
+    int64 _tell()
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->tell(self->stream_);
+        return stream_->tell(stream_);
     }
 
-    static int CEF_CALLBACK _eof(struct _cef_stream_reader_t* _)
+    int _eof()
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->eof(self->stream_);
+        return stream_->eof(stream_);
     }
 
-    static int CEF_CALLBACK _may_block(struct _cef_stream_reader_t* _)
+    int _may_block()
     {
-        auto self = static_cast<ModuleStreamReader *>(_);
-        return self->stream_->may_block(self->stream_);
+        return stream_->may_block(stream_);
     }
 };
 
@@ -145,7 +173,8 @@ private:
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
 public:
-    AssetsResourceHandler(const wstring &path, bool plugin) : CefRefCount(this)
+    AssetsResourceHandler(const wstr &path, bool plugin)
+        : CefRefCount(this)
         , path_(path)
         , mime_{}
         , stream_(nullptr)
@@ -153,9 +182,9 @@ public:
         , is_plugin_(plugin)
         , no_cache_(false)
     {
-        cef_resource_handler_t::open = _Open;
-        cef_resource_handler_t::get_response_headers = _GetResponseHeaders;
-        cef_resource_handler_t::read = _Read;
+        cef_bind_method(AssetsResourceHandler, open);
+        cef_bind_method(AssetsResourceHandler, get_response_headers);
+        cef_bind_method(AssetsResourceHandler, read);
     }
 
     ~AssetsResourceHandler()
@@ -167,35 +196,38 @@ public:
 private:
     cef_stream_reader_t *stream_;
     int64 length_;
-    wstring path_;
-    wstring mime_;
+    wstr path_;
+    wstr mime_;
     bool is_plugin_;
     bool no_cache_;
 
-    int CEF_CALLBACK Open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
+    int _open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
     {
         size_t pos;
-        wstring query_part{};
-        wstring path_ = this->path_;
+        wstr query_part{};
+        wstr path_ = this->path_;
         bool js_mime = false;
 
         // Check query part.
-        if ((pos = path_.find(L'?')) != string::npos)
+        if ((pos = path_.find(L'?')) != wstr::npos)
         {
             // Extract it.
             query_part = path_.substr(pos + 1);
             // Remove it from path.
             path_ = path_.substr(0, pos);
         }
-
-        CefScopedStr path_tmp { CefURIDecode(&CefStr(path_), true,
-            static_cast<cef_uri_unescape_rule_t>(UU_SPACES | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS)) };
-        path_ = path_tmp.cstr();
+           
+        path_ = CefScopedStr{
+            cef_uridecode(&CefStr(path_), true,
+                cef_uri_unescape_rule_t(UU_SPACES
+                | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS)
+            )
+        }.cstr();
 
         // Get final path.
         if (is_plugin_)
         {
-            path_ = config::getPluginsDir().append(path_);
+            path_ = config::pluginsDir().append(path_);
 
             // Trailing slash.
             if (path_[path_.length() - 1] == '/' || path_[path_.length() - 1] == L'\\')
@@ -206,10 +238,10 @@ private:
             else
             {
                 size_t pos = path_.find_last_of(L"//\\");
-                wstring sub = path_.substr(pos + 1);
+                wstr sub = path_.substr(pos + 1);
 
                 // No extension.
-                if (sub.find_last_of(L'.') == wstring::npos)
+                if (sub.find_last_of(L'.') == wstr::npos)
                 {
                     // peek .js
                     if (js_mime = utils::isFile(path_ + L".js"))
@@ -228,7 +260,7 @@ private:
                 CefScopedStr referer{ request->get_referrer_url(request) };
 
                 // Detect relative plugin imports by referer //plugins.
-                if (!referer.empty() && std::regex_search(wstring(referer.str, referer.length), module_pattern))
+                if (!referer.empty() && std::regex_search(wstr(referer.str, referer.length), module_pattern))
                 {
                     static const std::wregex raw_pattern{ L"\\braw\\b" };
                     static const std::wregex url_pattern{ L"\\burl\\b" };
@@ -237,14 +269,18 @@ private:
                         import = IMPORT_URL;
                     else if (std::regex_search(query_part, raw_pattern))
                         import = IMPORT_RAW;
-                    else if ((pos = path_.find_last_of(L'.')) != string::npos)
+                    else if ((pos = path_.find_last_of(L'.')) != wstr::npos)
                     {
                         auto ext = path_.substr(pos + 1);
                         if (ext == L"css")
                             import = IMPORT_CSS;
                         else if (ext == L"json")
                             import = IMPORT_JSON;
-                        else if (known_assets.find(ext) != known_assets.end())
+                        else if (ext == L"toml")
+                            import = IMPORT_TOML;
+                        else if (ext == L"yml" || ext == L"yaml")
+                            import = IMPORT_YAML;
+                        else if (KNOWN_ASSETS.find(ext) != KNOWN_ASSETS.end())
                             import = IMPORT_URL;
                     }
                 }
@@ -256,14 +292,14 @@ private:
                 }
                 else
                 {
-                    stream_ = CefStreamReader_CreateForFile(&CefStr(path_));
+                    stream_ = cef_stream_reader_create_for_file(&CefStr(path_));
                 }
             }
         }
         else
         {
-            path_ = config::getAssetsDir().append(path_);
-            stream_ = CefStreamReader_CreateForFile(&CefStr(path_));
+            path_ = config::assetsDir().append(path_);
+            stream_ = cef_stream_reader_create_for_file(&CefStr(path_));
         }
 
         if (stream_ != nullptr)
@@ -278,11 +314,11 @@ private:
                 mime_.assign(L"text/javascript");
                 no_cache_ = true;
             }
-            else if ((pos = path_.find_last_of(L'.')) != string::npos)
+            else if ((pos = path_.find_last_of(L'.')) != wstr::npos)
             {
                 // Get MIME type from file extension.
                 auto ext = path_.substr(pos + 1);
-                CefScopedStr type{ CefGetMimeType(&CefStr(ext)) };
+                CefScopedStr type{ cef_get_mime_type(&CefStr(ext)) };
                 if (!type.empty())
                     mime_.assign(type.str, type.length);
             }
@@ -293,15 +329,10 @@ private:
         return true;
     }
 
-    static void CEF_CALLBACK _GetResponseHeaders(cef_resource_handler_t* _,
-        struct _cef_response_t* response,
-        int64* response_length,
-        cef_string_t* redirectUrl)
+    void _get_response_headers(struct _cef_response_t* response, int64* response_length, cef_string_t* redirectUrl)
     {
-        auto self = static_cast<AssetsResourceHandler *>(_);
-
         // File not found.
-        if (self->stream_ == nullptr)
+        if (stream_ == nullptr)
         {
             response->set_status(response, 404);
             response->set_error(response, ERR_FILE_NOT_FOUND);
@@ -314,74 +345,63 @@ private:
             response->set_error(response, ERR_NONE);
 
             // Set MIME type.
-            if (!self->mime_.empty())
-                response->set_mime_type(response, &CefStr(self->mime_));
+            if (!mime_.empty())
+                response->set_mime_type(response, &CefStr(mime_));
 
-            response->set_header_by_name(response, &"Access-Control-Allow-Origin"_s, &"*"_s, 1);
+            response->set_header_by_name(response, &u"Access-Control-Allow-Origin"_s, &u"*"_s, 1);
 
-            if (self->no_cache_ || self->mime_ == L"text/javascript")
-                response->set_header_by_name(response, &"Cache-Control"_s, &"no-cache, no-store, must-revalidate"_s, 1);
+            if (no_cache_ || mime_ == L"text/javascript")
+                response->set_header_by_name(response, &u"Cache-Control"_s, &u"no-cache, no-store, must-revalidate"_s, 1);
             else
-                response->set_header_by_name(response, &"Cache-Control"_s, &"public, max-age=86400"_s, 1);
+                response->set_header_by_name(response, &u"Cache-Control"_s, &u"public, max-age=86400"_s, 1);
 
-            *response_length = self->length_;
+            *response_length = length_;
         }
     }
 
-    static int CEF_CALLBACK _Read(cef_resource_handler_t* _,
-        void* data_out,
-        int bytes_to_read,
-        int* bytes_read,
-        struct _cef_resource_read_callback_t* callback)
+    int _read(void* data_out, int bytes_to_read, int* bytes_read, struct _cef_resource_read_callback_t* callback)
     {
-        auto self = static_cast<AssetsResourceHandler *>(_);
-
         int read = 0;
-        auto stream = self->stream_;
         *bytes_read = 0;
 
         do
         {
-            read = static_cast<int>(stream->read(stream, static_cast<char*>(data_out) + *bytes_read, 1, bytes_to_read - *bytes_read));
+            read = static_cast<int>(stream_->read(stream_,
+                static_cast<char*>(data_out) + *bytes_read, 1, bytes_to_read - *bytes_read));
             *bytes_read += read;
         } while (read != 0 && *bytes_read < bytes_to_read);
 
         return (*bytes_read > 0);
     }
+};
 
-    static int CEF_CALLBACK _Open(cef_resource_handler_t* _,
-        struct _cef_request_t* request,
-        int* handle_request,
-        struct _cef_callback_t* callback)
+struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
+{
+    AssetsSchemeHandlerFactory() : CefRefCount(this)
     {
-        return static_cast<AssetsResourceHandler *>(_)->Open(request, handle_request, callback);
+        cef_scheme_handler_factory_t::create = create;
+    }
+
+    static cef_resource_handler_t* CEF_CALLBACK create(
+        struct _cef_scheme_handler_factory_t* self,
+        struct _cef_browser_t* browser,
+        struct _cef_frame_t* frame,
+        const cef_string_t* scheme_name,
+        struct _cef_request_t* request)
+    {
+        CefScopedStr url{ request->get_url(request) };
+        bool is_assets = wcsncmp(url.str, L"https://assets/", 15) == 0;
+        auto path = url.str + (is_assets ? 14 : 15);
+
+        return new AssetsResourceHandler(path, !is_assets);
     }
 };
 
 void RegisterAssetsSchemeHandlerFactory()
 {
-    struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
-    {
-        AssetsSchemeHandlerFactory() : CefRefCount(this)
-        {
-            cef_scheme_handler_factory_t::create = create;
-        }
+    cef_register_scheme_handler_factory(&u"https"_s,
+        &u"assets"_s, new AssetsSchemeHandlerFactory());
 
-        static cef_resource_handler_t* CEF_CALLBACK create(
-            struct _cef_scheme_handler_factory_t* self,
-            struct _cef_browser_t* browser,
-            struct _cef_frame_t* frame,
-            const cef_string_t* scheme_name,
-            struct _cef_request_t* request)
-        {
-            CefScopedStr url{ request->get_url(request) };
-            bool is_assets = wcsncmp(url.str, L"https://assets/", 15) == 0;
-            auto path = url.str + (is_assets ? 14 : 15);
-
-            return new AssetsResourceHandler(path, !is_assets);
-        }
-    };
-
-    CefRegisterSchemeHandlerFactory(&"https"_s, &CefStr("assets"), new AssetsSchemeHandlerFactory());
-    CefRegisterSchemeHandlerFactory(&"https"_s, &CefStr("plugins"), new AssetsSchemeHandlerFactory());
+    cef_register_scheme_handler_factory(&u"https"_s,
+        &u"plugins"_s, new AssetsSchemeHandlerFactory());
 }

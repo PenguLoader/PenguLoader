@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.AccessControl;
 using Microsoft.Win32;
 
 namespace PenguLoader.Main
@@ -25,9 +26,21 @@ namespace PenguLoader.Main
             {
                 if (key == null) return false;
 
-                using (var image = key.CreateSubKey(target))
+                using (var image = key.CreateSubKey(target, RegistryKeyPermissionCheck.ReadWriteSubTree))
                 {
                     if (image == null) return false;
+
+                    try
+                    {
+                        var user = Environment.UserDomainName + "\\" + Environment.UserName;
+                        RegistryAccessRule rule = new RegistryAccessRule(user, RegistryRights.FullControl, AccessControlType.Allow);
+                        RegistrySecurity security = new RegistrySecurity();
+                        security.AddAccessRule(rule);
+                        image.SetAccessControl(security);
+                    }
+                    catch
+                    {
+                    }
 
                     image.SetValue(VALUE_NAME, debugger, RegistryValueKind.String);
                     return true;
@@ -49,6 +62,9 @@ namespace PenguLoader.Main
             }
         }
 
-        private static RegistryKey OpenIFEOKey(bool writable = false) => Registry.LocalMachine.OpenSubKey(IFEO_PATH, writable);
+        static RegistryKey OpenIFEOKey(bool writable = false)
+        {
+            return Registry.LocalMachine.OpenSubKey(IFEO_PATH, writable);
+        }
     }
 }

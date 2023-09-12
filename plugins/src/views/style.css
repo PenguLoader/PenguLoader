@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+body {
+  position: relative;
+}
+
+#pengu-root {
+  font-size: .875rem;
+  font-family: 'Inter', sans-serif;
+}
+
+div[id^=index_loading_div] {
+  background-color: #010a13;
+}
+
+div[id^=index_loading_div]>img {
+  display: none;
+}
+
+div[id^=index_loading_div]::before {
+  content: '';
+  background-image: url(/lol-game-data/assets/v1/profile-icons/4216.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: 144px;
+  height: 144px;
+  border-radius: 50%;
+}
+
+div[id^=index_loading_div]:after {
+  margin-top: 32px;
+  content: "Pengu-Powered";
+  color: #e2e1e1;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 1rem;
+  text-transform: uppercase;
+}

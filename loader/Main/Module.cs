@@ -5,19 +5,30 @@ namespace PenguLoader.Main
 {
     static class Module
     {
-        private static string ModuleName => "core.dll";
-        private static string TargetName => "LeagueClientUx.exe";
-        private static string ModulePath => Path.Combine(Directory.GetCurrentDirectory(), ModuleName);
-        private static string DebuggerValue => $"rundll32 \"{ModulePath}\", #6000 ";
+        const string ModuleName = "core.dll";
+        const string TargetName = "LeagueClientUx.exe";
+        static string ModulePath => Path.Combine(Directory.GetCurrentDirectory(), ModuleName);
+        static string DebuggerValue => $"rundll32 \"{ModulePath}\", #6000 ";
 
-        public static bool IsLoaded() => Utils.IsFileInUse(ModulePath);
+        public static bool IsLoaded => Utils.IsFileInUse(ModulePath);
 
-        public static bool IsActivated() => DebuggerValue.Equals(IFEO.GetDebugger(TargetName), StringComparison.OrdinalIgnoreCase);
+        public static bool IsActivated => DebuggerValue.Equals(IFEO.GetDebugger(TargetName), StringComparison.OrdinalIgnoreCase);
 
-        public static bool Exists() => File.Exists(ModulePath);
+        public static bool IsFound => File.Exists(ModulePath);
 
-        public static bool Activate() => Exists() && IFEO.SetDebugger(TargetName, DebuggerValue);
-
-        public static void Deactivate() => IFEO.RemoveDebugger(TargetName);
+        public static void SetActive(bool active)
+        {
+            if (active)
+            {
+                if (IsFound)
+                {
+                    IFEO.SetDebugger(TargetName, DebuggerValue);
+                }
+            }
+            else
+            {
+                IFEO.RemoveDebugger(TargetName);
+            }
+        }
     }
 }

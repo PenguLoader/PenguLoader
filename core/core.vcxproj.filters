@@ -40,19 +40,10 @@
     <ClCompile Include="src\config.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\renderer\effects.cc">
-      <Filter>src\renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="src\renderer\loader.cc">
-      <Filter>src\renderer</Filter>
-    </ClCompile>
     <ClCompile Include="src\renderer\renderer.cc">
       <Filter>src\renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\utils\file.cc">
-      <Filter>src\utils</Filter>
-    </ClCompile>
-    <ClCompile Include="src\utils\string.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
     <ClCompile Include="src\utils\misc.cc">
@@ -64,41 +55,32 @@
     <ClCompile Include="src\utils\cefstr.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
-    <ClCompile Include="src\browser\window.cc">
-      <Filter>src\browser</Filter>
-    </ClCompile>
-    <ClCompile Include="src\browser\server.cc">
-      <Filter>src\browser</Filter>
-    </ClCompile>
-    <ClCompile Include="src\renderer\auth_callback.cc">
-      <Filter>src\renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="src\browser\jsdialog.cc">
-      <Filter>src\browser</Filter>
-    </ClCompile>
     <ClCompile Include="src\dllproxy.cc">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\winbrancy.cc">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\browser\keyboard.cc">
+      <Filter>src\browser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\fs.cc">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\renderer\extension.js">
-      <Filter>src\renderer</Filter>
-    </None>
     <None Include="res\module.def">
       <Filter>res</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\internal.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hook.h">
-      <Filter>src</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="res\resource.rc">
       <Filter>res</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\commons.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

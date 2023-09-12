@@ -19,7 +19,7 @@ namespace PenguLoader.Main
             ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
         }
 
-        public static bool IsRunning() => Process.GetProcessesByName("LeagueClientUx").Length > 0;
+        public static bool IsRunning => Process.GetProcessesByName("LeagueClientUx").Length > 0;
 
         public static string GetDir()
         {

@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "commons.h"
 #include "include/cef_version.h"
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -6,28 +6,68 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 bool LoadLibcefDll(bool is_browser);
 void HookBrowserProcess();
 void HookRendererProcess();
+void InjectThisDll(HANDLE hProcess);
+
+static hook::Hook<decltype(&CreateProcessW)> Old_CreateProcessW;
+static BOOL WINAPI Hooked_CreateProcessW(
+    _In_opt_ LPCWSTR lpApplicationName,
+    _Inout_opt_ LPWSTR lpCommandLine,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    _In_ BOOL bInheritHandles,
+    _In_ DWORD dwCreationFlags,
+    _In_opt_ LPVOID lpEnvironment,
+    _In_opt_ LPCWSTR lpCurrentDirectory,
+    _In_ LPSTARTUPINFOW lpStartupInfo,
+    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
+{
+    bool is_renderer = std::regex_search(lpCommandLine,
+        std::wregex(L"LeagueClientUxRender\\.exe.+--type=renderer", std::wregex::icase));
+
+    if (is_renderer)
+        dwCreationFlags |= CREATE_SUSPENDED;
+
+    BOOL success = Old_CreateProcessW(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes,
+        bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+
+    if (success && is_renderer)
+    {
+        InjectThisDll(lpProcessInformation->hProcess);
+        ResumeThread(lpProcessInformation->hThread);
+    }
+
+    return success;
+}
 
 static void Initialize()
 {
-    // Get exe path.
-    WCHAR _path[2048];
-    wstring name(_path, GetModuleFileNameW(NULL, _path, _countof(_path)));
-    name = name.substr(name.find_last_of(L"\\/") + 1);
+    WCHAR exe_path[2048]{};
+    GetModuleFileNameW(nullptr, exe_path, _countof(exe_path));
 
     // Determine which process to be hooked.
 
     // Browser process.
-    if (utils::strEqual(name, L"LeagueClientUx.exe", false))
+    if (std::regex_search(exe_path,
+        std::wregex(L"LeagueClientUx\\.exe$", std::wregex::icase)))
     {
         if (LoadLibcefDll(true))
+        {
             HookBrowserProcess();
+
+            // Hook CreateProcessW.
+            Old_CreateProcessW.hook(&CreateProcessW, Hooked_CreateProcessW);
+        }
     }
-    // Renderer process.
-    else if (utils::strEqual(name, L"LeagueClientUxRender.exe", false)
-        && utils::strContain(GetCommandLineW(), L"--type=renderer", false))
+    // Render process.
+    else if (std::regex_search(exe_path,
+        std::wregex(L"LeagueClientUxRender\\.exe$", std::wregex::icase)))
     {
-        if (LoadLibcefDll(false))
-            HookRendererProcess();
+        // Renderer only.
+        if (wcsstr(GetCommandLineW(), L"--type=renderer") != nullptr)
+        {
+            if (LoadLibcefDll(false))
+                HookRendererProcess();
+        }
     }
 }
 
