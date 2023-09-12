@@ -22,8 +22,10 @@ function subscribeRcp(name: string) {
         const api = await registrar(provider);
         pluginMap.set(name, api);
 
-        callbacks.filter(c => !c.pre)
-          .forEach(c => c.callback(api));
+        await Promise.allSettled(
+          callbacks.filter(c => !c.pre)
+            .map(c => c.callback(api))
+        );
 
         return api;
       });
@@ -59,9 +61,10 @@ function preInit(name: string, callback: (provider: any) => any) {
   }
 }
 
-function postInit(name: string, callback: (api: any) => any) {
+function postInit(name: string, callback: (api: any) => any, blocking: boolean = false) {
   if (typeof name === 'string' && typeof callback === 'function') {
-    addHook(name, false, callback);
+    const callbackFn = blocking ? callback : ((api: any) => { callback(api); void 0; });
+    addHook(name, false, callbackFn);
   }
 }
 
