@@ -1,5 +1,6 @@
 import { onMount } from 'solid-js';
 import { useRoot } from './root';
+import { penguI18n } from '../../../i18n/i18n';
 
 export function SearchBar() {
   let input: HTMLInputElement;
@@ -35,7 +36,7 @@ export function SearchBar() {
         onBlur={() => setTimeout(() => input.focus(), 50)}
         class="flex w-full px-2 py-3 text-sm bg-transparent border-none rounded-md outline-none
         placeholder:text-neutral-400 h-11 disabled:cursor-not-allowed disabled:opacity-50"
-        placeholder="Type a command or search..." autocomplete="off" autocorrect="off" spellcheck={false}
+        placeholder={penguI18n("commandbar.search_placeholder")} autocomplete="off" autocorrect="off" spellcheck={false}
       />
     </div>
   )

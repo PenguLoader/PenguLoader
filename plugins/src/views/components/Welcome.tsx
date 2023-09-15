@@ -1,6 +1,7 @@
 import { Show, createSignal, onMount } from 'solid-js';
-import penguLogo from '../assets/pengu.jpg';
 import toast from 'solid-toast';
+import penguLogo from '../assets/pengu.jpg';
+import { penguI18n } from '../../i18n/i18n';
 
 export function Welcome() {
 
@@ -18,7 +19,7 @@ export function Welcome() {
 
   if (!welcome) {
     onMount(() => {
-      toast.success('Pengu Loader is active!', {
+      toast.success(penguI18n("welcome.toast_message_bottom_right"), {
         position: 'bottom-right',
         duration: 7000
       });
@@ -38,11 +39,12 @@ export function Welcome() {
                     <img src={penguLogo} class="w-10 h-10 rounded" alt="" />
                   </div>
                   <div class="ml-4 mt-0 text-left">
-                    <h3 class="text-base mt-0 font-semibold leading-6 text-gray-900">Pengu Loader</h3>
+                    <h3 class="text-base mt-0 font-semibold leading-6 text-gray-900 flex items-center">
+                      {penguI18n("welcome.title")}
+                    </h3>
                     <div class="mt-2">
                       <div class="text-sm text-black">
-                        Hi Summoner, your installed plugins have been successfully loaded.
-                        Join our community to get more 😎 awesome plugins and themes now 👇
+                        {penguI18n("welcome.message")}
                       </div>
                       <div class="flex mt-5 space-x-1">
                         <a href="https://chat.pengu.lol/" target="_blank" rel="noreferrer" class="opacity-90 hover:opacity-100">
@@ -63,14 +65,14 @@ export function Welcome() {
                 <div class="flex items-center space-x-2">
                   <input type="checkbox" id="TxrO6Gew" onChange={dontShowCheck} class="h-4 w-4 rounded border-gray-300 outline-none" />
                   <label for="TxrO6Gew" class="text-sm font-medium text-gray-700">
-                    Do not show again
+                    {penguI18n("welcome.do_not_show_again")}
                   </label>
                 </div>
                 <button
                   onClick={hide}
                   type="button"
                   class="uppercase text-sm outline-none border-none bg-gray-300/60 px-3 py-1 text-gray-900 rounded hover:bg-gray-300 cursor-pointer"
-                >Okay</button>
+                >{penguI18n("welcome.okay")}</button>
               </div>
             </div>
           </div>

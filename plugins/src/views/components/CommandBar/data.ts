@@ -1,3 +1,5 @@
+import { penguI18n } from "../../../i18n/i18n";
+
 enum QueueId {
   DraftPick = 400,
   SoloDuo = 420,
@@ -65,29 +67,29 @@ async function quitPvPChampSelect() {
 const ACTIONS: Record<string, Action[]> = {
   pengu: [
     {
-      name: 'Visit homepage',
+      name: penguI18n("commandbar.builtin_commands.pengu_visit_homepage"),
       legend: 'pengu.lol',
       perform: () => window.open('https://pengu.lol', '_blank')
     },
     {
-      name: 'Open DevTools',
+      name: penguI18n("commandbar.builtin_commands.pengu_open_devtools"),
       legend: 'F12',
       tags: ['dev', 'console'],
       perform: () => window.openDevTools?.()
     },
     {
-      name: 'Open plugins folder',
+      name: penguI18n("commandbar.builtin_commands.pengu_open_plugins_folder"),
       tags: ['dev'],
       perform: () => window.openPluginsFolder?.()
     },
     {
-      name: 'Reload Client',
+      name: penguI18n("commandbar.builtin_commands.pengu_reload_client"),
       legend: 'Ctrl Shift R',
       hidden: true,
       perform: () => window.reloadClient?.()
     },
     {
-      name: 'Restart Client',
+      name: penguI18n("commandbar.builtin_commands.pengu_restart_client"),
       legend: 'Ctrl Shift Enter',
       hidden: true,
       perform: () => window.restartClient?.()
@@ -95,21 +97,21 @@ const ACTIONS: Record<string, Action[]> = {
   ],
   lobby: [
     {
-      name: 'Create ARAM lobby',
+      name: penguI18n("commandbar.builtin_commands.lobby_create_aram"),
       perform: () => createLobby(QueueId.ARAM)
     },
     {
-      name: 'Create 5v5 SR lobby',
+      name: penguI18n("commandbar.builtin_commands.lobby_create_5v5_sr"),
       perform: () => createLobby(QueueId.BlindPick)
     },
     {
-      name: 'Create Practice Tool',
+      name: penguI18n("commandbar.builtin_commands.lobby_create_practive_tool"),
       perform: () => createLobby(QueueId.PracticeTool)
     },
   ],
   uncategorized: [
     {
-      name: 'Quit PvP champ-select',
+      name: penguI18n("commandbar.builtin_commands.quit_pvp_champ_select"),
       hidden: true,
       perform: () => quitPvPChampSelect()
     }
