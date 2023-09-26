@@ -4,6 +4,15 @@ import { useRoot, VisualState } from './root';
 import { SearchItem } from './SearchItem';
 import { evaluate } from './utils';
 
+function evalAction(action: Action, path: string | string[]): string {
+  if (Array.isArray(path))
+    path = path[0];
+  if (path === 'name' || path === 'group')
+    return evaluate(action[path]);
+  else
+    return action[path as string];
+}
+
 export function SearchResults() {
 
   let containerRef: HTMLDivElement;
@@ -19,7 +28,8 @@ export function SearchResults() {
       distance: 200,
       threshold: 0.4,
       includeScore: true,
-      keys: ['name', 'tags', 'group']
+      keys: ['name', 'tags', 'group'],
+      getFn: evalAction
     });
 
     return fuse.search(search())

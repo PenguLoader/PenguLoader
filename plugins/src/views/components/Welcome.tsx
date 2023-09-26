@@ -1,6 +1,7 @@
 import { Show, createSignal, onMount } from 'solid-js';
 import penguLogo from '../assets/pengu.jpg';
 import toast from 'solid-toast';
+import { _t } from '../i18n';
 
 export function Welcome() {
 
@@ -18,7 +19,7 @@ export function Welcome() {
 
   if (!welcome) {
     onMount(() => {
-      toast.success('Pengu Loader is active!', {
+      toast.success(_t('active_status'), {
         position: 'bottom-right',
         duration: 7000
       });
@@ -40,10 +41,7 @@ export function Welcome() {
                   <div class="ml-4 mt-0 text-left">
                     <h3 class="text-base mt-0 font-semibold leading-6 text-gray-900">Pengu Loader</h3>
                     <div class="mt-2">
-                      <div class="text-sm text-black">
-                        Hi Summoner, your installed plugins have been successfully loaded.
-                        Join our community to get more 😎 awesome plugins and themes now 👇
-                      </div>
+                      <div class="text-sm text-black">{_t('welcome_msg')}</div>
                       <div class="flex mt-5 space-x-1">
                         <a href="https://chat.pengu.lol/" target="_blank" rel="noreferrer" class="opacity-90 hover:opacity-100">
                           <img src="https://img.shields.io/discord/1069483280438673418?style=flat-square&logo=discord&logoColor=white&label=discord&color=5c5fff" alt="" />
@@ -62,9 +60,7 @@ export function Welcome() {
               <div class="bg-gray-50 py-3 flex flex-row justify-between items-center px-6">
                 <div class="flex items-center space-x-2">
                   <input type="checkbox" id="TxrO6Gew" onChange={dontShowCheck} class="h-4 w-4 rounded border-gray-300 outline-none" />
-                  <label for="TxrO6Gew" class="text-sm font-medium text-gray-700">
-                    Do not show again
-                  </label>
+                  <label for="TxrO6Gew" class="text-sm font-medium text-gray-700">{_t('dont_show_again')}</label>
                 </div>
                 <button
                   onClick={hide}

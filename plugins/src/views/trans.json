@@ -1,0 +1,42 @@
+{
+  "fallback": "en-US",
+  "translations": [
+    {
+      "_locales": [
+        "en-US",
+        "en-GB",
+        "en-AU"
+      ],
+      "welcome_msg": "Hi Summoner, your Pengu has been successfully loaded and we hope you enjoy it! Join our community to get more 😎 awesome plugins and themes now 👇",
+      "dont_show_again": "Do not show again",
+      "active_status": "Pengu Loader is active!",
+      "act_visit_home": "Visit homepage",
+      "act_open_devtools": "Open DevTools",
+      "act_open_plugins": "Open plugins folder",
+      "act_reload": "Reload Client",
+      "act_restart": "Restart Client",
+      "act_create_aram": "Create ARAM lobby",
+      "act_create_normal": "Create 5v5 SR lobby",
+      "act_practice_tool": "Create Practice Tool",
+      "act_quit_pvp": "Quit PvP champ-select"
+    },
+    {
+      "_locales": [
+        "vi-VN",
+        "vn-VN"
+      ],
+      "welcome_msg": "Chào bạn gì đó ơi, Pengu đã được tải thành công và hi vọng bạn sẽ thích nó. Nhập hội cùng chúng mình để tìm thêm 😎 các theme và plugin tuyệt vời khác nhé 👇",
+      "dont_show_again": "Không hiển thị lại",
+      "active_status": "Pengu Loader đang hoạt động!",
+      "act_visit_home": "Ghé thăm trang chủ",
+      "act_open_devtools": "Mở DevTools",
+      "act_open_plugins": "Mở thư mục plugins",
+      "act_reload": "Tải lại Client",
+      "act_restart": "Khởi động lại Client",
+      "act_create_aram": "Tạo trận ARAM",
+      "act_create_normal": "Tạo trận 5v5 SR",
+      "act_practice_tool": "Tạo trận phòng tập",
+      "act_quit_pvp": "Thoát chọn tướng PvP"
+    }
+  ]
+}

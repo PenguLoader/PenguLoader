@@ -5,6 +5,7 @@ import './style.css';
 
 import install from '@twind/with-web-components';
 import config from '../../twind.config';
+import { loadTranslation } from './i18n';
 
 const rootId = 'pengu-root';
 const withTwind = install(config);
@@ -18,6 +19,8 @@ class PenguRoot extends withTwind(HTMLElement) {
 }
 
 async function mount() {
+  loadTranslation();
+
   let root = document.getElementById(rootId);
   if (!root) {
     root = document.createElement('div');
