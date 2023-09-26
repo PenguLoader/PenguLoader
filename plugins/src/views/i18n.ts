@@ -14,8 +14,16 @@ function findTranslation(locale: string) {
   }
 }
 
-export function loadTranslation() {
-  const locale = document.body.dataset['locale'] as string;
+export async function loadTranslation() {
+  let locale = fallback;
+  try {
+    // cant use body's dataset before rcp get loads
+    const data = await fetch('/riotclient/region-locale')
+      .then(r => r.json());
+    locale = data.locale.replace('_', '-');
+  } catch {
+    // fallback
+  }
   _T = (locale && findTranslation(locale)) || findTranslation(fallback);
 }
 

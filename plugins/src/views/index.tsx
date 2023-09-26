@@ -19,7 +19,8 @@ class PenguRoot extends withTwind(HTMLElement) {
 }
 
 async function mount() {
-  loadTranslation();
+
+  await loadTranslation();
 
   let root = document.getElementById(rootId);
   if (!root) {
