@@ -1,4 +1,4 @@
-import { rcp } from './rcp';
+import { rcp, socket } from './rcp';
 
 async function loadPlugin(entry: string) {
   let stage = 'load';
@@ -10,7 +10,7 @@ async function loadPlugin(entry: string) {
     // Init immediately
     if (typeof plugin.init === 'function') {
       stage = 'initialize';
-      await plugin.init({ rcp });
+      await plugin.init({ rcp, socket });
     }
 
     // Register load
