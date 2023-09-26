@@ -1,5 +1,6 @@
 import { Show } from 'solid-js';
 import { useRoot } from './root';
+import { evaluate } from './utils';
 
 interface Props {
   item: Action
@@ -25,9 +26,9 @@ export function SearchItem(props: Props) {
         <Show when={props.item.icon}>
           <span innerHTML={props.item.icon}></span>
         </Show>
-        <span>{props.item.name}</span>
+        <span>{evaluate(props.item.name)}</span>
         <Show when={props.item.legend}>
-          <span class="ml-auto text-xs tracking-widest">{props.item.legend}</span>
+          <span class="ml-auto text-xs tracking-widest">{evaluate(props.item.legend)}</span>
         </Show>
       </div>
     </div>

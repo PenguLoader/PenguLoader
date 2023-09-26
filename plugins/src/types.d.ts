@@ -15,11 +15,11 @@ interface RcpAnnouceEvent extends CustomEvent {
 
 interface Action {
   id?: string
-  name: string
-  legend?: string
+  name: string | (() => string)
+  legend?: string | (() => string)
   tags?: string[]
   icon?: string
-  group?: string
+  group?: string | (() => string)
   hidden?: boolean
   perform?: (id?: string) => any
 }
@@ -38,7 +38,7 @@ interface DataStore {
 }
 
 type ThemeName = 'light' | 'dark';
-type EffectName = 'mica' | 'blurbehind' | 'acrylic' | 'unified';
+type EffectName = 'mica' | 'blurbehind' | 'blur' | 'acrylic' | 'unified' | 'transparent';
 
 interface Effect {
   get current(): EffectName | null
@@ -47,7 +47,7 @@ interface Effect {
   setTheme: (theme: ThemeName) => boolean
 }
 
-interface FileStat{
+interface FileStat {
   fileName: string
   length: number
   isDir: boolean
@@ -59,7 +59,7 @@ interface PluginFS {
   mkdir: (path: string) => Promise<boolean>
   stat: (path: string) => Promise<FileStat | undefined>
   ls: (path: string) => Promise<string[] | undefined>
-  rm: (path: string, recursively:boolean) => Promise<number>
+  rm: (path: string, recursively: boolean) => Promise<number>
 }
 
 // globals
@@ -88,7 +88,7 @@ declare interface Window {
   DataStore: DataStore;
   CommandBar: CommandBar;
   Effect: Effect;
-  PluginFS:PluginFS;
+  PluginFS: PluginFS;
 
   openDevTools: typeof openDevTools;
   openAssetsFolder: typeof openAssetsFolder;

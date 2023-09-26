@@ -2,6 +2,7 @@ import { For, Show, createEffect, createMemo, on, onCleanup, onMount } from 'sol
 import Fuse from 'fuse.js';
 import { useRoot, VisualState } from './root';
 import { SearchItem } from './SearchItem';
+import { evaluate } from './utils';
 
 export function SearchResults() {
 
@@ -95,7 +96,7 @@ export function SearchResults() {
             <Show when={shouldShowCategory(item, index())}>
               <div class="px-1 overflow-hidden text-gray-700">
                 <div class="px-2 py-1 my-1 text-xs font-medium text-neutral-500 capitalize">
-                  {item.group}
+                  {evaluate(item.group)}
                 </div>
               </div>
             </Show>
