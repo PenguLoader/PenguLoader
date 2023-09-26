@@ -1,4 +1,4 @@
-import { Toaster } from 'solid-toast';
+import { Toaster } from './components/Toaster';
 import { CommandBar } from './components/CommandBar';
 import { Welcome } from './components/Welcome';
 

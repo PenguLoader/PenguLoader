@@ -1,6 +1,6 @@
 import { Show, createSignal, onMount } from 'solid-js';
 import penguLogo from '../assets/pengu.jpg';
-import toast from 'solid-toast';
+import { toast } from './Toaster';
 import { _t } from '../i18n';
 
 export function Welcome() {
@@ -20,7 +20,7 @@ export function Welcome() {
   if (!welcome) {
     onMount(() => {
       toast.success(_t('active_status'), {
-        position: 'bottom-right',
+        position: 'bottom-left',
         duration: 7000
       });
     });

@@ -30,6 +30,15 @@ interface CommandBar {
   update: () => void
 }
 
+interface Toast {
+  success: (message: string) => void
+  error: (message: string) => void
+  promise: <T>(
+    promise: Promise<T>,
+    msg: { loading: string, success: string, error: string }
+  ) => Promise<T>
+}
+
 interface DataStore {
   has: (key: string) => boolean
   get: <T>(key: string, fallback?: T) => T | undefined
@@ -72,6 +81,7 @@ namespace Pengu {
 
 declare const DataStore: DataStore;
 declare const CommandBar: CommandBar;
+declare const Toast: Toast;
 declare const Effect: Effect;
 declare const PluginFS: PluginFS;
 
@@ -87,6 +97,7 @@ declare interface Window {
 
   DataStore: DataStore;
   CommandBar: CommandBar;
+  Toast: Toast;
   Effect: Effect;
   PluginFS: PluginFS;
 
