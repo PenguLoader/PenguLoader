@@ -70,6 +70,9 @@
     <ClCompile Include="src\utils\shell.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\dialog.cc">
+      <Filter>src\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def">

@@ -336,6 +336,21 @@ namespace utils
     void *patternScan(const HMODULE module, const char *pattern);
 }
 
+namespace dialog
+{
+    enum Level
+    {
+        DIALOG_NONE,
+        DIALOG_INFO,
+        DIALOG_WARNING,
+        DIALOG_ERROR,
+        DIALOG_QUESTION
+    };
+
+    void alert(const char *message, const char *title, Level level = DIALOG_NONE, const void *owner = nullptr);
+    bool confirm(const char *message, const char *title, Level level = DIALOG_QUESTION, const void *owner = nullptr);
+}
+
 namespace shell
 {
     void open_url(const char *url);
@@ -398,18 +413,23 @@ namespace hook
         }
     };
 
-    template<typename Fn, typename R, typename ...Args>
-    class HookBase
+    template<typename>
+    class Hook;
+
+    template<typename R, typename ...Args>
+    class Hook<R(*)(Args...)>
     {
     public:
-        HookBase()
+        using Fn = R(*)(Args...);
+
+        Hook()
             : orig_(nullptr)
             , rest_(nullptr)
             , mutex_{}
         {
         }
 
-        ~HookBase()
+        ~Hook()
         {
             if (rest_ != nullptr)
             {
@@ -458,12 +478,4 @@ namespace hook
         Restorable *rest_;
         std::mutex mutex_;
     };
-
-    template<typename>
-    class Hook;
-
-    template<typename R, typename ...Args>
-    class Hook<R(*)(Args...)>
-        : public HookBase<R(*)(Args...), R, Args...> {};
-
 }

@@ -33,6 +33,7 @@
     <ClCompile Include="src\renderer\winbrancy.cc" />
     <ClCompile Include="src\renderer\renderer.cc" />
     <ClCompile Include="src\utils\cefstr.cc" />
+    <ClCompile Include="src\utils\dialog.cc" />
     <ClCompile Include="src\utils\file.cc" />
     <ClCompile Include="src\utils\misc.cc" />
     <ClCompile Include="src\utils\shell.cc" />

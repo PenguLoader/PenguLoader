@@ -174,9 +174,9 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
     if (!CreateProcessW(NULL, commandLine, NULL, NULL, FALSE,
         CREATE_SUSPENDED | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &si, &pi))
     {
-        char msg[512];
+        char msg[128];
         sprintf_s(msg, "Failed to create LeagueClientUx process, last error: 0x%08X.", GetLastError());
-        MessageBoxA(0, msg, "Pengu Loader bootstraper", MB_ICONWARNING | MB_OK);
+        dialog::alert(msg, "Pengu Loader bootstraper", dialog::DIALOG_WARNING);
         return 1;
     }
 
