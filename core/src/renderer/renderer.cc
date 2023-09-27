@@ -74,8 +74,7 @@ static V8Value *native_OpenDevTools(const vec<V8Value *> &args)
 
 static V8Value *native_OpenAssetsFolder(const vec<V8Value *> &args)
 {
-    utils::openLink(config::assetsDir());
-
+    shell::open_folder(config::assetsDir().c_str());
     return nullptr;
 }
 
@@ -92,7 +91,7 @@ static V8Value *native_OpenPluginsFolder(const vec<V8Value *> &args)
             return V8Value::boolean(false);
     }
 
-    utils::openLink(destPath);
+    shell::open_folder(destPath.c_str());
     return V8Value::boolean(true);
 }
 

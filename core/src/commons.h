@@ -333,8 +333,16 @@ namespace utils
     bool readFile(const wstr &path, str &out);
     vec<wstr> readDir(const wstr &dir);
 
-    void openLink(const wstr &link);
     void *patternScan(const HMODULE module, const char *pattern);
+}
+
+namespace shell
+{
+    void open_url(const char *url);
+    void open_url(const wchar_t *url);
+
+    void open_folder(const char *path);
+    void open_folder(const wchar_t *path);
 }
 
 namespace hook

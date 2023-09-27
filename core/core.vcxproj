@@ -35,6 +35,7 @@
     <ClCompile Include="src\utils\cefstr.cc" />
     <ClCompile Include="src\utils\file.cc" />
     <ClCompile Include="src\utils\misc.cc" />
+    <ClCompile Include="src\utils\shell.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def" />

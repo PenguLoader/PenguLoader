@@ -67,6 +67,9 @@
     <ClCompile Include="src\renderer\fs.cc">
       <Filter>src\renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\shell.cc">
+      <Filter>src\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def">

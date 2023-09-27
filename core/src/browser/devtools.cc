@@ -192,7 +192,7 @@ void OpenRemoteDevTools()
     if (remote_debugging_port_ != 0
         && !remote_devtools_url_.empty())
     {
-        utils::openLink(remote_devtools_url_);
+        shell::open_url(remote_devtools_url_.c_str());
     }
 }
 
