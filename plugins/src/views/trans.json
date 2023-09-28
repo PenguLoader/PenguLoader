@@ -37,6 +37,41 @@
       "act_create_normal": "Tạo trận 5v5 SR",
       "act_practice_tool": "Tạo trận phòng tập",
       "act_quit_pvp": "Thoát chọn tướng PvP"
+    },
+    {
+      "_locales": [
+        "zh-CN"
+      ],
+      "welcome_msg": "嗨，召唤师！你安装的插件已经成功载入！加入我们的社区😎以获得更多插件和主题 👇",
+      "dont_show_again": "不再显示",
+      "active_status": "Pengu Loader已激活！",
+      "act_visit_home": "访问 Pengu Loader 主页",
+      "act_open_devtools": "打开开发者工具",
+      "act_open_plugins": "打开插件文件夹",
+      "act_reload": "软重启客户端",
+      "act_restart": "硬重启客户端",
+      "act_create_aram": "创建大乱斗房间",
+      "act_create_normal": "创建单双排房间",
+      "act_practice_tool": "创建训练模式房间",
+      "act_quit_pvp": "秒退（仅限PVP模式）"
+
+    },
+    {
+      "_locales": [
+        "zh-TW"
+      ],
+      "welcome_msg": "嗨，召喚師！您的插件已經成功載入！加入我們的社群😎以獲得更多插件和主題👇",
+      "dont_show_again": "不再顯示",
+      "active_status": "Pengu Loader已啟用！",
+      "act_visit_home": "訪問 Pengu Loader 主頁",
+      "act_open_devtools": "打開開發者工具",
+      "act_open_plugins": "打開插件資料夾",
+      "act_reload": "重載客戶端",
+      "act_restart": "重啟客戶端",
+      "act_create_aram": "創建隨機單中房間",
+      "act_create_normal": "創建5V5單排房間",
+      "act_practice_tool": "創建練習模式",
+      "act_quit_pvp": "跳GAME(僅限PVP模式)"
     }
   ]
 }
