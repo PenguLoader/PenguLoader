@@ -54,6 +54,7 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -68,6 +69,8 @@
     </ApplicationDefinition>
     <Compile Include="Main\DataStore.cs" />
     <Compile Include="Main\Native.cs" />
+    <Compile Include="Main\Schema.cs" />
+    <Compile Include="Main\Symlink.cs" />
     <Compile Include="Views\MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -81,6 +84,10 @@
     <Page Include="Languages\en-US.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Languages\es-ES.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Languages\ja-JP.xaml">
       <SubType>Designer</SubType>
@@ -172,11 +179,11 @@
     <PackageReference Include="FontAwesome5">
       <Version>2.1.11</Version>
     </PackageReference>
-    <PackageReference Include="MadMilkman.Ini">
-      <Version>1.0.6</Version>
-    </PackageReference>
     <PackageReference Include="ModernWpfUI">
       <Version>0.9.6</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
     </PackageReference>
     <PackageReference Include="Ookii.Dialogs.Wpf">
       <Version>4.0.0</Version>
