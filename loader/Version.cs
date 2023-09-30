@@ -8,7 +8,7 @@ namespace PenguLoader
     {
         public const string VERSION =
 #endif
-        "1.0.6"
+        "1.1.0"
 #if !__cplusplus
         ;
         public static string CommitSha1;

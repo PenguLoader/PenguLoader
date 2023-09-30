@@ -10,6 +10,7 @@
       "welcome_msg": "Hi Summoner, your Pengu has been successfully loaded and we hope you enjoy it! Join our community to get more 😎 awesome plugins and themes now 👇",
       "dont_show_again": "Do not show again",
       "active_status": "Pengu Loader is active!",
+      "cmdbar_type_hint": "Type a command or search...",
       "act_visit_home": "Visit homepage",
       "act_open_devtools": "Open DevTools",
       "act_open_plugins": "Open plugins folder",
@@ -28,6 +29,7 @@
       "welcome_msg": "Chào bạn gì đó ơi, Pengu đã được tải thành công và hi vọng bạn sẽ thích nó. Nhập hội cùng chúng mình để tìm thêm 😎 các theme và plugin tuyệt vời khác nhé 👇",
       "dont_show_again": "Không hiển thị lại",
       "active_status": "Pengu Loader đang hoạt động!",
+      "cmdbar_type_hint": "Gõ một lệnh hoặc tìm gì đó...",
       "act_visit_home": "Ghé thăm trang chủ",
       "act_open_devtools": "Mở DevTools",
       "act_open_plugins": "Mở thư mục plugins",
@@ -45,6 +47,7 @@
       "welcome_msg": "嗨，召唤师！你安装的插件已经成功载入！加入我们的社区😎以获得更多插件和主题 👇",
       "dont_show_again": "不再显示",
       "active_status": "Pengu Loader已激活！",
+      "cmdbar_type_hint": "输入指令或搜索...",
       "act_visit_home": "访问 Pengu Loader 主页",
       "act_open_devtools": "打开开发者工具",
       "act_open_plugins": "打开插件文件夹",
@@ -54,7 +57,6 @@
       "act_create_normal": "创建单双排房间",
       "act_practice_tool": "创建训练模式房间",
       "act_quit_pvp": "秒退（仅限PVP模式）"
-
     },
     {
       "_locales": [
@@ -63,6 +65,7 @@
       "welcome_msg": "嗨，召喚師！您的插件已經成功載入！加入我們的社群😎以獲得更多插件和主題👇",
       "dont_show_again": "不再顯示",
       "active_status": "Pengu Loader已啟用！",
+      "cmdbar_type_hint": "輸入指令或搜尋...",
       "act_visit_home": "訪問 Pengu Loader 主頁",
       "act_open_devtools": "打開開發者工具",
       "act_open_plugins": "打開插件資料夾",
