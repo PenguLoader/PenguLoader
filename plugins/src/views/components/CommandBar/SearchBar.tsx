@@ -1,6 +1,6 @@
 import { onMount } from 'solid-js';
 import { useRoot } from './root';
-import { _t } from '../../i18n';
+import { _t } from '../../lib/i18n';
 
 export function SearchBar() {
   let input: HTMLInputElement;

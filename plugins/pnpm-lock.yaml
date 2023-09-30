@@ -20,6 +20,9 @@ dependencies:
   fuse.js:
     specifier: ^6.6.2
     version: 6.6.2
+  snarkdown:
+    specifier: ^2.0.0
+    version: 2.0.0
   solid-js:
     specifier: ^1.7.8
     version: 1.7.8
@@ -1191,6 +1194,10 @@ packages:
   /seroval@0.5.1:
     resolution: {integrity: sha512-ZfhQVB59hmIauJG5Ydynupy8KHyr5imGNtdDhbZG68Ufh1Ynkv9KOYOAABf71oVbQxJ8VkWnMHAjEHE7fWkH5g==}
     engines: {node: '>=10'}
+
+  /snarkdown@2.0.0:
+    resolution: {integrity: sha512-MgL/7k/AZdXCTJiNgrO7chgDqaB9FGM/1Tvlcenenb7div6obaDATzs16JhFyHHBGodHT3B7RzRc5qk8pFhg3A==}
+    dev: false
 
   /solid-js@1.7.8:
     resolution: {integrity: sha512-XHBWk1FvFd0JMKljko7FfhefJMTSgYEuVKcQ2a8hzRXfiuSJAGsrPPafqEo+f6l+e8Oe3cROSpIL6kbzjC1fjQ==}

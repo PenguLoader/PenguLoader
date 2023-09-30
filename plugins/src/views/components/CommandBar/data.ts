@@ -1,4 +1,4 @@
-import { _t } from '../../i18n';
+import { _t } from '../../lib/i18n';
 
 enum QueueId {
   DraftPick = 400,
