@@ -9,14 +9,12 @@ namespace PenguLoader.Main
     {
         public static string ConfigPath => GetPath("config");
         public static string DataStorePath => GetPath("datastore");
-        public static string AssetsDir => GetPath("assets");
         public static string PluginsDir => GetPath("plugins");
 
         static Dictionary<string, string> _data;
 
         static Config()
         {
-            Utils.EnsureDirectoryExists(AssetsDir);
             Utils.EnsureDirectoryExists(PluginsDir);
             Utils.EnsureFileExists(ConfigPath);
             Utils.EnsureFileExists(DataStorePath);
