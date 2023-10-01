@@ -83,6 +83,28 @@
       "act_create_normal": "創建5V5單排房間",
       "act_practice_tool": "創建練習模式",
       "act_quit_pvp": "跳GAME(僅限PVP模式)"
+    },
+    {
+      "_locales": [
+        "pt-BR",
+        "pt-PT"
+      ],
+      "welcome_msg": "Olá Invocador, o Pengu foi carregado com sucesso, esperamos que você aproveite! Junte-se à nossa comunidade para obter mais 😎 plugins e temas incríveis agora 👇",
+      "dont_show_again": "Não mostrar novamente",
+      "active_status": "Pengu Loader está ativo!",
+      "update_available": "Nova atualização disponível",
+      "update_hint": "Você precisa fechar o Cliente e abrir o Pengu Loader para obtê-la.",
+      "cmdbar_type_hint": "Digite um comando ou pesquise...",
+      "act_visit_home": "Visitar página inicial",
+      "act_open_devtools": "Abrir Ferramentas de Desenvolvedor",
+      "act_open_plugins": "Abrir pasta de plugins",
+      "act_reload": "Recarregar Cliente",
+      "act_restart": "Reiniciar Cliente",
+      "act_create_aram": "Criar sala ARAM",
+      "act_create_normal": "Criar sala 5v5 SR",
+      "act_practice_tool": "Criar sala de Treino",
+      "act_quit_pvp": "Sair da seleção de campeões PvP"
     }
+    
   ]
 }
