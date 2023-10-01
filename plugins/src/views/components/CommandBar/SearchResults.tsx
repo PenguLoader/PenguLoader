@@ -2,6 +2,16 @@ import { For, Show, createEffect, createMemo, on, onCleanup, onMount } from 'sol
 import Fuse from 'fuse.js';
 import { useRoot, VisualState } from './root';
 import { SearchItem } from './SearchItem';
+import { evaluate } from './utils';
+
+function evalAction(action: Action, path: string | string[]): string {
+  if (Array.isArray(path))
+    path = path[0];
+  if (path === 'name' || path === 'group')
+    return evaluate(action[path]);
+  else
+    return action[path as string];
+}
 
 export function SearchResults() {
 
@@ -18,7 +28,8 @@ export function SearchResults() {
       distance: 200,
       threshold: 0.4,
       includeScore: true,
-      keys: ['name', 'tags', 'group']
+      keys: ['name', 'tags', 'group'],
+      getFn: evalAction
     });
 
     return fuse.search(search())
@@ -95,7 +106,7 @@ export function SearchResults() {
             <Show when={shouldShowCategory(item, index())}>
               <div class="px-1 overflow-hidden text-gray-700">
                 <div class="px-2 py-1 my-1 text-xs font-medium text-neutral-500 capitalize">
-                  {item.group}
+                  {evaluate(item.group)}
                 </div>
               </div>
             </Show>

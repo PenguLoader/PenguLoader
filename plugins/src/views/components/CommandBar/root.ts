@@ -27,7 +27,7 @@ const root = createRoot(() => {
 
     const action = { ...item };
 
-    if (!action.group || typeof action.group === 'string') {
+    if (!action.group || typeof action.group !== 'string') {
       action.group = 'uncategorized';
     }
 

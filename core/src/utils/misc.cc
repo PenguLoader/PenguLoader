@@ -1,19 +1,5 @@
 #include "commons.h"
 
-void utils::openLink(const wstr &link)
-{
-    static decltype(&ShellExecuteW) pShellExecuteW = nullptr;
-
-    if (!pShellExecuteW)
-    {
-        HMODULE shell32 = LoadLibraryA("shell32");
-        (LPVOID &)pShellExecuteW = GetProcAddress(shell32, "ShellExecuteW");
-    }
-
-    if (pShellExecuteW)
-        pShellExecuteW(NULL, L"open", link.c_str(), NULL, NULL, SW_SHOWNORMAL);
-}
-
 void *utils::patternScan(const HMODULE module, const char *pattern)
 {
     if (!module)

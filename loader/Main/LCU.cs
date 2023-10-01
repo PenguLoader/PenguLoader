@@ -6,6 +6,8 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
+using Newtonsoft.Json;
+
 namespace PenguLoader.Main
 {
     static class LCU
@@ -93,6 +95,55 @@ namespace PenguLoader.Main
 
             port = pass = string.Empty;
             return false;
+        }
+
+        public static bool IsValidDir(string path)
+        {
+            return !string.IsNullOrEmpty(path)
+                && Directory.Exists(path)
+                && File.Exists(Path.Combine(path, "LeagueClient.exe"));
+        }
+
+        public static string GetClientPath()
+        {
+            var jsonPath = @"C:\ProgramData\Riot Games\RiotClientInstalls.json";
+            if (File.Exists(jsonPath))
+            {
+                var json = File.ReadAllText(jsonPath);
+                var data = JsonConvert.DeserializeObject<Schema.RiotClientInstalls>(json);
+
+                var rcPath = string.Empty;
+                if (!string.IsNullOrEmpty(data.rc_live))
+                    rcPath = Directory.GetParent(data.rc_live).FullName;
+                else if (!string.IsNullOrEmpty(data.rc_default))
+                    rcPath = Directory.GetParent(data.rc_default).FullName;
+
+                var lcDir = Path.Combine(rcPath, "..", "League of Legends");
+                if (IsValidDir(lcDir))    // found
+                    return Path.GetFullPath(lcDir);
+
+                var lcPbeDir = Path.Combine(rcPath, "..", "League of Legends (PBE)");
+                if (IsValidDir(lcPbeDir)) // found PBE
+                    return Path.GetFullPath(lcPbeDir);
+
+                if (data.associated_client != null && data.associated_client.Count > 0)
+                {
+                    foreach (var k in data.associated_client.Keys)
+                    {
+                        if (k.ToUpper().Contains("(PBE)"))
+                            lcPbeDir = k.TrimEnd('\\', '/');
+                        else
+                            lcDir = k.TrimEnd('\\', '/');
+                    }
+
+                    if (IsValidDir(lcDir))    // found
+                        return lcDir;
+                    else if (IsValidDir(lcPbeDir)) // found PBE
+                        return lcPbeDir;
+                }
+            }
+
+            return string.Empty;
         }
     }
 }

@@ -39,10 +39,9 @@ static int CEF_CALLBACK Hooked_OnPreKeyEvent(
             static auto thread = [](LPVOID param) -> DWORD
             {
                 auto browser = static_cast<cef_browser_t *>(param);
-                int ret = MessageBoxA(rclient_, "Do you want to do a full League Client restart?",
-                    "Pengu Loader", MB_YESNO | MB_ICONQUESTION);
 
-                if (ret == IDYES)
+                if (dialog::confirm("Do you want to do a full League Client restart?",
+                    "Pengu Loader", dialog::DIALOG_QUESTION, rclient_))
                 {
                     auto frame = browser->get_main_frame(browser);
                     frame->execute_java_script(frame,

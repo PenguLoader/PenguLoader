@@ -1,8 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
-
-using MadMilkman.Ini;
 
 namespace PenguLoader.Main
 {
@@ -10,22 +9,57 @@ namespace PenguLoader.Main
     {
         public static string ConfigPath => GetPath("config");
         public static string DataStorePath => GetPath("datastore");
-        public static string AssetsDir => GetPath("assets");
         public static string PluginsDir => GetPath("plugins");
+
+        static Dictionary<string, string> _data;
 
         static Config()
         {
-            Utils.EnsureDirectoryExists(AssetsDir);
             Utils.EnsureDirectoryExists(PluginsDir);
             Utils.EnsureFileExists(ConfigPath);
             Utils.EnsureFileExists(DataStorePath);
 
-            Ini = new IniFile(new IniOptions
-            {
-                Encoding = Encoding.UTF8
-            });
+            _data = new Dictionary<string, string>();
 
-            Ini.Load(ConfigPath);
+            if (File.Exists(ConfigPath))
+            {
+                var lines = File.ReadAllLines(ConfigPath);
+
+                foreach (string line in lines)
+                {
+                    var parts = line.Split(new[] { '=' }, 2);
+
+                    if (parts.Length == 2)
+                    {
+                        string key = parts[0].Trim();
+                        string value = parts[1].Trim();
+
+                        _data[key] = value;
+                    }
+                }
+            }
+        }
+
+        static void Save()
+        {
+            var sb = new StringBuilder();
+
+            foreach (var kv in _data)
+            {
+                var key = kv.Key;
+                var value = kv.Value.Trim();
+
+                var line = $"{key}={value}";
+                sb.AppendLine(line);
+            }
+
+            File.WriteAllText(ConfigPath, sb.ToString());
+        }
+
+        public static string LeaguePath
+        {
+            get => Get("LeaguePath");
+            set => Set("LeaguePath", value);
         }
 
         public static string Language
@@ -46,42 +80,29 @@ namespace PenguLoader.Main
             set => SetBool("SuperLowSpecMode", value);
         }
 
-        private static string GetPath(string folderName)
+        static string GetPath(string folderName)
         {
             return Path.Combine(Environment.CurrentDirectory, folderName);
         }
 
-        static IniFile Ini;
-
-        private static string Get(string key, string @default = "")
+        static string Get(string key, string @default = "")
         {
-            try
-            {
-                return Ini.Sections["Main"].Keys[key].Value;
-            }
-            catch
-            {
-                return @default;
-            }
+            if (_data.ContainsKey(key))
+                return _data[key];
+
+            return @default;
         }
 
-        private static void Set(string key, string value)
+        static void Set(string key, string value)
         {
-            var main = Ini.Sections["Main"];
-            if (main == null)
-                main = Ini.Sections.Add("Main");
-
-            var k = main.Keys[key];
-            if (k == null)
-                k = main.Keys.Add(key);
-
-            k.Value = value;
-            Ini.Save(ConfigPath);
+            _data[key] = value;
+            Save();
         }
 
         static bool GetBool(string key, bool @default)
         {
-            var value = Get(key);
+            var value = Get(key).ToLower();
+
             if (value == "true" || value == "1")
                 return true;
             else if (value == "false" || value == "0")
@@ -90,6 +111,9 @@ namespace PenguLoader.Main
             return @default;
         }
 
-        static void SetBool(string key, bool value) => Set(key, value ? "true" : "false");
+        static void SetBool(string key, bool value)
+        {
+            Set(key, value ? "true" : "false");
+        }
     }
 }

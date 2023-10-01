@@ -7,16 +7,14 @@
 
 static void WarnInvalidVersion()
 {
-    MessageBoxW(NULL,
-        L"The version of your League of Legends Client is not supported.",
-        L"Pengu Loader", MB_TOPMOST | MB_OK | MB_ICONWARNING);
+    dialog::alert("Your League Client is not supported or your Pengu version is out of date.",
+        "Pengu Loader", dialog::DIALOG_WARNING);
 }
 
 static void WarnLoadingFails()
 {
-    MessageBoxW(NULL,
-        L"Failed to load libcef.",
-        L"Pengu Loader", MB_TOPMOST | MB_OK | MB_ICONWARNING);
+    dialog::alert("Failed to load libcef.",
+        "Pengu Loader", dialog::DIALOG_WARNING);
 }
 
 static cef_color_t Hooked_GetBackgroundColor(void *rcx, cef_browser_settings_t *, cef_state_t)

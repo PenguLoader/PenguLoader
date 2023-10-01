@@ -15,11 +15,11 @@ interface RcpAnnouceEvent extends CustomEvent {
 
 interface Action {
   id?: string
-  name: string
-  legend?: string
+  name: string | (() => string)
+  legend?: string | (() => string)
   tags?: string[]
   icon?: string
-  group?: string
+  group?: string | (() => string)
   hidden?: boolean
   perform?: (id?: string) => any
 }
@@ -30,6 +30,15 @@ interface CommandBar {
   update: () => void
 }
 
+interface Toast {
+  success: (message: string) => void
+  error: (message: string) => void
+  promise: <T>(
+    promise: Promise<T>,
+    msg: { loading: string, success: string, error: string }
+  ) => Promise<T>
+}
+
 interface DataStore {
   has: (key: string) => boolean
   get: <T>(key: string, fallback?: T) => T | undefined
@@ -38,7 +47,7 @@ interface DataStore {
 }
 
 type ThemeName = 'light' | 'dark';
-type EffectName = 'mica' | 'blurbehind' | 'acrylic' | 'unified';
+type EffectName = 'mica' | 'blurbehind' | 'blur' | 'acrylic' | 'unified' | 'transparent';
 
 interface Effect {
   get current(): EffectName | null
@@ -47,7 +56,7 @@ interface Effect {
   setTheme: (theme: ThemeName) => boolean
 }
 
-interface FileStat{
+interface FileStat {
   fileName: string
   length: number
   isDir: boolean
@@ -59,7 +68,7 @@ interface PluginFS {
   mkdir: (path: string) => Promise<boolean>
   stat: (path: string) => Promise<FileStat | undefined>
   ls: (path: string) => Promise<string[] | undefined>
-  rm: (path: string, recursively:boolean) => Promise<number>
+  rm: (path: string, recursively: boolean) => Promise<number>
 }
 
 // globals
@@ -72,6 +81,7 @@ namespace Pengu {
 
 declare const DataStore: DataStore;
 declare const CommandBar: CommandBar;
+declare const Toast: Toast;
 declare const Effect: Effect;
 declare const PluginFS: PluginFS;
 
@@ -87,8 +97,9 @@ declare interface Window {
 
   DataStore: DataStore;
   CommandBar: CommandBar;
+  Toast: Toast;
   Effect: Effect;
-  PluginFS:PluginFS;
+  PluginFS: PluginFS;
 
   openDevTools: typeof openDevTools;
   openAssetsFolder: typeof openAssetsFolder;

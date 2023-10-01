@@ -7,7 +7,7 @@
     <system:String x:Key="t_active_status">Trạng Thái</system:String>
     <system:String x:Key="t_options">Các tùy chọn</system:String>
     <system:String x:Key="t_optimize_client">Tối ưu Client</system:String>
-    <system:String x:Key="t_super_potato_mode">Siêu Cấu hình thấp</system:String>
+    <system:String x:Key="t_super_potato_mode">Chế độ Siêu Cấu hình thấp</system:String>
 
     <system:String x:Key="t_available_plugins">Số plugin khả dụng</system:String>
     <system:String x:Key="t_open_plugins">Mở thư mục</system:String>

@@ -333,8 +333,31 @@ namespace utils
     bool readFile(const wstr &path, str &out);
     vec<wstr> readDir(const wstr &dir);
 
-    void openLink(const wstr &link);
     void *patternScan(const HMODULE module, const char *pattern);
+}
+
+namespace dialog
+{
+    enum Level
+    {
+        DIALOG_NONE,
+        DIALOG_INFO,
+        DIALOG_WARNING,
+        DIALOG_ERROR,
+        DIALOG_QUESTION
+    };
+
+    void alert(const char *message, const char *title, Level level = DIALOG_NONE, const void *owner = nullptr);
+    bool confirm(const char *message, const char *title, Level level = DIALOG_QUESTION, const void *owner = nullptr);
+}
+
+namespace shell
+{
+    void open_url(const char *url);
+    void open_url(const wchar_t *url);
+
+    void open_folder(const char *path);
+    void open_folder(const wchar_t *path);
 }
 
 namespace hook
@@ -390,18 +413,23 @@ namespace hook
         }
     };
 
-    template<typename Fn, typename R, typename ...Args>
-    class HookBase
+    template<typename>
+    class Hook;
+
+    template<typename R, typename ...Args>
+    class Hook<R(*)(Args...)>
     {
     public:
-        HookBase()
+        using Fn = R(*)(Args...);
+
+        Hook()
             : orig_(nullptr)
             , rest_(nullptr)
             , mutex_{}
         {
         }
 
-        ~HookBase()
+        ~Hook()
         {
             if (rest_ != nullptr)
             {
@@ -450,12 +478,4 @@ namespace hook
         Restorable *rest_;
         std::mutex mutex_;
     };
-
-    template<typename>
-    class Hook;
-
-    template<typename R, typename ...Args>
-    class Hook<R(*)(Args...)>
-        : public HookBase<R(*)(Args...), R, Args...> {};
-
 }

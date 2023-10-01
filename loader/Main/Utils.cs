@@ -28,12 +28,17 @@ namespace PenguLoader.Main
 
         public static void DeletePath(string path, bool isDir = false)
         {
-            try
+            if (isDir ? Directory.Exists(path) : File.Exists(path))
             {
-                if (isDir) Directory.Delete(path, true);
-                else File.Delete(path);
+                try
+                {
+                    if (isDir) Directory.Delete(path, true);
+                    else File.Delete(path);
+                }
+                catch
+                {
+                }
             }
-            catch { }
         }
 
         public static void EnsureDirectoryExists(string path)
@@ -46,6 +51,13 @@ namespace PenguLoader.Main
         {
             if (!File.Exists(path))
                 File.Create(path).Close();
+        }
+
+        public static string NormalizePath(string path)
+        {
+            return Path.GetFullPath(new Uri(path).LocalPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                .ToUpperInvariant();
         }
     }
 }

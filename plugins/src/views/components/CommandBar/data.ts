@@ -1,3 +1,5 @@
+import { _t } from '../../lib/i18n';
+
 enum QueueId {
   DraftPick = 400,
   SoloDuo = 420,
@@ -65,29 +67,29 @@ async function quitPvPChampSelect() {
 const ACTIONS: Record<string, Action[]> = {
   pengu: [
     {
-      name: 'Visit homepage',
+      name: _t.bind(null, 'act_visit_home'),
       legend: 'pengu.lol',
       perform: () => window.open('https://pengu.lol', '_blank')
     },
     {
-      name: 'Open DevTools',
+      name: _t.bind(null, 'act_open_devtools'),
       legend: 'F12',
       tags: ['dev', 'console'],
       perform: () => window.openDevTools?.()
     },
     {
-      name: 'Open plugins folder',
+      name: _t.bind(null, 'act_open_plugins'),
       tags: ['dev'],
       perform: () => window.openPluginsFolder?.()
     },
     {
-      name: 'Reload Client',
+      name: _t.bind(null, 'act_reload'),
       legend: 'Ctrl Shift R',
       hidden: true,
       perform: () => window.reloadClient?.()
     },
     {
-      name: 'Restart Client',
+      name: _t.bind(null, 'act_restart'),
       legend: 'Ctrl Shift Enter',
       hidden: true,
       perform: () => window.restartClient?.()
@@ -95,21 +97,21 @@ const ACTIONS: Record<string, Action[]> = {
   ],
   lobby: [
     {
-      name: 'Create ARAM lobby',
+      name: _t.bind(null, 'act_create_aram'),
       perform: () => createLobby(QueueId.ARAM)
     },
     {
-      name: 'Create 5v5 SR lobby',
+      name: _t.bind(null, 'act_create_normal'),
       perform: () => createLobby(QueueId.BlindPick)
     },
     {
-      name: 'Create Practice Tool',
+      name: _t.bind(null, 'act_practice_tool'),
       perform: () => createLobby(QueueId.PracticeTool)
     },
   ],
   uncategorized: [
     {
-      name: 'Quit PvP champ-select',
+      name: _t.bind(null, 'act_quit_pvp'),
       hidden: true,
       perform: () => quitPvPChampSelect()
     }

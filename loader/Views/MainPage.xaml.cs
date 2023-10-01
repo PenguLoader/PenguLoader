@@ -1,9 +1,11 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-
+using System.Windows.Media;
 using PenguLoader.Main;
+using Forms = System.Windows.Forms;
 
 namespace PenguLoader.Views
 {
@@ -57,25 +59,34 @@ namespace PenguLoader.Views
             get => Module.IsFound && Module.IsActivated;
             set
             {
+                if (!Module.IsFound)
+                {
+                    MessageBox.Show(Owner, App.GetTranslation("t_msg_module_not_found"),
+                         Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                    Module.SetActive(false);
+                    TriggerPropertyChanged(nameof(IsActivated));
+
+                    return;
+                }
+
                 try
                 {
-                    if (!Module.IsFound)
+                    if (Module.SymlinkMode && !LCU.IsValidDir(Config.LeaguePath))
                     {
-                        MessageBox.Show(Owner, App.GetTranslation("t_msg_module_not_found"),
-                             Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+                        if (!DoSelectLeaguePath())
+                            return;
                     }
-                    else
-                    {
-                        Module.SetActive(value);
-                        TriggerPropertyChanged(nameof(IsActivated));
 
-                        if ((value && LCU.IsRunning) || (!value && Module.IsLoaded))
+                    Module.SetActive(value);
+                    TriggerPropertyChanged(nameof(IsActivated));
+
+                    if ((value && LCU.IsRunning) || (!value && Module.IsLoaded))
+                    {
+                        if (MessageBox.Show(Owner, App.GetTranslation("t_msg_restart_client"),
+                            Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                         {
-                            if (MessageBox.Show(Owner, App.GetTranslation("t_msg_restart_client"),
-                                Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                            {
-                                LCU.KillUxAndRestart();
-                            }
+                            LCU.KillUxAndRestart();
                         }
                     }
                 }
@@ -100,6 +111,18 @@ namespace PenguLoader.Views
         public MainPage()
         {
             InitializeComponent();
+
+            if (Module.SymlinkMode)
+            {
+                SetLeaguePath(Config.LeaguePath);
+                gLeaguePath.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                tLeaguePath.Text = "";
+                gLeaguePath.Visibility = Visibility.Collapsed;
+            }
+
             DataContext = this;
         }
 
@@ -116,6 +139,70 @@ namespace PenguLoader.Views
         private void HomePageButtonClick(object sender, RoutedEventArgs e)
         {
             Utils.OpenLink(Program.HomePageUrl);
+        }
+
+        bool DoSelectLeaguePath()
+        {
+            using (var fbd = new Forms.FolderBrowserDialog())
+            {
+                fbd.Description = "Select Riot Games, League of Legends or LeagueClient folder.";
+                if (fbd.ShowDialog() == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+                {
+                    var path = fbd.SelectedPath;
+                    var selected = fbd.SelectedPath;
+
+                    if (LCU.IsValidDir(path)) { }
+                    else if (LCU.IsValidDir(path = Path.Combine(selected, "LeagueClient"))) { }
+                    else if (LCU.IsValidDir(path = Path.Combine(selected, "League of Legends"))) { }
+                    else if (LCU.IsValidDir(path = Path.Combine(selected, "Riot Games", "League of Legends"))) { }
+                    else
+                    {
+                        MessageBox.Show(Owner, "Your selected folder is not valid, please make sure it contains \"LeagueClient.exe\".",
+                            Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return false;
+                    }
+
+                    Config.LeaguePath = path;
+                    SetLeaguePath(path);
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        void SetLeaguePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                tLeaguePath.Text = "[not selected]";
+            }
+            else
+            {
+                if (path.Length > 60)
+                    path = path.Substring(0, 60) + "...";
+
+                tLeaguePath.Text = path;
+            }
+        }
+
+        void LeaguePath_MouseEnter(object s, System.Windows.Input.MouseEventArgs e)
+        {
+            (s as TextBlock).Background = new SolidColorBrush(Color.FromArgb(0x40, 0x80, 0x80, 0x80));
+        }
+
+        void LeaguePath_MouseLeave(object s, System.Windows.Input.MouseEventArgs e)
+        {
+            (s as TextBlock).Background = Brushes.Transparent;
+        }
+
+        void LeaguePath_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == System.Windows.Input.MouseButton.Left
+                && e.LeftButton == System.Windows.Input.MouseButtonState.Released)
+            {
+                DoSelectLeaguePath();
+            }
         }
     }
 }
