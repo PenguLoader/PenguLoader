@@ -12,19 +12,20 @@
     
     xmlns:ui="http://schemas.modernwpf.com/2019"
     xmlns:fa5="http://schemas.fontawesome.com/icons/"
-    d:DesignHeight="260" d:DesignWidth="450"
+    d:DesignHeight="270" d:DesignWidth="500"
     
     Background="{DynamicResource SystemControlPageBackgroundAltHighBrush}"
     Foreground="{DynamicResource SystemControlPageTextBaseHighBrush}"
 >
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40" />
+            <RowDefinition Height="35" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="70" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
-            <TextBlock HorizontalAlignment="Left" Margin="20.5,20,0,0" FontSize="14" FontWeight="SemiBold" Height="20">
+            <TextBlock HorizontalAlignment="Left" FontSize="14" FontWeight="SemiBold" Height="20" VerticalAlignment="Bottom" Margin="20,0,0,0">
                 <TextBlock.Text>
                     <MultiBinding StringFormat=" {0} v{1} #{2}">
                         <Binding Source="{x:Static root:Program.Name}" Path="." />
@@ -80,7 +81,16 @@
                 </StackPanel>
             </StackPanel>
         </Grid>
-        <Grid Grid.Row="2" Background="#2AAA">
+        <Grid Grid.Row="2" x:Name="gLeaguePath" Background="#2AAA" Height="25">
+            <TextBlock
+                FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Bottom" Padding="10,2"
+                Cursor="Hand" MouseEnter="LeaguePath_MouseEnter" MouseLeave="LeaguePath_MouseLeave" MouseUp="LeaguePath_MouseUp"
+            >
+                <TextBlock FontWeight="SemiBold" Text="League path" Margin="0,0,8,0" />
+                <TextBlock x:Name="tLeaguePath" Text="D:\Riot Games\League of Legend" />
+            </TextBlock>
+        </Grid>
+        <Grid Grid.Row="3" Background="#2AAA">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />

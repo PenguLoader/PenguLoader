@@ -13,9 +13,13 @@ namespace PenguLoader.Main
         {
             using (var key = OpenIFEOKey())
             {
-                using (var image = key?.OpenSubKey(target))
+                if (key == null) return string.Empty;
+
+                using (var image = key.OpenSubKey(target))
                 {
-                    return image?.GetValue(VALUE_NAME) as string;
+                    if (image == null) return string.Empty;
+
+                    return image.GetValue(VALUE_NAME) as string;
                 }
             }
         }

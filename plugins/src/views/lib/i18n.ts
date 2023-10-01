@@ -1,4 +1,4 @@
-import { fallback, translations } from './trans.json';
+import { fallback, translations } from '../trans.json';
 
 type Translation = Record<string, string>;
 type TranslationKey = keyof typeof translations[0];
