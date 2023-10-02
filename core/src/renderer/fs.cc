@@ -94,7 +94,7 @@ namespace PluginFS {
         auto entry = std::filesystem::directory_entry(path);
 
         return PluginFS::FileStat{
-            entry.is_regular_file() ? entry.path().filename().wstring() : entry.path().stem(),
+            entry.is_regular_file() ? entry.path().filename().wstring() : entry.path().stem().generic_wstring(),
             entry.is_directory(),
             static_cast<int>(entry.file_size())
         };
@@ -109,7 +109,7 @@ namespace PluginFS {
             PluginFS::removeTailingSlash(enryPathWstr);
             std::filesystem::path entryPath{ enryPathWstr };
 
-            fileNames.push_back(entry.is_regular_file() ? entryPath.filename().wstring() : entryPath.stem());
+            fileNames.push_back(entry.is_regular_file() ? entryPath.filename().wstring() : entryPath.stem().generic_wstring());
         }
         return std::move(fileNames);
     }
@@ -143,7 +143,7 @@ V8Value* native_WriteFile(const vec<V8Value*>& args)
     str content = CefString(args[1]->asString()).ToString();
     bool enableAppMode = args[2]->asBool();
 
-    if (PluginFS::WriteFile(destPath, std::move(content), enableAppMode)) {
+    if (PluginFS::WriteFile(destPath, /*std::move*/(content), enableAppMode)) {
         return V8Value::boolean(true);
     }
     return V8Value::boolean(false);
