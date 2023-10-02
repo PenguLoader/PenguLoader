@@ -49,8 +49,10 @@ namespace PenguLoader.Main
                     var lcPath = Config.LeaguePath;
                     if (!LCU.IsValidDir(lcPath)) return false;
 
-                    var resolved = Symlink.Resolve(SymlinkPath);
-                    return ModulePath.Equals(resolved, StringComparison.OrdinalIgnoreCase);
+                    var resolved = Utils.NormalizePath(Symlink.Resolve(SymlinkPath));
+                    var modulePath = Utils.NormalizePath(ModulePath);
+
+                    return string.Compare(resolved, modulePath, false) == 0;
                 }
                 else
                 {

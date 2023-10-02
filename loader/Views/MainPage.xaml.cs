@@ -209,6 +209,7 @@ namespace PenguLoader.Views
             if (e.ChangedButton == System.Windows.Input.MouseButton.Left
                 && e.LeftButton == System.Windows.Input.MouseButtonState.Released)
             {
+                IsActivated = false;
                 DoSelectLeaguePath();
             }
         }
