@@ -46,7 +46,8 @@ namespace PenguLoader
             { "日本語", "ja-JP.xaml" },
             { "中文", "zh-CN.xaml" },
             { "Español", "es-ES.xaml" },
-            { "Русский", "ru-RU.xaml"}
+            { "Português", "pt-BR.xaml" },
+            { "Русский", "ru-RU.xaml" }
         };
 
         public static void SetLanguage(string lang)

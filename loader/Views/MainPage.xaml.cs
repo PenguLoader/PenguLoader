@@ -70,6 +70,14 @@ namespace PenguLoader.Views
                     return;
                 }
 
+                if (!Utils.IsAdmin())
+                {
+                    MessageBox.Show(Owner, "Failed to perform activation, please make sure you are running Pengu Loader as Admin.",
+                        Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                    return;
+                }
+
                 try
                 {
                     if (Module.SymlinkMode && !LCU.IsValidDir(Config.LeaguePath))
@@ -93,7 +101,7 @@ namespace PenguLoader.Views
                 catch (Exception ex)
                 {
                     var msg = App.GetTranslation("t_msg_activation_fail");
-                    msg += string.Format("\n\nERR: {0}\n{1}", ex.Message, ex.StackTrace);
+                    msg += string.Format("\n\n[{0}] - {1}\n{2}", ex.GetType().Name, ex.Message, ex.StackTrace);
 
                     if (ex.InnerException != null)
                         msg += string.Format("\n\nERR2: {0}\n{1}", ex.InnerException.Message, ex.InnerException.StackTrace);
@@ -201,6 +209,7 @@ namespace PenguLoader.Views
             if (e.ChangedButton == System.Windows.Input.MouseButton.Left
                 && e.LeftButton == System.Windows.Input.MouseButtonState.Released)
             {
+                IsActivated = false;
                 DoSelectLeaguePath();
             }
         }
