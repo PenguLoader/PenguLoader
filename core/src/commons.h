@@ -334,6 +334,7 @@ namespace utils
     vec<wstr> readDir(const wstr &dir);
 
     void *patternScan(const HMODULE module, const char *pattern);
+    float getWindowScale(void *handle);
 }
 
 namespace dialog
