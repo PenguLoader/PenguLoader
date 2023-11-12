@@ -62,6 +62,12 @@ namespace PenguLoader.Main
             set => Set("LeaguePath", value);
         }
 
+        public static bool UseSymlink
+        {
+            get => GetBool("UseSymlink", false);
+            set => SetBool("UseSymlink", value);
+        }
+
         public static string Language
         {
             get => Get("Language", "English");

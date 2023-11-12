@@ -80,7 +80,7 @@ namespace PenguLoader.Views
 
                 try
                 {
-                    if (Module.SymlinkMode && !LCU.IsValidDir(Config.LeaguePath))
+                    if (Module.UseSymlink && !LCU.IsValidDir(Config.LeaguePath))
                     {
                         if (!DoSelectLeaguePath())
                             return;
@@ -120,7 +120,7 @@ namespace PenguLoader.Views
         {
             InitializeComponent();
 
-            if (Module.SymlinkMode)
+            if (Module.UseSymlink)
             {
                 SetLeaguePath(Config.LeaguePath);
                 gLeaguePath.Visibility = Visibility.Visible;

@@ -13,10 +13,16 @@ namespace PenguLoader.Main
         static string DebuggerValue => $"rundll32 \"{ModulePath}\", #6000 ";
         static string SymlinkPath => Path.Combine(Config.LeaguePath, SymlinkName);
 
-        public static bool SymlinkMode { get; private set; } = false;
+        public static bool UseSymlink { get; private set; } = false;
 
         static Module()
         {
+            if (Config.UseSymlink)
+            {
+                UseSymlink = true;
+                return;
+            }
+
             try
             {
                 // uncomment it to test
@@ -28,7 +34,7 @@ namespace PenguLoader.Main
             }
             catch (UnauthorizedAccessException)
             {
-                SymlinkMode = true;
+                UseSymlink = true;
             }
             catch
             {
@@ -44,7 +50,7 @@ namespace PenguLoader.Main
         {
             get
             {
-                if (SymlinkMode)
+                if (UseSymlink)
                 {
                     var lcPath = Config.LeaguePath;
                     if (!LCU.IsValidDir(lcPath)) return false;
@@ -64,7 +70,7 @@ namespace PenguLoader.Main
 
         public static void SetActive(bool active)
         {
-            if (SymlinkMode)
+            if (UseSymlink)
             {
                 var path = SymlinkPath;
                 Utils.DeletePath(path);
