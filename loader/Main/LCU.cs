@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Management;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -88,6 +89,15 @@ namespace PenguLoader.Main
                         }
                     }
                 }
+
+                // Server disabled lockfile, use wmic instead
+                string commandLine = GetCommandlineFromProcess("LeagueClientUx.exe");
+                if (!string.IsNullOrEmpty(commandLine))
+                {
+                    port = ExtractValueFromCommandLine(commandLine, "--app-port=");
+                    pass = ExtractValueFromCommandLine(commandLine, "--remoting-auth-token=");
+                    return true;
+                }
             }
             catch
             {
@@ -95,6 +105,32 @@ namespace PenguLoader.Main
 
             port = pass = string.Empty;
             return false;
+        }
+
+        public static string GetCommandlineFromProcess(string process)
+        {
+            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher($"SELECT CommandLine FROM Win32_Process WHERE Name = '{process}'"))
+            {
+                foreach (ManagementObject obj in searcher.Get())
+                {
+                    return obj["CommandLine"]?.ToString();
+                }
+            }
+            return null;
+        }
+        public static string ExtractValueFromCommandLine(string cmdline, string parameter)
+        {
+            int index = cmdline.IndexOf(parameter);
+            if (index >= 0)
+            {
+                index += parameter.Length;
+                int endIndex = cmdline.IndexOf("\"", index);
+                if (endIndex > index)
+                {
+                    return cmdline.Substring(index, endIndex - index);
+                }
+            }
+            return null;
         }
 
         public static bool IsValidDir(string path)
