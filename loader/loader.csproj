@@ -53,6 +53,7 @@
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml">
@@ -102,8 +103,8 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Languages\ru-RU.xaml">
-        <SubType>Designer</SubType>
-        <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Languages\zh-CN.xaml">
       <SubType>Designer</SubType>
