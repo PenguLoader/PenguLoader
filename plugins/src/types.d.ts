@@ -73,17 +73,18 @@ interface PluginFS {
 
 // globals
 
-namespace Pengu {
-  const version: string;
-  const superPotato: boolean;
-  const plugins: string[];
+interface Pengu {
+  version: string
+  superPotato: boolean
+  plugins: string[]
+  fs: PluginFS
 }
 
 declare const DataStore: DataStore;
 declare const CommandBar: CommandBar;
 declare const Toast: Toast;
 declare const Effect: Effect;
-declare const PluginFS: PluginFS;
+declare const Pengu: Pengu;
 
 declare const openDevTools: (remote?: boolean) => void;
 declare const openAssetsFolder: () => void;
@@ -99,7 +100,8 @@ declare interface Window {
   CommandBar: CommandBar;
   Toast: Toast;
   Effect: Effect;
-  PluginFS: PluginFS;
+  Pengu: Pengu;
+  
 
   openDevTools: typeof openDevTools;
   openAssetsFolder: typeof openAssetsFolder;

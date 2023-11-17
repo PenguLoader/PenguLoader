@@ -1,4 +1,5 @@
 import { rcp, socket } from './rcp';
+import { FS } from './api/PluginFS';
 
 async function loadPlugin(entry: string) {
   let stage = 'load';
@@ -10,7 +11,13 @@ async function loadPlugin(entry: string) {
     // Init immediately
     if (typeof plugin.init === 'function') {
       stage = 'initialize';
-      await plugin.init({ rcp, socket });
+      const pluginName = entry.substring(0, entry.indexOf('/'));
+      const initContext = { rcp, socket};
+      // If it's not top-level JS
+      if (pluginName) {
+        initContext['fs'] = new FS(pluginName);
+      }
+      await plugin.init(initContext);
     }
 
     // Register load
