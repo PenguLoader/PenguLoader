@@ -1,6 +1,6 @@
 import { native } from './native';
 
-window.PluginFS = {
+const globalFs = {
   read(path: string) {
     return new Promise<string | undefined>((resolve) => {
       const pluginName = getScriptPath()?.match(/\/([^/]+)\/index\.js$/)?.[1]
@@ -47,6 +47,7 @@ window.PluginFS = {
     });
   }
 }
+window.Pengu.fs = Object.freeze(globalFs)
 
 function pathCheck(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
