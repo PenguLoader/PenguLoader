@@ -12,10 +12,13 @@ async function loadPlugin(entry: string) {
     if (typeof plugin.init === 'function') {
       stage = 'initialize';
       const pluginName = entry.substring(0, entry.indexOf('/'));
-      const initContext = { rcp, socket};
+      const initContext = { rcp, socket };
       // If it's not top-level JS
       if (pluginName) {
         initContext['fs'] = new FS(pluginName);
+
+        const meta = { name: pluginName };
+        initContext['meta'] = meta;
       }
       await plugin.init(initContext);
     }
