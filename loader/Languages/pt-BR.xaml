@@ -1,0 +1,23 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
+>
+
+    <system:String x:Key="t_active_status">Status de Ativação</system:String>
+    <system:String x:Key="t_options">Opções</system:String>
+    <system:String x:Key="t_optimize_client">Otimizar o client</system:String>
+    <system:String x:Key="t_super_potato_mode">Modo PC Fraco</system:String>
+
+    <system:String x:Key="t_available_plugins">Plugins Instalados</system:String>
+    <system:String x:Key="t_open_plugins">Abrir pasta</system:String>
+    <system:String x:Key="t_refresh">Atualizar</system:String>
+
+    <system:String x:Key="t_msg_module_not_found">O "core.dll" não foi localizado, por favor reinstale o programa.</system:String>
+    <system:String x:Key="t_msg_restart_client">Deseja reiniciar o client em execução para aplicar as alterações?</system:String>
+    <system:String x:Key="t_msg_activation_fail" xml:space="preserve">Erro ao executar a ativação.&#13;Por favor capture a mensagem de erro, clique em Sim e reporte-a.</system:String>
+
+    <system:String x:Key="t_msg_optimize_client_prompt" xml:space="preserve">É recomendado ativar essa opção.&#13;&#13;Ao ativar essa opção algumas coisas não utilizadas serão desativadas, tarefas em segundo plano e ira reduzir o lag&#13;&#13;Deseja continuar?</system:String>
+    <system:String x:Key="t_msg_super_potato_mode_prompt" xml:space="preserve">Essa opção amplia o modo de otimização. Ao ativar essa opção irá ser desativado todos os efeitos de transição e animação, além de reduzir significativamente o lag e aumentar a velocidade de resposta.&#13;&#13;Isso é bastante util para PC fraco mas pode causar bugs.&#13;&#13;Deseja continuar?</system:String>
+
+</ResourceDictionary>
