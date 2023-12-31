@@ -36,9 +36,8 @@ namespace PenguLoader.Main
                 }
                 else if (Symlink.IsSymbolic(SymlinkPath)) 
                 {
-                    //if  can create  "LeagueClientUx.exe" but not "Debugger" because of UnauthorizedAccessException
-                    //already use SymlinkMode
-                    SymlinkMode = true;
+                    UseSymlink = true;
+                    Config.UseSymlink = true;
                 }
             }
             catch (UnauthorizedAccessException)

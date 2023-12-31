@@ -36,11 +36,7 @@ namespace PenguLoader.Main
         {
             return CreateSymbolicLinkW(linkPath, sourcePath);
         }
-        public static bool IsSymbolic(string path)
-        {
-            FileInfo pathInfo = new FileInfo(path);
-            return pathInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
-        }
+
         public static string Resolve(string path)
         {
             if (!File.Exists(path))
@@ -74,6 +70,15 @@ namespace PenguLoader.Main
             {
                 CloseHandle(h);
             }
+        }
+
+        public static bool IsSymbolic(string path)
+        {
+            if (File.Exists(path))
+                return false;
+
+            var pathInfo = new FileInfo(path);
+            return pathInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
         }
     }
 }
