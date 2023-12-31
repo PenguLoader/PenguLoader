@@ -29,8 +29,17 @@ namespace PenguLoader.Main
                 //throw new UnauthorizedAccessException();
 
                 var old = IFEO.GetDebugger(TargetName);
-                IFEO.RemoveDebugger(TargetName);
-                IFEO.SetDebugger(TargetName, old);
+                if (old != null)
+                {
+                    IFEO.RemoveDebugger(TargetName);
+                    IFEO.SetDebugger(TargetName, old);
+                }
+                else if (Symlink.IsSymbolic(SymlinkPath)) 
+                {
+                    //if  can create  "LeagueClientUx.exe" but not "Debugger" because of UnauthorizedAccessException
+                    //already use SymlinkMode
+                    SymlinkMode = true;
+                }
             }
             catch (UnauthorizedAccessException)
             {
