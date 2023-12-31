@@ -73,13 +73,21 @@ function whenReady(name: string): Promise<any>;
 function whenReady(names: string[]): Promise<any[]>;
 function whenReady(param) {
   if (typeof param === 'string') {
-    return new Promise<any>(resolve => {
-      postInit(param, resolve);
+    return new Promise<any>((resolve) => {
+      if (pluginMap.has(param)) {
+        resolve(pluginMap.get(param));
+      } else {
+        postInit(param, resolve);
+      }
     });
   } else if (Array.isArray(param)) {
-    return Promise.all(param.map(name =>
-      new Promise<any>(resolve => {
-        postInit(name, resolve);
+    return Promise.all(param.map((name) =>
+      new Promise<any>((resolve) => {
+        if (pluginMap.has(name)) {
+          resolve(pluginMap.get(name));
+        } else {
+          postInit(name, resolve);
+        }
       })
     ));
   }
