@@ -73,35 +73,18 @@ interface PluginFS {
 
 // globals
 
-interface Pengu {
-  version: string
-  superPotato: boolean
-  plugins: string[]
-  fs: PluginFS
-}
-
-declare const DataStore: DataStore;
-declare const CommandBar: CommandBar;
-declare const Toast: Toast;
-declare const Effect: Effect;
-declare const Pengu: Pengu;
-
-declare const openDevTools: (remote?: boolean) => void;
-declare const openAssetsFolder: () => void;
-declare const openPluginsFolder: (path?: string) => boolean;
-declare const reloadClient: () => void;
-declare const restartClient: () => void;
-declare const getScriptPath: () => string | undefined;
-declare const __llver: string;
-
 declare interface Window {
 
   DataStore: DataStore;
   CommandBar: CommandBar;
   Toast: Toast;
   Effect: Effect;
-  Pengu: Pengu;
-  
+  Pengu: {
+    version: string
+    superPotato: boolean
+    plugins: string[]
+    fs: PluginFS
+  };
 
   openDevTools: typeof openDevTools;
   openAssetsFolder: typeof openAssetsFolder;
@@ -109,5 +92,6 @@ declare interface Window {
   reloadClient: typeof reloadClient;
   restartClient: typeof restartClient;
   getScriptPath: typeof getScriptPath;
+
   __llver: string;
 }

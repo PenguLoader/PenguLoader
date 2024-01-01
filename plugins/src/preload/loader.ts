@@ -40,7 +40,7 @@ async function loadPlugin(entry: string) {
 
 // Load all plugins asynchronously
 const waitable = Promise.all(
-  Pengu.plugins
+  window.Pengu.plugins
     .filter(n => !/^@default\//i.test(n))
     .map(loadPlugin)
 );
