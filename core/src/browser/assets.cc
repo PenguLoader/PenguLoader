@@ -252,11 +252,7 @@ private:
         {
             auto import = IMPORT_DEFAULT;
 
-            static const std::wregex module_pattern{ L"^https:\\/\\/plugins.*\\.js(?:\\?.*)?$" };
-            CefScopedStr referer{ request->get_referrer_url(request) };
-
-            // Detect relative plugin imports by referer //plugins.
-            if (!referer.empty() && std::regex_search(wstr(referer.str, referer.length), module_pattern))
+            if (request->get_resource_type(request) == RT_SCRIPT)
             {
                 static const std::wregex raw_pattern{ L"\\braw\\b" };
                 static const std::wregex url_pattern{ L"\\burl\\b" };
