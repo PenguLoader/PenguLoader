@@ -314,6 +314,37 @@ private:
             }
         }
 
+#if _DEBUG
+        wprintf(L"[%s] assets request: %s\n", stream_ != nullptr ? L"OK" : L"FAIL", path_.c_str());
+        wprintf(L"  method: %s\n", CefScopedStr{ request->get_method(request) }.cstr().c_str());
+        wprintf(L"  ref: %s\n", CefScopedStr{ request->get_referrer_url(request) }.cstr().c_str());
+        wprintf(L"  res: %d, flags: %x\n", request->get_resource_type(request), request->get_flags(request));
+
+        auto headers = cef_string_multimap_alloc();
+        request->get_header_map(request, headers);
+
+        for (int i = 0; i < cef_string_multimap_size(headers); i++)
+        {
+            cef_string_t key{};
+            cef_string_multimap_key(headers, i, &key);
+
+            wprintf(L"  %s:", key.str);
+
+            for (int j = 0; j < cef_string_multimap_find_count(headers, &key); j++)
+            {
+                cef_string_t value{};
+                cef_string_multimap_enumerate(headers, &key, j, &value);
+
+                wprintf(L" %s,", value.str);
+            }
+
+            printf("\n");
+        }
+
+        printf("\n");
+        cef_string_multimap_free(headers);
+#endif
+
         *handle_request = true;
         callback->cont(callback);
         return true;
