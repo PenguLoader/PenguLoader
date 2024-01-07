@@ -173,13 +173,12 @@ private:
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
 public:
-    AssetsResourceHandler(const wstr &path, bool plugin)
+    AssetsResourceHandler(const wstr &path)
         : CefRefCount(this)
         , path_(path)
         , mime_{}
         , stream_(nullptr)
         , length_(0)
-        , is_plugin_(plugin)
         , no_cache_(false)
     {
         cef_bind_method(AssetsResourceHandler, open);
@@ -198,7 +197,6 @@ private:
     int64 length_;
     wstr path_;
     wstr mime_;
-    bool is_plugin_;
     bool no_cache_;
 
     int _open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
@@ -225,81 +223,73 @@ private:
         }.cstr();
 
         // Get final path.
-        if (is_plugin_)
+        path_ = config::pluginsDir().append(path_);
+
+        // Trailing slash.
+        if (path_[path_.length() - 1] == L'/' || path_[path_.length() - 1] == L'\\')
         {
-            path_ = config::pluginsDir().append(path_);
-
-            // Trailing slash.
-            if (path_[path_.length() - 1] == '/' || path_[path_.length() - 1] == L'\\')
-            {
-                js_mime = true;
-                path_.append(L"index.js");
-            }
-            else
-            {
-                size_t pos = path_.find_last_of(L"//\\");
-                wstr sub = path_.substr(pos + 1);
-
-                // No extension.
-                if (sub.find_last_of(L'.') == wstr::npos)
-                {
-                    // peek .js
-                    if (js_mime = utils::isFile(path_ + L".js"))
-                        path_.append(L".js");
-                    // peek folder
-                    else if (js_mime = utils::isDir(path_))
-                        path_.append(L"/index.js");
-                }
-            }
-
-            if (utils::isFile(path_))
-            {
-                auto import = IMPORT_DEFAULT;
-
-                static const std::wregex module_pattern{ L"^https:\\/\\/plugins.*\\.js(?:\\?.*)?$" };
-                CefScopedStr referer{ request->get_referrer_url(request) };
-
-                // Detect relative plugin imports by referer //plugins.
-                if (!referer.empty() && std::regex_search(wstr(referer.str, referer.length), module_pattern))
-                {
-                    static const std::wregex raw_pattern{ L"\\braw\\b" };
-                    static const std::wregex url_pattern{ L"\\burl\\b" };
-
-                    if (std::regex_search(query_part, url_pattern))
-                        import = IMPORT_URL;
-                    else if (std::regex_search(query_part, raw_pattern))
-                        import = IMPORT_RAW;
-                    else if ((pos = path_.find_last_of(L'.')) != wstr::npos)
-                    {
-                        auto ext = path_.substr(pos + 1);
-                        if (ext == L"css")
-                            import = IMPORT_CSS;
-                        else if (ext == L"json")
-                            import = IMPORT_JSON;
-                        else if (ext == L"toml")
-                            import = IMPORT_TOML;
-                        else if (ext == L"yml" || ext == L"yaml")
-                            import = IMPORT_YAML;
-                        else if (KNOWN_ASSETS.find(ext) != KNOWN_ASSETS.end())
-                            import = IMPORT_URL;
-                    }
-                }
-
-                if (import != IMPORT_DEFAULT)
-                {
-                    js_mime = true;
-                    stream_ = new ModuleStreamReader(import);
-                }
-                else
-                {
-                    stream_ = cef_stream_reader_create_for_file(&CefStr(path_));
-                }
-            }
+            js_mime = true;
+            path_.append(L"index.js");
         }
         else
         {
-            path_ = config::assetsDir().append(path_);
-            stream_ = cef_stream_reader_create_for_file(&CefStr(path_));
+            size_t pos = path_.find_last_of(L"//\\");
+            wstr sub = path_.substr(pos + 1);
+
+            // No extension.
+            if (sub.find_last_of(L'.') == wstr::npos)
+            {
+                // peek .js
+                if (js_mime = utils::isFile(path_ + L".js"))
+                    path_.append(L".js");
+                // peek folder
+                else if (js_mime = utils::isDir(path_))
+                    path_.append(L"/index.js");
+            }
+        }
+
+        if (utils::isFile(path_))
+        {
+            auto import = IMPORT_DEFAULT;
+
+            static const std::wregex module_pattern{ L"^https:\\/\\/plugins.*\\.js(?:\\?.*)?$" };
+            CefScopedStr referer{ request->get_referrer_url(request) };
+
+            // Detect relative plugin imports by referer //plugins.
+            if (!referer.empty() && std::regex_search(wstr(referer.str, referer.length), module_pattern))
+            {
+                static const std::wregex raw_pattern{ L"\\braw\\b" };
+                static const std::wregex url_pattern{ L"\\burl\\b" };
+
+                if (std::regex_search(query_part, url_pattern))
+                    import = IMPORT_URL;
+                else if (std::regex_search(query_part, raw_pattern))
+                    import = IMPORT_RAW;
+                else if ((pos = path_.find_last_of(L'.')) != wstr::npos)
+                {
+                    auto ext = path_.substr(pos + 1);
+                    if (ext == L"css")
+                        import = IMPORT_CSS;
+                    else if (ext == L"json")
+                        import = IMPORT_JSON;
+                    else if (ext == L"toml")
+                        import = IMPORT_TOML;
+                    else if (ext == L"yml" || ext == L"yaml")
+                        import = IMPORT_YAML;
+                    else if (KNOWN_ASSETS.find(ext) != KNOWN_ASSETS.end())
+                        import = IMPORT_URL;
+                }
+            }
+
+            if (import != IMPORT_DEFAULT)
+            {
+                js_mime = true;
+                stream_ = new ModuleStreamReader(import);
+            }
+            else
+            {
+                stream_ = cef_stream_reader_create_for_file(&CefStr(path_));
+            }
         }
 
         if (stream_ != nullptr)
@@ -390,18 +380,17 @@ struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
         struct _cef_request_t* request)
     {
         CefScopedStr url{ request->get_url(request) };
-        bool is_assets = wcsncmp(url.str, L"https://assets/", 15) == 0;
-        auto path = url.str + (is_assets ? 14 : 15);
+        wstr path = url.cstr().substr(15);
 
-        return new AssetsResourceHandler(path, !is_assets);
+        return new AssetsResourceHandler(path);
     }
 };
 
 void RegisterAssetsSchemeHandlerFactory()
 {
-    cef_register_scheme_handler_factory(&u"https"_s,
-        &u"assets"_s, new AssetsSchemeHandlerFactory());
+    CefStr scheme{ "https" };
+    CefStr domain{ "plugins" };
 
-    cef_register_scheme_handler_factory(&u"https"_s,
-        &u"plugins"_s, new AssetsSchemeHandlerFactory());
+    cef_register_scheme_handler_factory(&scheme, &domain,
+        new AssetsSchemeHandlerFactory());
 }
