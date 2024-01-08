@@ -1,4 +1,4 @@
-#include "commons.h"
+﻿#include "commons.h"
 #include "include/capi/cef_parser_capi.h"
 #include "include/capi/cef_scheme_capi.h"
 #include "include/capi/cef_stream_capi.h"
@@ -78,18 +78,6 @@ enum ImportType
     IMPORT_YAML,
     IMPORT_RAW,
     IMPORT_URL
-};
-
-template <typename T>
-struct MethodPointerTraits;
-
-// Partial specialization for non-const member function pointers
-template <typename T, typename ReturnType, typename... Args>
-struct MethodPointerTraits<ReturnType(T::*)(Args...)> {
-    using ClassType = T;
-    using Delegate = ReturnType(*)(Args...);
-    using ReturnTypeType = ReturnType;
-    using ParameterTypes = std::tuple<Args...>;
 };
 
 class ModuleStreamReader : public CefRefCount<cef_stream_reader_t>
@@ -179,11 +167,16 @@ public:
         , mime_{}
         , stream_(nullptr)
         , length_(0)
+        , offset_(0)
         , no_cache_(false)
+        , is_opened_(false)
     {
         cef_bind_method(AssetsResourceHandler, open);
         cef_bind_method(AssetsResourceHandler, get_response_headers);
         cef_bind_method(AssetsResourceHandler, read);
+        cef_bind_method(AssetsResourceHandler, skip);
+
+        range_header_.clear();
     }
 
     ~AssetsResourceHandler()
@@ -194,13 +187,25 @@ public:
 
 private:
     cef_stream_reader_t *stream_;
+    int64 offset_;
     int64 length_;
+    str range_header_;
+
     wstr path_;
     wstr mime_;
     bool no_cache_;
+    bool is_opened_;
 
     int _open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
     {
+        //if (is_opened_)
+        //{
+        //    *handle_request = 0;
+        //    return 0;
+        //}
+
+        is_opened_ = true;
+
         size_t pos;
         wstr query_part{};
         wstr path_ = this->path_;
@@ -214,13 +219,9 @@ private:
             // Remove it from path.
             path_ = path_.substr(0, pos);
         }
-           
-        path_ = CefScopedStr{
-            cef_uridecode(&CefStr(path_), true,
-                cef_uri_unescape_rule_t(UU_SPACES
-                | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS)
-            )
-        }.cstr();
+        
+        // Decode URI.
+        decode_uri(path_);
 
         // Get final path.
         path_ = config::pluginsDir().append(path_);
@@ -341,14 +342,21 @@ private:
         cef_string_multimap_free(headers);
 #endif
 
-        *handle_request = true;
-        callback->cont(callback);
-        return true;
+        CefScopedStr range{ request->get_header_by_name(request, &u"Range"_s) };
+        if (!range.empty())
+        {
+            range_header_ = CefStrUtf8(range.ptr()).cstr();
+        }
+
+        *handle_request = 1;
+        //callback->cont(callback);
+        return 1;
     }
 
     void _get_response_headers(struct _cef_response_t* response, int64* response_length, cef_string_t* redirectUrl)
     {
-        // File not found.
+        response->set_header_by_name(response, &u"Access-Control-Allow-Origin"_s, &u"*"_s, 1);
+
         if (stream_ == nullptr)
         {
             response->set_status(response, 404);
@@ -368,12 +376,63 @@ private:
             response->set_header_by_name(response, &u"Access-Control-Allow-Origin"_s, &u"*"_s, 1);
 
             if (no_cache_ || mime_ == L"text/javascript")
-                response->set_header_by_name(response, &u"Cache-Control"_s, &u"no-cache, no-store, must-revalidate"_s, 1);
+                response->set_header_by_name(response, &u"Cache-Control"_s, &u"no-store"_s, 1);
             else
-                response->set_header_by_name(response, &u"Cache-Control"_s, &u"public, max-age=86400"_s, 1);
+            {
+                response->set_header_by_name(response, &u"Cache-Control"_s, &u"max-age=31536000, immutable"_s, 1);
+                set_etag(response, path_);
+            }
 
-            *response_length = length_;
+            if (!range_header_.empty())
+            {
+                str contentRange;
+                int contentLength;
+
+                if (try_get_range_header(contentRange, contentLength))
+                {
+                    response->set_header_by_name(response, &u"Content-Length"_s, &CefStr(std::to_string(contentLength)), 1);
+                    response->set_header_by_name(response, &u"Content-Range"_s, &CefStr(contentRange), 1);
+
+                    *response_length = contentLength;
+                    response->set_status(response, 206);
+                    response->set_status_text(response, &u"Partial Content"_s);
+                }
+                else
+                {
+                    *response_length = -1;
+                    response->set_status(response, 416);
+                    response->set_status_text(response, &u"Requested Range Not Satisfiable"_s);
+                }
+            }
+            else
+            {
+                *response_length = length_;
+            }
         }
+    }
+
+    int _skip(int64 bytes_to_skip, int64* bytes_skipped, cef_resource_skip_callback_t* callback)
+    {
+        if (stream_ == nullptr || stream_->eof(stream_))
+        {
+            *bytes_skipped = -2;
+        }
+        else if (stream_->tell(stream_) == (length_ - 1))
+        {
+            *bytes_skipped = 0;
+        }
+        else
+        {
+            int oldPosition = static_cast<int>(stream_->tell(stream_));
+            int result = stream_->seek(stream_, bytes_to_skip, SEEK_CUR);
+            int position = static_cast<int>(stream_->tell(stream_));
+            *bytes_skipped = position - oldPosition;
+            *bytes_skipped = bytes_to_skip;
+
+            offset_ = position;
+        }
+
+        return *bytes_skipped > 0;
     }
 
     int _read(void* data_out, int bytes_to_read, int* bytes_read, struct _cef_resource_read_callback_t* callback)
@@ -381,14 +440,88 @@ private:
         int read = 0;
         *bytes_read = 0;
 
-        do
-        {
-            read = static_cast<int>(stream_->read(stream_,
-                static_cast<char*>(data_out) + *bytes_read, 1, bytes_to_read - *bytes_read));
-            *bytes_read += read;
-        } while (read != 0 && *bytes_read < bytes_to_read);
+        if (stream_ == nullptr)
+            return false;
+
+        *bytes_read = static_cast<int>(stream_->read(stream_, data_out, 1, bytes_to_read));
+        offset_ += *bytes_read;
 
         return (*bytes_read > 0);
+    }
+
+    bool try_get_range_header(str &contentRange, int &contentLength)
+    {
+        contentRange.clear();
+        contentLength = 0;
+
+        str range = range_header_.substr(6);
+
+        int rangeStart = std::atoi(range.c_str());
+        int rangeEnd = 0;
+
+        size_t pos = range.rfind('-');
+        if (pos != str::npos)
+        {
+            rangeEnd = std::atoi(range.substr(pos + 1).c_str());
+        }
+
+        int totalBytes = static_cast<int>(length_);
+        if (totalBytes == 0)
+            return false;
+
+        if (rangeEnd == 0)
+            rangeEnd = totalBytes - 1;
+
+        if (rangeStart > rangeEnd)
+            return false;
+
+        if (rangeStart != offset_)
+        {
+            stream_->seek(stream_, rangeStart, SEEK_SET);
+            offset_ = rangeStart;
+        }
+
+        char buf[64];
+        size_t len = sprintf_s(buf, "bytes %d-%d/%d", rangeStart, rangeEnd, totalBytes);
+
+        contentRange.assign(buf, len);
+        contentLength = totalBytes - rangeStart;
+
+        return true;
+    }
+
+    static void set_etag(cef_response_t *res, const wstr &path)
+    {
+        uint64_t hash = hash_fnv1a(path.c_str(), path.length() * sizeof(wstr::traits_type::char_type));
+
+        char etag[64];
+        size_t length = sprintf_s(etag, "\"%016llx\"", hash);
+
+        res->set_header_by_name(res, &u"Etag"_s, &CefStr(etag, length), 1);
+    }
+
+    static uint64_t hash_fnv1a(const void *data, size_t len)
+    {
+        const uint8_t *bytes = (const uint8_t *)data;
+        uint64_t hash = 14695981039346656037ULL;
+
+        for (size_t i = 0; i < len; ++i)
+        {
+            hash ^= bytes[i];
+            hash *= 1099511628211ULL;
+        }
+
+        return hash;
+    }
+
+    static void decode_uri(wstr &uri)
+    {
+        auto rule = cef_uri_unescape_rule_t(UU_SPACES | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS);
+
+        cef_string_t input{ uri.data(), uri.length(), nullptr };
+        CefScopedStr ret{ cef_uridecode(&input, true, rule) };
+
+        uri.assign(ret.str, ret.length);
     }
 };
 
