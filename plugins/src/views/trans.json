@@ -2,11 +2,7 @@
   "fallback": "en-US",
   "translations": [
     {
-      "_locales": [
-        "en-US",
-        "en-GB",
-        "en-AU"
-      ],
+      "_locales": ["en-US", "en-GB", "en-AU"],
       "welcome_msg": "Hi Summoner, your Pengu has been successfully loaded and we hope you enjoy it! Join our community to get more 😎 awesome plugins and themes now 👇",
       "dont_show_again": "Do not show again",
       "active_status": "Pengu Loader is active!",
@@ -24,10 +20,7 @@
       "act_quit_pvp": "Quit PvP champ-select"
     },
     {
-      "_locales": [
-        "vi-VN",
-        "vn-VN"
-      ],
+      "_locales": ["vi-VN", "vn-VN"],
       "welcome_msg": "Chào bạn gì đó ơi, Pengu đã được tải thành công và hi vọng bạn sẽ thích nó. Nhập hội cùng chúng mình để tìm thêm 😎 các theme và plugin tuyệt vời khác nhé 👇",
       "dont_show_again": "Không hiển thị lại",
       "active_status": "Pengu Loader đang hoạt động!",
@@ -45,9 +38,7 @@
       "act_quit_pvp": "Thoát chọn tướng PvP"
     },
     {
-      "_locales": [
-        "zh-CN"
-      ],
+      "_locales": ["zh-CN"],
       "welcome_msg": "嗨，召唤师！你安装的插件已经成功载入！加入我们的社区😎以获得更多插件和主题 👇",
       "dont_show_again": "不再显示",
       "active_status": "Pengu Loader已激活！",
@@ -65,9 +56,7 @@
       "act_quit_pvp": "秒退（仅限PVP模式）"
     },
     {
-      "_locales": [
-        "zh-TW"
-      ],
+      "_locales": ["zh-TW"],
       "welcome_msg": "嗨，召喚師！您的插件已經成功載入！加入我們的社群😎以獲得更多插件和主題👇",
       "dont_show_again": "不再顯示",
       "active_status": "Pengu Loader已啟用！",
@@ -83,6 +72,24 @@
       "act_create_normal": "創建5V5單排房間",
       "act_practice_tool": "創建練習模式",
       "act_quit_pvp": "跳GAME(僅限PVP模式)"
+    },
+    {
+      "_locales": ["fr-FR", "fr-CA", "fr-BE", "fr-CH", "fr-LU"],
+      "welcome_msg": "Salut Invocateur, ton Pengu a été chargé avec succès et nous espérons que tu l'apprécieras ! Rejoins notre communauté pour obtenir plus de 😎 plugins et thèmes géniaux maintenant 👇",
+      "dont_show_again": "Ne plus afficher",
+      "active_status": "Pengu Loader est actif !",
+      "update_available": "Nouvelle mise à jour disponible",
+      "update_hint": "Vous devez fermer le Client et ouvrir Pengu Loader pour l'obtenir.",
+      "cmdbar_type_hint": "Tapez une commande ou recherchez...",
+      "act_visit_home": "Visiter la page d'accueil",
+      "act_open_devtools": "Ouvrir les DevTools",
+      "act_open_plugins": "Ouvrir le dossier des plugins",
+      "act_reload": "Recharger le Client",
+      "act_restart": "Redémarrer le Client",
+      "act_create_aram": "Créer un lobby ARAM",
+      "act_create_normal": "Créer un lobby SR 5v5",
+      "act_practice_tool": "Créer un lobby Entraînement",
+      "act_quit_pvp": "Quitter la sélection de champion PvP"
     }
   ]
 }
