@@ -14,12 +14,12 @@ static bool is_main_ = false;
 V8Value *native_LoadDataStore(const vec<V8Value *> &args);
 V8Value *native_SaveDataStore(const vec<V8Value *> &args);
 
-V8Value* native_ReadFile(const vec<V8Value*>& args);
-V8Value* native_WriteFile(const vec<V8Value*>& args);
-V8Value* native_MkDir(const vec<V8Value*>& args);
-V8Value* native_Stat(const vec<V8Value*>& args);
-V8Value* native_Ls(const vec<V8Value*>& args);
-V8Value* native_Remove(const vec<V8Value*>& args);
+//V8Value* native_ReadFile(const vec<V8Value*>& args);
+//V8Value* native_WriteFile(const vec<V8Value*>& args);
+//V8Value* native_MkDir(const vec<V8Value*>& args);
+//V8Value* native_Stat(const vec<V8Value*>& args);
+//V8Value* native_Ls(const vec<V8Value*>& args);
+//V8Value* native_Remove(const vec<V8Value*>& args);
 
 V8Value *native_GetWindowEffect(const vec<V8Value *> &args);
 V8Value *native_SetWindowEffect(const vec<V8Value *> &args);
@@ -141,12 +141,12 @@ static map<wstr, V8FunctionHandler> m_nativeDelegateMap
     { L"LoadDataStore", native_LoadDataStore },
     { L"SaveDataStore", native_SaveDataStore },
 
-    { L"ReadFile", native_ReadFile},
-    { L"WriteFile", native_WriteFile},
-    { L"MkDir", native_MkDir},
-    { L"Stat", native_Stat},
-    { L"Ls", native_Ls},
-    { L"Remove",native_Remove},
+    //{ L"ReadFile", native_ReadFile},
+    //{ L"WriteFile", native_WriteFile},
+    //{ L"MkDir", native_MkDir},
+    //{ L"Stat", native_Stat},
+    //{ L"Ls", native_Ls},
+    //{ L"Remove", native_Remove},
 
     { L"GetWindowEffect", native_GetWindowEffect },
     { L"SetWindowEffect", native_SetWindowEffect },

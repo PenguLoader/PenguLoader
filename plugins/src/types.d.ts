@@ -62,14 +62,14 @@ interface FileStat {
   isDir: boolean
 }
 
-interface PluginFS {
-  read: (path: string) => Promise<string | undefined>
-  write: (path: string, content: string, enableAppendMode: boolean) => Promise<boolean>
-  mkdir: (path: string) => Promise<boolean>
-  stat: (path: string) => Promise<FileStat | undefined>
-  ls: (path: string) => Promise<string[] | undefined>
-  rm: (path: string, recursively: boolean) => Promise<number>
-}
+// interface PluginFS {
+//   read: (path: string) => Promise<string | undefined>
+//   write: (path: string, content: string, enableAppendMode: boolean) => Promise<boolean>
+//   mkdir: (path: string) => Promise<boolean>
+//   stat: (path: string) => Promise<FileStat | undefined>
+//   ls: (path: string) => Promise<string[] | undefined>
+//   rm: (path: string, recursively: boolean) => Promise<number>
+// }
 
 // globals
 
@@ -83,7 +83,7 @@ declare interface Window {
     version: string
     superPotato: boolean
     plugins: string[]
-    fs: PluginFS
+    // fs: PluginFS
   };
 
   openDevTools: typeof openDevTools;
