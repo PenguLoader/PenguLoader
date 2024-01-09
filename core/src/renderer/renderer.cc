@@ -29,6 +29,16 @@ static vec<wstr> GetPluginEntries()
 {
     vec<wstr> entries{};
 
+    /*
+        plugins/
+          |__@author
+            |__plugin-1
+              |__index.js       <-- by author plugin
+          |__plugin-2
+            |__index.js         <-- normal plugin
+          |__plugin-3.js        <-- top-level plugin
+    */
+
     auto pluginsDir = config::pluginsDir();
     if (utils::isDir(pluginsDir))
     {
@@ -39,15 +49,29 @@ static vec<wstr> GetPluginEntries()
             if (name[0] == '_' || name[0] == '.')
                 continue;
 
+            auto path = pluginsDir + L"\\" + name;
+
             // Top-level JS file.
-            if (std::regex_search(name, std::wregex(L"\\.js$", std::regex::icase))
-                && utils::isFile(pluginsDir + L"\\" + name))
+            if (std::regex_search(name, std::wregex(L"\\.js$", std::regex::icase)) && utils::isFile(path))
             {
                 entries.push_back(name);
             }
+            // Group by @author.
+            else if (name[0] == '@' && utils::isDir(path))
+            {
+                for (const auto &subname : utils::readDir(path + L"\\*"))
+                {
+                    if (subname[0] == '_' || subname[0] == '.')
+                        continue;
+
+                    if (utils::isFile(path + L"\\" + subname + L"\\index.js"))
+                    {
+                        entries.push_back(name + L"/" + subname + L"/index.js");
+                    }
+                }
+            }
             // Sub-folder with index.
-            else if (utils::isDir(pluginsDir + L"\\" + name)
-                && utils::isFile(pluginsDir + L"\\" + name + L"\\index.js"))
+            else if (utils::isFile(path + L"\\index.js"))
             {
                 entries.push_back(name + L"/index.js");
             }
