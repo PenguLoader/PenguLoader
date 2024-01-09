@@ -13,9 +13,10 @@ static const set<wstr> KNOWN_ASSETS
     L"jpg", L"jpeg", L"jfif",
     L"pjpeg", L"pjp", L"gif",
     L"svg", L"ico", L"webp",
+    L"avif",
 
     // media
-    L"avif", L"mp4", L"webm",
+    L"mp4", L"webm",
     L"ogg", L"mp3", L"wav",
     L"flac", L"aac",
 
@@ -173,13 +174,12 @@ private:
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
 public:
-    AssetsResourceHandler(const wstr &path, bool plugin)
+    AssetsResourceHandler(const wstr &path)
         : CefRefCount(this)
         , path_(path)
         , mime_{}
         , stream_(nullptr)
         , length_(0)
-        , is_plugin_(plugin)
         , no_cache_(false)
     {
         cef_bind_method(AssetsResourceHandler, open);
@@ -198,7 +198,6 @@ private:
     int64 length_;
     wstr path_;
     wstr mime_;
-    bool is_plugin_;
     bool no_cache_;
 
     int _open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
@@ -217,89 +216,74 @@ private:
             path_ = path_.substr(0, pos);
         }
            
-        path_ = CefScopedStr{
-            cef_uridecode(&CefStr(path_), true,
-                cef_uri_unescape_rule_t(UU_SPACES
-                | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS)
-            )
-        }.cstr();
+        // Decode URI.
+        decode_uri(path_);
 
         // Get final path.
-        if (is_plugin_)
+        path_ = config::pluginsDir().append(path_);
+
+        // Trailing slash.
+        if (path_[path_.length() - 1] == '/' || path_[path_.length() - 1] == L'\\')
         {
-            path_ = config::pluginsDir().append(path_);
-
-            // Trailing slash.
-            if (path_[path_.length() - 1] == '/' || path_[path_.length() - 1] == L'\\')
-            {
-                js_mime = true;
-                path_.append(L"index.js");
-            }
-            else
-            {
-                size_t pos = path_.find_last_of(L"//\\");
-                wstr sub = path_.substr(pos + 1);
-
-                // No extension.
-                if (sub.find_last_of(L'.') == wstr::npos)
-                {
-                    // peek .js
-                    if (js_mime = utils::isFile(path_ + L".js"))
-                        path_.append(L".js");
-                    // peek folder
-                    else if (js_mime = utils::isDir(path_))
-                        path_.append(L"/index.js");
-                }
-            }
-
-            if (utils::isFile(path_))
-            {
-                auto import = IMPORT_DEFAULT;
-
-                static const std::wregex module_pattern{ L"^https:\\/\\/plugins.*\\.js(?:\\?.*)?$" };
-                CefScopedStr referer{ request->get_referrer_url(request) };
-
-                // Detect relative plugin imports by referer //plugins.
-                if (!referer.empty() && std::regex_search(wstr(referer.str, referer.length), module_pattern))
-                {
-                    static const std::wregex raw_pattern{ L"\\braw\\b" };
-                    static const std::wregex url_pattern{ L"\\burl\\b" };
-
-                    if (std::regex_search(query_part, url_pattern))
-                        import = IMPORT_URL;
-                    else if (std::regex_search(query_part, raw_pattern))
-                        import = IMPORT_RAW;
-                    else if ((pos = path_.find_last_of(L'.')) != wstr::npos)
-                    {
-                        auto ext = path_.substr(pos + 1);
-                        if (ext == L"css")
-                            import = IMPORT_CSS;
-                        else if (ext == L"json")
-                            import = IMPORT_JSON;
-                        else if (ext == L"toml")
-                            import = IMPORT_TOML;
-                        else if (ext == L"yml" || ext == L"yaml")
-                            import = IMPORT_YAML;
-                        else if (KNOWN_ASSETS.find(ext) != KNOWN_ASSETS.end())
-                            import = IMPORT_URL;
-                    }
-                }
-
-                if (import != IMPORT_DEFAULT)
-                {
-                    js_mime = true;
-                    stream_ = new ModuleStreamReader(import);
-                }
-                else
-                {
-                    stream_ = cef_stream_reader_create_for_file(&CefStr(path_));
-                }
-            }
+            js_mime = true;
+            path_.append(L"index.js");
         }
         else
         {
-            path_ = config::assetsDir().append(path_);
-            stream_ = cef_stream_reader_create_for_file(&CefStr(path_));
+            size_t pos = path_.find_last_of(L"//\\");
+            wstr sub = path_.substr(pos + 1);
+
+            // No extension.
+            if (sub.find_last_of(L'.') == wstr::npos)
+            {
+                // peek .js
+                if (js_mime = utils::isFile(path_ + L".js"))
+                    path_.append(L".js");
+                // peek folder
+                else if (js_mime = utils::isDir(path_))
+                    path_.append(L"/index.js");
+            }
+        }
+
+        if (utils::isFile(path_))
+        {
+            auto import = IMPORT_DEFAULT;
+
+            // Detect relative plugin imports by referer //plugins.
+            if (request->get_resource_type(request) == RT_SCRIPT)
+            {
+                static const std::wregex raw_pattern{ L"\\braw\\b" };
+                static const std::wregex url_pattern{ L"\\burl\\b" };
+
+                if (std::regex_search(query_part, url_pattern))
+                    import = IMPORT_URL;
+                else if (std::regex_search(query_part, raw_pattern))
+                    import = IMPORT_RAW;
+                else if ((pos = path_.find_last_of(L'.')) != wstr::npos)
+                {
+                    auto ext = path_.substr(pos + 1);
+                    if (ext == L"css")
+                        import = IMPORT_CSS;
+                    else if (ext == L"json")
+                        import = IMPORT_JSON;
+                    else if (ext == L"toml")
+                        import = IMPORT_TOML;
+                    else if (ext == L"yml" || ext == L"yaml")
+                        import = IMPORT_YAML;
+                    else if (KNOWN_ASSETS.find(ext) != KNOWN_ASSETS.end())
+                        import = IMPORT_URL;
+                }
+            }
+
+            if (import != IMPORT_DEFAULT)
+            {
+                js_mime = true;
+                stream_ = new ModuleStreamReader(import);
+            }
+            else
+            {
+                stream_ = cef_stream_reader_create_for_file(&CefStr(path_));
+            }
         }
 
         if (stream_ != nullptr)
@@ -331,6 +315,8 @@ private:
 
     void _get_response_headers(struct _cef_response_t* response, int64* response_length, cef_string_t* redirectUrl)
     {
+        response->set_header_by_name(response, &u"Access-Control-Allow-Origin"_s, &u"*"_s, 1);
+
         // File not found.
         if (stream_ == nullptr)
         {
@@ -348,12 +334,13 @@ private:
             if (!mime_.empty())
                 response->set_mime_type(response, &CefStr(mime_));
 
-            response->set_header_by_name(response, &u"Access-Control-Allow-Origin"_s, &u"*"_s, 1);
-
             if (no_cache_ || mime_ == L"text/javascript")
-                response->set_header_by_name(response, &u"Cache-Control"_s, &u"no-cache, no-store, must-revalidate"_s, 1);
+                response->set_header_by_name(response, &u"Cache-Control"_s, &u"no-store"_s, 1);
             else
-                response->set_header_by_name(response, &u"Cache-Control"_s, &u"public, max-age=86400"_s, 1);
+            {
+                response->set_header_by_name(response, &u"Cache-Control"_s, &u"max-age=31536000, immutable"_s, 1);
+                set_etag(response, path_);
+            }
 
             *response_length = length_;
         }
@@ -361,17 +348,47 @@ private:
 
     int _read(void* data_out, int bytes_to_read, int* bytes_read, struct _cef_resource_read_callback_t* callback)
     {
-        int read = 0;
         *bytes_read = 0;
 
-        do
-        {
-            read = static_cast<int>(stream_->read(stream_,
-                static_cast<char*>(data_out) + *bytes_read, 1, bytes_to_read - *bytes_read));
-            *bytes_read += read;
-        } while (read != 0 && *bytes_read < bytes_to_read);
+        if (stream_ == nullptr)
+            return false;
 
+        *bytes_read = static_cast<int>(stream_->read(stream_, data_out, 1, bytes_to_read));
         return (*bytes_read > 0);
+    }
+
+    static void set_etag(cef_response_t *res, const wstr &path)
+    {
+        uint64_t hash = hash_fnv1a(path.c_str(), path.length() * sizeof(wstr::traits_type::char_type));
+
+        char etag[64];
+        size_t length = sprintf_s(etag, "\"%016llx\"", hash);
+
+        res->set_header_by_name(res, &u"Etag"_s, &CefStr(etag, length), 1);
+    }
+
+    static uint64_t hash_fnv1a(const void *data, size_t len)
+    {
+        const uint8_t *bytes = (const uint8_t *)data;
+        uint64_t hash = 14695981039346656037ULL;
+
+        for (size_t i = 0; i < len; ++i)
+        {
+            hash ^= bytes[i];
+            hash *= 1099511628211ULL;
+        }
+
+        return hash;
+    }
+
+    static void decode_uri(wstr &uri)
+    {
+        auto rule = cef_uri_unescape_rule_t(UU_SPACES | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS);
+
+        cef_string_t input{ uri.data(), uri.length(), nullptr };
+        CefScopedStr ret{ cef_uridecode(&input, true, rule) };
+
+        uri.assign(ret.str, ret.length);
     }
 };
 
@@ -390,18 +407,17 @@ struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
         struct _cef_request_t* request)
     {
         CefScopedStr url{ request->get_url(request) };
-        bool is_assets = wcsncmp(url.str, L"https://assets/", 15) == 0;
-        auto path = url.str + (is_assets ? 14 : 15);
+        wstr path = url.cstr().substr(15);
 
-        return new AssetsResourceHandler(path, !is_assets);
+        return new AssetsResourceHandler(path);
     }
 };
 
 void RegisterAssetsSchemeHandlerFactory()
 {
-    cef_register_scheme_handler_factory(&u"https"_s,
-        &u"assets"_s, new AssetsSchemeHandlerFactory());
+    CefStr scheme{ "https" };
+    CefStr domain{ "plugins" };
 
-    cef_register_scheme_handler_factory(&u"https"_s,
-        &u"plugins"_s, new AssetsSchemeHandlerFactory());
+    cef_register_scheme_handler_factory(&scheme, &domain,
+        new AssetsSchemeHandlerFactory());
 }
