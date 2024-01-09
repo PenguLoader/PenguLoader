@@ -45,17 +45,17 @@ export default JSON.parse(content);
 )";
 
 static const auto SCRIPT_IMPORT_TOML = u8R"(
-import { parse } from 'https://esm.sh/smol-toml@1.1.1';
+const { parse } = __p('toml');
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
 export default parse(content);
 )";
 
 static const auto SCRIPT_IMPORT_YAML = u8R"(
-import { load } from 'https://esm.sh/js-yaml@4.1.0';
+const { parse } = __p('yaml');
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
-export default load(content);
+export default parse(content);
 )";
 
 static const auto SCRIPT_IMPORT_RAW = u8R"(
