@@ -224,7 +224,7 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
-    const_cast<cef_settings_t *>(settings)->cache_path = CefStr(config::cacheDir()).forward();
+    const_cast<cef_settings_t *>(settings)->cache_path = CefStr(config::cacheDir().wstring()).forward();
 
     static auto GetBrowserProcessHandler = app->get_browser_process_handler;
     app->get_browser_process_handler = [](cef_app_t *self)

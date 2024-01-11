@@ -37,6 +37,7 @@
 #include <regex>
 #include <unordered_set>
 #include <unordered_map>
+#include <filesystem>
 
 #define CEF_STRING_TYPE_UTF16 1
 #include "include/internal/cef_string.h"
@@ -45,6 +46,7 @@
 
 using str = std::string;
 using wstr = std::wstring;
+using path = std::filesystem::path;
 
 template <typename T>
 using vec = std::vector<T>;
@@ -312,13 +314,12 @@ typedef V8Value* (*V8FunctionHandler)(const vec<V8Value *> &args);
 
 namespace config
 {
-    wstr loaderDir();
-    wstr assetsDir();
-    wstr pluginsDir();
-    wstr datastorePath();
+    path loaderDir();
+    path pluginsDir();
+    path datastorePath();
 
-    wstr cacheDir();
-    wstr leagueDir();
+    path cacheDir();
+    path leagueDir();
 
     wstr getConfigValue(const wstr &key, const wstr &fallback = L"");
     bool getConfigValueBool(const wstr &key, bool fallback);
@@ -327,11 +328,11 @@ namespace config
 
 namespace utils
 {
-    bool isDir(const wstr &path);
-    bool isFile(const wstr &path);
-    bool isSymlink(const wstr &path);
-    bool readFile(const wstr &path, str &out);
-    vec<wstr> readDir(const wstr &dir);
+    bool isDir(const path &path);
+    bool isFile(const path &path);
+    bool isSymlink(const path &path);
+    bool readFile(const path &path, str &out);
+    vec<wstr> readDir(const path &dir);
 
     void *patternScan(const HMODULE module, const char *pattern);
     float getWindowScale(void *handle);

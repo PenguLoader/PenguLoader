@@ -220,7 +220,7 @@ private:
         decode_uri(path_);
 
         // Get final path.
-        path_ = config::pluginsDir().append(path_);
+        path_ = config::pluginsDir().wstring().append(path_);
 
         // Trailing slash.
         if (path_[path_.length() - 1] == '/' || path_[path_.length() - 1] == L'\\')

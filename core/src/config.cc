@@ -3,7 +3,7 @@
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
-wstr config::loaderDir()
+path config::loaderDir()
 {
     static wstr cachedPath{};
     if (!cachedPath.empty()) return cachedPath;
@@ -36,34 +36,29 @@ wstr config::loaderDir()
     return cachedPath = dir.substr(0, dir.find_last_of(L"/\\"));
 }
 
-wstr config::assetsDir()
+path config::pluginsDir()
 {
-    return loaderDir() + L"\\assets";
+    return loaderDir() / "plugins";
 }
 
-wstr config::pluginsDir()
+path config::datastorePath()
 {
-    return loaderDir() + L"\\plugins";
+    return loaderDir() / "datastore";
 }
 
-wstr config::datastorePath()
-{
-    return loaderDir() + L"\\datastore";
-}
-
-wstr config::cacheDir()
+path config::cacheDir()
 {
     wchar_t path[2048];
     size_t length = GetEnvironmentVariableW(L"LOCALAPPDATA", path, _countof(path));
 
     if (length == 0)
-        return leagueDir() + L"\\Cache";
+        return leagueDir() / "Cache";
 
     lstrcatW(path, L"\\Riot Games\\League of Legends\\Cache");
     return path;
 }
 
-wstr config::leagueDir()
+path config::leagueDir()
 {
     wchar_t buf[2048];
     size_t length = GetModuleFileNameW(nullptr, buf, _countof(buf));
@@ -79,7 +74,7 @@ static map<wstr, wstr> getConfigMap()
 
     if (!cached)
     {
-        auto path = config::loaderDir() + L"\\config";
+        auto path = config::loaderDir() / L"config";
         std::wifstream file(path);
 
         if (file.is_open())

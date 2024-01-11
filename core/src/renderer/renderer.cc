@@ -43,13 +43,13 @@ static vec<wstr> GetPluginEntries()
     if (utils::isDir(pluginsDir))
     {
         // Scan plugins dir.
-        for (const auto &name : utils::readDir(pluginsDir + L"\\*"))
+        for (const auto &name : utils::readDir(pluginsDir))
         {
             // Skip name starts with underscore or dot.
             if (name[0] == '_' || name[0] == '.')
                 continue;
 
-            auto path = pluginsDir + L"\\" + name;
+            auto path = pluginsDir / name;
 
             // Top-level JS file.
             if (std::regex_search(name, std::wregex(L"\\.js$", std::regex::icase)) && utils::isFile(path))
@@ -59,19 +59,19 @@ static vec<wstr> GetPluginEntries()
             // Group by @author.
             else if (name[0] == '@' && utils::isDir(path))
             {
-                for (const auto &subname : utils::readDir(path + L"\\*"))
+                for (const auto &subname : utils::readDir(path))
                 {
                     if (subname[0] == '_' || subname[0] == '.')
                         continue;
 
-                    if (utils::isFile(path + L"\\" + subname + L"\\index.js"))
+                    if (utils::isFile(path / subname / "index.js"))
                     {
                         entries.push_back(name + L"/" + subname + L"/index.js");
                     }
                 }
             }
             // Sub-folder with index.
-            else if (utils::isFile(path + L"\\index.js"))
+            else if (utils::isFile(path / "index.js"))
             {
                 entries.push_back(name + L"/index.js");
             }
@@ -93,12 +93,6 @@ static V8Value *native_OpenDevTools(const vec<V8Value *> &args)
     auto msg = cef_process_message_create(&name);
     frame->send_process_message(frame, PID_BROWSER, msg);
 
-    return nullptr;
-}
-
-static V8Value *native_OpenAssetsFolder(const vec<V8Value *> &args)
-{
-    shell::open_folder(config::assetsDir().c_str());
     return nullptr;
 }
 
@@ -134,7 +128,6 @@ static V8Value *native_ReloadClient(const vec<V8Value *> &args)
 static map<wstr, V8FunctionHandler> m_nativeDelegateMap
 {
     { L"OpenDevTools", native_OpenDevTools },
-    { L"OpenAssetsFolder", native_OpenAssetsFolder },
     { L"OpenPluginsFolder", native_OpenPluginsFolder },
     { L"ReloadClient", native_ReloadClient },
 
@@ -246,7 +239,7 @@ static void ExecutePreloadScript(cef_frame_t *frame)
 {
 #ifdef _DEBUG
     str script{};
-    if (utils::readFile(config::loaderDir() + L"\\..\\plugins\\dist\\preload.js", script))
+    if (utils::readFile(config::loaderDir() / "../plugins/dist/preload.js", script))
     {
         CefStr code{ script.c_str(), script.length() };
         frame->execute_java_script(frame, &code, &u"https://plugins/@/preload"_s, 1);
