@@ -70,106 +70,6 @@ const url = import.meta.url.replace(/\?.*$/, '');
 export default url;
 )";
 
-enum ImportType
-{
-    IMPORT_DEFAULT = 0,
-    IMPORT_CSS,
-    IMPORT_JSON,
-    IMPORT_TOML,
-    IMPORT_YAML,
-    IMPORT_RAW,
-    IMPORT_URL
-};
-
-template <typename T>
-struct MethodPointerTraits;
-
-// Partial specialization for non-const member function pointers
-template <typename T, typename ReturnType, typename... Args>
-struct MethodPointerTraits<ReturnType(T::*)(Args...)> {
-    using ClassType = T;
-    using Delegate = ReturnType(*)(Args...);
-    using ReturnTypeType = ReturnType;
-    using ParameterTypes = std::tuple<Args...>;
-};
-
-class ModuleStreamReader : public CefRefCount<cef_stream_reader_t>
-{
-public:
-    ModuleStreamReader(ImportType type) : CefRefCount(this)
-    {
-        cef_bind_method(ModuleStreamReader, read);
-        cef_bind_method(ModuleStreamReader, seek);
-        cef_bind_method(ModuleStreamReader, tell);
-        cef_bind_method(ModuleStreamReader, eof);
-        cef_bind_method(ModuleStreamReader, may_block);
-
-        data_.clear();
-
-        switch (type)
-        {
-            case IMPORT_CSS:
-                data_.assign(SCRIPT_IMPORT_CSS);
-                break;
-            case IMPORT_JSON:
-                data_.assign(SCRIPT_IMPORT_JSON);
-                break;
-            case IMPORT_TOML:
-                data_.assign(SCRIPT_IMPORT_TOML);
-                break;
-            case IMPORT_YAML:
-                data_.assign(SCRIPT_IMPORT_YAML);
-                break;
-            case IMPORT_RAW:
-                data_.assign(SCRIPT_IMPORT_RAW);
-                break;
-            case IMPORT_URL:
-                data_.assign(SCRIPT_IMPORT_URL);
-                break;
-        }
-
-        stream_ = cef_stream_reader_create_for_data(
-            const_cast<char *>(data_.c_str()), data_.length());
-    }
-
-    ~ModuleStreamReader()
-    {
-        if (stream_ != nullptr)
-            stream_->base.release(&stream_->base);
-
-        data_.clear();
-    }
-
-private:
-    cef_stream_reader_t *stream_;
-    str data_;
-
-    size_t _read(void* ptr, size_t size, size_t n)
-    {
-        return stream_->read(stream_, ptr, size, n);
-    }
-
-    int _seek(int64 offset, int whence)
-    {
-        return stream_->seek(stream_, offset, whence);
-    }
-
-    int64 _tell()
-    {
-        return stream_->tell(stream_);
-    }
-
-    int _eof()
-    {
-        return stream_->eof(stream_);
-    }
-
-    int _may_block()
-    {
-        return stream_->may_block(stream_);
-    }
-};
-
 // Custom resource handler for local assets.
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
@@ -247,7 +147,7 @@ private:
 
         if (utils::isFile(path_))
         {
-            auto import = IMPORT_DEFAULT;
+            const char *module_code = nullptr;
 
             // Detect relative plugin imports by referer //plugins.
             if (request->get_resource_type(request) == RT_SCRIPT)
@@ -256,29 +156,29 @@ private:
                 static const std::wregex url_pattern{ L"\\burl\\b" };
 
                 if (std::regex_search(query_part, url_pattern))
-                    import = IMPORT_URL;
+                    module_code = SCRIPT_IMPORT_URL;
                 else if (std::regex_search(query_part, raw_pattern))
-                    import = IMPORT_RAW;
+                    module_code = SCRIPT_IMPORT_RAW;
                 else if ((pos = path_.find_last_of(L'.')) != wstr::npos)
                 {
                     auto ext = path_.substr(pos + 1);
                     if (ext == L"css")
-                        import = IMPORT_CSS;
+                        module_code = SCRIPT_IMPORT_CSS;
                     else if (ext == L"json")
-                        import = IMPORT_JSON;
+                        module_code = SCRIPT_IMPORT_JSON;
                     else if (ext == L"toml")
-                        import = IMPORT_TOML;
+                        module_code = SCRIPT_IMPORT_TOML;
                     else if (ext == L"yml" || ext == L"yaml")
-                        import = IMPORT_YAML;
+                        module_code = SCRIPT_IMPORT_YAML;
                     else if (KNOWN_ASSETS.find(ext) != KNOWN_ASSETS.end())
-                        import = IMPORT_URL;
+                        module_code = SCRIPT_IMPORT_URL;
                 }
             }
 
-            if (import != IMPORT_DEFAULT)
+            if (module_code != nullptr)
             {
                 js_mime = true;
-                stream_ = new ModuleStreamReader(import);
+                stream_ = cef_stream_reader_create_for_data((void *)module_code, strlen(module_code));
             }
             else
             {
