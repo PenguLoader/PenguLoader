@@ -24,6 +24,8 @@ jobs:
 
       - name: Update project files
         run: |
+          (Get-Content loader\loader.csproj) -replace "FrameworkVersion>v4.5", "FrameworkVersion>v4.8" | Out-File loader\loader.csproj
+          (Get-Content loader\App.config) -replace "Version=v4.5", "Version=v4.8" | Out-File loader\App.config
           (Get-Content loader\Version.cs) -replace 'CommitSha1.*;', 'CommitSha1 = "${{ env.SHORT_SHA }}";' | Out-File loader\Version.cs
 
       - name: Setup MSBuild
