@@ -183,8 +183,11 @@ void SetRiotClientCredentials(const wstr &appPort, const wstr &authToken)
     origin_.assign(L"https://127.0.0.1:");
     origin_.append(appPort);
 
-    auto cred = L"riot:" + authToken;
-    CefScopedStr base64 = cef_base64encode(str{ cred.begin(), cred.end() }.data(), cred.length());
+    str cred = "riot:";
+    for (wchar_t c : authToken)
+        cred.append(1, (char)c);
+
+    CefScopedStr base64 = cef_base64encode(cred.data(), cred.length());
 
     authorization_.assign(L"Basic ");
     authorization_.append(base64.cstr());

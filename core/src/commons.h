@@ -115,11 +115,11 @@ struct CefRefCount : public T
 {
     template <typename U>
     CefRefCount(const U *) noexcept : T{}, ref_(1) {
-        base.size = sizeof(U);
-        base.add_ref = _Base_AddRef;
-        base.release = _Base_Release;
-        base.has_one_ref = _Base_HasOneRef;
-        base.has_at_least_one_ref = _Base_HasAtLeastOneRef;
+        T::base.size = sizeof(U);
+        T::base.add_ref = _Base_AddRef;
+        T::base.release = _Base_Release;
+        T::base.has_one_ref = _Base_HasOneRef;
+        T::base.has_at_least_one_ref = _Base_HasAtLeastOneRef;
         self_delete_ = [](void *self) noexcept { delete static_cast<U *>(self); };
     }
 

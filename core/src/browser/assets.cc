@@ -25,7 +25,7 @@ static const set<wstr> KNOWN_ASSETS
     L"eot", L"ttf", L"otf",
 };
 
-static const auto SCRIPT_IMPORT_CSS = u8R"(
+static const auto SCRIPT_IMPORT_CSS = R"(
 (async function () {
     if (document.readyState !== 'complete')
         await new Promise(res => document.addEventListener('DOMContentLoaded', res));
@@ -39,33 +39,33 @@ static const auto SCRIPT_IMPORT_CSS = u8R"(
 })();
 )";
 
-static const auto SCRIPT_IMPORT_JSON = u8R"(
+static const auto SCRIPT_IMPORT_JSON = R"(
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
 export default JSON.parse(content);
 )";
 
-static const auto SCRIPT_IMPORT_TOML = u8R"(
+static const auto SCRIPT_IMPORT_TOML = R"(
 const { parse } = __p('toml');
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
 export default parse(content);
 )";
 
-static const auto SCRIPT_IMPORT_YAML = u8R"(
+static const auto SCRIPT_IMPORT_YAML = R"(
 const { parse } = __p('yaml');
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
 export default parse(content);
 )";
 
-static const auto SCRIPT_IMPORT_RAW = u8R"(
+static const auto SCRIPT_IMPORT_RAW = R"(
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
 export default content;
 )";
 
-static const auto SCRIPT_IMPORT_URL = u8R"(
+static const auto SCRIPT_IMPORT_URL = R"(
 const url = import.meta.url.replace(/\?.*$/, '');
 export default url;
 )";

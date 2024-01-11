@@ -2,7 +2,7 @@
 
 // utf8 string helpers
 
-CefStrUtf8::CefStrUtf8() : cef_string_utf8_t{ "", 0, nullptr }
+CefStrUtf8::CefStrUtf8() : cef_string_utf8_t{ (char *)"", 0, nullptr }
 {
 }
 
@@ -26,7 +26,7 @@ str CefStrUtf8::cstr() const
 
 // utf16 string helpers
 
-CefStrBase::CefStrBase() : cef_string_t{ L"", 0, nullptr }
+CefStrBase::CefStrBase() : cef_string_t{ (char16 *)u"", 0, nullptr }
 {
 }
 
@@ -120,7 +120,7 @@ CefStrBase CefStr::borrow(const cef_string_t *s)
     }
     else
     {
-        base.str = L"";
+        base.str = (char16 *)u"";
         base.length = 0;
     }
 
@@ -138,7 +138,7 @@ CefScopedStr::CefScopedStr(cef_string_userfree_t uf) : CefStrBase(), str_(uf)
     }
     else
     {
-        cef_string_t::str = L"";
+        cef_string_t::str = (char16 *)u"";
         cef_string_t::length = 0;
     }
 }
