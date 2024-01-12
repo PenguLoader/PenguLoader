@@ -321,9 +321,17 @@ namespace config
     path cacheDir();
     path leagueDir();
 
-    wstr getConfigValue(const wstr &key, const wstr &fallback = L"");
-    bool getConfigValueBool(const wstr &key, bool fallback);
-    int getConfigValueInt(const wstr &key, int fallback);
+    namespace options
+    {
+        bool AllowProxyServer();
+        int RemoteDebuggingPort();
+
+        bool DisableWebSecurity();
+        bool IgnoreCertificateErrors();
+
+        bool OptimizeClient();
+        bool SuperLowSpecMode();
+    }
 }
 
 namespace utils

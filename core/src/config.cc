@@ -67,28 +67,28 @@ path config::leagueDir()
     return path.substr(0, path.find_last_of(L"/\\"));
 }
 
-static map<wstr, wstr> getConfigMap()
+static map<str, str> getConfigMap()
 {
     static bool cached = false;
-    static map<wstr, wstr> map{};
+    static map<str, str> map{};
 
     if (!cached)
     {
-        auto path = config::loaderDir() / L"config";
-        std::wifstream file(path);
+        auto path = config::loaderDir() / "config";
+        std::ifstream file(path);
 
         if (file.is_open())
         {
-            std::wstring line;
+            std::string line;
             while (std::getline(file, line))
             {
-                if (!line.empty() && line[0] != L';')
+                if (!line.empty() && line[0] != ';')
                 {
-                    size_t pos = line.find(L"=");
-                    if (pos != std::wstring::npos)
+                    size_t pos = line.find("=");
+                    if (pos != std::string::npos)
                     {
-                        std::wstring key = line.substr(0, pos);
-                        std::wstring value = line.substr(pos + 1);
+                        std::string key = line.substr(0, pos);
+                        std::string value = line.substr(pos + 1);
                         map[key] = value;
                     }
                 }
@@ -102,55 +102,74 @@ static map<wstr, wstr> getConfigMap()
     return map;
 }
 
-wstr config::getConfigValue(const wstr &key, const wstr &fallback)
+static str getConfigValue(const char *key, const char *fallback)
 {
     auto map = getConfigMap();
     auto it = map.find(key);
-    auto value = fallback;
+    str value = fallback;
 
     if (it != map.end())
         value = it->second;
 
-#ifdef _DEBUG
-    wprintf(L"config: %s -> %s\n", key.c_str(), value.c_str());
-#endif
-
     return value;
 }
 
-bool config::getConfigValueBool(const wstr &key, bool fallback)
+static bool getConfigValueBool(const char *key, bool fallback)
 {
     auto map = getConfigMap();
     auto it = map.find(key);
-    auto value = fallback;
+    bool value = fallback;
 
     if (it != map.end())
     {
-        if (it->second == L"0" || it->second == L"false")
+        if (it->second == "0" || it->second == "false")
             value = false;
-        else if (it->second == L"1" || it->second == L"true")
+        else if (it->second == "1" || it->second == "true")
             value = true;
     }
-
-#ifdef _DEBUG
-    wprintf(L"config: %s -> %s\n", key.c_str(), value ? L"true" : L"false");
-#endif
 
     return value;
 }
 
-int config::getConfigValueInt(const wstr &key, int fallback)
+static int getConfigValueInt(const char *key, int fallback)
 {
     auto map = getConfigMap();
     auto it = map.find(key);
-    auto value = fallback;
+    int value = fallback;
 
     if (it != map.end())
         value = std::stoi(it->second);
-    
-#ifdef _DEBUG
-    wprintf(L"config: %s -> %d\n", key.c_str(), value);
-#endif
 
     return value;
+}
+
+namespace config::options
+{
+    bool AllowProxyServer()
+    {
+        return getConfigValueBool("AllowProxyServer", false)
+            || !getConfigValueBool("NoProxyServer", true);
+    }
+
+    int RemoteDebuggingPort()
+    {
+        return getConfigValueInt("RemoteDebuggingPort", 0);
+    }
+    bool DisableWebSecurity()
+    {
+        return getConfigValueBool("DisableWebSecurity", false);
+    }
+    bool IgnoreCertificateErrors()
+    {
+        return getConfigValueBool("IgnoreCertificateErrors", false);
+    }
+
+    bool OptimizeClient()
+    {
+        return getConfigValueBool("OptimizeClient", true);
+    }
+    bool SuperLowSpecMode()
+    {
+        return getConfigValueBool("SuperLowSpecMode", false);
+    }
 }

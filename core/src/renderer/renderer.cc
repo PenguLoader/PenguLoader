@@ -212,7 +212,7 @@ static void LoadPlugins(V8Object *window)
     pengu->set(&u"version"_s, version, V8_PROPERTY_ATTRIBUTE_READONLY);
 
     // Pengu.superPotato
-    auto superPotato = V8Value::boolean(config::getConfigValueBool(L"SuperLowSpecMode", false));
+    auto superPotato = V8Value::boolean(config::options::SuperLowSpecMode());
     pengu->set(&u"superPotato"_s, superPotato, V8_PROPERTY_ATTRIBUTE_READONLY);
 
     pengu->set(&u"os"_s, V8Value::string(&u"win"_s), V8_PROPERTY_ATTRIBUTE_READONLY);

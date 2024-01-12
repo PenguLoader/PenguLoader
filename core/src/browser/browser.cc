@@ -146,13 +146,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     // Extract args string.
     auto args = CefScopedStr(command_line->get_command_line_string(command_line)).cstr();
 
-    auto chromiumArgs = config::getConfigValue(L"ChromiumArgs");
-    if (!chromiumArgs.empty())
-    {
-        args += L" " + chromiumArgs;
-    }
-
-    if (!config::getConfigValueBool(L"NoProxyServer", true))
+    if (config::options::AllowProxyServer())
     {
         size_t pos = args.find(L"--no-proxy-server");
         if (pos != std::wstring::npos)
@@ -165,26 +159,26 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 
     OnBeforeCommandLineProcessing(self, process_type, command_line);
 
-    if (remote_debugging_port_ = config::getConfigValueInt(L"RemoteDebuggingPort", 0))
+    if (remote_debugging_port_ = config::options::RemoteDebuggingPort())
     {
         // Set remote debugging port.
         command_line->append_switch_with_value(command_line,
             &u"remote-debugging-port"_s, &CefStr(std::to_string(remote_debugging_port_)));
     }
 
-    if (config::getConfigValueBool(L"DisableWebSecurity", false))
+    if (config::options::DisableWebSecurity())
     {
         // Disable web security.
         command_line->append_switch(command_line, &u"disable-web-security"_s);
     }
 
-    if (config::getConfigValueBool(L"IgnoreCertificateErrors", false))
+    if (config::options::IgnoreCertificateErrors())
     {
         // Ignore invalid certs.
         command_line->append_switch(command_line, &u"ignore-certificate-errors"_s);
     }
 
-    if (config::getConfigValueBool(L"OptimizeClient", true))
+    if (config::options::OptimizeClient())
     {
         // Optimize Client.
         command_line->append_switch(command_line, &u"disable-async-dns"_s);
@@ -207,7 +201,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &u"no-sandbox"_s);
     }
 
-    if (config::getConfigValueBool(L"SuperLowSpecMode", false))
+    if (config::options::SuperLowSpecMode())
     {
         // Super Low Spec Mode.
         command_line->append_switch(command_line, &u"disable-smooth-scrolling"_s);
