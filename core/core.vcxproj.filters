@@ -88,5 +88,8 @@
     <ClInclude Include="src\commons.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\hook.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

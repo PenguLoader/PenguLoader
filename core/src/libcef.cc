@@ -1,4 +1,5 @@
 #include "commons.h"
+#include "hook.h"
 #include "include/cef_version.h"
 
 #ifdef _MSC_VER

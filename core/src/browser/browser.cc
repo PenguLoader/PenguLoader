@@ -1,4 +1,5 @@
 #include "commons.h"
+#include "hook.h"
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_client_capi.h"
 #include "include/capi/cef_browser_capi.h"
