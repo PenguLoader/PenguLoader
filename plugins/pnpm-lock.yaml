@@ -52,9 +52,6 @@ devDependencies:
   vite:
     specifier: ^4.4.4
     version: 4.4.4(@types/node@18.16.19)
-  vite-plugin-css-injected-by-js:
-    specifier: ^3.2.0
-    version: 3.2.0(vite@4.4.4)
   vite-plugin-mkcert:
     specifier: ^1.16.0
     version: 1.16.0(vite@4.4.4)
@@ -1307,14 +1304,6 @@ packages:
 
   /validate-html-nesting@1.2.2:
     resolution: {integrity: sha512-hGdgQozCsQJMyfK5urgFcWEqsSSrK63Awe0t/IMR0bZ0QMtnuaiHzThW81guu3qx9abLi99NEuiaN6P9gVYsNg==}
-    dev: true
-
-  /vite-plugin-css-injected-by-js@3.2.0(vite@4.4.4):
-    resolution: {integrity: sha512-a6MtYm/qfswVCtLezzzKJWL2ZpxrXXQd6/1UHy0t/G0IILHl4GG6n4OprbcC93aXIwkeS19JNbuKWD0Xt+pZtg==}
-    peerDependencies:
-      vite: '>2.0.0-0'
-    dependencies:
-      vite: 4.4.4(@types/node@18.16.19)
     dev: true
 
   /vite-plugin-mkcert@1.16.0(vite@4.4.4):
