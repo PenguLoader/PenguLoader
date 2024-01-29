@@ -1,4 +1,5 @@
 #include "commons.h"
+#include "hook.h"
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_render_process_handler_capi.h"
 
@@ -14,12 +15,12 @@ static bool is_main_ = false;
 V8Value *native_LoadDataStore(const vec<V8Value *> &args);
 V8Value *native_SaveDataStore(const vec<V8Value *> &args);
 
-V8Value* native_ReadFile(const vec<V8Value*>& args);
-V8Value* native_WriteFile(const vec<V8Value*>& args);
-V8Value* native_MkDir(const vec<V8Value*>& args);
-V8Value* native_Stat(const vec<V8Value*>& args);
-V8Value* native_Ls(const vec<V8Value*>& args);
-V8Value* native_Remove(const vec<V8Value*>& args);
+//V8Value* native_ReadFile(const vec<V8Value*>& args);
+//V8Value* native_WriteFile(const vec<V8Value*>& args);
+//V8Value* native_MkDir(const vec<V8Value*>& args);
+//V8Value* native_Stat(const vec<V8Value*>& args);
+//V8Value* native_Ls(const vec<V8Value*>& args);
+//V8Value* native_Remove(const vec<V8Value*>& args);
 
 V8Value *native_GetWindowEffect(const vec<V8Value *> &args);
 V8Value *native_SetWindowEffect(const vec<V8Value *> &args);
@@ -29,25 +30,49 @@ static vec<wstr> GetPluginEntries()
 {
     vec<wstr> entries{};
 
+    /*
+        plugins/
+          |__@author
+            |__plugin-1
+              |__index.js       <-- by author plugin
+          |__plugin-2
+            |__index.js         <-- normal plugin
+          |__plugin-3.js        <-- top-level plugin
+    */
+
     auto pluginsDir = config::pluginsDir();
     if (utils::isDir(pluginsDir))
     {
         // Scan plugins dir.
-        for (const auto &name : utils::readDir(pluginsDir + L"\\*"))
+        for (const auto &name : utils::readDir(pluginsDir))
         {
             // Skip name starts with underscore or dot.
             if (name[0] == '_' || name[0] == '.')
                 continue;
 
+            auto path = pluginsDir / name;
+
             // Top-level JS file.
-            if (std::regex_search(name, std::wregex(L"\\.js$", std::regex::icase))
-                && utils::isFile(pluginsDir + L"\\" + name))
+            if (std::regex_search(name, std::wregex(L"\\.js$", std::regex::icase)) && utils::isFile(path))
             {
                 entries.push_back(name);
             }
+            // Group by @author.
+            else if (name[0] == '@' && utils::isDir(path))
+            {
+                for (const auto &subname : utils::readDir(path))
+                {
+                    if (subname[0] == '_' || subname[0] == '.')
+                        continue;
+
+                    if (utils::isFile(path / subname / "index.js"))
+                    {
+                        entries.push_back(name + L"/" + subname + L"/index.js");
+                    }
+                }
+            }
             // Sub-folder with index.
-            else if (utils::isDir(pluginsDir + L"\\" + name)
-                && utils::isFile(pluginsDir + L"\\" + name + L"\\index.js"))
+            else if (utils::isFile(path / "index.js"))
             {
                 entries.push_back(name + L"/index.js");
             }
@@ -69,12 +94,6 @@ static V8Value *native_OpenDevTools(const vec<V8Value *> &args)
     auto msg = cef_process_message_create(&name);
     frame->send_process_message(frame, PID_BROWSER, msg);
 
-    return nullptr;
-}
-
-static V8Value *native_OpenAssetsFolder(const vec<V8Value *> &args)
-{
-    shell::open_folder(config::assetsDir().c_str());
     return nullptr;
 }
 
@@ -110,19 +129,18 @@ static V8Value *native_ReloadClient(const vec<V8Value *> &args)
 static map<wstr, V8FunctionHandler> m_nativeDelegateMap
 {
     { L"OpenDevTools", native_OpenDevTools },
-    { L"OpenAssetsFolder", native_OpenAssetsFolder },
     { L"OpenPluginsFolder", native_OpenPluginsFolder },
     { L"ReloadClient", native_ReloadClient },
 
     { L"LoadDataStore", native_LoadDataStore },
     { L"SaveDataStore", native_SaveDataStore },
 
-    { L"ReadFile", native_ReadFile},
-    { L"WriteFile", native_WriteFile},
-    { L"MkDir", native_MkDir},
-    { L"Stat", native_Stat},
-    { L"Ls", native_Ls},
-    { L"Remove",native_Remove},
+    //{ L"ReadFile", native_ReadFile},
+    //{ L"WriteFile", native_WriteFile},
+    //{ L"MkDir", native_MkDir},
+    //{ L"Stat", native_Stat},
+    //{ L"Ls", native_Ls},
+    //{ L"Remove", native_Remove},
 
     { L"GetWindowEffect", native_GetWindowEffect },
     { L"SetWindowEffect", native_SetWindowEffect },
@@ -195,7 +213,7 @@ static void LoadPlugins(V8Object *window)
     pengu->set(&u"version"_s, version, V8_PROPERTY_ATTRIBUTE_READONLY);
 
     // Pengu.superPotato
-    auto superPotato = V8Value::boolean(config::getConfigValueBool(L"SuperLowSpecMode", false));
+    auto superPotato = V8Value::boolean(config::options::SuperLowSpecMode());
     pengu->set(&u"superPotato"_s, superPotato, V8_PROPERTY_ATTRIBUTE_READONLY);
 
     pengu->set(&u"os"_s, V8Value::string(&u"win"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
@@ -222,7 +240,7 @@ static void ExecutePreloadScript(cef_frame_t *frame)
 {
 #ifdef _DEBUG
     str script{};
-    if (utils::readFile(config::loaderDir() + L"\\..\\plugins\\dist\\preload.js", script))
+    if (utils::readFile(config::loaderDir() / "../plugins/dist/preload.js", script))
     {
         CefStr code{ script.c_str(), script.length() };
         frame->execute_java_script(frame, &code, &u"https://plugins/@/preload"_s, 1);

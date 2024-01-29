@@ -66,9 +66,7 @@ Please visit the homepage to begin:
 ## Documentation
 
 - [Pengu docs](https://pengu.lol/guide/welcome)
-- [API docs](./API_DOCS.md)
-- [Migration to v1](./MIGRATION_TO_V1.md)
-- [Insecure options](./INSECURE_OPTIONS.md)
+- [Insecure options](https://github.com/PenguLoader/PenguLoader/blob/256dfa8412e5b9973ff1caeb4bb1b1d6346978d8/INSECURE_OPTIONS.md)
 
 ## Contributing
 
@@ -90,6 +88,7 @@ To contribute to the project, follow these steps:
   information.
 - **Additional Base/Starter plugins**: Share your plugins along with a detailed
   guide to help beginners get started easily.
+- **Translations**: Add your new language and translations.
 - **Core features**: Ensure you have extensive experience with CEF and low-level
   programming skills.
 - **JavaScript features**: Extensive web development knowledge is required.
@@ -106,10 +105,10 @@ To contribute to the project, follow these steps:
 
 ### Prerequisites
 
-- Visual Studio 2017+
-  - Desktop development with C++
+- Visual Studio 2022, with these components:
   - .NET desktop development
-  - Windows 8.1 SDK
+  - Desktop development with C++
+  - Windows 10 SDK
 - **NodeJS** 18+ and **pnpm** 8+
 
 ### Initial Steps
@@ -149,6 +148,12 @@ To contribute to the project, follow these steps:
 
 > For developing and debugging purpose, you should set build mode to `Debug` and
 > build preload scripts with `pnpm build-dev`.
+
+## Disclaimer
+
+THE PROGRAM IS PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION THE IMPLIED WARRANTIES OF MERCHANTABILITY, NONINFRINGMENT, OR OF FITNESS FOR A PARTICULAR PURPOSE. LICENSOR DOES NOT WARRANT THAT THE FUNCTIONS CONTAINED IN THE PROGRAM WILL MEET YOUR REQUIREMENTS OR THAT OPERATION WILL BE UNINTERRUPTED OR ERROR FREE. LICENSOR MAKES NO WARRANTIES RESPECTING ANY HARM THAT MAY BE CAUSED BY MALICIOUS USE OF THIS SOFTWARE. LICENSOR FURTHER EXPRESSLY DISCLAIMS ANY WARRANTY OR REPRESENTATION TO AUTHORIZED USERS OR TO ANY THIRD PARTY.
+
+Pengu Loader isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
 
 ## License
 

@@ -23,13 +23,14 @@ namespace PenguLoader.Main
             var pluginsDir = Config.PluginsDir;
             var plugins = new List<PluginInfo>();
 
-            void addPlugin(string name, string path, bool enabled)
+            void addPlugin(string name, string path, bool enabled, string author = "")
             {
                 var plugin = new PluginInfo
                 {
                     Name = name,
                     Path = path,
-                    Enabled = enabled
+                    Enabled = enabled,
+                    Author = author
                 };
 
                 ParsePluginEntry(path, plugin);
@@ -40,7 +41,25 @@ namespace PenguLoader.Main
             foreach (var dir in Directory.GetDirectories(pluginsDir))
             {
                 var dirName = Path.GetFileName(dir);
-                if (FilterName(dirName))
+                if (dirName.StartsWith("@"))
+                {
+                    foreach (var subdir in Directory.GetDirectories(dir))
+                    {
+                        var subdirName = Path.GetFileName(subdir);
+                        if (FilterName(subdirName))
+                        {
+                            var disabled = false;
+                            var indexPath = string.Empty;
+
+                            if (File.Exists(indexPath = Path.Combine(subdir, "index.js")) ||
+                                (disabled = File.Exists(indexPath = Path.Combine(subdir, "index.js_"))))
+                            {
+                                addPlugin($"{dirName}/{subdirName}", indexPath, !disabled, dirName);
+                            }
+                        }
+                    }
+                }
+                else if (FilterName(dirName))
                 {
                     var disabled = false;
                     var indexPath = string.Empty;

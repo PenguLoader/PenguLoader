@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using PenguLoader.Main;
@@ -47,6 +47,8 @@ namespace PenguLoader
             { "中文", "zh-CN.xaml" },
             { "Español", "es-ES.xaml" },
             { "Français", "fr-FR.xaml"}
+            { "Português", "pt-BR.xaml" },
+            { "Русский", "ru-RU.xaml" }
         };
 
         public static void SetLanguage(string lang)

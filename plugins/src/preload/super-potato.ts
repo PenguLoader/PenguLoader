@@ -42,7 +42,7 @@ function load() {
   });
 }
 
-if (Pengu.superPotato) {
+if (window.Pengu.superPotato) {
   window.addEventListener('load', load);
 }
 

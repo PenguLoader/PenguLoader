@@ -1,4 +1,5 @@
 #include "commons.h"
+#include "hook.h"
 #include "include/cef_version.h"
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -9,17 +10,10 @@ void HookRendererProcess();
 void InjectThisDll(HANDLE hProcess);
 
 static hook::Hook<decltype(&CreateProcessW)> Old_CreateProcessW;
-static BOOL WINAPI Hooked_CreateProcessW(
-    _In_opt_ LPCWSTR lpApplicationName,
-    _Inout_opt_ LPWSTR lpCommandLine,
-    _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
-    _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
-    _In_ BOOL bInheritHandles,
-    _In_ DWORD dwCreationFlags,
-    _In_opt_ LPVOID lpEnvironment,
-    _In_opt_ LPCWSTR lpCurrentDirectory,
-    _In_ LPSTARTUPINFOW lpStartupInfo,
-    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
+static BOOL WINAPI Hooked_CreateProcessW(LPCWSTR lpApplicationName, LPWSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCWSTR lpCurrentDirectory,
+    LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation)
 {
     bool is_renderer = std::regex_search(lpCommandLine,
         std::wregex(L"LeagueClientUxRender\\.exe.+--type=renderer", std::wregex::icase));
@@ -176,7 +170,7 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
     {
         char msg[128];
         sprintf_s(msg, "Failed to create LeagueClientUx process, last error: 0x%08X.", GetLastError());
-        dialog::alert(msg, "Pengu Loader bootstraper", dialog::DIALOG_WARNING);
+        dialog::alert(msg, "Pengu Loader bootstrapper", dialog::DIALOG_WARNING);
         return 1;
     }
 

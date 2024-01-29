@@ -31,12 +31,12 @@
 
 #include <type_traits>
 #include <atomic>
-#include <mutex>
 #include <string>
 #include <vector>
 #include <regex>
 #include <unordered_set>
 #include <unordered_map>
+#include <filesystem>
 
 #define CEF_STRING_TYPE_UTF16 1
 #include "include/internal/cef_string.h"
@@ -45,6 +45,7 @@
 
 using str = std::string;
 using wstr = std::wstring;
+using path = std::filesystem::path;
 
 template <typename T>
 using vec = std::vector<T>;
@@ -115,11 +116,11 @@ struct CefRefCount : public T
 {
     template <typename U>
     CefRefCount(const U *) noexcept : T{}, ref_(1) {
-        base.size = sizeof(U);
-        base.add_ref = _Base_AddRef;
-        base.release = _Base_Release;
-        base.has_one_ref = _Base_HasOneRef;
-        base.has_at_least_one_ref = _Base_HasAtLeastOneRef;
+        T::base.size = sizeof(U);
+        T::base.add_ref = _Base_AddRef;
+        T::base.release = _Base_Release;
+        T::base.has_one_ref = _Base_HasOneRef;
+        T::base.has_at_least_one_ref = _Base_HasAtLeastOneRef;
         self_delete_ = [](void *self) noexcept { delete static_cast<U *>(self); };
     }
 
@@ -312,28 +313,36 @@ typedef V8Value* (*V8FunctionHandler)(const vec<V8Value *> &args);
 
 namespace config
 {
-    wstr loaderDir();
-    wstr assetsDir();
-    wstr pluginsDir();
-    wstr datastorePath();
+    path loaderDir();
+    path pluginsDir();
+    path datastorePath();
 
-    wstr cacheDir();
-    wstr leagueDir();
+    path cacheDir();
+    path leagueDir();
 
-    wstr getConfigValue(const wstr &key, const wstr &fallback = L"");
-    bool getConfigValueBool(const wstr &key, bool fallback);
-    int getConfigValueInt(const wstr &key, int fallback);
+    namespace options
+    {
+        bool AllowProxyServer();
+        int RemoteDebuggingPort();
+
+        bool DisableWebSecurity();
+        bool IgnoreCertificateErrors();
+
+        bool OptimizeClient();
+        bool SuperLowSpecMode();
+    }
 }
 
 namespace utils
 {
-    bool isDir(const wstr &path);
-    bool isFile(const wstr &path);
-    bool isSymlink(const wstr &path);
-    bool readFile(const wstr &path, str &out);
-    vec<wstr> readDir(const wstr &dir);
+    bool isDir(const path &path);
+    bool isFile(const path &path);
+    bool isSymlink(const path &path);
+    bool readFile(const path &path, str &out);
+    vec<wstr> readDir(const path &dir);
 
     void *patternScan(const HMODULE module, const char *pattern);
+    float getWindowScale(void *handle);
 }
 
 namespace dialog
@@ -358,124 +367,4 @@ namespace shell
 
     void open_folder(const char *path);
     void open_folder(const wchar_t *path);
-}
-
-namespace hook
-{
-#   pragma pack(push, 1)
-    struct Shellcode
-    {
-        Shellcode(intptr_t addr) : addr(addr) {}
-
-    private:
-        // Special thanks to https://github.com/nbqofficial/divert/
-        uint8_t movabs = 0x48;      //                 
-        uint8_t mov_rax = 0xB8;     // movabs rax [addr]
-        intptr_t addr;              //
-        uint8_t push_rax = 0x50;    // push rax
-        uint8_t ret = 0xC3;         // ret
-    };
-#   pragma pack(pop)
-
-    struct Restorable
-    {
-        Restorable(void *func, const void *code, size_t size)
-            : func_(func)
-            , backup_(new uint8_t[size]{})
-            , size_(size)
-        {
-            memcpy(backup_, func, size);
-            memcpy_safe(func, code, size);
-        }
-
-        ~Restorable()
-        {
-            memcpy_safe(func_, backup_, size_);
-            delete[] backup_;
-        }
-
-        Restorable swap()
-        {
-            return Restorable(func_, backup_, size_);
-        }
-
-    private:
-        void *func_;
-        uint8_t *backup_;
-        size_t size_;
-
-        static void memcpy_safe(void *dst, const void *src, size_t size)
-        {
-            DWORD op;
-            VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &op);
-            memcpy(dst, src, size);
-            VirtualProtect(dst, size, op, &op);
-        }
-    };
-
-    template<typename>
-    class Hook;
-
-    template<typename R, typename ...Args>
-    class Hook<R(*)(Args...)>
-    {
-    public:
-        using Fn = R(*)(Args...);
-
-        Hook()
-            : orig_(nullptr)
-            , rest_(nullptr)
-            , mutex_{}
-        {
-        }
-
-        ~Hook()
-        {
-            if (rest_ != nullptr)
-            {
-                std::lock_guard<std::mutex> lock(mutex_);
-                {
-                    delete rest_;
-                }
-            }
-        }
-
-        bool hook(Fn orig, Fn hook)
-        {
-            if (orig == nullptr || hook == nullptr)
-                return false;
-
-            orig_ = orig;
-
-            Shellcode code(reinterpret_cast<intptr_t>(hook));
-            rest_ = new Restorable(orig, &code, sizeof(code));
-
-            return true;
-        }
-
-        bool hook(const char *lib, const char *proc, Fn hook)
-        {
-            if (HMODULE mod = GetModuleHandleA(lib))
-                if (Fn orig = reinterpret_cast<Fn>(GetProcAddress(mod, proc)))
-                    return this->hook(orig, hook);
-
-            return false;
-        }
-
-        R operator ()(Args ...args)
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            {
-                auto _t = rest_->swap();
-                {
-                    return orig_(args...);
-                }
-            }
-        }
-
-    protected:
-        Fn orig_;
-        Restorable *rest_;
-        std::mutex mutex_;
-    };
 }

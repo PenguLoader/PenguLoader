@@ -23,6 +23,9 @@ export default defineConfig(({ command, mode }) => {
       https: true,
       port: port
     },
+    esbuild: {
+      legalComments: 'none',
+    },
     build: {
       assetsInlineLimit: 1024 * 64,
       minify: !dev,

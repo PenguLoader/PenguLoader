@@ -24,16 +24,15 @@ static void SetUpDevToolsWindow(HWND window)
     bool IsWindowsDarkTheme();
     void ForceDarkTheme(HWND);
 
-    if (IsWindowsDarkTheme())
-    {
+    if (IsWindowsDarkTheme()) {
         // Force dark theme.
         ForceDarkTheme(window);
-
-        // Fix dark titlebar issue.
-        RECT rc; GetClientRect(window, &rc);
-        SetWindowPos(window, NULL, 0, 0,
-            rc.right - 5, rc.bottom, SWP_NOMOVE | SWP_FRAMECHANGED);
     }
+
+    // Fix window content.
+    RECT rc; GetClientRect(window, &rc);
+    SetWindowPos(window, NULL, 0, 0,
+        rc.right - 5, rc.bottom, SWP_NOMOVE | SWP_FRAMECHANGED);
 }
 
 struct DevToolsLifeSpan : CefRefCount<cef_life_span_handler_t>
@@ -55,6 +54,10 @@ struct DevToolsLifeSpan : CefRefCount<cef_life_span_handler_t>
         // Save devtools handle.
         HWND window = host->get_window_handle(host);
         devtools_map_.emplace(parent_id_, window);
+
+        // Set initial zoom level
+        double zoom_level = utils::getWindowScale(window) - 1.0;
+        host->set_zoom_level(host, zoom_level);
 
         SetUpDevToolsWindow(window);
         host->base.release(&host->base);

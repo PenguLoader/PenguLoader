@@ -1,9 +1,9 @@
 #include "commons.h"
 #include <fstream>
 
-bool utils::isSymlink(const wstr &path)
+bool utils::isSymlink(const path &path)
 {
-    DWORD attr = GetFileAttributesW(path.c_str());
+    DWORD attr = GetFileAttributesW(path.wstring().c_str());
 
     if (attr == INVALID_FILE_ATTRIBUTES)
         return false;
@@ -11,9 +11,9 @@ bool utils::isSymlink(const wstr &path)
     return attr & FILE_ATTRIBUTE_REPARSE_POINT;
 }
 
-bool utils::isDir(const wstr &path)
+bool utils::isDir(const path &path)
 {
-    DWORD attr = GetFileAttributesW(path.c_str());
+    DWORD attr = GetFileAttributesW(path.wstring().c_str());
 
     if (attr == INVALID_FILE_ATTRIBUTES)
         return false;
@@ -21,9 +21,9 @@ bool utils::isDir(const wstr &path)
     return attr & FILE_ATTRIBUTE_DIRECTORY;
 }
 
-bool utils::isFile(const wstr &path)
+bool utils::isFile(const path &path)
 {
-    DWORD attr = GetFileAttributesW(path.c_str());
+    DWORD attr = GetFileAttributesW(path.wstring().c_str());
 
     if (attr == INVALID_FILE_ATTRIBUTES)
         return false;
@@ -31,7 +31,7 @@ bool utils::isFile(const wstr &path)
     return !(attr & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-bool utils::readFile(const wstr &path, str &out)
+bool utils::readFile(const path &path, str &out)
 {
     bool result = false;
     std::ifstream input(path, std::ios::binary);
@@ -46,12 +46,13 @@ bool utils::readFile(const wstr &path, str &out)
     return result;
 }
 
-vec<wstr> utils::readDir(const wstr &dir)
+vec<wstr> utils::readDir(const path &dir)
 {
+    wstr target = dir.wstring() + L"\\*";
     vec<wstr> files{};
 
     WIN32_FIND_DATAW fd;
-    HANDLE hFind = FindFirstFileW(dir.c_str(), &fd);
+    HANDLE hFind = FindFirstFileW(target.c_str(), &fd);
 
     if (hFind != INVALID_HANDLE_VALUE)
     {

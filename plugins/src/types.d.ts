@@ -62,36 +62,16 @@ interface FileStat {
   isDir: boolean
 }
 
-interface PluginFS {
-  read: (path: string) => Promise<string | undefined>
-  write: (path: string, content: string, enableAppendMode: boolean) => Promise<boolean>
-  mkdir: (path: string) => Promise<boolean>
-  stat: (path: string) => Promise<FileStat | undefined>
-  ls: (path: string) => Promise<string[] | undefined>
-  rm: (path: string, recursively: boolean) => Promise<number>
-}
+// interface PluginFS {
+//   read: (path: string) => Promise<string | undefined>
+//   write: (path: string, content: string, enableAppendMode: boolean) => Promise<boolean>
+//   mkdir: (path: string) => Promise<boolean>
+//   stat: (path: string) => Promise<FileStat | undefined>
+//   ls: (path: string) => Promise<string[] | undefined>
+//   rm: (path: string, recursively: boolean) => Promise<number>
+// }
 
 // globals
-
-namespace Pengu {
-  const version: string;
-  const superPotato: boolean;
-  const plugins: string[];
-}
-
-declare const DataStore: DataStore;
-declare const CommandBar: CommandBar;
-declare const Toast: Toast;
-declare const Effect: Effect;
-declare const PluginFS: PluginFS;
-
-declare const openDevTools: (remote?: boolean) => void;
-declare const openAssetsFolder: () => void;
-declare const openPluginsFolder: (path?: string) => boolean;
-declare const reloadClient: () => void;
-declare const restartClient: () => void;
-declare const getScriptPath: () => string | undefined;
-declare const __llver: string;
 
 declare interface Window {
 
@@ -99,7 +79,12 @@ declare interface Window {
   CommandBar: CommandBar;
   Toast: Toast;
   Effect: Effect;
-  PluginFS: PluginFS;
+  Pengu: {
+    version: string
+    superPotato: boolean
+    plugins: string[]
+    // fs: PluginFS
+  };
 
   openDevTools: typeof openDevTools;
   openAssetsFolder: typeof openAssetsFolder;
@@ -107,5 +92,6 @@ declare interface Window {
   reloadClient: typeof reloadClient;
   restartClient: typeof restartClient;
   getScriptPath: typeof getScriptPath;
+
   __llver: string;
 }
