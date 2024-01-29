@@ -6,7 +6,6 @@ import { build } from 'esbuild';
 // Vite plugins
 import mkcert from 'vite-plugin-mkcert';
 import solidPlugin from 'vite-plugin-solid';
-import bundleCssInJs from 'vite-plugin-css-injected-by-js';
 import viteRestart from 'vite-plugin-restart';
 
 const port = 3001;
@@ -27,35 +26,26 @@ export default defineConfig(({ command, mode }) => {
       legalComments: 'none',
     },
     build: {
-      assetsInlineLimit: 1024 * 64,
       minify: !dev,
       modulePreload: false,
       lib: {
-        name: 'preload',
-        entry: 'src/index.ts',
-        formats: ['iife']
+        entry: {
+          npm: 'src/npm/index.ts',
+          preload: 'src/preload/index.ts',
+          views: 'src/views/index.tsx',
+        },
+        formats: ['es'],
       },
       rollupOptions: {
         output: {
-          format: 'iife',
+          format: 'es',
           sourcemap: dev ? 'inline' : false,
-          entryFileNames: 'preload.js'
         }
       }
     },
     plugins: [
       mkcert(),
       solidPlugin(),
-      bundleCssInJs({
-        topExecutionPriority: false,
-        injectCodeFunction: function (css) {
-          document.addEventListener('DOMContentLoaded', function () {
-            const style = document.createElement('style');
-            style.appendChild(document.createTextNode(css));
-            document.head.appendChild(style);
-          });
-        }
-      }),
       viteRestart({
         restart: 'src/preload/**/*.ts'
       }),
@@ -85,9 +75,8 @@ export default defineConfig(({ command, mode }) => {
         apply: 'build',
         enforce: 'post',
         async closeBundle() {
-          const code = await fs.readFile(root('dist/preload.js'), 'utf-8');
-          const header = generateHeader(code, 'preload_script');
-          await fs.writeFile(root('dist/preload.g.h'), header, 'utf-8');
+          const header = await generateHeader(root('dist'), 'pengu_assets');
+          await fs.writeFile(root('dist/pengu.g.h'), header, 'utf-8');
         }
       }
     ]
@@ -106,24 +95,68 @@ function generateDevLoader(port: number) {
   return `!(${template.toString()})(${port});`;
 }
 
-function generateHeader(code: string, name: string, lineLength = 12) {
-  const bytes = [...Buffer.from(code, 'utf-8')]
+async function generateBytes(file: string) {
+  const bytes = [...await fs.readFile(file)]
     .map(c => '0x' + c.toString(16).padStart(2, '0'));
 
   const formatted = Array<string>();
-  for (let i = 0; i < bytes.length; i += lineLength) {
-    const line = bytes.slice(i, i + lineLength).join(', ');
+  for (let i = 0; i < bytes.length; i += 12) {
+    const line = bytes.slice(i, i + 12).join(', ');
     formatted.push(line);
   }
+
+  return formatted.join(',\n  ');
+}
+
+async function generateHeader(dir: string, name: string) {
+  const files = await readDir(dir);
+  const hashes = files.map(p => fnv1a32('/@pengu/' + p));
+  const chunks = await Promise.all(files.map(p => generateBytes(path.join(dir, p))));
 
   return `#ifndef _${name.toUpperCase()}_H_
 #define _${name.toUpperCase()}_H_
 
-static const unsigned int _${name}_size = ${bytes.length};
+#include <utility>
+#include <unordered_map>
 
-static const unsigned char _${name}[${bytes.length + 1}] = {
-  ${formatted.join(',\n  ')}
+${hashes.map((h, i) => `static const unsigned char __h${h}_[] = {
+  ${chunks[i]}
+};
+`).join('\n')
+}
+
+static const std::unordered_map<unsigned int, std::pair<const void *, size_t>> __${name} {
+${hashes.map((h, i) => `  { 0x${h}, std::make_pair<const void *, size_t>(__h${h}_, sizeof(__h${h}_)) },`).join('\n')}
 };
 
 #endif`
+}
+
+async function readDir(dir: string) {
+  const files = Array<string>();
+
+  async function readDirectory(dir: string) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await readDirectory(fullPath);
+      } else {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  await readDirectory(dir);
+  return files.map(p => p.replace(dir, '').replace(/\\/g, '/').substring(1));
+}
+
+function fnv1a32(str: string) {
+  let hash = 0x811c9dc5n;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= BigInt(str.charCodeAt(i));
+    hash = BigInt.asUintN(32, hash * 0x01000193n);
+  }
+  return hash.toString(16);
 }
