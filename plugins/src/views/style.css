@@ -20,7 +20,7 @@ div[id^=index_loading_div]>img {
 
 div[id^=index_loading_div]::before {
   content: '';
-  background-image: url(/lol-game-data/assets/v1/profile-icons/4216.jpg);
+  background-image: url(../assets/pengu-sm.jpg);
   background-repeat: no-repeat;
   background-size: cover;
   width: 144px;

@@ -238,22 +238,8 @@ static void LoadPlugins(V8Object *window)
 
 static void ExecutePreloadScript(cef_frame_t *frame)
 {
-#ifdef _DEBUG
-    str script{};
-    if (utils::readFile(config::loaderDir() / "../plugins/dist/preload.js", script))
-    {
-        CefStr code{ script.c_str(), script.length() };
-        frame->execute_java_script(frame, &code, &u"https://plugins/@/preload"_s, 1);
-    }
-    else
-    {
-        printf("preload is not found, please start dev server and reload your client\n");
-    }
-#else
-#   include "../plugins/dist/preload.g.h"
-    CefStr script{ (const char *)_preload_script, _preload_script_size };
-    frame->execute_java_script(frame, &script, nullptr, 1);
-#endif
+    frame->execute_java_script(frame, &u"(() => import('https://plugins/@pengu/preload.js'))();"_s, nullptr, 1);
+    frame->execute_java_script(frame, &u"(() => import('https://plugins/@pengu/views.js'))();"_s, nullptr, 1);
 }
 
 static decltype(cef_render_process_handler_t::on_context_created) OnContextCreated;

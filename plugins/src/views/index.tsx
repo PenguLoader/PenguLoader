@@ -34,5 +34,14 @@ async function mount() {
   root.appendChild(twind);
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.querySelector('style[data-vite-dev-id]') == null) {
+    const link = document.createElement('link');
+    link.setAttribute('rel', 'stylesheet');
+    link.setAttribute('href', 'https://plugins/@pengu/style.css');
+    document.head.appendChild(link);
+  }
+});
+
 customElements.define(rootId, PenguRoot);
 window.addEventListener('load', mount);
