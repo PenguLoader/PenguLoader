@@ -4,6 +4,8 @@
 #include "include/capi/cef_stream_capi.h"
 #include "include/capi/cef_resource_handler_capi.h"
 
+#include "../../plugins/dist/pengu.g.h"
+
 // BROWSER PROCESS ONLY.
 
 static const set<wstr> KNOWN_ASSETS
@@ -46,17 +48,17 @@ export default JSON.parse(content);
 )";
 
 static const auto SCRIPT_IMPORT_TOML = R"(
-const { parse } = __p('toml');
+import { TOML } from 'https://plugins/@pengu/npm.js';
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
-export default parse(content);
+export default TOML.parse(content);
 )";
 
 static const auto SCRIPT_IMPORT_YAML = R"(
-const { parse } = __p('yaml');
+import { YAML } from 'https://plugins/@pengu/npm.js';
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
-export default parse(content);
+export default YAML.parse(content);
 )";
 
 static const auto SCRIPT_IMPORT_RAW = R"(
@@ -119,11 +121,22 @@ private:
         // Decode URI.
         decode_uri(path_);
 
+        // Check built-in assets.
+        uint32_t hash = hash_fnv1a32(path_.c_str(), path_.length());
+        const auto& iter = __pengu_assets.find(hash);
+
+        if (iter != __pengu_assets.end())
+        {
+            const auto& value = iter->second;
+            stream_ = cef_stream_reader_create_for_data((void*)value.first, value.second);
+            goto _process;
+        }
+
         // Get final path.
         path_ = config::pluginsDir().wstring().append(path_);
 
         // Trailing slash.
-        if (path_[path_.length() - 1] == '/' || path_[path_.length() - 1] == L'\\')
+        if (path_[path_.length() - 1] == '/' || path_[path_.length() - 1] == '\\')
         {
             js_mime = true;
             path_.append(L"index.js");
@@ -186,6 +199,7 @@ private:
             }
         }
 
+_process:
         if (stream_ != nullptr)
         {
             stream_->seek(stream_, 0, SEEK_END);
@@ -278,6 +292,16 @@ private:
             hash *= 1099511628211ULL;
         }
 
+        return hash;
+    }
+
+    template <typename T>
+    static uint32_t hash_fnv1a32(T *arr, size_t length) {
+        uint32_t hash = 0x811c9dc5u;
+        for (size_t i = 0; i < length; i++) {
+            hash ^= arr[i];
+            hash *= 0x01000193u;
+        }
         return hash;
     }
 
