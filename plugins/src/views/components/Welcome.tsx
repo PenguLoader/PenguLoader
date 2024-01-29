@@ -1,5 +1,5 @@
 import { Show, createSignal, onMount } from 'solid-js';
-import penguLogo from '../assets/pengu.jpg';
+import penguLogo from '../../assets/pengu-md.jpg';
 import { toast } from './Toaster';
 import { _t } from '../lib/i18n';
 import { fetchUpdate } from '../lib/updater';

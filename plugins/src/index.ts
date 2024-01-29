@@ -1,2 +1,0 @@
-import './preload';
-import './views';
