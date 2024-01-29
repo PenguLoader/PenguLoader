@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using PenguLoader.Main;
@@ -46,6 +46,7 @@ namespace PenguLoader
             { "日本語", "ja-JP.xaml" },
             { "中文", "zh-CN.xaml" },
             { "Español", "es-ES.xaml" },
+            { "Français", "fr-FR.xaml"}
             { "Português", "pt-BR.xaml" },
             { "Русский", "ru-RU.xaml" }
         };
