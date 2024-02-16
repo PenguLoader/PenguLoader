@@ -83,6 +83,26 @@
       "act_create_normal": "創建5V5單排房間",
       "act_practice_tool": "創建練習模式",
       "act_quit_pvp": "跳GAME(僅限PVP模式)"
-    }
+    },
+{
+      "_locales": [
+        "tr-TR"
+      ],
+      "welcome_msg": "Merhaba Sihirdar, Pengu başarıyla yüklendi umarız hoşuna gider! Daha fazla harika 😎 eklenti ve tema edinmek için topluluğumuza katıl 👇",
+      "dont_show_again": "Tekrar gösterme",
+      "active_status": "Pengu İstemcisi Etkin!",
+      "update_available": "Yeni güncelleme mevcut!",
+      "update_hint": "Güncellemeyi almak için İstemciyi kapatmanız ve Pengu Loader'ı açman gerekiyor.",
+      "cmdbar_type_hint": "Komut yaz veya ara...",
+      "act_visit_home": "Anasayfaya git",
+      "act_open_devtools": "Geliştirici Araçlarını Aç",
+      "act_open_plugins": "Eklenti Klasörünü Aç",
+      "act_reload": "İstemciyi Yeniden Yükle",
+      "act_restart": "İstemciyi Yeniden Başlat",
+      "act_create_aram": "ARAM Lobisi Oluştur",
+      "act_create_normal": "5V5 SV Lobisi Oluştur",
+      "act_practice_tool": "Antrenman Modu Oluştur",
+      "act_quit_pvp": "PvP şampiyon seçiminden çık"
+    },
   ]
 }
