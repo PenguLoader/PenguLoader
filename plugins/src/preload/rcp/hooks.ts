@@ -1,111 +1,129 @@
+type CallbackType = "before" | "after";
+
 interface Callback {
-  pre: boolean,
-  callback: Function,
+  (...args: any): void | Promise<void>;
 }
 
-const pluginMap = new Map<string, any>();
-const callbacksMap = new Map<string, Callback[]>();
+type CallbackContainer = {
+  [length]: number;
+} & {
+  [k in CallbackType]?: Callback[];
+}
 
-function subscribeRcp(name: string) {
-  function listener(event: RcpAnnouceEvent) {
-    const handler = event.registrationHandler;
+const length = Symbol("length");
 
-    event.registrationHandler = function (registrar) {
-      handler(async (provider) => {
-        const callbacks = callbacksMap.get(name)!;
+class RCP {
+  static readonly PREF = "riotPlugin.announce:";
+  static readonly PREF_LEN = this.PREF.length;
 
-        await Promise.allSettled(
-          callbacks.filter(c => c.pre)
-            .map(c => c.callback(provider))
-        );
+  static isAnnounceEvent(event: Event): event is RcpAnnouceEvent {
+    return event.type.startsWith(this.PREF);
+  }
 
+  constructor() {
+    const self = this;
+    const { dispatchEvent } = document;
+    function dispatchEventWrap(this: any, event: Event): boolean {
+      if (RCP.isAnnounceEvent(event)) self.onPluginAnnounce(event);
+      return dispatchEvent.call(this, event);
+    }
+    Object.defineProperty(document, "dispatchEvent", { value: dispatchEventWrap });
+  }
+
+  private readonly pluginRegistry = new Map<string, any>();
+  private readonly callbacks = new Map<string, CallbackContainer>();
+
+  private onPluginAnnounce(event: RcpAnnouceEvent) {
+    const self = this;
+    const name = event.type.substring(RCP.PREF_LEN);
+    
+    const { registrationHandler } = event;
+
+    function registrationHandlerWrap(this: any, registrar: Parameters<typeof registrationHandler>[0]): ReturnType<typeof registrationHandler> {
+      return registrationHandler.call(this, async function(provider) {
+        await self.invokeCallbacks("before", name, provider);
         const api = await registrar(provider);
-        pluginMap.set(name, api);
-
-        await Promise.allSettled(
-          callbacks.filter(c => !c.pre)
-            .map(c => c.callback(api))
-        );
-
+        self.pluginRegistry.set(name, api);
+        await self.invokeCallbacks("after", name, api);
         return api;
       });
-    };
+    }
+  
+    Object.defineProperty(event, "registrationHandler", {
+      value: registrationHandlerWrap,
+    })
   }
 
-  const type = `riotPlugin.announce:${name}`;
-  document.addEventListener(type, <any>listener, {
-    once: true,
-    capture: false
-  });
-}
-
-function addHook(name: string, pre: boolean, callback: Function) {
-  let callbacks: Callback[];
-
-  if (callbacksMap.has(name)) {
-    callbacks = callbacksMap.get(name)!;
-  } else {
-    callbacksMap.set(name, callbacks = []);
-    subscribeRcp(name);
+  private invokeCallbacks(type: CallbackType, name: string, ...args: any[]) {
+    const container = this.callbacks.get(name);
+    if (container == undefined) return;
+    const callbacks = container[type];
+    if (callbacks == undefined) return;
+    if ((container[length] -= callbacks.length) == 0) this.callbacks.delete(name);
+    const tasks: any[] = [];
+    for (const callback of callbacks) tasks.push(callback(...args));
+    callbacks.length = 0;
+    return Promise.allSettled(tasks);
   }
 
-  callbacks.push({
-    pre,
-    callback
-  });
-}
-
-function preInit(name: string, callback: (provider: any) => any) {
-  if (typeof name === 'string' && typeof callback === 'function') {
-    addHook(name, true, callback);
+  private addCallback(type: CallbackType, name: string, callback: Callback) {
+    let container = this.callbacks.get(name);
+    if (container == undefined) this.callbacks.set(name, (container = { [type]: [], [length]: 0 }));
+    const arr = container[type] ?? (container[type] = []);
+    container[length]++;
+    arr.push(callback);
   }
-}
 
-function postInit(name: string, callback: (api: any) => any, blocking: boolean = false) {
-  if (typeof name === 'string' && typeof callback === 'function') {
-    const callbackFn = blocking ? callback : ((api: any) => { callback(api); void 0; });
-    addHook(name, false, callbackFn);
+  public preInit(name: string, callback: (provider: any) => any): boolean {
+    name = String(name);
+    if (typeof callback !== "function") throw new TypeError(`${callback} is not a function`);
+    if (this.pluginRegistry.has(name)) return false;
+    this.addCallback("before", name, callback);
+    return true;
   }
-}
 
-// Wait for plugin(s) loaded asynchronously
-function whenReady(name: string): Promise<any>;
-function whenReady(names: string[]): Promise<any[]>;
-function whenReady(param) {
-  if (typeof param === 'string') {
-    return new Promise<any>((resolve) => {
-      if (pluginMap.has(param)) {
-        resolve(pluginMap.get(param));
-      } else {
-        postInit(param, resolve);
-      }
+  public postInit(name: string, callback: (api: any) => any, blocking: boolean = false){
+    name = String(name);
+    if (typeof callback !== "function") throw new TypeError(`${callback} is not a function`);
+    if (this.pluginRegistry.has(name)) return false;
+    this.addCallback("after", name, callback);
+    return true;
+  }
+
+  private whenReadyOne(name: string) {
+    const plugin = this.pluginRegistry.get(name);
+    if (plugin !== undefined) return Promise.resolve(plugin);
+    return new Promise<any>(resolve => {
+      this.postInit(name, resolve);
     });
-  } else if (Array.isArray(param)) {
-    return Promise.all(param.map((name) =>
-      new Promise<any>((resolve) => {
-        if (pluginMap.has(name)) {
-          resolve(pluginMap.get(name));
-        } else {
-          postInit(name, resolve);
-        }
-      })
-    ));
+  }
+  private whenReadyAll(names: string[]) {
+    const tasks: any[] = [];
+    for (const name of names) tasks.push(this.whenReadyOne(name));
+    return Promise.all(tasks);
+  }
+
+  public whenReady(param){
+    if (typeof param == "string") return this.whenReadyOne(param);
+    if (Array.isArray(param)) return this.whenReadyAll(param);
+    throw new TypeError(`unexpected argument ${param}`);
+  }
+  public get(name: string){
+    name = String(name).toLowerCase();
+    if (!name.startsWith('rcp-')) name = 'rcp-' + name;
+    return this.pluginRegistry.get(name);
+  }
+
+  [Symbol.iterator](){
+    return this.pluginRegistry.entries();
   }
 }
 
-// Get a plugin sunchronously, returns undefined if it's not loaded
-function get(name: string): object | undefined {
-  name = String(name).toLowerCase();
-  if (!name.startsWith('rcp-'))
-    name = 'rcp-' + name;
-  return pluginMap.get(name);
-}
+export const rcp = new RCP();
 
-export const rcp = {
-  get,
-  preInit,
-  postInit,
-  whenReady,
-};
-
-window['rcp'] = Object.freeze(rcp);
+Object.defineProperty(window, "rcp", {
+  value: rcp,
+  enumerable: false,
+  configurable: false,
+  writable: false
+})
