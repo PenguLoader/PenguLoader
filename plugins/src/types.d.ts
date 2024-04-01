@@ -84,6 +84,7 @@ declare interface Window {
     superPotato: boolean
     plugins: string[]
     // fs: PluginFS
+    __plugins: Record<string, string>;
   };
 
   openDevTools: typeof openDevTools;

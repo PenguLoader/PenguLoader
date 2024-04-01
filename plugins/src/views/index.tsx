@@ -19,7 +19,6 @@ class PenguRoot extends withTwind(HTMLElement) {
 }
 
 async function mount() {
-
   await loadTranslation();
 
   let root = document.getElementById(rootId);
@@ -35,4 +34,6 @@ async function mount() {
 }
 
 customElements.define(rootId, PenguRoot);
-window.addEventListener('load', mount);
+// window.addEventListener('load', mount);
+if (document.readyState !== "loading") mount();
+else document.addEventListener("DOMContentLoaded", mount);

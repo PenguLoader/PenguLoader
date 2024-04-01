@@ -38,17 +38,21 @@ async function loadPlugin(entry: string) {
   }
 }
 
-// Load all plugins asynchronously
-const waitable = Promise.all(
-  window.Pengu.plugins
-    .filter(n => !/^@default\//i.test(n))
-    .map(loadPlugin)
-);
+document.addEventListener("Pengu.importmap.ready", function() {
 
-// Listen for the first rcp, it's also the first listener
-rcp.preInit('rcp-fe-common-libs', async function () {
-  // Wait for plugins load
-  await waitable;
-});
+  // Load all plugins asynchronously
+  const waitable = Promise.all(
+    window.Pengu.plugins
+      .filter(n => !/^@default\//i.test(n))
+      .map(loadPlugin)
+  );
+  
+  // Listen for the first rcp, it's also the first listener
+  rcp.preInit('rcp-fe-common-libs', async function () {
+    // Wait for plugins load
+    await waitable;
+  });
+})
+
 
 export { }
