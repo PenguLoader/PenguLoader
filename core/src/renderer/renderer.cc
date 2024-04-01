@@ -82,6 +82,60 @@ static vec<wstr> GetPluginEntries()
     return entries;
 }
 
+static struct package {
+    std::wstring dir;
+    std::string content;
+};
+
+static boolean includesPackage(const std::vector<std::wstring>& strs) {
+    for (const auto& str : strs) if (str.compare(L"package.json") == 0) return true;
+    return false;
+}
+
+static void GetPackageEntriesRecursive(const std::filesystem::path& root, const std::filesystem::path& path, vec<package>& entries, int maxDepth) {
+    if (maxDepth == 0) return;
+
+
+    const auto fullPath = root / path;
+    const auto items = utils::readDir(fullPath);
+    if (includesPackage(items)) {
+        const auto packagePath = fullPath / L"package.json";
+        if (utils::isFile(packagePath)) {
+            std::wstring dir = path;
+            for (int i = 0; i < dir.size(); i++) if (dir[i] == L'\\') dir[i] = L'/';
+            std::string content;
+            if (utils::readFile(packagePath, content)) entries.push_back({ dir, content });
+            #if _DEBUG
+                printf("package.json at: %ws\n", path.c_str());
+            #endif
+            return;
+        }
+    }
+
+    #if _DEBUG
+        printf("looking for package.json at: %ws\n", path.c_str());
+    #endif
+
+    for (const auto& name : items) {
+        const auto item = path / name;
+        if (name.compare(L".") == 0) continue;
+        if (name.compare(L"..") == 0) continue;
+        if (utils::isDir(root / item)) GetPackageEntriesRecursive(root, item, entries, maxDepth - 1);
+    }
+};
+
+static vec<package> GetPackageEntries() {
+    vec<package> entries{};
+    auto pluginsDir = config::pluginsDir();
+    if (utils::isDir(pluginsDir)) for (const auto& name : utils::readDir(pluginsDir)) {
+        if (name.compare(L".") == 0) continue;
+        if (name.compare(L"..") == 0) continue;
+
+        GetPackageEntriesRecursive(pluginsDir, name, entries, 5);
+    }
+    return entries;
+}
+
 static V8Value *native_OpenDevTools(const vec<V8Value *> &args)
 {
     bool remote = args.size() > 0 && args[0]->asBool();
@@ -222,6 +276,18 @@ static void LoadPlugins(V8Object *window)
     // Pengu.entries
     auto entries = GetPluginEntries();
     auto pluginEntries = V8Array::create((int)entries.size());
+
+    // Packages
+    {
+        auto packageObj = V8Object::create();
+        const auto packages = GetPackageEntries();
+        for (const auto& package : packages) packageObj->set(
+            &CefStr(package.dir),
+            V8Value::string(&CefStr(package.content)),
+            V8_PROPERTY_ATTRIBUTE_READONLY
+        );
+        pengu->set(&u"__plugins"_s, packageObj, V8_PROPERTY_ATTRIBUTE_READONLY);
+    }
 
     for (int index = 0; index < (int)entries.size(); index++)
     {
