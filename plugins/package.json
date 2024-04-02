@@ -11,7 +11,7 @@
     "build": "npm run build -ws -if-present & tsc & vite build -m production",
     "build:dev": "npm run build:dev -ws -if-present & tsc & vite build -m development",
 
-    "dev": "vite build --watch"
+    "dev": "vite build --watch -m development"
   },
   "devDependencies": {
     "typescript": "^5.4.3",
