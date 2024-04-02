@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "module": "NodeNext",
-        // "moduleResolution": "NodeNext",
+        "moduleResolution": "NodeNext",
         "target": "ES2022",
         
         "allowJs": true,
@@ -10,7 +10,6 @@
         "allowSyntheticDefaultImports": true,
         "strict": true,
         "noImplicitAny": true,
-        "isolatedModules": true,
 
         "outDir": "types",
 
