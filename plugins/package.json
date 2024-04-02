@@ -8,8 +8,9 @@
     "types"
   ],
   "scripts": {
-    "build": "npm run build -ws -if-present",
-    "build:self": "vite build",
+    "build": "npm run build -ws -if-present & tsc & vite build -m production",
+    "build:dev": "npm run build:dev -ws -if-present & tsc & vite build -m development",
+
     "dev": "vite build --watch"
   },
   "devDependencies": {

@@ -4,9 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "build": "npm run build:types & npm run build:self",
-    "build:types": "tsc",
-    "build:self": "vite build"
+    "build": "tsc & vite build -m production",
+    "build:dev": "tsc & vite build -m development",
+    "dev": "vite build --watch"
   },
 
   "exports": {

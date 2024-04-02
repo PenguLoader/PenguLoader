@@ -1,12 +1,17 @@
 import { defineConfig } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
+    ...mode == "production" ? {
+      minify: true,
+      sourcemap: false,
+    } : {
+      minify: false,
+      sourcemap: "inline",
+    },
+
     target: ['es2020'],
     assetsInlineLimit: 1024 * 64,
-    minify: false,
-    modulePreload: false,
-    sourcemap: "inline",
     lib: {
       name: 'preload',
       entry: 'src/index.ts',
@@ -20,4 +25,4 @@ export default defineConfig({
       }
     }
   }
-})
+}));

@@ -1,11 +1,17 @@
 import { defineConfig } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     build: {
-        assetsInlineLimit: 1024 * 64,
+      ...mode == "production" ? {
+        minify: true,
+        sourcemap: false,
+      } : {
         minify: false,
-        modulePreload: false,
         sourcemap: "inline",
+      },
+
+      target: ['es2020'],
+      assetsInlineLimit: 1024 * 64,
         lib: {
           name: 'pengufs',
           entry: 'src/index.ts',
@@ -19,4 +25,4 @@ export default defineConfig({
           }
         }
     }
-})
+}));

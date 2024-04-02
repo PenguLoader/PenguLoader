@@ -12,12 +12,12 @@
         "noImplicitAny": true,
         "isolatedModules": true,
 
-        "outDir": "types",
+        // "outDir": "types",
 
-        "noEmit": false,
-        "declaration": true,
-        "emitDeclarationOnly": true,
-        "declarationMap": true,
+        "noEmit": true,
+        // "declaration": true,
+        // "emitDeclarationOnly": true,
+        // "declarationMap": true,
 
         "types": ["vite/client", "pengu"]
     },
