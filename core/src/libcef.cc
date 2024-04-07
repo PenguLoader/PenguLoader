@@ -6,57 +6,53 @@
 #pragma comment(lib, "libcef.lib")
 #endif
 
-static void WarnInvalidVersion()
-{
-    dialog::alert("Your League Client is not supported or your Pengu version is out of date.",
-        "Pengu Loader", dialog::DIALOG_WARNING);
-}
-
-static void WarnLoadingFails()
-{
-    dialog::alert("Failed to load libcef.",
-        "Pengu Loader", dialog::DIALOG_WARNING);
-}
-
-static cef_color_t Hooked_GetBackgroundColor(void *rcx, cef_browser_settings_t *, cef_state_t)
+// CefContext::GetBackgroundColor()
+static cef_color_t get_background_color(void *rcx, cef_browser_settings_t *, cef_state_t)
 {
     return 0; // SK_ColorTRANSPARENT
 }
 
-bool LoadLibcefDll(bool is_browser)
+static void fix_browser_background(const void *rladdr)
 {
-    if (HMODULE module = GetModuleHandleA("libcef.dll"))
+#if OS_WIN
+    const char *pattern = "41 83 F8 01 74 0B 41 83 F8 02 75 0A 45 31 C0";
+#elif OS_MAC
+    const char *pattern = "55 48 89 E5 83 FA 01 74 0A 83 FA 02 75 0A 45 31 C0";
+#endif
+    using Fn = decltype(&get_background_color);
+    static hook::Hook<Fn> GetBackgroundColor;
+    // Find CefContext::GetBackgroundColor()
+    auto func = reinterpret_cast<Fn>(dylib::find_memory(rladdr, pattern));
+
+    if (func != nullptr)
+        GetBackgroundColor.hook(func, get_background_color);
+}
+
+bool check_libcef_version(bool is_browser)
+{
+    void *libcef = dylib::find_lib(LIBCEF_MODULE_NAME);
+
+    if (libcef != nullptr)
     {
-        auto GetVersion = reinterpret_cast<decltype(&cef_version_info)>
-            (GetProcAddress(module, "cef_version_info"));
+        auto get_version = reinterpret_cast<decltype(&cef_version_info)>(dylib::find_proc(libcef, "cef_version_info"));
 
         // Check CEF version
-        if (GetVersion == nullptr || GetVersion(0) != CEF_VERSION_MAJOR)
+        if (get_version == nullptr || get_version(0) != CEF_VERSION_MAJOR)
         {
             if (is_browser)
-                CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&WarnInvalidVersion, NULL, 0, NULL);
-
+                dialog::alert("Pengu does not support your Client version.", "Pengu Loader");
             return false;
         }
 
         if (is_browser)
-        {
-            // Find CefContext::GetBackgroundColor().
-            const char *pattern = "41 83 F8 01 74 0B 41 83 F8 02 75 0A 45 31 C0";
-            static hook::Hook<decltype(&Hooked_GetBackgroundColor)> GetBackgroundColor;
-            auto delegate = (decltype(&Hooked_GetBackgroundColor))utils::patternScan(module, pattern);
-
-            // Hook CefContext::GetBackgroundColor().
-            GetBackgroundColor.hook(delegate, Hooked_GetBackgroundColor);
-        }
+            fix_browser_background((const void *)get_version);
 
         return true;
     }
     else
     {
         if (is_browser)
-            WarnLoadingFails();
-
+            dialog::alert("Failed to load Chromium Embedded Framework.", "Pengu Loader");
         return false;
     }
 }

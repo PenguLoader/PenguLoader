@@ -1,12 +1,21 @@
 #include "commons.h"
 #include <fstream>
+#include <unordered_map>
 
+#if OS_WIN
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+#elif OS_MAC
+#include <dlfcn.h>
+#include <libgen.h>
+extern "C" void eglCreateNativeClientBufferANDROID();
+#endif
 
-path config::loaderDir()
+path config::loader_dir()
 {
+#if OS_WIN
     static wstr cachedPath{};
-    if (!cachedPath.empty()) return cachedPath;
+    if (!cachedPath.empty())
+        return cachedPath;
 
     // Get this dll path.
     WCHAR thisPath[2048];
@@ -26,7 +35,7 @@ path config::loaderDir()
     DWORD pathLength = GetFinalPathNameByHandleW(file, finalPath, 2048, FILE_NAME_OPENED);
     CloseHandle(file);
 
-    wstr dir{ finalPath, pathLength };
+    wstr dir{finalPath, pathLength};
 
     // Remove prepended '\\?\' by GetFinalPathNameByHandle()
     if (dir.rfind(L"\\\\?\\", 0) == 0)
@@ -34,20 +43,41 @@ path config::loaderDir()
 
     // Get parent folder.
     return cachedPath = dir.substr(0, dir.find_last_of(L"/\\"));
+#elif OS_MAC
+    static std::string path;
+    if (path.empty())
+    {
+        Dl_info info;
+        if (dladdr((const void *)&eglCreateNativeClientBufferANDROID, &info))
+        {
+            char *_path = strdup(info.dli_fname);
+            auto dir = dirname(_path);
+
+            int len = strlen(dir);
+            if (strstr(dir, "/dylib") == (dir + strlen(dir) - 6))
+                dir = dirname(dir);
+
+            path.assign(dir);
+            free(_path);
+        }
+    }
+    return path;
+#endif
 }
 
-path config::pluginsDir()
+path config::plugins_dir()
 {
-    return loaderDir() / "plugins";
+    return loader_dir() / "plugins";
 }
 
-path config::datastorePath()
+path config::datastore_path()
 {
-    return loaderDir() / "datastore";
+    return loader_dir() / "datastore";
 }
 
-path config::cacheDir()
+path config::cache_dir()
 {
+#if OS_WIN
     wchar_t path[2048];
     size_t length = GetEnvironmentVariableW(L"LOCALAPPDATA", path, _countof(path));
 
@@ -56,25 +86,32 @@ path config::cacheDir()
 
     lstrcatW(path, L"\\Riot Games\\League of Legends\\Cache");
     return path;
+#else
+    return "";
+#endif
 }
 
-path config::leagueDir()
+path config::league_dir()
 {
+#if OS_WIN
     wchar_t buf[2048];
     size_t length = GetModuleFileNameW(nullptr, buf, _countof(buf));
 
     wstr path(buf, length);
     return path.substr(0, path.find_last_of(L"/\\"));
+#else
+    return "";
+#endif
 }
 
-static map<str, str> getConfigMap()
+static auto get_config_map()
 {
     static bool cached = false;
-    static map<str, str> map{};
+    static std::unordered_map<std::string, std::string> map;
 
     if (!cached)
     {
-        auto path = config::loaderDir() / "config";
+        auto path = config::loader_dir() / "config";
         std::ifstream file(path);
 
         if (file.is_open())
@@ -102,11 +139,11 @@ static map<str, str> getConfigMap()
     return map;
 }
 
-static str getConfigValue(const char *key, const char *fallback)
+static std::string get_config_value(const char *key, const char *fallback)
 {
-    auto map = getConfigMap();
+    auto map = get_config_map();
     auto it = map.find(key);
-    str value = fallback;
+    std::string value = fallback;
 
     if (it != map.end())
         value = it->second;
@@ -114,9 +151,9 @@ static str getConfigValue(const char *key, const char *fallback)
     return value;
 }
 
-static bool getConfigValueBool(const char *key, bool fallback)
+static bool get_config_value_bool(const char *key, bool fallback)
 {
-    auto map = getConfigMap();
+    auto map = get_config_map();
     auto it = map.find(key);
     bool value = fallback;
 
@@ -131,9 +168,9 @@ static bool getConfigValueBool(const char *key, bool fallback)
     return value;
 }
 
-static int getConfigValueInt(const char *key, int fallback)
+static int get_config_value_int(const char *key, int fallback)
 {
-    auto map = getConfigMap();
+    auto map = get_config_map();
     auto it = map.find(key);
     int value = fallback;
 
@@ -147,29 +184,28 @@ namespace config::options
 {
     bool AllowProxyServer()
     {
-        return getConfigValueBool("AllowProxyServer", false)
-            || !getConfigValueBool("NoProxyServer", true);
+        return get_config_value_bool("AllowProxyServer", false) || !get_config_value_bool("NoProxyServer", true);
     }
 
     int RemoteDebuggingPort()
     {
-        return getConfigValueInt("RemoteDebuggingPort", 0);
+        return get_config_value_int("RemoteDebuggingPort", 0);
     }
     bool DisableWebSecurity()
     {
-        return getConfigValueBool("DisableWebSecurity", false);
+        return get_config_value_bool("DisableWebSecurity", false);
     }
     bool IgnoreCertificateErrors()
     {
-        return getConfigValueBool("IgnoreCertificateErrors", false);
+        return get_config_value_bool("IgnoreCertificateErrors", false);
     }
 
     bool OptimizeClient()
     {
-        return getConfigValueBool("OptimizeClient", true);
+        return get_config_value_bool("OptimizeClient", true);
     }
     bool SuperLowSpecMode()
     {
-        return getConfigValueBool("SuperLowSpecMode", false);
+        return get_config_value_bool("SuperLowSpecMode", false);
     }
 }

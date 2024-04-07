@@ -1,60 +1,29 @@
-#pragma once
-
-#if defined(_WIN32) || defined(_WIN64)
-#ifndef OS_WIN
-#define OS_WIN 1
-#endif
-#elif defined(__APPLE__) || defined(__MACH__)
-#ifndef OS_MAC
-#define OS_MAC 1
-#endif
-#else
-#error "Your platform is not supported."
-#endif
-
-#if !(defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__) || defined(__amd64__))
-#error "Target 64-bit (x86-64/AMD64) only."
-#endif
-
-#ifdef _MSC_VER
-#define NOMINMAX
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
-#ifndef COUNT_OF
-#define COUNT_OF(arr) (sizeof(arr) / sizeof(*arr))
-#endif
+#ifndef _COMMONS_H_
+#define _COMMONS_H_
+#include "platform.h"
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#ifdef OS_WIN
 #include <windows.h>
+#elif OS_MAC
+#include <unistd.h>
+#define CALLBACK
+#endif
 
 #include <type_traits>
 #include <atomic>
 #include <string>
 #include <vector>
-#include <regex>
-#include <unordered_set>
-#include <unordered_map>
 #include <filesystem>
 
 #define CEF_STRING_TYPE_UTF16 1
 #include "include/internal/cef_string.h"
 #include "include/capi/cef_base_capi.h"
-#include "include/capi/cef_v8_capi.h"
 
-using str = std::string;
-using wstr = std::wstring;
 using path = std::filesystem::path;
-
-template <typename T>
-using vec = std::vector<T>;
-
-template <typename V>
-using set = std::unordered_set<V>;
-
-template <typename K, typename V>
-using map = std::unordered_map<K, V>;
 
 template<typename T>
 struct remove_arg1;
@@ -87,7 +56,7 @@ struct self_bind_traits_base
 };
 
 template <int id, typename This, typename M, typename R, typename Self, typename... Args>
-typename M self_bind_traits_base<id, This, M, R, Self, Args...>::m_ = nullptr;
+/* typename */ M self_bind_traits_base<id, This, M, R, Self, Args...>::m_ = nullptr;
 
 template <int id, typename, typename, typename>
 struct self_bind_traits;
@@ -99,15 +68,15 @@ struct self_bind_traits<id, This, M, R(*)(Self, Args...)>
 template <int id, typename M, typename To>
 static inline void self_bind(M from, To &to) noexcept
 {
-    using traits = self_bind_traits<id, method_traits<M>::klass, M, To>;
-    if (traits::m_ == nullptr) traits::m_ = from;
-    to = traits::invoke;
+    // using traits = self_bind_traits<id, method_traits<M>::klass, M, To>;
+    // if (traits::m_ == nullptr) traits::m_ = from;
+    // to = traits::invoke;
 }
 
 #define cef_bind_method(klass, m)                                                   \
     do {                                                                            \
         static_assert(std::is_same<method_traits<decltype(&klass::_##m)>::type,     \
-            remove_arg1<decltype(m)>::type>::value, "Invalid method.");        \
+            remove_arg1<decltype(m)>::type>::value, "Invalid method.");             \
         self_bind<__COUNTER__>(&klass::_##m, m);                                    \
     } while (0)
 
@@ -152,43 +121,43 @@ private:
     }
 };
 
-struct CefStrUtf8 : cef_string_utf8_t
-{
-    CefStrUtf8();
-    CefStrUtf8(const cef_string_t *s);
-    ~CefStrUtf8();
-
-    ::str cstr() const;
-};
-
 struct CefStrBase : cef_string_t
 {
     CefStrBase();
 
     bool empty() const;
-    bool equal(const wchar_t *s) const;
-    bool equal(const wstr &s) const;
-    bool equali(const wchar_t *s) const;
-    bool equali(const wstr &s) const;
+    bool equal(const char *that) const;
+    bool contain(const char *sub) const;
+    bool startw(const char *sub) const;
+    bool endw(const char *sub) const;
 
-    bool search(const wstr &regex, bool icase = false) const;
+    void copy(std::u16string &to) const;
 
-    wstr cstr() const;
+    std::string to_utf8() const;
+    std::u16string to_utf16() const;
+    std::filesystem::path to_path() const;
 };
 
-// cef_string_t wrapper.
 struct CefStr : CefStrBase
 {
     CefStr();
-
-    CefStr(const char *s, size_t l);
-    CefStr(const wchar_t *s, size_t l);
-    CefStr(const ::str &s);
-    CefStr(const wstr &s);
     ~CefStr();
+
+    CefStr(const char *s, size_t len);
+    CefStr(const char16_t *s, size_t len);
+    CefStr(const std::string &s);
 
     cef_string_t forward();
     static CefStrBase borrow(const cef_string_t *s);
+
+    // wrap u16string in cef_string_t on stack
+    static cef_string_t wrap(const std::u16string &utf16) {
+        return cef_string_t{
+            (char16 *)utf16.data(),
+            utf16.length(),
+            nullptr
+        };
+    }
 };
 
 struct CefScopedStr : CefStrBase
@@ -204,121 +173,22 @@ private:
     cef_string_userfree_t str_;
 };
 
+/**
+ * CefString UTF-16 literal.
+*/
 static inline cef_string_t operator""_s(const char16_t *s, size_t l)
 {
     return cef_string_t{ (char16 *)s, l, nullptr };
 }
 
-struct V8ValueBase
-{
-    inline cef_v8value_t *ptr() {
-        return &_;
-    }
-
-protected:
-    cef_v8value_t _;
-};
-
-struct V8Value : V8ValueBase
-{
-    inline bool isUndefined() { return _.is_undefined(&_); }
-    inline bool isNull() { return _.is_null(&_); }
-
-    inline bool isBool() { return _.is_bool(&_); }
-    inline bool isInt() { return _.is_int(&_); }
-    inline bool isUint() { return _.is_uint(&_); }
-    inline bool isDouble() { return _.is_double(&_); }
-    inline bool isString() { return _.is_string(&_); }
-    inline bool isObject() { return _.is_object(&_); }
-    inline bool isArray() { return _.is_array(&_); }
-    inline bool isFunction() { return _.is_function(&_); }
-
-    inline bool asBool() { return _.get_bool_value(&_); }
-    inline int asInt() { return _.get_int_value(&_); }
-    inline uint32_t asUint() { return _.get_uint_value(&_); }
-    inline double asDouble() { return _.get_double_value(&_); }
-    inline cef_string_userfree_t asString() { return _.get_string_value(&_); }
-
-    inline struct V8Array *asArray() { return reinterpret_cast<struct V8Array *>(&_); }
-    inline struct V8Object *asObject() { return reinterpret_cast<struct V8Object *>(&_); }
-
-    static inline V8Value *undefined() {
-        return (V8Value *)cef_v8value_create_undefined();
-    }
-
-    static inline V8Value *null() {
-        return (V8Value *)cef_v8value_create_null();
-    }
-
-    static inline V8Value *boolean(bool value) {
-        return (V8Value *)cef_v8value_create_bool(value);
-    }
-
-    static inline V8Value *number(double value) {
-        return (V8Value *)cef_v8value_create_double(value);
-    }
-
-    static inline V8Value *number(int value) {
-        return (V8Value *)cef_v8value_create_int(value);
-    }
-
-    static inline V8Value *string(const cef_string_t *value) {
-        return (V8Value *)cef_v8value_create_string(value);
-    }
-
-    static inline V8Value *function(const cef_string_t *name, cef_v8handler_t *handler) {
-        return (V8Value *)cef_v8value_create_function(name, handler);
-    }
-};
-
-struct V8Array : V8ValueBase
-{
-    inline int length() {
-        return _.get_array_length(&_);
-    }
-
-    inline V8Value *get(int index) {
-        _.get_value_byindex(&_, index);
-    }
-
-    inline void set(int index, V8ValueBase *value) {
-        _.set_value_byindex(&_, index, (cef_v8value_t *)value);
-    }
-
-    static inline V8Array *create(int length) {
-        return (V8Array *)cef_v8value_create_array(length);
-    }
-};
-
-struct V8Object : V8ValueBase
-{
-    inline bool has(const cef_string_t *key) {
-        return _.has_value_bykey(&_, key);
-    }
-
-    inline V8Value *get(const cef_string_t *key) {
-        return (V8Value *)_.get_value_bykey(&_, key);
-    }
-
-    inline void set(const cef_string_t *key, V8ValueBase *value, cef_v8_propertyattribute_t attr) {
-        _.set_value_bykey(&_, key, (cef_v8value_t *)value, attr);
-    }
-
-    static inline V8Object *create() {
-        return (V8Object *)cef_v8value_create_object(nullptr, nullptr);
-    }
-};
-
-typedef V8Value* (*V8FunctionHandler)(const vec<V8Value *> &args);
-
 namespace config
 {
-    path loaderDir();
-    path pluginsDir();
-    path datastorePath();
+    path loader_dir();
+    path plugins_dir();
+    path datastore_path();
 
-    path cacheDir();
-    path leagueDir();
+    path cache_dir();
+    path league_dir();
 
     namespace options
     {
@@ -333,38 +203,118 @@ namespace config
     }
 }
 
-namespace utils
+namespace utf8
 {
-    bool isDir(const path &path);
-    bool isFile(const path &path);
-    bool isSymlink(const path &path);
-    bool readFile(const path &path, str &out);
-    vec<wstr> readDir(const path &dir);
+    static int length(const char *s) {
+        int i = 0, len = 0;
+        while(s[i]) {
+            if ((s[i] & 0xc0) != 0x80) ++len;
+            ++i;
+        }
+        return len;
+    }
+}
 
-    void *patternScan(const HMODULE module, const char *pattern);
-    float getWindowScale(void *handle);
+namespace file
+{
+    bool is_dir(const path &path);
+    bool is_file(const path &path);
+    bool is_symlink(const path &path);
+
+    bool read_file(const path &path, void **buffer, size_t *length);
+    bool write_file(const path &path, const void *buffer, size_t length);
+
+    std::vector<path> read_dir(const path &dir);
 }
 
 namespace dialog
 {
-    enum Level
-    {
-        DIALOG_NONE,
-        DIALOG_INFO,
-        DIALOG_WARNING,
-        DIALOG_ERROR,
-        DIALOG_QUESTION
-    };
+    /**
+     * Show a system message box, it will block executing thread.
+    */
+    void alert(const char *message, const char *caption);
+    bool confirm(const char *message, const char *caption);
 
-    void alert(const char *message, const char *title, Level level = DIALOG_NONE, const void *owner = nullptr);
-    bool confirm(const char *message, const char *title, Level level = DIALOG_QUESTION, const void *owner = nullptr);
+#if OS_WIN
+    static void alert(const char *message, const char *caption) {
+        MessageBoxA(NULL, message, caption,
+            MB_ICONINFORMATION | MB_OK | MB_TOPMOST);
+    }
+    static bool confirm(const char *message, const char *caption) {
+        return IDYES == MessageBoxA(NULL, message, caption,
+            MB_ICONWARNING/* MB_ICONQUESTION */ | MB_YESNO | MB_TOPMOST);
+    }
+#endif
 }
 
 namespace shell
 {
+    /**
+     * Open an URL in browser.
+     * @param url A string should start with `https://`.
+    */
     void open_url(const char *url);
-    void open_url(const wchar_t *url);
 
-    void open_folder(const char *path);
-    void open_folder(const wchar_t *path);
+    /**
+     * Open a folder path in Explorer/Finder.
+     * @param path Absolute path of folder.
+    */
+    void open_folder(const path &path);
 }
+
+namespace window
+{
+    /**
+     * Get window rectangle on screen.
+     * @param hwnd_nsview A window handle, `HWND` on Windows, or `NSView*` on macOS.
+    */
+    void get_rect(void *hwnd_nsview, int *x, int *y, int *w, int *h);
+
+    /**
+     * Get window DPI scale factor.
+    */
+    float get_scaling(void *hwnd);
+
+    /**
+     * Bring window to foreground.
+    */
+    void make_foreground(void *hwnd);
+
+    /**
+     * Get window rectangle on screen.
+     * @param nsview A window handle.
+     * @param material `NSVisualEffectMaterial` enum.
+     * @param state `NSVisualEffectState` enum.
+    */
+    void apply_vibrancy(void *nsview, int material, int state, double cornerRadius);
+
+    /**
+     * Enable window drop shadow.
+    */
+    void enable_shadow(void *hwnd);
+}
+
+namespace dylib
+{
+    /**
+     * Find the loaded dylib/dll.
+     * @param name Library name or full `.framework` name on macOS.
+    */
+    void *find_lib(const char *name);
+
+    /**
+     * Find symbol/proc in lib.
+     * @param lib A handle from `find_lib()`.
+     * @param proc Symbol name.
+    */
+    void *find_proc(void *lib, const char *proc);
+
+    /**
+     * Find memory in a module with matching pattern.
+     * @param rladdr Relative address near to the module's address space.
+     * @param pattern Matching pattern e.g `AA BB CC 00`, also allows wildcard `AA ?? FF`.
+    */
+    void *find_memory(const void *rladdr, const char *pattern);
+}
+
+#endif

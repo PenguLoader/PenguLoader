@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #include <windows.h>
 
 enum Module
@@ -191,3 +192,5 @@ EXTERN_C BOOL WINAPI VerQueryValueW(LPCVOID pBlock, LPCWSTR lpSubBlock, LPVOID *
 {
     return Forward_VERSION(VerQueryValueW)(pBlock, lpSubBlock, lplpBuffer, puLen);
 }
+
+#endif

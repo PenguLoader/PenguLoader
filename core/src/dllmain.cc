@@ -1,12 +1,14 @@
 #include "commons.h"
 #include "hook.h"
-#include "include/cef_version.h"
+
+bool check_libcef_version(bool is_browser);
+void HookBrowserProcess();
+void HookRendererProcess();
+
+#if OS_WIN
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
-bool LoadLibcefDll(bool is_browser);
-void HookBrowserProcess();
-void HookRendererProcess();
 void InjectThisDll(HANDLE hProcess);
 
 static hook::Hook<decltype(&CreateProcessW)> Old_CreateProcessW;
@@ -82,11 +84,6 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
     }
 
     return TRUE;
-}
-
-int APIENTRY _GetCefVersion()
-{
-    return CEF_VERSION_MAJOR;
 }
 
 static DWORD64 CompactPEVersion(LPCWSTR file)
@@ -194,3 +191,28 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
     CloseHandle(pi.hThread);
     return 0;
 }
+
+#elif OS_MAC
+
+__attribute__((constructor)) static void dllmain(int argc, const char **argv)
+{
+    std::string prog(argv[0]);
+    prog = prog.substr(prog.rfind('/') + 1);
+
+    if (prog == "LeagueClientUx") {
+        if (check_libcef_version(true)) {
+            dialog::alert("Continue debugging...", "Debug me");
+            HookBrowserProcess();
+        }
+        else {
+            _exit(0);
+        }
+    }
+    else if (prog == "LeagueClientUx Helper (Renderer)") {
+        // if (check_libcef_version(false)) {
+        //     //HookRendererProcess();
+        // }
+    }
+}
+
+#endif

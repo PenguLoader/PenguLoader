@@ -1,6 +1,8 @@
 #include "commons.h"
 #include <stdlib.h>
 
+#if OS_WIN
+
 void shell::open_url(const char *url)
 {
     static decltype(&ShellExecuteA) pShellExecuteA = nullptr;
@@ -14,7 +16,7 @@ void shell::open_url(const char *url)
         pShellExecuteA(NULL, "open", url, NULL, NULL, SW_SHOWNORMAL);
 }
 
-void shell::open_url(const wchar_t *url)
+void shell::open_folder(const path &path)
 {
     static decltype(&ShellExecuteW) pShellExecuteW = nullptr;
 
@@ -24,15 +26,15 @@ void shell::open_url(const wchar_t *url)
     }
 
     if (pShellExecuteW)
-        pShellExecuteW(NULL, L"open", url, NULL, NULL, SW_SHOWNORMAL);
+        pShellExecuteW(NULL, L"open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
-void shell::open_folder(const char *path)
+#elif OS_MAC
+
+void shell::open_folder(const path &path)
 {
-    open_url(path);
+    extern void open_folder_utf8(const char *path);
+    open_folder_utf8(path.c_str());
 }
 
-void shell::open_folder(const wchar_t *path)
-{
-    open_url(path);
-}
+#endif

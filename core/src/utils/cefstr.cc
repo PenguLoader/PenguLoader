@@ -1,29 +1,5 @@
 #include "commons.h"
 
-// utf8 string helpers
-
-CefStrUtf8::CefStrUtf8() : cef_string_utf8_t{ (char *)"", 0, nullptr }
-{
-}
-
-CefStrUtf8::CefStrUtf8(const cef_string_t *s) : cef_string_utf8_t{}
-{
-    cef_string_to_utf8(s->str, s->length, this);
-}
-
-CefStrUtf8::~CefStrUtf8()
-{
-    if (dtor != nullptr)
-    {
-        dtor(str);
-    }
-}
-
-str CefStrUtf8::cstr() const
-{
-    return ::str(str, length);
-}
-
 // utf16 string helpers
 
 CefStrBase::CefStrBase() : cef_string_t{ (char16 *)u"", 0, nullptr }
@@ -35,61 +11,115 @@ bool CefStrBase::empty() const
     return length == 0;
 }
 
-bool CefStrBase::equal(const wchar_t *s) const
+bool CefStrBase::equal(const char *that) const
 {
-    return wcscmp(str, s) == 0;
+    size_t i;
+    for (i = 0; that[i] != '\0'; ++i) {
+        if (i >= length)
+            return false;
+        if (str[i] != that[i])
+            return false;
+    }
+
+    return length == i;
 }
 
-bool CefStrBase::equal(const wstr &s) const
+bool CefStrBase::contain(const char *sub) const
 {
-    return wcsncmp(str, s.c_str(), length) == 0;
+    if (empty()) return false;
+    size_t sub_len = strlen(sub);
+
+    for (size_t i = 0; i <= length - sub_len; ++i) {
+        bool match = true;
+        for (size_t j = 0; j < sub_len; ++j) {
+            if (str[i + j] != sub[j]) {
+                match = false;
+                break;
+            }
+        }
+        if (match)
+            return true;
+    }
+
+    return false;
 }
 
-bool CefStrBase::equali(const wchar_t *s) const
-{
-    return _wcsicmp(str, s) == 0;
-}
-
-bool CefStrBase::equali(const wstr &s) const
-{
-    return _wcsnicmp(str, s.c_str(), length) == 0;
-}
-
-bool CefStrBase::search(const wstr &regex, bool icase) const
+bool CefStrBase::startw(const char *sub) const
 {
     if (empty()) return false;
 
-    auto flags = icase ? std::regex::icase : std::regex::flag_type(0);
-    std::wregex pattern(regex, flags);
-
-    wstr input(str, length);
-    return std::regex_search(input, pattern);
+    size_t i = 0;
+    while (sub[i] != '\0') {
+        if (str[i] == '\0')
+            return false;
+        if (str[i] != sub[i])
+            return false;
+        i++;
+    }
+    return true;
 }
 
-wstr CefStrBase::cstr() const
+bool CefStrBase::endw(const char *sub) const
 {
-    return wstr(str, length);
+    if (empty()) return false;
+
+    size_t sub_len = strlen(sub);
+    if (length < sub_len)
+        return false;
+
+    size_t si = length - sub_len;
+    for (size_t i = 0; i < sub_len; ++i) {
+        if (str[si + i] != sub[i])
+            return false;
+    }
+
+    return true;
+}
+
+void CefStrBase::copy(std::u16string &to) const
+{
+    to.assign((char16_t *)str, length);
+}
+
+std::string CefStrBase::to_utf8() const
+{
+    cef_string_utf8_t out{};
+    cef_string_to_utf8(str, length, &out);
+
+    std::string ret(out.str, out.length);
+    cef_string_utf8_clear(&out);
+    return ret;
+}
+
+std::u16string CefStrBase::to_utf16() const
+{
+    return std::u16string((const char16_t *)str, length);
+}
+
+std::filesystem::path CefStrBase::to_path() const
+{
+#if OS_WIN
+    return std::filesystem::path(std::wstring(str, length));
+#else
+    return std::filesystem::path(to_utf8());
+#endif
 }
 
 CefStr::CefStr() : CefStrBase()
 {
 }
 
-CefStr::CefStr(const char *s, size_t l) : CefStrBase()
+CefStr::CefStr(const char *s, size_t len) : CefStrBase()
 {
-    cef_string_from_utf8(s, l, this);
+    cef_string_from_utf8(s, len, this);
 }
 
-CefStr::CefStr(const wchar_t *s, size_t l) : CefStrBase()
+CefStr::CefStr(const char16_t *s, size_t len) : CefStrBase()
 {
-    cef_string_from_wide(s, l, this);
+    cef_string_from_utf16((char16 *)s, len, this);
 }
 
-CefStr::CefStr(const ::str &s) : CefStr(s.c_str(), s.length())
-{
-}
-
-CefStr::CefStr(const wstr &s) : CefStr(s.c_str(), s.length())
+CefStr::CefStr(const std::string &s) : CefStr(s.c_str(), s.length())
 {
 }
 

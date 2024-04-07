@@ -1,4 +1,4 @@
-#include "commons.h"
+#include "browser.h"
 #include "hook.h"
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_client_capi.h"
@@ -6,54 +6,34 @@
 
 // BROWSER PROCESS ONLY.
 
-HWND rclient_;
-int main_browser_id_;
-extern int remote_debugging_port_;
+void *browser::view_handle = NULL;
 
-void OpenDevTools(cef_browser_t *browser);
-void OpenRemoteDevTools();
-void PrepareRemoteDevTools();
-
-void RegisterAssetsSchemeHandlerFactory();
-void RegisterRiotClientSchemeHandlerFactory();
-void SetRiotClientCredentials(const wstr &appPort, const wstr &authToken);
-
-static void SetUpBrowserWindow(cef_browser_t *browser)
+static void enhance_browser_window(cef_browser_t *browser)
 {
-    if (rclient_ != nullptr) return;
+    if (browser::view_handle) return;
 
-    main_browser_id_ = browser->get_identifier(browser);
     auto host = browser->get_host(browser);
+    browser::view_handle = (void *)host->get_window_handle(host);
 
+#if OS_WIN
     // Get needed windows.
-    HWND browserWin = host->get_window_handle(host);
+    HWND browserWin = (HWND)browser::view_handle;
     HWND rclient = (rclient_ = GetParent(browserWin));
     HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
     //HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
 
     // Ensure transparency effect.
-
-    // Hide Chrome_RenderWidgetHostHWND.
+    //   hide Chrome_RenderWidgetHostHWND
     //ShowWindow(widgetHost, SW_HIDE);
-    // Hide CefBrowserWindow.
+    //   hide CefBrowserWindow
     ShowWindow(browserWin, SW_HIDE);
-    // Bring Chrome_WidgetWin_0 into top-level children.
+    //   bring Chrome_WidgetWin_0 to top-level children
     SetParent(widgetWin, rclient);
 
-    // Send RCLIENT HWND to renderer.
-    auto frame = browser->get_main_frame(browser);
-    auto msg = cef_process_message_create(&u"__rclient"_s);
-    auto args = msg->get_argument_list(msg);
-    args->set_int(args, 0, (int32_t)reinterpret_cast<intptr_t>(rclient));
-    frame->send_process_message(frame, PID_RENDERER, msg);
+	window::enable_shadow(rclient);
+#endif
 
-    args->base.release(&args->base);
     host->base.release(&host->base);
-
-	void EnableWindowShadow(HWND);
-	EnableWindowShadow(rclient);
-
-    PrepareRemoteDevTools();
 }
 
 static decltype(cef_life_span_handler_t::on_after_created) OnAfterCreated;
@@ -61,7 +41,7 @@ static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* 
     struct _cef_browser_t* browser)
 {
     OnAfterCreated(self, browser);
-    SetUpBrowserWindow(browser);
+    enhance_browser_window(browser);
 }
 
 static void HookMainBrowserClient(cef_client_t *client)
@@ -93,11 +73,9 @@ static void HookMainBrowserClient(cef_client_t *client)
         if (source_process == PID_RENDERER)
         {
             CefScopedStr name = message->get_name(message);
-            if (name.equal(L"__open_devtools"))
-                OpenDevTools(browser);
-            else if (name.equal(L"__open_remote_devtools"))
-                OpenRemoteDevTools();
-            else if (name.equal(L"__reload_client"))
+            if (name.equal("@open-devtools"))
+                browser::open_devtools(browser);
+            else if (name.equal("@reload-client"))
                 browser->reload_ignore_cache(browser);
         }
 
@@ -114,12 +92,11 @@ static int Hooked_CefBrowserHost_CreateBrowser(
     struct _cef_dictionary_value_t* extra_info,
     struct _cef_request_context_t* request_context)
 {
+    auto url_ = CefStr::borrow(url);
+
     // Hook main browser only.
-    if (CefStr::borrow(url).search(L"^https:\\/\\/riot:.+\\/bootstrap\\.html", true))
+    if (url_.startw("https://riot:") && url_.endw("/bootstrap.html"))
     {
-#if _DEBUG
-        wprintf(L"main browser: %.*s\n", (int)url->length, url->str);
-#endif
         // Create extra info if null.
         if (extra_info == nullptr)
             extra_info = cef_dictionary_value_create();
@@ -142,8 +119,9 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 {
     CefScopedStr rc_port = command_line->get_switch_value(command_line, &u"riotclient-app-port"_s);
     CefScopedStr rc_token = command_line->get_switch_value(command_line, &u"riotclient-auth-token"_s);
-    SetRiotClientCredentials(rc_port.cstr(), rc_token.cstr());
+    browser::set_riotclient_credentials(rc_port.to_utf8().c_str(), rc_token.to_utf8().c_str());
 
+#if OS_WIN
     // Extract args string.
     auto args = CefScopedStr(command_line->get_command_line_string(command_line)).cstr();
 
@@ -157,14 +135,16 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     // Rebuild it.
     command_line->reset(command_line);
     command_line->init_from_string(command_line, &CefStr(args));
+#endif
 
     OnBeforeCommandLineProcessing(self, process_type, command_line);
 
-    if (remote_debugging_port_ = config::options::RemoteDebuggingPort())
+#if OS_WIN
+    if (int rdport = config::options::RemoteDebuggingPort())
     {
         // Set remote debugging port.
         command_line->append_switch_with_value(command_line,
-            &u"remote-debugging-port"_s, &CefStr(std::to_string(remote_debugging_port_)));
+            &u"remote-debugging-port"_s, &CefStr(std::to_string(rdport)));
     }
 
     if (config::options::DisableWebSecurity())
@@ -178,6 +158,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         // Ignore invalid certs.
         command_line->append_switch(command_line, &u"ignore-certificate-errors"_s);
     }
+#endif
 
     if (config::options::OptimizeClient())
     {
@@ -219,7 +200,9 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
-    const_cast<cef_settings_t *>(settings)->cache_path = CefStr(config::cacheDir().wstring()).forward();
+#if OS_WIN
+    const_cast<cef_settings_t *>(settings)->cache_path = CefStr(config::cache_dir().wstring()).forward();
+#endif
 
     static auto GetBrowserProcessHandler = app->get_browser_process_handler;
     app->get_browser_process_handler = [](cef_app_t *self)
@@ -229,9 +212,8 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
         static auto OnContextIntialized = handler->on_context_initialized;
         handler->on_context_initialized = [](cef_browser_process_handler_t *self)
         {
-            RegisterAssetsSchemeHandlerFactory();
-            RegisterRiotClientSchemeHandlerFactory();
-
+            browser::register_plugins_domain();
+            browser::register_riotclient_domain();
             OnContextIntialized(self);
         };
 
@@ -243,16 +225,18 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
 
 void HookBrowserProcess()
 {
+#if OS_WIN && _DEBUG
     // Open console window.
-#if _DEBUG
     AllocConsole();
     SetConsoleTitleA("League Client (browser process)");
     freopen("CONOUT$", "w", stdout);
 #endif
 
     // Hook CefInitialize().
-    CefInitialize.hook("libcef.dll", "cef_initialize", Hooked_CefInitialize);
+    CefInitialize.hook(LIBCEF_MODULE_NAME,
+        "cef_initialize", Hooked_CefInitialize);
 
     // Hook CefBrowserHost::CreateBrowser().
-    CefBrowserHost_CreateBrowser.hook("libcef.dll", "cef_browser_host_create_browser", Hooked_CefBrowserHost_CreateBrowser);
+    CefBrowserHost_CreateBrowser.hook(LIBCEF_MODULE_NAME,
+        "cef_browser_host_create_browser", Hooked_CefBrowserHost_CreateBrowser);
 }
