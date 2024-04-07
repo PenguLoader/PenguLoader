@@ -146,9 +146,11 @@ struct CefStr : CefStrBase
     CefStr(const char *s, size_t len);
     CefStr(const char16_t *s, size_t len);
     CefStr(const std::string &s);
+    CefStr(const std::u16string &s);
 
     cef_string_t forward();
     static CefStrBase borrow(const cef_string_t *s);
+    static CefStr from_path(const path &path);
 
     // wrap u16string in cef_string_t on stack
     static cef_string_t wrap(const std::u16string &utf16) {

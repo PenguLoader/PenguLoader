@@ -104,9 +104,9 @@ static void *get_base_address(const void *rladdr)
 static size_t get_lib_size(void *base_address)
 {
 #if OS_WIN
-    auto dos_header = (IMAGE_DOS_HEADER *)module;
-    auto nt_headers = (IMAGE_NT_HEADERS *)((uint8_t *)(handle) + dos_header->e_lfanew);
-    return = nt_headers->OptionalHeader.SizeOfImage;
+    auto dos_header = (IMAGE_DOS_HEADER *)base_address;
+    auto nt_headers = (IMAGE_NT_HEADERS *)((uint8_t *)(base_address) + dos_header->e_lfanew);
+    return nt_headers->OptionalHeader.SizeOfImage;
 #elif OS_MAC
     struct mach_header_64 *header = (struct mach_header_64 *)base_address;
 

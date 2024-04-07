@@ -25,8 +25,7 @@ float window::get_scaling(void *hwnd)
         GetDpiForMonitor = reinterpret_cast<decltype(GetDpiForMonitor)>(proc);
     }
 
-    HWND hwnd = static_cast<HWND>(handle);
-    HMONITOR hmom = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    HMONITOR hmom = MonitorFromWindow(static_cast<HWND>(hwnd), MONITOR_DEFAULTTONEAREST);
     int dpi = 0;
 
     if (GetDpiForMonitor) {

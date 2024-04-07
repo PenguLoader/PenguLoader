@@ -54,8 +54,11 @@ bool file::is_file(const path &path)
 
 bool file::read_file(const path &path, void **buffer, size_t *length)
 {
+#if OS_WIN
+    FILE* fp = _wfopen(path.c_str(), L"rb");
+#else
     FILE* fp = fopen(path.c_str(), "rb");
-
+#endif
     if (fp != nullptr)
     {
         fseek(fp, 0, SEEK_END);
@@ -99,7 +102,7 @@ std::vector<path> file::read_dir(const path &dir)
     files.clear();
 
 #if OS_WIN
-    wstr target = dir.wstring() + L"\\*";
+    std::wstring target = dir.wstring() + L"\\*";
     WIN32_FIND_DATAW fd;
     HANDLE hFind = FindFirstFileW(target.c_str(), &fd);
 

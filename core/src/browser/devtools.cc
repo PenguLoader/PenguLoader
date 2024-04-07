@@ -12,11 +12,12 @@
 
 static std::unordered_map<int, void *> devtools_map_{};
 
-static void enhance_devtools_window(void *window)
+static void enhance_devtools_window(void *handle)
 {
-    if (window == nullptr) return;
+    if (handle == nullptr) return;
 #if OS_WIN
     extern HWND rclient_;
+    HWND window = static_cast<HWND>(handle);
 
     // Get League icon.
     HICON icon_sm = (HICON)SendMessageW(rclient_, WM_GETICON, ICON_BIG, 0);

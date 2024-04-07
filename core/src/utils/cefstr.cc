@@ -123,6 +123,19 @@ CefStr::CefStr(const std::string &s) : CefStr(s.c_str(), s.length())
 {
 }
 
+CefStr::CefStr(const std::u16string &s) : CefStr(s.c_str(), s.length())
+{
+}
+
+CefStr CefStr::from_path(const path &path)
+{
+#if OS_WIN
+    return CefStr(path.u16string());
+#else
+    return CefStr(path.string());
+#endif
+}
+
 CefStr::~CefStr()
 {
     if (dtor != nullptr)

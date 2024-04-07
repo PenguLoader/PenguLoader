@@ -18,7 +18,7 @@ static void enhance_browser_window(cef_browser_t *browser)
 #if OS_WIN
     // Get needed windows.
     HWND browserWin = (HWND)browser::view_handle;
-    HWND rclient = (rclient_ = GetParent(browserWin));
+    HWND rclient = GetParent(browserWin);
     HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
     //HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
 
@@ -123,13 +123,13 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 
 #if OS_WIN
     // Extract args string.
-    auto args = CefScopedStr(command_line->get_command_line_string(command_line)).cstr();
+    auto args = CefScopedStr(command_line->get_command_line_string(command_line)).to_utf16();
 
     if (config::options::AllowProxyServer())
     {
-        size_t pos = args.find(L"--no-proxy-server");
+        size_t pos = args.find(u"--no-proxy-server");
         if (pos != std::wstring::npos)
-            args.replace(pos, 17, L"");
+            args.replace(pos, 17, u"");
     }
 
     // Rebuild it.
@@ -201,7 +201,7 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
 #if OS_WIN
-    const_cast<cef_settings_t *>(settings)->cache_path = CefStr(config::cache_dir().wstring()).forward();
+    const_cast<cef_settings_t *>(settings)->cache_path = CefStr(config::cache_dir().u16string()).forward();
 #endif
 
     static auto GetBrowserProcessHandler = app->get_browser_process_handler;

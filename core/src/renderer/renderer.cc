@@ -167,8 +167,9 @@ static void LoadPlugins(V8Object *window)
 
     for (int index = 0; index < (int)entries.size(); index++)
     {
-        auto entry = V8Value::string(&CefStr(entries[index]));
-        pluginEntries->set(index, entry);
+        auto entry = CefStr::from_path(entries[index]);
+        auto value = V8Value::string(&entry);
+        pluginEntries->set(index, value);
     }
 
     // Should add to parent objet after init.
