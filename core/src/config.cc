@@ -13,36 +13,35 @@ extern "C" void eglCreateNativeClientBufferANDROID();
 path config::loader_dir()
 {
 #if OS_WIN
-    static wstr cachedPath{};
-    if (!cachedPath.empty())
-        return cachedPath;
-
-    // Get this dll path.
-    WCHAR thisPath[2048];
-    GetModuleFileNameW((HINSTANCE)&__ImageBase, thisPath, 2048);
-
-    DWORD attr = GetFileAttributesW(thisPath);
-    if ((attr & FILE_ATTRIBUTE_REPARSE_POINT) != FILE_ATTRIBUTE_REPARSE_POINT)
+    static std::wstring path;
+    if (path.empty())
     {
-        cachedPath = thisPath;
-        return cachedPath = cachedPath.substr(0, cachedPath.find_last_of(L"/\\"));
+        // Get this dll path.
+        WCHAR thisPath[2048];
+        GetModuleFileNameW((HINSTANCE)&__ImageBase, thisPath, ARRAYSIZE(thisPath) - 1);
+
+        DWORD attr = GetFileAttributesW(thisPath);
+        if ((attr & FILE_ATTRIBUTE_REPARSE_POINT) != FILE_ATTRIBUTE_REPARSE_POINT)
+        {
+            path = thisPath;
+            return path = path.substr(0, path.find_last_of(L"/\\"));
+        }
+
+        OFSTRUCT of{};
+        WCHAR finalPath[2048];
+        // Get final path.
+        HANDLE file = CreateFileW(thisPath, GENERIC_READ, 0x1, NULL, OPEN_EXISTING, 0, NULL);
+        DWORD pathLength = GetFinalPathNameByHandleW(file, finalPath, 2048, FILE_NAME_OPENED);
+        CloseHandle(file);
+
+        std::wstring dir{ finalPath, pathLength };
+        // Remove prepended '\\?\' by GetFinalPathNameByHandle()
+        if (dir.rfind(L"\\\\?\\", 0) == 0)
+            dir.erase(0, 4);
+
+        // Get parent folder.
+        return path = dir.substr(0, dir.find_last_of(L"/\\"));
     }
-
-    OFSTRUCT of{};
-    WCHAR finalPath[2048];
-    // Get final path.
-    HANDLE file = CreateFileW(thisPath, GENERIC_READ, 0x1, NULL, OPEN_EXISTING, 0, NULL);
-    DWORD pathLength = GetFinalPathNameByHandleW(file, finalPath, 2048, FILE_NAME_OPENED);
-    CloseHandle(file);
-
-    wstr dir{finalPath, pathLength};
-
-    // Remove prepended '\\?\' by GetFinalPathNameByHandle()
-    if (dir.rfind(L"\\\\?\\", 0) == 0)
-        dir.erase(0, 4);
-
-    // Get parent folder.
-    return cachedPath = dir.substr(0, dir.find_last_of(L"/\\"));
 #elif OS_MAC
     static std::string path;
     if (path.empty())
@@ -61,8 +60,8 @@ path config::loader_dir()
             free(_path);
         }
     }
-    return path;
 #endif
+    return path;
 }
 
 path config::plugins_dir()
@@ -82,7 +81,7 @@ path config::cache_dir()
     size_t length = GetEnvironmentVariableW(L"LOCALAPPDATA", path, _countof(path));
 
     if (length == 0)
-        return leagueDir() / "Cache";
+        return league_dir() / "Cache";
 
     lstrcatW(path, L"\\Riot Games\\League of Legends\\Cache");
     return path;
@@ -97,7 +96,7 @@ path config::league_dir()
     wchar_t buf[2048];
     size_t length = GetModuleFileNameW(nullptr, buf, _countof(buf));
 
-    wstr path(buf, length);
+    std::wstring path(buf, length);
     return path.substr(0, path.find_last_of(L"/\\"));
 #else
     return "";

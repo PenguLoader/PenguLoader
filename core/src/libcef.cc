@@ -2,10 +2,6 @@
 #include "hook.h"
 #include "include/cef_version.h"
 
-#ifdef _MSC_VER
-#pragma comment(lib, "libcef.lib")
-#endif
-
 // CefContext::GetBackgroundColor()
 static cef_color_t get_background_color(void *rcx, cef_browser_settings_t *, cef_state_t)
 {

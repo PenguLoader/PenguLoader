@@ -28,22 +28,25 @@
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\dllproxy.cc" />
     <ClCompile Include="src\dllmain.cc" />
-    <ClCompile Include="src\renderer\datastore.cc" />
     <ClCompile Include="src\renderer\fs.cc" />
+    <ClCompile Include="src\renderer\v8_datastore.cc" />
+    <ClCompile Include="src\renderer\v8_helper.cc" />
     <ClCompile Include="src\renderer\winbrancy.cc" />
     <ClCompile Include="src\renderer\renderer.cc" />
     <ClCompile Include="src\utils\cefstr.cc" />
-    <ClCompile Include="src\utils\dialog.cc" />
+    <ClCompile Include="src\utils\dylib.cc" />
     <ClCompile Include="src\utils\file.cc" />
-    <ClCompile Include="src\utils\misc.cc" />
     <ClCompile Include="src\utils\shell.cc" />
+    <ClCompile Include="src\utils\window.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\browser\browser.h" />
     <ClInclude Include="src\commons.h" />
     <ClInclude Include="src\hook.h" />
+    <ClInclude Include="src\renderer\v8_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc" />
@@ -165,6 +168,7 @@
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
       <DelayLoadDLLs>libcef.dll</DelayLoadDLLs>
+      <AdditionalDependencies>libcef.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

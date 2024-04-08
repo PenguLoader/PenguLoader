@@ -1,5 +1,6 @@
 #include "commons.h"
 #include "hook.h"
+#include "include/cef_version.h"
 
 bool check_libcef_version(bool is_browser);
 void HookBrowserProcess();
@@ -8,8 +9,22 @@ void HookRendererProcess();
 #if OS_WIN
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-
 void InjectThisDll(HANDLE hProcess);
+
+static bool wcsfindi(const wchar_t *str, const wchar_t *sub)
+{
+    size_t str_len = wcslen(str), sub_len = wcslen(sub);
+    if (sub_len > str_len)
+        return false;
+    for (size_t i = 0; i <= str_len - sub_len; ++i) {
+        for (size_t j = 0; j < sub_len; ++j)
+            if (towlower(str[i + j]) != towlower(sub[j]))
+                goto next;
+        return true;
+        next:;
+    }
+    return false;
+}
 
 static hook::Hook<decltype(&CreateProcessW)> Old_CreateProcessW;
 static BOOL WINAPI Hooked_CreateProcessW(LPCWSTR lpApplicationName, LPWSTR lpCommandLine,
@@ -17,8 +32,8 @@ static BOOL WINAPI Hooked_CreateProcessW(LPCWSTR lpApplicationName, LPWSTR lpCom
     BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCWSTR lpCurrentDirectory,
     LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation)
 {
-    bool is_renderer = std::regex_search(lpCommandLine,
-        std::wregex(L"LeagueClientUxRender\\.exe.+--type=renderer", std::wregex::icase));
+    bool is_renderer = wcsfindi(lpCommandLine, L"LeagueClientUxRender.exe")
+        && wcsfindi(lpCommandLine, L"--type=renderer");
 
     if (is_renderer)
         dwCreationFlags |= CREATE_SUSPENDED;
@@ -41,12 +56,10 @@ static void Initialize()
     GetModuleFileNameW(nullptr, exe_path, _countof(exe_path));
 
     // Determine which process to be hooked.
-
     // Browser process.
-    if (std::regex_search(exe_path,
-        std::wregex(L"LeagueClientUx\\.exe$", std::wregex::icase)))
+    if (wcsfindi(exe_path, L"LeagueClientUx.exe"))
     {
-        if (LoadLibcefDll(true))
+        if (check_libcef_version(true))
         {
             HookBrowserProcess();
 
@@ -55,13 +68,12 @@ static void Initialize()
         }
     }
     // Render process.
-    else if (std::regex_search(exe_path,
-        std::wregex(L"LeagueClientUxRender\\.exe$", std::wregex::icase)))
-    {
+    else if (wcsfindi(exe_path, L"LeagueClientUxRender.exe"))
+    { 
         // Renderer only.
         if (wcsstr(GetCommandLineW(), L"--type=renderer") != nullptr)
         {
-            if (LoadLibcefDll(false))
+            if (check_libcef_version(false))
                 HookRendererProcess();
         }
     }
@@ -86,51 +98,7 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
     return TRUE;
 }
 
-static DWORD64 CompactPEVersion(LPCWSTR file)
-{
-    DWORD64 version = 0;
-    DWORD  verHandle = 0;
-    UINT   size = 0;
-    LPBYTE lpBuffer = NULL;
-
-    if (DWORD verSize = GetFileVersionInfoSize(file, &verHandle))
-    {
-        LPSTR verData = new char[verSize];
-
-        if (GetFileVersionInfo(file, verHandle, verSize, verData)
-            && VerQueryValue(verData, L"\\", (VOID FAR* FAR*)&lpBuffer, &size)
-            && size > 0)
-        {
-            VS_FIXEDFILEINFO *verInfo = (VS_FIXEDFILEINFO *)lpBuffer;
-            if (verInfo->dwSignature == 0xfeef04bd)
-                version = verInfo->dwFileVersionMS
-                | (static_cast<DWORD64>(verInfo->dwFileVersionLS) << 32u);
-        }
-
-        delete[] verData;
-    }
-
-    return version;
-}
-
-static void RemoveOldModule()
-{
-    WCHAR path[2048]{};
-    GetCurrentDirectoryW(_countof(path), path);
-    lstrcatW(path, L"\\d3d9.dll");
-
-    DWORD attr = GetFileAttributesW(path);
-    if (attr == INVALID_FILE_ATTRIBUTES)
-        return;
-
-    if ((attr & FILE_ATTRIBUTE_REPARSE_POINT)           // symlink
-        || CompactPEVersion(path) == 0x4A610907000A0000ULL) // old module 
-    {
-        DeleteFileW(path);
-    }
-}
-
-void InjectThisDll(HANDLE hProcess)
+static void InjectThisDll(HANDLE hProcess)
 {
     HMODULE kernel32 = GetModuleHandleA("kernel32");
     auto pVirtualAllocEx = (decltype(&VirtualAllocEx))GetProcAddress(kernel32, "VirtualAllocEx");
@@ -151,8 +119,6 @@ void InjectThisDll(HANDLE hProcess)
 
 int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
 {
-    RemoveOldModule();
-
     NTSTATUS (NTAPI *NtQueryInformationProcess)(HANDLE, DWORD, PVOID, ULONG, PULONG);
     NTSTATUS (NTAPI *NtRemoveProcessDebug)(HANDLE, HANDLE);
     NTSTATUS (NTAPI *NtClose)(HANDLE Handle);
@@ -167,7 +133,7 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
     {
         char msg[128];
         sprintf_s(msg, "Failed to create LeagueClientUx process, last error: 0x%08X.", GetLastError());
-        dialog::alert(msg, "Pengu Loader bootstrapper", dialog::DIALOG_WARNING);
+        MessageBoxA(NULL, msg, "Pengu Loader bootstrapper", MB_ICONWARNING | MB_OK | MB_TOPMOST);
         return 1;
     }
 
@@ -216,3 +182,8 @@ __attribute__((constructor)) static void dllmain(int argc, const char **argv)
 }
 
 #endif
+
+int _GetCefVersion()
+{
+    return CEF_VERSION_MAJOR;
+}

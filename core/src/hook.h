@@ -19,7 +19,7 @@ namespace hook
 {
     struct Shellcode
     {
-#ifdef OS_WIN
+#if OS_WIN
         uint8_t opcodes[12];
 #elif OS_MAC
         uint8_t opcodes[16];
@@ -27,7 +27,7 @@ namespace hook
         Shellcode(intptr_t addr)
         {
             memset(opcodes, 0, sizeof(opcodes));
-#ifdef OS_WIN
+#if OS_WIN
             // movabs rax [addr]
             opcodes[0] = 0x48;
             opcodes[1] = 0xB8;
@@ -73,7 +73,7 @@ namespace hook
 
         static bool memcpy_safe(void *dst, const void *src, size_t size)
         {
-#ifdef OS_WIN
+#if OS_WIN
             DWORD op;
             BOOL success = VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &op);
             if (success == 0)

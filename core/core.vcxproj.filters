@@ -43,18 +43,6 @@
     <ClCompile Include="src\renderer\renderer.cc">
       <Filter>src\renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\utils\file.cc">
-      <Filter>src\utils</Filter>
-    </ClCompile>
-    <ClCompile Include="src\utils\misc.cc">
-      <Filter>src\utils</Filter>
-    </ClCompile>
-    <ClCompile Include="src\renderer\datastore.cc">
-      <Filter>src\renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="src\utils\cefstr.cc">
-      <Filter>src\utils</Filter>
-    </ClCompile>
     <ClCompile Include="src\dllproxy.cc">
       <Filter>src</Filter>
     </ClCompile>
@@ -67,10 +55,25 @@
     <ClCompile Include="src\renderer\fs.cc">
       <Filter>src\renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\v8_datastore.cc">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\v8_helper.cc">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\cefstr.cc">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\dylib.cc">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\file.cc">
+      <Filter>src\utils</Filter>
+    </ClCompile>
     <ClCompile Include="src\utils\shell.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
-    <ClCompile Include="src\utils\dialog.cc">
+    <ClCompile Include="src\utils\window.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
   </ItemGroup>
@@ -90,6 +93,12 @@
     </ClInclude>
     <ClInclude Include="src\hook.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\v8_wrapper.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\browser\browser.h">
+      <Filter>src\browser</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
