@@ -209,7 +209,6 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
     struct _cef_v8context_t* context)
 {
     CefScopedStr url = frame->get_url(frame);
-    OnContextCreated(self, browser, frame, context);
 
     // Detect main page.
     if (is_main_ && url.startw("https://riot:") && url.endw("/index.html"))
@@ -226,6 +225,8 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
         LoadPlugins(reinterpret_cast<V8Object *>(window));
         ExecutePreloadScript(frame);
     }
+
+    OnContextCreated(self, browser, frame, context);
 }
 
 static decltype(cef_render_process_handler_t::on_context_released) OnContextReleased;
@@ -284,17 +285,17 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
         OnContextCreated = handler->on_context_created;
         handler->on_context_created = Hooked_OnContextCreated;
 
-        // Hook OnContextReleased().
-        OnContextReleased = handler->on_context_released;
-        handler->on_context_released = Hooked_OnContextReleased;
+        // // Hook OnContextReleased().
+        // OnContextReleased = handler->on_context_released;
+        // handler->on_context_released = Hooked_OnContextReleased;
 
         // Hook OnBrowserCreated().
         OnBrowserCreated = handler->on_browser_created;
         handler->on_browser_created = Hooked_OnBrowserCreated;
 
-        // Hook OnProcessMessageReceived().
-        OnProcessMessageReceived = handler->on_process_message_received;
-        handler->on_process_message_received = Hooked_OnProcessMessageReceived;
+        // // Hook OnProcessMessageReceived().
+        // OnProcessMessageReceived = handler->on_process_message_received;
+        // handler->on_process_message_received = Hooked_OnProcessMessageReceived;
 
         return handler;
     };
@@ -305,6 +306,9 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
 void HookRendererProcess()
 {
     // Hook CefExecuteProcess().
-    CefExecuteProcess.hook(LIBCEF_MODULE_NAME,
-    "cef_execute_process", Hooked_CefExecuteProcess);
+#if OS_WIN
+    CefExecuteProcess.hook(LIBCEF_MODULE_NAME, "cef_execute_process", Hooked_CefExecuteProcess);
+#elif OS_MAC
+    CefExecuteProcess.hook(cef_execute_process, Hooked_CefExecuteProcess);
+#endif
 }

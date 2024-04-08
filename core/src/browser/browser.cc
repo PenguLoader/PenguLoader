@@ -135,9 +135,9 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     // Rebuild it.
     command_line->reset(command_line);
     command_line->init_from_string(command_line, &CefStr(args));
-#endif
 
     OnBeforeCommandLineProcessing(self, process_type, command_line);
+#endif
 
 #if OS_WIN
     if (int rdport = config::options::RemoteDebuggingPort())
@@ -190,6 +190,10 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &u"wm-window-animations-disabled"_s);
         command_line->append_switch_with_value(command_line, &u"animation-duration-scale"_s, &u"0"_s);
     }
+
+#if OS_MAC
+    OnBeforeCommandLineProcessing(self, process_type, command_line);
+#endif
 }
 
 static hook::Hook<decltype(&cef_initialize)> CefInitialize;

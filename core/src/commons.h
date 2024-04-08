@@ -68,9 +68,9 @@ struct self_bind_traits<id, This, M, R(*)(Self, Args...)>
 template <int id, typename M, typename To>
 static inline void self_bind(M from, To &to) noexcept
 {
-     using traits = self_bind_traits<id, method_traits<M>::klass, M, To>;
-     if (traits::m_ == nullptr) traits::m_ = from;
-     to = traits::invoke;
+    using traits = self_bind_traits<id, typename method_traits<M>::klass, M, To>;
+    if (traits::m_ == nullptr) traits::m_ = from;
+    to = traits::invoke;
 }
 
 #define cef_bind_method(klass, m)                                                   \

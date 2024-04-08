@@ -34,4 +34,8 @@
 #define LIBCEF_MODULE_NAME "Chromium Embedded Framework.framework/Chromium Embedded Framework"
 #endif
 
+#ifndef NDEBUG
+#define _DEBUG 1
+#endif
+
 #endif

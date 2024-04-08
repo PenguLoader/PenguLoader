@@ -167,7 +167,11 @@ __attribute__((constructor)) static void dllmain(int argc, const char **argv)
 
     if (prog == "LeagueClientUx") {
         if (check_libcef_version(true)) {
-            dialog::alert("Continue debugging...", "Debug me");
+#if _DEBUG
+            char msg[128];
+            snprintf(msg, sizeof(msg)-1, "Debug me: %d", getpid());
+            dialog::alert("Continue debugging...", msg);
+#endif
             HookBrowserProcess();
         }
         else {
@@ -175,8 +179,8 @@ __attribute__((constructor)) static void dllmain(int argc, const char **argv)
         }
     }
     else if (prog == "LeagueClientUx Helper (Renderer)") {
-        // if (check_libcef_version(false)) {
-        //     //HookRendererProcess();
+        // if (check_libcef_version(true)) {
+            HookRendererProcess();
         // }
     }
 }
