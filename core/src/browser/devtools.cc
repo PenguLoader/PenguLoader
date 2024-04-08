@@ -14,26 +14,18 @@ static std::unordered_map<int, void *> devtools_map_{};
 
 static void enhance_devtools_window(void *handle)
 {
-    if (handle == nullptr) return;
 #if OS_WIN
-    extern HWND rclient_;
     HWND window = static_cast<HWND>(handle);
+    HWND rclient = GetParent(static_cast<HWND>(browser::view_handle));
 
-    // Get League icon.
-    HICON icon_sm = (HICON)SendMessageW(rclient_, WM_GETICON, ICON_BIG, 0);
-    HICON icon_bg = (HICON)SendMessageW(rclient_, WM_GETICON, ICON_BIG, 0);
+    // Copy window icon.
+    HICON hicon = (HICON)SendMessageW(rclient, WM_GETICON, ICON_BIG, 0);
+    SendMessageW(window, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+    SendMessageW(window, WM_SETICON, ICON_BIG, (LPARAM)hicon);
 
-    // Set window icon.
-    SendMessageW(window, WM_SETICON, ICON_SMALL, (LPARAM)icon_sm);
-    SendMessageW(window, WM_SETICON, ICON_BIG, (LPARAM)icon_bg);
-
-    bool IsWindowsDarkTheme();
-    void ForceDarkTheme(HWND);
-
-    if (IsWindowsDarkTheme()) {
-        // Force dark theme.
-        ForceDarkTheme(window);
-    }
+    // Ensure dark theme.
+    if (window::is_dark_theme())
+        window::set_theme(window, true);
 
     // Fix window content.
     RECT rc; GetClientRect(window, &rc);
