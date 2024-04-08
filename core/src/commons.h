@@ -68,9 +68,9 @@ struct self_bind_traits<id, This, M, R(*)(Self, Args...)>
 template <int id, typename M, typename To>
 static inline void self_bind(M from, To &to) noexcept
 {
-    // using traits = self_bind_traits<id, method_traits<M>::klass, M, To>;
-    // if (traits::m_ == nullptr) traits::m_ = from;
-    // to = traits::invoke;
+     using traits = self_bind_traits<id, method_traits<M>::klass, M, To>;
+     if (traits::m_ == nullptr) traits::m_ = from;
+     to = traits::invoke;
 }
 
 #define cef_bind_method(klass, m)                                                   \
@@ -294,6 +294,18 @@ namespace window
      * Enable window drop shadow.
     */
     void enable_shadow(void *hwnd);
+
+    /**
+     * Check the current system theme is dark.
+     * Works on Windows 10 1607+.
+    */
+    bool is_dark_theme();
+
+    /**
+     * Set default window theme.
+     * Works on Windows 10 1809+.
+    */
+    bool set_theme(void *hwnd, bool dark);
 }
 
 namespace dylib
