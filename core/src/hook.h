@@ -111,10 +111,6 @@ namespace hook
     public:
         using Fn = R (*)(Args...);
 
-        Hook() : orig_(nullptr), rest_(nullptr), mutex_{}
-        {
-        }
-
         ~Hook()
         {
             if (rest_)
@@ -162,8 +158,8 @@ namespace hook
         }
 
     protected:
-        Fn orig_;
-        Restorable *rest_;
+        Fn orig_ = nullptr;
+        Restorable *rest_ = nullptr;
         std::mutex mutex_;
     };
 }
