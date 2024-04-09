@@ -113,14 +113,15 @@ std::vector<path> file::read_dir(const path &dir)
         FindClose(hFind);
     }
 #elif OS_MAC
-    if (DIR *d = opendir(dir.string().c_str())) {
-        struct dirent *dir;
-        while ((dir = readdir(d)) != NULL) {
-            if (dir->d_type == DT_REG) {
-                files.push_back(dir->d_name);
+    if (DIR *pdir = opendir(dir.string().c_str())) {
+        struct dirent *entry = readdir(pdir);
+        while (entry != NULL) {
+            if (entry->d_type & (DT_REG | DT_DIR)) {
+                files.push_back(entry->d_name);
             }
+            entry = readdir(pdir);
         }
-        closedir(d);
+        closedir(pdir);
     }
 #endif
 
