@@ -33,8 +33,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd core/include
-          git fetch
-          git checkout 91.1.22-mac
+          git checkout -b 91.1.22-mac
+          git pull
 
       - name: Prepare environment variables
         run: |
@@ -79,7 +79,7 @@ jobs:
       - name: Build solution
         if: runner.os == 'Windows'
         # run: msbuild pengu-loader.sln /t:restore,build /m /p:Configuration=Release /p:Platform=x64
-        run: msbuild core/core.vcxproj /t:build /m /p:Configuration=Release /p:Platform=x64
+        run: msbuild.exe core/core.vcxproj /t:build /m /p:Configuration=Release /p:Platform=x64
 
       - name: Build makefile
         if: runner.os == 'macOS'
