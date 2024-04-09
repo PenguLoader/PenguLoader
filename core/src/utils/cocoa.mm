@@ -87,25 +87,41 @@ namespace window
         [view.window orderFrontRegardless];
     }
 
-    void apply_vibrancy(void *nsview, int material, int state, double cornerRadius)
+    void clear_vibrancy(void *nsview)
     {
         @autoreleasepool
         {
             NSView *view = (__bridge NSView *)nsview;
-            NSRect rect = view.bounds;
 
-            NSVisualEffectMaterial m = (NSVisualEffectMaterial)material;
+            if (view.subviews.count > 1)
+                [[view.subviews firstObject] removeFromSuperview];
+        }
+    }
+
+    void apply_vibrancy(void *nsview, int _material, bool follow_active)
+    {
+        clear_vibrancy(nsview);
+
+        @autoreleasepool
+        {
+            NSView *view = (__bridge NSView *)nsview;
+            NSRect rect = view.bounds;
+            
+            if (view.subviews.count > 1)
+                [[view.subviews firstObject] removeFromSuperview];
+
+            NSVisualEffectMaterial material = (NSVisualEffectMaterial)_material;
+            NSVisualEffectState state = follow_active ? NSVisualEffectStateFollowsWindowActiveState : NSVisualEffectStateActive;
             NSVisualEffectView *blurredView = [[[NSVisualEffectView alloc] initWithFrame:rect] autorelease];
             
-            [blurredView setMaterial:m];
-            [blurredView setState:(NSVisualEffectState)state];
+            [blurredView setMaterial:material];
+            [blurredView setState:state];
             [blurredView setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
             
-            if (blurredView.layer)
-                blurredView.layer.cornerRadius = cornerRadius;
+            // if (blurredView.layer)
+            //     blurredView.layer.cornerRadius = cornerRadius;
             
             blurredView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-            
             [view addSubview:blurredView positioned:NSWindowBelow relativeTo:0];
         }
     }

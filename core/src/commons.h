@@ -288,7 +288,13 @@ namespace window
      * @param material `NSVisualEffectMaterial` enum.
      * @param state `NSVisualEffectState` enum.
     */
-    void apply_vibrancy(void *nsview, int material, int state, double cornerRadius);
+    void apply_vibrancy(void *nsview, int material, bool follow_active);
+
+    /**
+     * Remove applied vibrancy effect in window.
+     * @param nsview A window handle.
+    */
+    void clear_vibrancy(void *nsview);
 
     /**
      * Enable window drop shadow.
