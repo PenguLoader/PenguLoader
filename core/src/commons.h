@@ -211,18 +211,6 @@ namespace config
     }
 }
 
-namespace utf8
-{
-    static int length(const char *s) {
-        int i = 0, len = 0;
-        while(s[i]) {
-            if ((s[i] & 0xc0) != 0x80) ++len;
-            ++i;
-        }
-        return len;
-    }
-}
-
 namespace file
 {
     bool is_dir(const path &path);

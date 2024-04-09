@@ -198,16 +198,13 @@ static void LoadPlugins(V8Object *window)
 static void ExecutePreloadScript(cef_frame_t *frame)
 {
 #ifdef _DEBUG
-    void *buffer;
+    void *buffer; size_t length;
     path preload_path = config::loader_dir() / "../plugins/dist/preload.js";
 
-    if (file::read_file(preload_path, &buffer, nullptr))
+    if (file::read_file(preload_path, &buffer, &length))
     {
-        cef_string_t script{};
-        cef_string_from_utf8((char *)buffer, utf8::length((char *)buffer), &script);
+        CefStr script((const char *)buffer, length);
         frame->execute_java_script(frame, &script, &u"https://plugins/@/preload"_s, 1);
-
-        cef_string_clear(&script);
         free(buffer);
     }
 #else

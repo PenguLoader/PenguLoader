@@ -20,14 +20,11 @@ static void load_datastore(cef_string_t *json)
 
     if (file::is_file(path))
     {
-        void *buffer;
-        size_t length;
-
+        void *buffer; size_t length;
         if (file::read_file(path, &buffer, &length))
         {
             transform_data(buffer, length);
-            cef_string_from_utf8((char *)buffer,
-                utf8::length((char *)buffer), json); // must use utf8 length
+            cef_string_from_utf8((char *)buffer, length, json);
             free(buffer);
         }
     }
@@ -37,18 +34,12 @@ static void load_datastore(cef_string_t *json)
     }
 }
 
-static void save_datastore(const cef_string_utf8_t *json)
+static void save_datastore(cef_string_utf8_t *json)
 {
     auto path = config::datastore_path();
-    // must use bytes length
-    size_t length = strlen(json->str);
-    void *buffer = malloc(length);
-    memcpy(buffer, json->str, length);
 
-    transform_data(buffer, length);
-    file::write_file(path, buffer, length);
-
-    free(buffer);
+    transform_data(json->str, json->length);
+    file::write_file(path, json->str, json->length);
 }
 
 static V8Value *v8_load_datastore(V8Value *const args[], int argc)
