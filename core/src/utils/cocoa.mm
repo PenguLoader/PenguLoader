@@ -1,4 +1,3 @@
-#import <string>
 #import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
 
@@ -70,9 +69,10 @@ namespace window
         return 1.0f;
     }
 
-    void make_foreground(void *hwnd)
+    void make_foreground(void *nsview)
     {
-        // TODO
+        NSView *view = (__bridge NSView *)nsview;
+        [view.window orderFrontRegardless];
     }
 
     void apply_vibrancy(void *nsview, int material, int state, double cornerRadius)
@@ -93,5 +93,34 @@ namespace window
         blurredView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
         
         [view addSubview:blurredView positioned:NSWindowBelow relativeTo:0];
+    }
+
+    void enable_shadow(void *nsview)
+    {
+        NSView *view = (__bridge NSView *)nsview;
+        [view.window invalidateShadow];
+    }
+
+    bool is_dark_theme()
+    {
+        if ([[NSApplication sharedApplication] respondsToSelector:@selector(effectiveAppearance)])
+        {
+            NSAppearance *appearance = [[NSApplication sharedApplication] effectiveAppearance];
+
+            if ([appearance.name rangeOfString:@"dark" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                return true;
+        }
+
+        return false;
+    }
+
+    void set_theme(void *nsview, bool dark)
+    {
+        NSView *view = (__bridge NSView *)nsview;
+        NSAppearanceName theme = dark ? NSAppearanceNameVibrantDark : NSAppearanceNameVibrantLight;
+        NSAppearance *appearance = [NSAppearance appearanceNamed:theme];
+
+        [view.window setAppearance:appearance];
+        [view.window invalidateShadow];
     }
 }

@@ -144,7 +144,7 @@ bool window::is_dark_theme()
     return false;
 }
 
-bool window::set_theme(void *hwnd, bool dark)
+void window::set_theme(void *hwnd, bool dark)
 {
     HWND window = static_cast<HWND>(hwnd);
 
@@ -155,8 +155,6 @@ bool window::set_theme(void *hwnd, bool dark)
         if (IsWin10_1809()) attr -= 1;
         _DwmSetWindowAttribute(window, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
     }
-
-    return false;
 }
 
 #endif

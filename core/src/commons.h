@@ -283,7 +283,7 @@ namespace window
     void make_foreground(void *hwnd);
 
     /**
-     * Get window rectangle on screen.
+     * Set window vibrancy effect.
      * @param nsview A window handle.
      * @param material `NSVisualEffectMaterial` enum.
      * @param state `NSVisualEffectState` enum.
@@ -305,7 +305,7 @@ namespace window
      * Set default window theme.
      * Works on Windows 10 1809+.
     */
-    bool set_theme(void *hwnd, bool dark);
+    void set_theme(void *hwnd, bool dark);
 }
 
 namespace dylib
