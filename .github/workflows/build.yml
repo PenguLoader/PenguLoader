@@ -33,6 +33,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd core/include
+          git fetch
           git checkout 91.1.22-mac
 
       - name: Prepare environment variables
