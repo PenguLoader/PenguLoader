@@ -166,6 +166,7 @@
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
       <DelayLoadDLLs>libcef.dll</DelayLoadDLLs>
+      <AdditionalDependencies>$(ProjectDir)lib\$(Configuration)\libcef.lib;$(ProjectDir)lib\$(Configuration)\cef_sandbox.lib;$(ProjectDir)lib\$(Configuration)\libcef_dll_wrapper.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -223,6 +224,7 @@
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
       <DelayLoadDLLs>libcef.dll</DelayLoadDLLs>
+      <AdditionalDependencies>$(ProjectDir)lib\$(Configuration)\libcef.lib;$(ProjectDir)lib\$(Configuration)\cef_sandbox.lib;$(ProjectDir)lib\$(Configuration)\libcef_dll_wrapper.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
