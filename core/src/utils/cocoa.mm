@@ -1,6 +1,35 @@
 #import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
 
+namespace platform
+{
+    const char *get_os_version()
+    {
+        @autoreleasepool
+        {
+            static char output[24];
+            NSOperatingSystemVersion osVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
+            snprintf(output, sizeof(output), "%ld.%ld.%ld",
+                (long)osVersion.majorVersion,
+                (long)osVersion.minorVersion,
+                (long)osVersion.patchVersion);
+            return output;
+        }
+    }
+
+    const char *get_os_build()
+    {
+        @autoreleasepool
+        {
+            static char output[32];
+            NSDictionary *systemVersionPlist = [NSDictionary dictionaryWithContentsOfFile:@"/System/Library/CoreServices/SystemVersion.plist"];
+            NSString *buildNumber = systemVersionPlist[@"ProductBuildVersion"];
+            snprintf(output, sizeof(output), "%s", [buildNumber UTF8String]);
+            return output;
+        }
+    }
+}
+
 namespace shell
 {
     void open_url(const char *url)

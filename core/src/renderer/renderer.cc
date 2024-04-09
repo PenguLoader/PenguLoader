@@ -146,6 +146,17 @@ static void ExposeNativeFunctions(V8Object *window)
     window->set(&u"__llver"_s, V8Value::string(&CefStr(PL_VERSION)), V8_PROPERTY_ATTRIBUTE_READONLY);
 }
 
+static void ExposeOsObject(V8Object *window)
+{
+    auto object = V8Object::create();
+
+    object->set(&u"name"_s, V8Value::string(&CefStr(PLATFORM_NAME)), V8_PROPERTY_ATTRIBUTE_READONLY);
+    object->set(&u"version"_s, V8Value::string(&CefStr(platform::get_os_version())), V8_PROPERTY_ATTRIBUTE_READONLY);
+    object->set(&u"build"_s, V8Value::string(&CefStr(platform::get_os_build())), V8_PROPERTY_ATTRIBUTE_READONLY);
+
+    window->set(&u"os"_s, object, V8_PROPERTY_ATTRIBUTE_READONLY);
+}
+
 static void LoadPlugins(V8Object *window)
 {
     auto pengu = V8Object::create();
@@ -158,8 +169,13 @@ static void LoadPlugins(V8Object *window)
     auto superPotato = V8Value::boolean(config::options::SuperLowSpecMode());
     pengu->set(&u"superPotato"_s, superPotato, V8_PROPERTY_ATTRIBUTE_READONLY);
 
-    pengu->set(&u"os"_s, V8Value::string(&u"win"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
-    pengu->set(&u"osVersion"_s, V8Value::string(&u"10"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
+    pengu->set(&u"isMac"_s,
+#ifdef OS_MAC
+        V8Value::boolean(true),
+#else
+        V8Value::boolean(false),
+#endif
+        V8_PROPERTY_ATTRIBUTE_READONLY);
 
     // Pengu.entries
     auto entries = get_plugin_entries();
@@ -221,6 +237,7 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
 #endif
         auto window = context->get_global(context);
 
+        ExposeOsObject(reinterpret_cast<V8Object *>(window));
         ExposeNativeFunctions(reinterpret_cast<V8Object *>(window));
         LoadPlugins(reinterpret_cast<V8Object *>(window));
         ExecutePreloadScript(frame);

@@ -43,17 +43,17 @@ static DWORD winver(int n)
 #define IsWin11()       (winver(2) >= 22000)
 #define IsWin11_22H2()  (winver(2) >= 22621)
 
- static HRESULT WINAPI _DwmExtendFrameIntoClientArea(HWND hWnd, const MARGINS *pMarInset)
- {
-     return getfunc<decltype(&DwmExtendFrameIntoClientArea)>
-         ("dwmapi.dll", "DwmExtendFrameIntoClientArea")(hWnd, pMarInset);
- }
+static HRESULT WINAPI _DwmExtendFrameIntoClientArea(HWND hWnd, const MARGINS *pMarInset)
+{
+    return getfunc<decltype(&DwmExtendFrameIntoClientArea)>
+        ("dwmapi.dll", "DwmExtendFrameIntoClientArea")(hWnd, pMarInset);
+}
 
- static HRESULT WINAPI _DwmSetWindowAttribute(HWND hwnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute)
- {
-     return getfunc<decltype(&DwmSetWindowAttribute)>
-         ("dwmapi.dll", "DwmSetWindowAttribute")(hwnd, dwAttribute, pvAttribute, cbAttribute);
- }
+static HRESULT WINAPI _DwmSetWindowAttribute(HWND hwnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute)
+{
+    return getfunc<decltype(&DwmSetWindowAttribute)>
+        ("dwmapi.dll", "DwmSetWindowAttribute")(hwnd, dwAttribute, pvAttribute, cbAttribute);
+}
 
 void window::get_rect(void *hwnd, int *x, int *y, int *w, int *h)
 {
@@ -154,6 +154,23 @@ void window::set_theme(void *hwnd, bool dark)
         DWORD attr = DWMWA_USE_IMMERSIVE_DARK_MODE;
         if (IsWin10_1809()) attr -= 1;
         _DwmSetWindowAttribute(window, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
+    }
+}
+
+namespace platform
+{
+    const char *get_os_version()
+    {
+        static char output[24];
+        snprintf(output, sizeof(output), "%d.%d.%d", winver(0), winver(1), winver(2));
+        return output;
+    }
+
+    const char *get_os_build()
+    {
+        static char output[12];
+        snprintf(output, sizeof(output), "%d", winver(2));
+        return output;
     }
 }
 

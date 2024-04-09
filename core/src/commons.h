@@ -183,6 +183,12 @@ static inline cef_string_t operator""_s(const char16_t *s, size_t l)
     return cef_string_t{ (char16 *)s, l, nullptr };
 }
 
+namespace platform
+{
+    const char *get_os_version();
+    const char *get_os_build();
+}
+
 namespace config
 {
     path loader_dir();
