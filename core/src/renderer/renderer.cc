@@ -6,7 +6,7 @@
 #include "include/capi/cef_render_process_handler_capi.h"
 
 static const char *PL_VERSION {
-#   include "../loader/version.cs"
+#   include "../../loader/version.cs"
 };
 
 // RENDERER PROCESS ONLY.
@@ -208,7 +208,7 @@ static void ExecutePreloadScript(cef_frame_t *frame)
         free(buffer);
     }
 #else
-#   include "../plugins/dist/preload.g.h"
+#   include "../../plugins/dist/preload.g.h"
     CefStr script{ (const char *)_preload_script, _preload_script_size };
     frame->execute_java_script(frame, &script, nullptr, 1);
 #endif

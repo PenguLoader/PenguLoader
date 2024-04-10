@@ -25,7 +25,7 @@ LIB_ORIG_PATH := $(LIB_ORIG_DIR)/$(TARGET_LIB_NAME)
 
 # Compiler
 CXX := clang++
-CXXFLAGS := -std=c++20 -g -fPIC -arch x86_64 -I./core -I./core/src/ -fvisibility=hidden -Wno-address-of-temporary -Wno-nonportable-include-path
+CXXFLAGS := -std=c++20 -g -fPIC -arch x86_64 -I./core/cef -I./core/src -fvisibility=hidden -Wno-address-of-temporary -Wno-nonportable-include-path
 
 # Linker
 LDFLAGS := -shared -dynamiclib -arch x86_64 -current_version $(VERSION) -compatibility_version 1.0.0
