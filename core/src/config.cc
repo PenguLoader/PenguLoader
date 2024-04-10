@@ -7,7 +7,6 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #elif OS_MAC
 #include <dlfcn.h>
 #include <libgen.h>
-extern "C" void eglCreateNativeClientBufferANDROID();
 #endif
 
 path config::loader_dir()
@@ -47,17 +46,10 @@ path config::loader_dir()
     if (path.empty())
     {
         Dl_info info;
-        if (dladdr((const void *)&eglCreateNativeClientBufferANDROID, &info))
+        if (dladdr((const void *)&loader_dir, &info))
         {
-            char *_path = strdup(info.dli_fname);
-            auto dir = dirname(_path);
-
-            int len = strlen(dir);
-            if (strstr(dir, "/dylib") == (dir + strlen(dir) - 6))
-                dir = dirname(dir);
-
-            path.assign(dir);
-            free(_path);
+            path = info.dli_fname;
+            path = path.substr(0, path.rfind('/'));
         }
     }
 #endif
