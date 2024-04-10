@@ -29,36 +29,14 @@ jobs:
           ref: ${{ github.ref }}
           submodules: true
 
-      - name: 'Update mac include'
-        if: runner.os == 'macOS'
-        run: |
-          cd core/include
-          git checkout -b 91.1.22-mac
-          git pull
-
       - name: Prepare environment variables
         run: |
           echo "SHORT_SHA=$("${{ github.sha }}" | cut -c1-8)" >> $env:GITHUB_ENV
           echo APP_VERSION=$(cat loader/Version.cs | grep -o -E "(\d\.\d\.\d)") >> $env:GITHUB_ENV
 
-      # - name: Update project files
-      #   if: runner.os == 'Windows'
-      #   run: |
-      #     (Get-Content loader\loader.csproj) -replace "FrameworkVersion>v4.5", "FrameworkVersion>v4.8" | Out-File loader\loader.csproj
-      #     (Get-Content loader\App.config) -replace "Version=v4.5", "Version=v4.8" | Out-File loader\App.config
-      #     (Get-Content loader\Version.cs) -replace 'CommitSha1.*;', 'CommitSha1 = "${{ env.SHORT_SHA }}";' | Out-File loader\Version.cs
-
       - name: Setup MSBuild
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v1.1
-
-      - name: Cache NuGet packages
-        if: runner.os == 'Windows'
-        uses: actions/cache@v3
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: ${{ runner.os }}-nuget-
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -78,8 +56,7 @@ jobs:
 
       - name: Build solution
         if: runner.os == 'Windows'
-        # run: msbuild pengu-loader.sln /t:restore,build /m /p:Configuration=Release /p:Platform=x64
-        run: msbuild.exe core/core.vcxproj /t:build /m /p:Configuration=Release /p:Platform=x64
+        run: msbuild.exe pengu.sln /t:build /m /p:Configuration=Release /p:Platform=x64
 
       - name: Build makefile
         if: runner.os == 'macOS'

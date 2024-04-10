@@ -29,7 +29,7 @@ CXXFLAGS := -std=c++20 -g -fPIC -arch x86_64 -I./core/cef -I./core/src -fvisibil
 
 # Linker
 LDFLAGS := -shared -dynamiclib -arch x86_64 -current_version $(VERSION) -compatibility_version 1.0.0
-LDLIBS := -framework cocoa -F $(LOL_FRAMEWORKS_DIR) -framework "Chromium Embedded Framework" -Wl,-reexport_library,"$(LIB_ORIG_PATH)"
+LDLIBS := -framework cocoa -Lcore/cef/lib/mac -lcef.d -Wl,-reexport-lEGL.d
 
 # Source files
 CPP_SRCS := $(wildcard $(SRC_DIR)/*.cc) $(wildcard $(SRC_DIR)/**/*.cc)
@@ -61,8 +61,8 @@ $(LIB_ORIG_PATH):
 $(LIB_OUT_PATH): $(CPP_OBJS) $(OBJCXX_OBJS) $(LIB_ORIG_PATH)
 	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(CPP_OBJS) $(OBJCXX_OBJS) $(LDLIBS)
-	@install_name_tool -change "@executable_path/../Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework" "@loader_path/../Chromium Embedded Framework" $@
-	@install_name_tool -change "./$(TARGET_LIB_NAME)" "$(abspath $(LIB_ORIG_PATH))" $@
+	@install_name_tool -change "libcef.d.dylib" "@loader_path/../Chromium Embedded Framework" $@
+	@install_name_tool -change "libEGL.d.dylib" "$(abspath $(LIB_ORIG_PATH))" $@
 	dsymutil $@
 
 install: $(LIB_OUT_PATH)
