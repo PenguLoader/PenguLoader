@@ -23,7 +23,7 @@ TARGET_LIB_PATH := $(TARGET_LIB_DIR)/libEGL.dylib
 # Compiler
 CC := clang
 CXX := clang++
-CXXFLAGS := -std=c++20 -g -fPIC -arch x86_64 -I./core/cef -I./core/src -fvisibility=hidden -Wno-address-of-temporary -Wno-nonportable-include-path
+CXXFLAGS := -std=c++20 -fPIC -arch x86_64 -I./core/cef -I./core/src -fvisibility=hidden -Wno-address-of-temporary -Wno-nonportable-include-path
 
 # Linker
 LDFLAGS := -shared -dynamiclib -arch x86_64 -current_version $(VERSION) -compatibility_version 1.0.0
@@ -39,7 +39,14 @@ CPP_OBJS := $(patsubst $(SRC_DIR)/%.cc,$(OBJ_DIR)/%.o,$(CPP_SRCS))
 OBJCXX_OBJS := $(patsubst $(SRC_DIR)/%.mm,$(OBJ_DIR)/%.o,$(OBJCXX_SRCS))
 
 # Default target
-all: $(LIB_OUT_PATH)
+all: debug
+
+debug: CXXFLAGS += -DDEBUG -g
+debug: $(LIB_OUT_PATH)
+
+release: CXXFLAGS += -DNDEBUG -O3
+release: LDFLAGS += -flto
+release: clean $(LIB_OUT_PATH)
 
 # Rule to compile C++ source files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc ${INC_HEADERS}
