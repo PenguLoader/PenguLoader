@@ -78,7 +78,8 @@ path config::cache_dir()
     lstrcatW(path, L"\\Riot Games\\League of Legends\\Cache");
     return path;
 #else
-    return "";
+    // inside the RiotClient folder 
+    return "/Users/Shared/Riot Games/League Client/Cache";
 #endif
 }
 
