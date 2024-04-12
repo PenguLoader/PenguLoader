@@ -10,9 +10,8 @@ interface Native {
   OpenPluginsFolder: (path?: string) => boolean;
   ReloadClient: () => void;
 
-  GetWindowEffect: () => string;
-  SetWindowEffect: (name: string | false, options?: any) => boolean;
-  SetWindowTheme: (theme: string) => void;
+  SetWindowTheme: (dark: boolean) => void;
+  SetWindowVibrancy: (kind: number | null, state?: number) => void;
 
   LoadDataStore: () => string;
   SaveDataStore: (data: string) => void;
