@@ -2,6 +2,9 @@
 #define _PLATFORM_H_
 
 #if defined(_WIN32) || defined(_WIN64)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #ifndef OS_WIN
 #define OS_WIN 1
 #endif

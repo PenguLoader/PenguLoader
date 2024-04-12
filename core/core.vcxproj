@@ -33,11 +33,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def" />
+    <None Include="src\utils\cocoa.mm" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\browser\browser.h" />
     <ClInclude Include="src\commons.h" />
     <ClInclude Include="src\hook.h" />
+    <ClInclude Include="src\platform.h" />
     <ClInclude Include="src\renderer\v8_wrapper.h" />
   </ItemGroup>
   <ItemGroup>

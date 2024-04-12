@@ -81,6 +81,9 @@
     <None Include="res\module.def">
       <Filter>res</Filter>
     </None>
+    <None Include="src\utils\cocoa.mm">
+      <Filter>src\utils</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc">
@@ -99,6 +102,9 @@
     </ClInclude>
     <ClInclude Include="src\browser\browser.h">
       <Filter>src\browser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\platform.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -3,6 +3,8 @@
 
 #if OS_WIN
 
+#include <shellapi.h>
+
 void shell::open_url(const char *url)
 {
     static decltype(&ShellExecuteA) pShellExecuteA = nullptr;
