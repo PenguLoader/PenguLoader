@@ -271,7 +271,7 @@ void window::apply_vibrancy(void* handle, uint32_t _type, uint32_t param)
         case BackdropType::Mica:
             if (IsWin11())
             {
-                extend_client_area(window, 0);
+                extend_client_area(window, -1);
                 set_window_attribute(window,
                     IsWin11_22H2() ? DWMWA_SYSTEMBACKDROP_TYPE : DWMWA_MICA_EFFECT,
                     param == 1 ? DWMSBT_TABBEDWINDOW : DWMSBT_MAINWINDOW);

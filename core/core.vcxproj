@@ -20,10 +20,8 @@
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\dllproxy.cc" />
     <ClCompile Include="src\dllmain.cc" />
-    <ClCompile Include="src\renderer\fs.cc" />
     <ClCompile Include="src\renderer\v8_datastore.cc" />
     <ClCompile Include="src\renderer\v8_helper.cc" />
-    <ClCompile Include="src\renderer\winbrancy.cc" />
     <ClCompile Include="src\renderer\renderer.cc" />
     <ClCompile Include="src\utils\cefstr.cc" />
     <ClCompile Include="src\utils\dylib.cc" />
