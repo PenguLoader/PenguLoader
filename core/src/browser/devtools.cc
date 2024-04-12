@@ -16,7 +16,7 @@ static void enhance_devtools_window(void *handle)
 {
 #if OS_WIN
     HWND window = static_cast<HWND>(handle);
-    HWND rclient = GetParent(static_cast<HWND>(browser::view_handle));
+    HWND rclient = static_cast<HWND>(browser::view_handle);
 
     // Copy window icon.
     HICON hicon = (HICON)SendMessageW(rclient, WM_GETICON, ICON_BIG, 0);

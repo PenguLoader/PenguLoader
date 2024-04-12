@@ -11,14 +11,15 @@ void *browser::view_handle = NULL;
 static void enhance_browser_window(cef_browser_t *browser)
 {
     if (browser::view_handle) return;
-
     auto host = browser->get_host(browser);
-    browser::view_handle = (void *)host->get_window_handle(host);
 
 #if OS_WIN
     // Get needed windows.
-    HWND browserWin = (HWND)browser::view_handle;
-    HWND rclient = GetParent(browserWin);
+    HWND browserWin = host->get_window_handle(host);
+    // Retrieve top-level window (RCLIENT).
+    HWND rclient = GetAncestor(browserWin, GA_ROOT);
+    browser::view_handle = (void *)rclient;
+
     HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
     //HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
 
@@ -29,9 +30,12 @@ static void enhance_browser_window(cef_browser_t *browser)
     ShowWindow(browserWin, SW_HIDE);
     //   bring Chrome_WidgetWin_0 to top-level children
     SetParent(widgetWin, rclient);
-
-	window::enable_shadow(rclient);
+#elif OS_MAC
+    browser::view_handle = (void*)host->get_window_handle(host);
 #endif
+
+    window::set_theme(browser::view_handle, true);
+    window::enable_shadow(browser::view_handle);
 
     host->base.release(&host->base);
 }

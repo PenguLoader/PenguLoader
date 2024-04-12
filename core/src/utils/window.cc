@@ -194,7 +194,7 @@ void window::enable_shadow(void *hwnd)
 
 bool window::is_dark_theme()
 {
-    char buffer[4];
+    char buffer[4]{};
     DWORD cbData = sizeof(buffer);
     auto res = _getfunc<decltype(&RegGetValueW)>("advapi32.dll", "RegGetValueW")(HKEY_CURRENT_USER,
         L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
