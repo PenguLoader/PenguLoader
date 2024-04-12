@@ -127,7 +127,7 @@ namespace window
         }
     }
 
-    void apply_vibrancy(void *nsview, int _material, int _state)
+    void apply_vibrancy(void *nsview, uint32_t _material, uint32_t _state)
     {
         clear_vibrancy(nsview);
 
