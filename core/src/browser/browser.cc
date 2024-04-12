@@ -68,15 +68,41 @@ static void HookMainBrowserClient(cef_client_t *client)
         struct _cef_browser_t* browser,
         struct _cef_frame_t* frame,
         cef_process_id_t source_process,
-        struct _cef_process_message_t* message)
+        struct _cef_process_message_t* message) -> int
     {
         if (source_process == PID_RENDERER)
         {
-            CefScopedStr name = message->get_name(message);
+            CefScopedStr name{ message->get_name(message) };
+            auto margs = message->get_argument_list(message);
+
             if (name.equal("@open-devtools"))
+            {
                 browser::open_devtools(browser);
+                return 1;
+            }
             else if (name.equal("@reload-client"))
+            {
                 browser->reload_ignore_cache(browser);
+                return 1;
+            }
+            else if (name.equal("@set-window-vibrancy"))
+            {
+                if (margs->get_type(margs, 0) == VTYPE_NULL)
+                    window::clear_vibrancy(browser::view_handle);
+                else
+                {
+                    uint32_t param1 = (uint32_t)margs->get_double(margs, 0);
+                    uint32_t param2 = (uint32_t)margs->get_double(margs, 1);
+                    window::apply_vibrancy(browser::view_handle, param1, param2);
+                }
+                return 1;
+            }
+            else if (name.equal("@set-window-theme"))
+            {
+                bool dark = margs->get_bool(margs, 0);
+                window::set_theme(browser::view_handle, dark);
+                return 1;
+            }
         }
 
         return OnProcessMessageReceived(self, browser, frame, source_process, message);
