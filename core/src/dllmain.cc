@@ -119,9 +119,9 @@ static void InjectThisDll(HANDLE hProcess)
 
 int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
 {
-    NTSTATUS (NTAPI *NtQueryInformationProcess)(HANDLE, DWORD, PVOID, ULONG, PULONG);
-    NTSTATUS (NTAPI *NtRemoveProcessDebug)(HANDLE, HANDLE);
-    NTSTATUS (NTAPI *NtClose)(HANDLE Handle);
+    LONG (NTAPI *NtQueryInformationProcess)(HANDLE, DWORD, PVOID, ULONG, PULONG);
+    LONG (NTAPI *NtRemoveProcessDebug)(HANDLE, HANDLE);
+    LONG (NTAPI *NtClose)(HANDLE Handle);
 
     STARTUPINFOW si;
     PROCESS_INFORMATION pi;

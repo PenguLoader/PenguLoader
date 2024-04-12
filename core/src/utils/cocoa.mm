@@ -127,7 +127,7 @@ namespace window
         }
     }
 
-    void apply_vibrancy(void *nsview, int _material, bool follow_active)
+    void apply_vibrancy(void *nsview, int _material, int _state)
     {
         clear_vibrancy(nsview);
 
@@ -140,7 +140,7 @@ namespace window
                 [[view.subviews firstObject] removeFromSuperview];
 
             NSVisualEffectMaterial material = (NSVisualEffectMaterial)_material;
-            NSVisualEffectState state = follow_active ? NSVisualEffectStateFollowsWindowActiveState : NSVisualEffectStateActive;
+            NSVisualEffectState state = (NSVisualEffectState)_state;
             NSVisualEffectView *blurredView = [[[NSVisualEffectView alloc] initWithFrame:rect] autorelease];
             
             [blurredView setMaterial:material];

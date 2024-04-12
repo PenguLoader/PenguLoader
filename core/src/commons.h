@@ -262,50 +262,61 @@ namespace window
 {
     /**
      * Get window rectangle on screen.
-     * @param hwnd_nsview A window handle, `HWND` on Windows, or `NSView*` on macOS.
+     * @param handle `NSView*` on macOS, or `HWND` on Windows.
     */
-    void get_rect(void *hwnd_nsview, int *x, int *y, int *w, int *h);
+    void get_rect(void *handle, int *x, int *y, int *w, int *h);
 
     /**
      * Get window DPI scale factor.
+     * @param handle `NSView*` on macOS, or `HWND` on Windows.
     */
-    float get_scaling(void *hwnd);
+    float get_scaling(void *handle);
 
     /**
      * Bring window to foreground.
+     * @param handle `NSView*` on macOS, or `HWND` on Windows.
     */
-    void make_foreground(void *hwnd);
+    void make_foreground(void *handle);
 
     /**
      * Set window vibrancy effect.
-     * @param nsview A window handle.
-     * @param material `NSVisualEffectMaterial` enum.
-     * @param state `NSVisualEffectState` enum.
+     * @param handle `NSView*` on macOS, or `HWND` on Windows.
+     * @param material `NSVisualEffectMaterial` enum on macOS.
+     *      On Windows, it should be one of following values:
+     *        `0` (transparent - Windows 7+),
+     *        `1` (blurbehind -Windows 7+),
+     *        `2` (acrylic - Windows 10+),
+     *        `3` (unified - Windows 10+),
+     *        `4` (mica - Windows 11).
+     * @param state `NSVisualEffectState` enum on macOS, or accent background color on Windows.
     */
-    void apply_vibrancy(void *nsview, int material, bool follow_active);
+    void apply_vibrancy(void *handle, uint32_t material, uint32_t state);
 
     /**
      * Remove applied vibrancy effect in window.
-     * @param nsview A window handle.
+     * @param handle `NSView*` on macOS, or `HWND` on Windows.
     */
-    void clear_vibrancy(void *nsview);
+    void clear_vibrancy(void *handle);
 
     /**
      * Enable window drop shadow.
+     * @param handle `NSView*` on macOS, or `HWND` on Windows.
+     * @note Windows 7 requires aero enabled.
     */
-    void enable_shadow(void *hwnd);
+    void enable_shadow(void *handle);
 
     /**
-     * Check the current system theme is dark.
-     * Works on Windows 10 1607+.
+     * Check the current system appearance is dark mode.
+     * @note Support Windows 10 1607+, macOS 10.14+.
     */
     bool is_dark_theme();
 
     /**
      * Set default window theme.
-     * Works on Windows 10 1809+.
+     * @param handle `NSView*` on macOS, or `HWND` on Windows.
+     * @note Support Windows 10 1809+, macOS 10.14+.
     */
-    void set_theme(void *hwnd, bool dark);
+    void set_theme(void *handle, bool dark);
 }
 
 namespace dylib
