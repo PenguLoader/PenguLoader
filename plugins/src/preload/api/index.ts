@@ -5,12 +5,8 @@ import './Effect';
 // import './PluginFS';
 import './npm';
 
-window.openDevTools = function (remote?: boolean) {
-  native.OpenDevTools(Boolean(remote));
-};
-
-window.openAssetsFolder = function () {
-  native.OpenAssetsFolder();
+window.openDevTools = function () {
+  native.OpenDevTools();
 };
 
 window.openPluginsFolder = function (path?: string) {

@@ -96,12 +96,11 @@ declare interface Window {
     build: string
   };
 
-  openDevTools: typeof openDevTools;
-  openAssetsFolder: typeof openAssetsFolder;
-  openPluginsFolder: typeof openPluginsFolder;
-  reloadClient: typeof reloadClient;
-  restartClient: typeof restartClient;
-  getScriptPath: typeof getScriptPath;
+  openDevTools: () => void;
+  openPluginsFolder: (subdir?: string) => void;
+  reloadClient: () => void;
+  restartClient: () => void;
+  getScriptPath: () => string | undefined;
 
   __llver: string;
 }

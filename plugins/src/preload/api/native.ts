@@ -5,8 +5,7 @@ export const native: Native = window.__native;
 delete window.__native;
 
 interface Native {
-  OpenDevTools: (remote: boolean) => void;
-  OpenAssetsFolder: () => void;
+  OpenDevTools: () => void;
   OpenPluginsFolder: (path?: string) => boolean;
   ReloadClient: () => void;
 
@@ -22,8 +21,4 @@ interface Native {
   // Stat: (path:string) => FileStat | undefined;
   // Ls: (path:string) => string[] | undefined;
   // Remove: (path:string, recursively:boolean) => number;
-
-  CreateAuthCallbackURL: () => string;
-  AddAuthCallback: (url: string, cb: Function) => void;
-  RemoveAuthCallback: (url: string) => void;
 }
