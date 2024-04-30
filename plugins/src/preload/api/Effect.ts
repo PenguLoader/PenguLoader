@@ -25,6 +25,14 @@ const WinToMacMaterial = {
   mica: NSVisualEffectMaterial.HeaderView,
 }
 
+const Win11MicaMaterial = {
+  auto: 0,
+  none: 1,
+  mica: 2,
+  acrylic: 3,
+  tabbed: 4,
+}
+
 type EffectName =
   | 'transparent'
   | 'blurbehind'
@@ -57,7 +65,7 @@ function parseHexColor(color: string): number {
         a = parseInt(hex[++i] + hex[i += step], 16)
       }
 
-      return ((a << 24) | (r << 16) | (g << 8) | b) >>> 0
+      return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0
     }
   }
   return 0
@@ -84,8 +92,12 @@ function applyWindowEffectMac(name: EffectName, options) {
 function applyWindowEffectWin(name: EffectName, options) {
   if (name in WinBackdropType) {
     if (name === 'mica') {
-      const tabbed = options.tabbed
-      native.SetWindowVibrancy(WinBackdropType.mica, tabbed ? 1 : 0)
+      const material = String(options.material || 'mica')
+      if (material in Win11MicaMaterial) {
+        native.SetWindowVibrancy(WinBackdropType.mica, Win11MicaMaterial[material])
+      } else {
+        console.warn('Unsupported mica material: %s', material)
+      }
     } else {
       const color = parseHexColor(options.color)
       native.SetWindowVibrancy(WinBackdropType[name], color)
@@ -116,4 +128,5 @@ window.Effect = {
     else (theme === 'dark')
     native.SetWindowTheme(true)
   },
-};
+
+}

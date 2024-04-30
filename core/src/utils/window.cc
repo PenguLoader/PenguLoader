@@ -39,6 +39,7 @@ struct WINDOWCOMPOSITIONATTRIBDATA
 
 enum DWM_SYSTEMBACKDROP_TYPE
 {
+    DWMSBT_AUTO = 0,            // Auto
     DWMSBT_DISABLE = 1,         // None
     DWMSBT_MAINWINDOW = 2,      // Mica
     DWMSBT_TRANSIENTWINDOW = 3, // Acrylic
@@ -86,7 +87,7 @@ static auto winver()
 #define IsWin10_20H1()  (winver().build >= 19041 && winver().build < 22000)
 #define IsWin10_1809()  (winver().build >= 17763 && winver().build < 22000)
 #define IsWin11()       (winver().build >= 22000)
-#define IsWin11_22H2()  (winver().build >= 22621)
+#define IsWin11_22H2()  (winver().build >= 22523/*22621*/)
 
 static void extend_client_area(HWND hwnd, int inset)
 {
@@ -250,20 +251,19 @@ void window::apply_vibrancy(void* handle, uint32_t _type, uint32_t param)
             }
             break;
 
-        case BackdropType::Acrylic:
         case BackdropType::BlurBehind:
-        case BackdropType::Unified:
-            if (type == BackdropType::Acrylic && IsWin11_22H2())
+            if (IsWin7Plus())
             {
-                extend_client_area(window, -1);
-                set_window_attribute(window, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_TRANSIENTWINDOW);
+                set_accent_policy(window, ACCENT_ENABLE_BLURBEHIND, (COLORREF)param);
                 success = true;
             }
-            else if (IsWin7Plus())
+            break;
+
+        case BackdropType::Acrylic:
+        case BackdropType::Unified:
+            if (IsWin7Plus())
             {
-                set_accent_policy(window,
-                    (type == BackdropType::BlurBehind) ? ACCENT_ENABLE_ACRYLICBLURBEHIND : ACCENT_ENABLE_BLURBEHIND,
-                    (COLORREF)param);
+                set_accent_policy(window, ACCENT_ENABLE_ACRYLICBLURBEHIND, (COLORREF)param);
                 success = true;
             }
             break;
@@ -271,10 +271,16 @@ void window::apply_vibrancy(void* handle, uint32_t _type, uint32_t param)
         case BackdropType::Mica:
             if (IsWin11())
             {
+                DWORD attr = DWMWA_MICA_EFFECT;
+                DWORD value = DWMSBT_MAINWINDOW;
+                if (IsWin11_22H2())
+                {
+                    attr = DWMWA_SYSTEMBACKDROP_TYPE;
+                    value = (DWM_SYSTEMBACKDROP_TYPE)param;
+                }
+
                 extend_client_area(window, -1);
-                set_window_attribute(window,
-                    IsWin11_22H2() ? DWMWA_SYSTEMBACKDROP_TYPE : DWMWA_MICA_EFFECT,
-                    param == 1 ? DWMSBT_TABBEDWINDOW : DWMSBT_MAINWINDOW);
+                set_window_attribute(window, attr, value);
                 success = true;
             }
             break;
@@ -298,12 +304,7 @@ void window::clear_vibrancy(void *handle)
         case BackdropType::BlurBehind:
         case BackdropType::Acrylic:
         case BackdropType::Unified:
-            if (type == BackdropType::Acrylic && IsWin11_22H2())
-            {
-                extend_client_area(window, 0);
-                set_window_attribute(window, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_DISABLE);
-            }
-            else if (IsWin7Plus())
+            if (IsWin7Plus())
             {
                 set_accent_policy(window, ACCENT_DISABLED, 0);
             }
@@ -312,7 +313,7 @@ void window::clear_vibrancy(void *handle)
         case BackdropType::Mica:
             if (IsWin11())
             {
-                extend_client_area(window, 0);
+                extend_client_area(window, 1);
                 set_window_attribute(window,
                     IsWin11_22H2() ? DWMWA_SYSTEMBACKDROP_TYPE : DWMWA_MICA_EFFECT,
                     IsWin11_22H2() ? DWMSBT_DISABLE : 0);

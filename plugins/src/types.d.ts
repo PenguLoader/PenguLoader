@@ -47,8 +47,8 @@ interface DataStore {
 }
 
 interface ApplyEffectFn {
-  (type: 'mica', options?: { tabbed: boolean }): void
   (type: 'transparent' | 'blurbehind' | 'acrylic' | 'unified', options?: { color: string }): void
+  (type: 'mica', options?: { material?: 'auto' | 'mica' | 'acrylic' | 'tabbed' }): void
   (type: 'vibrancy', options: { material: string, alwaysOn?: boolean }): void
 }
 
