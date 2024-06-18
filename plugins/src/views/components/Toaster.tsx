@@ -7,11 +7,11 @@ const options: ToastOptions = {
 
 window.Toast = {
 
-  success(message) {
+  success(message, options) {
     toast.success(message, options);
   },
 
-  error(message) {
+  error(message, options) {
     toast.error(message, options)
   },
 

@@ -30,9 +30,16 @@ interface CommandBar {
   update: () => void
 }
 
+type ToastPosition = 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
+interface ToastOptions {
+  position: ToastPosition
+  duration: number
+}
+
 interface Toast {
-  success: (message: string) => void
-  error: (message: string) => void
+  success: (message: string, options?: ToastOptions) => void
+  error: (message: string, options?: ToastOptions) => void
   promise: <T>(
     promise: Promise<T>,
     msg: { loading: string, success: string, error: string }
