@@ -330,6 +330,7 @@ namespace config
 
         bool OptimizeClient();
         bool SuperLowSpecMode();
+        bool SilentMode();
     }
 }
 

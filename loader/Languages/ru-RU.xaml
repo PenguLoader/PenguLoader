@@ -8,6 +8,7 @@
     <system:String x:Key="t_options">Настройки</system:String>
     <system:String x:Key="t_optimize_client">Оптимизировать клиент</system:String>
     <system:String x:Key="t_super_potato_mode">Режим супернизких требований</system:String>
+    <system:String x:Key="t_silent_mode">Скрытый режим</system:String>
 
     <system:String x:Key="t_available_plugins">Доступные плагины</system:String>
     <system:String x:Key="t_open_plugins">Открыть папку</system:String>
@@ -19,5 +20,5 @@
 
     <system:String x:Key="t_msg_optimize_client_prompt" xml:space="preserve">Рекомендовано включить эту опцию.&#13;&#13;Включив её, некоторые неиспользуемые процессы будут отключены, что уменьшит лаги.&#13;&#13;Вы хотите продолжить?</system:String>
     <system:String x:Key="t_msg_super_potato_mode_prompt" xml:space="preserve">Эта опция расширяет стандартный режим низких требований. Включив её, все визуальные эффекты будут отключены, значительно уменьшив количество лагов и увеличив скорость отзывчивости.&#13;&#13;Очень полезно для слабых ПК, однако могут возникнуть баги. Пожалуйста, докладывайте о них, чтобы помочь нам исправить этот режим.&#13;&#13;Вы хотите продолжить?</system:String>
-
+    <system:String x:Key="t_msg_silent_mode_prompt" xml:space="preserve">Эта опция отключает сплэш при загрузке клиента, а также убирает все оповещения от плагинов.&#13;&#13;Вы хотите продолжить?</system:String>
 </ResourceDictionary>

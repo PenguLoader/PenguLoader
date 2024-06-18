@@ -74,10 +74,11 @@
                     HorizontalAlignment="Stretch" />
             </StackPanel>
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{DynamicResource t_options}" HorizontalAlignment="Stretch" Margin="20,10" FontSize="14" FontWeight="SemiBold" />
-                <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{DynamicResource t_options}" HorizontalAlignment="Stretch" Margin="20,1" FontSize="14" FontWeight="SemiBold" />
+                <StackPanel Height="125"> // seems like it broke when I had to switch my dotnet ver to 4.8 since I dont have enough space for installing another VS so I would have 4.5
                     <CheckBox Content="{DynamicResource t_optimize_client}" IsChecked="{Binding Path=OptimizeClient, Mode=TwoWay}" Focusable="False" Margin="20,5" HorizontalAlignment="Stretch" />
                     <CheckBox Content="{DynamicResource t_super_potato_mode}" IsChecked="{Binding Path=SuperLowSpecMode, Mode=TwoWay}" Focusable="False" Margin="20,5" HorizontalAlignment="Stretch" />
+                    <CheckBox Content="{DynamicResource t_silent_mode}" IsChecked="{Binding Path=SilentMode, Mode=TwoWay}" Focusable="False" Margin="20,5" HorizontalAlignment="Stretch" />
                 </StackPanel>
             </StackPanel>
         </Grid>

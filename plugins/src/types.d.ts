@@ -43,7 +43,7 @@ interface Toast {
   promise: <T>(
     promise: Promise<T>,
     msg: { loading: string, success: string, error: string }
-  ) => Promise<T>
+  ) => Promise<T> | void;
 }
 
 interface DataStore {
@@ -89,6 +89,7 @@ declare interface Window {
   Pengu: {
     version: string
     superPotato: boolean
+    silentMode: boolean
     plugins: string[]
     // fs: PluginFS
   };

@@ -8,6 +8,7 @@
     <system:String x:Key="t_options">Options</system:String>
     <system:String x:Key="t_optimize_client">Optimize Client</system:String>
     <system:String x:Key="t_super_potato_mode">Super Low Spec Mode</system:String>
+    <system:String x:Key="t_silent_mode">Silent Mode</system:String>
 
     <system:String x:Key="t_available_plugins">Available plugins</system:String>
     <system:String x:Key="t_open_plugins">Open folder</system:String>
@@ -19,5 +20,5 @@
 
     <system:String x:Key="t_msg_optimize_client_prompt" xml:space="preserve">It is recommended to enable this option.&#13;&#13;Enabling it will disable some unused things, unused background tasks, and reduce lag.&#13;&#13;Do you want to continue?</system:String>
     <system:String x:Key="t_msg_super_potato_mode_prompt" xml:space="preserve">This option extends the default Low Spec Mode. Enabling it will disable all transition and animation effects, also greatly reduce lag and increase response speed.&#13;&#13;It's very helpful for low PC, but may cause bug. Please report your issues to help us improve this mode.&#13;&#13;Do you want to continue?</system:String>
-
+    <system:String x:Key="t_msg_silent_mode_prompt" xml:space="preserve">This option disables the splash screen during client loading and also suppresses all toast notifications.&#13;&#13;Do you want to continue?</system:String>
 </ResourceDictionary>

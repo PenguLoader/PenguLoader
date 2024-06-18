@@ -54,6 +54,25 @@ namespace PenguLoader.Views
             }
         }
 
+        public bool SilentMode
+        {
+            get => Config.SilentMode;
+            set 
+            {
+                if (value == true)
+                {
+                    var caption = App.GetTranslation("t_silent_mode");
+                    var message = App.GetTranslation("t_msg_silent_mode_prompt");
+
+                    value = MessageBox.Show(Owner, message, caption,
+                        MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes;
+                }
+
+                Config.SilentMode = value;
+                TriggerPropertyChanged(nameof(SilentMode));
+            }
+        }
+
         public bool IsActivated
         {
             get => Module.IsFound && Module.IsActivated;

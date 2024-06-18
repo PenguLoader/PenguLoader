@@ -216,6 +216,10 @@ static void LoadPlugins(V8Object *window)
     auto superPotato = V8Value::boolean(config::options::SuperLowSpecMode());
     pengu->set(&u"superPotato"_s, superPotato, V8_PROPERTY_ATTRIBUTE_READONLY);
 
+    // Pengu.silentMode
+    auto silentMode = V8Value::boolean(config::options::SilentMode());
+    pengu->set(&u"silentMode"_s, silentMode, V8_PROPERTY_ATTRIBUTE_READONLY);
+
     pengu->set(&u"os"_s, V8Value::string(&u"win"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
     pengu->set(&u"osVersion"_s, V8Value::string(&u"10"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
 

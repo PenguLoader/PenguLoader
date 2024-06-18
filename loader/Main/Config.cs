@@ -86,6 +86,12 @@ namespace PenguLoader.Main
             set => SetBool("SuperLowSpecMode", value);
         }
 
+        public static bool SilentMode
+        {
+            get => GetBool("SilentMode", false);
+            set => SetBool("SilentMode", value);
+        }
+
         static string GetPath(string folderName)
         {
             return Path.Combine(Environment.CurrentDirectory, folderName);

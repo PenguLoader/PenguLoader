@@ -57,7 +57,7 @@ export function Welcome() {
     show(false);
   };
 
-  if (!welcome) {
+  if (!welcome && !window.Pengu.silentMode) {
     onMount(() => {
       toast.success(_t('active_status'), {
         position: 'bottom-left',

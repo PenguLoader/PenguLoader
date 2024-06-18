@@ -172,4 +172,8 @@ namespace config::options
     {
         return getConfigValueBool("SuperLowSpecMode", false);
     }
+    bool SilentMode()
+    {
+        return getConfigValueBool("SilentMode", false);
+    }
 }
