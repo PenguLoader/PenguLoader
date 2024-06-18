@@ -4,17 +4,15 @@ import { Welcome } from './components/Welcome';
 
 export default function App() {
   return (
-    <div>
+    <div onClick={() => {
+      toast.remove();
+    }}>
       <Welcome />
       <CommandBar />
-      <div onClick={() => {
-        toast.remove();
-      }}>
-        <Toaster
-          gutter={8}
-          position="bottom-right"
-        />
-      </div>
+      <Toaster
+        gutter={8}
+        position="bottom-right"
+      />
     </div>
   )
 }
