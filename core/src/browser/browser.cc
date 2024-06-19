@@ -4,6 +4,8 @@
 #include "include/capi/cef_client_capi.h"
 #include "include/capi/cef_browser_capi.h"
 
+#include "filter.h"
+
 // BROWSER PROCESS ONLY.
 
 HWND rclient_;
@@ -68,6 +70,8 @@ static void HookMainBrowserClient(cef_client_t *client)
 {
     void HookKeyboardHandler(cef_client_t *client);
     HookKeyboardHandler(client);
+
+    HookRequestHandler(client);
 
     // Hook LifeSpanHandler.
     static auto GetLifeSpanHandler = client->get_life_span_handler;

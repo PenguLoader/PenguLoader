@@ -22,6 +22,8 @@
     <ClCompile Include="src\browser\assets.cc" />
     <ClCompile Include="src\browser\browser.cc" />
     <ClCompile Include="src\browser\devtools.cc" />
+    <ClCompile Include="src\browser\filter.cpp" />
+    <ClCompile Include="src\browser\filters\indexPageFilter.cpp" />
     <ClCompile Include="src\browser\keyboard.cc" />
     <ClCompile Include="src\browser\riotclient.cc" />
     <ClCompile Include="src\config.cc" />
@@ -42,6 +44,8 @@
     <None Include="res\module.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\browser\filter.h" />
+    <ClInclude Include="src\browser\filters\indexPageFilter.h" />
     <ClInclude Include="src\commons.h" />
     <ClInclude Include="src\hook.h" />
   </ItemGroup>

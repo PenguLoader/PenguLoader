@@ -17,6 +17,9 @@
     <Filter Include="src\utils">
       <UniqueIdentifier>{e0b1c27d-cfeb-41e1-87e3-5f64c8ddc7fd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\browser\filters">
+      <UniqueIdentifier>{1e91eb2a-6a2d-4cdd-8e58-9c00d8cc8068}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dllmain.cc">
@@ -73,6 +76,12 @@
     <ClCompile Include="src\utils\dialog.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\browser\filter.cpp">
+      <Filter>src\browser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\browser\filters\indexPageFilter.cpp">
+      <Filter>src\browser\filters</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def">
@@ -90,6 +99,12 @@
     </ClInclude>
     <ClInclude Include="src\hook.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\browser\filter.h">
+      <Filter>src\browser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\browser\filters\indexPageFilter.h">
+      <Filter>src\browser\filters</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
