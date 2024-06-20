@@ -9,19 +9,19 @@ window.Toast = {
 
   success(message, options) {
     if (window.Pengu.silentMode)
-      return console.log(`Silent mode enabled, user won't recieve this toast`);
+      return console.warn(`Suppressed following message since slient mode is on: ${message}`);
     toast.success(message, options);
   },
 
   error(message, options) {
     if (window.Pengu.silentMode)
-      return console.log(`Silent mode enabled, user won't recieve this toast`)
+      return console.warn(`Suppressed following message since slient mode is on: ${message}`);
     toast.error(message, options)
   },
 
   promise(promise, msg) {
     if (window.Pengu.silentMode) {
-      return console.log("Silent mode enabled, user won't recieve this toast");
+      return console.warn(`Suppressed following message since slient mode is on: ${msg}`);
     }
     return toast.promise(promise, msg, options);
   },
