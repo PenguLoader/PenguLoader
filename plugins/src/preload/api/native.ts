@@ -5,14 +5,12 @@ export const native: Native = window.__native;
 delete window.__native;
 
 interface Native {
-  OpenDevTools: (remote: boolean) => void;
-  OpenAssetsFolder: () => void;
+  OpenDevTools: () => void;
   OpenPluginsFolder: (path?: string) => boolean;
   ReloadClient: () => void;
 
-  GetWindowEffect: () => string;
-  SetWindowEffect: (name: string | false, options?: any) => boolean;
-  SetWindowTheme: (theme: string) => void;
+  SetWindowTheme: (dark: boolean) => void;
+  SetWindowVibrancy: (kind: number | null, state?: number) => void;
 
   LoadDataStore: () => string;
   SaveDataStore: (data: string) => void;
@@ -23,8 +21,4 @@ interface Native {
   // Stat: (path:string) => FileStat | undefined;
   // Ls: (path:string) => string[] | undefined;
   // Remove: (path:string, recursively:boolean) => number;
-
-  CreateAuthCallbackURL: () => string;
-  AddAuthCallback: (url: string, cb: Function) => void;
-  RemoveAuthCallback: (url: string) => void;
 }

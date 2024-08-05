@@ -1,34 +1,25 @@
 #include "commons.h"
 #include "hook.h"
+#include "v8_wrapper.h"
+#include <unordered_map>
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_render_process_handler_capi.h"
 
 static const char *PL_VERSION {
-#   include "../loader/version.cs"
+#   include "../../loader/version.cs"
 };
 
 // RENDERER PROCESS ONLY.
 
-extern HWND RCLIENT_WINDOW;
 static bool is_main_ = false;
 
-V8Value *native_LoadDataStore(const vec<V8Value *> &args);
-V8Value *native_SaveDataStore(const vec<V8Value *> &args);
+extern V8HandlerFunctionEntry v8_DataStoreEntries[];
+extern V8HandlerFunctionEntry v8_HelperEntries[];
 
-//V8Value* native_ReadFile(const vec<V8Value*>& args);
-//V8Value* native_WriteFile(const vec<V8Value*>& args);
-//V8Value* native_MkDir(const vec<V8Value*>& args);
-//V8Value* native_Stat(const vec<V8Value*>& args);
-//V8Value* native_Ls(const vec<V8Value*>& args);
-//V8Value* native_Remove(const vec<V8Value*>& args);
-
-V8Value *native_GetWindowEffect(const vec<V8Value *> &args);
-V8Value *native_SetWindowEffect(const vec<V8Value *> &args);
-V8Value *native_SetWindowTheme(const vec<V8Value *> &args);
-
-static vec<wstr> GetPluginEntries()
+static std::vector<path> get_plugin_entries()
 {
-    vec<wstr> entries{};
+    std::vector<path> entries;
+    auto plugins_dir = config::plugins_dir();
 
     /*
         plugins/
@@ -40,41 +31,49 @@ static vec<wstr> GetPluginEntries()
           |__plugin-3.js        <-- top-level plugin
     */
 
-    auto pluginsDir = config::pluginsDir();
-    if (utils::isDir(pluginsDir))
+    if (file::is_dir(plugins_dir))
     {
         // Scan plugins dir.
-        for (const auto &name : utils::readDir(pluginsDir))
+        for (const auto &name : file::read_dir(plugins_dir))
         {
+            auto ch1 = name.c_str()[0];
+
             // Skip name starts with underscore or dot.
-            if (name[0] == '_' || name[0] == '.')
+            if (ch1 == '_' || ch1 == '.')
                 continue;
 
-            auto path = pluginsDir / name;
+            auto path = plugins_dir / name;
 
-            // Top-level JS file.
-            if (std::regex_search(name, std::wregex(L"\\.js$", std::regex::icase)) && utils::isFile(path))
+            if (file::is_file(path))
             {
-                entries.push_back(name);
-            }
-            // Group by @author.
-            else if (name[0] == '@' && utils::isDir(path))
-            {
-                for (const auto &subname : utils::readDir(path))
+                // Top-level JS file.
+                if (name.string().ends_with(".js"))
                 {
-                    if (subname[0] == '_' || subname[0] == '.')
-                        continue;
-
-                    if (utils::isFile(path / subname / "index.js"))
-                    {
-                        entries.push_back(name + L"/" + subname + L"/index.js");
-                    }
+                    entries.push_back(name);
                 }
             }
-            // Sub-folder with index.
-            else if (utils::isFile(path / "index.js"))
+            else if (file::is_dir(path))
             {
-                entries.push_back(name + L"/index.js");
+                // Group by @author.
+                if (ch1 == '@')
+                {
+                    for (const auto &subname : file::read_dir(path))
+                    {
+                        auto ch1 = subname.c_str()[0];
+                        if (ch1 == '_' || ch1 == '.')
+                            continue;
+
+                        if (file::is_file(path / subname / "index.js"))
+                        {
+                            entries.push_back(name / subname / "index.js");
+                        }
+                    }
+                }
+                // Sub-folder with index.
+                else if (file::is_file(path / "index.js"))
+                {
+                    entries.push_back(name / "index.js");
+                }
             }
         }
     }
@@ -82,126 +81,80 @@ static vec<wstr> GetPluginEntries()
     return entries;
 }
 
-static V8Value *native_OpenDevTools(const vec<V8Value *> &args)
-{
-    bool remote = args.size() > 0 && args[0]->asBool();
-
-    auto context = cef_v8context_get_current_context();
-    auto frame = context->get_frame(context);
-
-    // IPC to browser process.
-    auto name = remote ? u"__open_remote_devtools"_s : u"__open_devtools"_s;
-    auto msg = cef_process_message_create(&name);
-    frame->send_process_message(frame, PID_BROWSER, msg);
-
-    return nullptr;
-}
-
-static V8Value *native_OpenPluginsFolder(const vec<V8Value *> &args)
-{   
-    wstr destPath = config::pluginsDir();
-
-    if (args.size() > 0)
-    {
-        CefScopedStr path = args[0]->asString();
-        destPath += L"\\" + path.cstr();
-
-        if (!utils::isDir(destPath))
-            return V8Value::boolean(false);
-    }
-
-    shell::open_folder(destPath.c_str());
-    return V8Value::boolean(true);
-}
-
-static V8Value *native_ReloadClient(const vec<V8Value *> &args)
-{
-    auto context = cef_v8context_get_current_context();
-    auto frame = context->get_frame(context);
-
-    // IPC to browser process.
-    auto msg = cef_process_message_create(&CefStr("__reload_client"));
-    frame->send_process_message(frame, PID_BROWSER, msg);
-
-    return nullptr;
-}
-
-static map<wstr, V8FunctionHandler> m_nativeDelegateMap
-{
-    { L"OpenDevTools", native_OpenDevTools },
-    { L"OpenPluginsFolder", native_OpenPluginsFolder },
-    { L"ReloadClient", native_ReloadClient },
-
-    { L"LoadDataStore", native_LoadDataStore },
-    { L"SaveDataStore", native_SaveDataStore },
-
-    //{ L"ReadFile", native_ReadFile},
-    //{ L"WriteFile", native_WriteFile},
-    //{ L"MkDir", native_MkDir},
-    //{ L"Stat", native_Stat},
-    //{ L"Ls", native_Ls},
-    //{ L"Remove", native_Remove},
-
-    { L"GetWindowEffect", native_GetWindowEffect },
-    { L"SetWindowEffect", native_SetWindowEffect },
-    { L"SetWindowTheme", native_SetWindowTheme },
-};
-
 struct NativeV8Handler : CefRefCount<cef_v8handler_t>
 {
+    std::unordered_map<std::string, V8FunctionHandler> map_;
+
     NativeV8Handler() : CefRefCount(this)
     {
-        cef_v8handler_t::execute = Execute;
+        cef_bind_method(NativeV8Handler, execute);
     }
 
 private:
-    static int CALLBACK Execute(cef_v8handler_t* self,
+    int CALLBACK _execute(
         const cef_string_t* name,
         cef_v8value_t* object,
-        size_t argc,
-        cef_v8value_t* const* argv,
+        size_t _argc,
+        cef_v8value_t* const* _args,
         cef_v8value_t** retval,
         cef_string_t* exception)
     {
-        wstr func{ name->str, name->length };
+        cef_string_utf8_t func{};
+        cef_string_to_utf8(name->str, name->length, &func);
 
-#if _DEBUG
-        wprintf(L"native invoke: %s(%zu)\n", func.c_str(), argc);
-#endif
+        bool handled = false;
+        auto it = map_.find(func.str);
 
-        auto it = m_nativeDelegateMap.find(func);
-        if (it != m_nativeDelegateMap.end())
+        if (it != map_.end())
         {
-            const auto argv_ = (V8Value **)(argv);
-            vec<V8Value *> args{ argv_, argv_ + argc };
+            int argc = static_cast<int>(_argc);
+            auto args = reinterpret_cast<V8Value *const *>(_args);
 
-            auto result = it->second(args);
+            auto result = it->second(args, argc);
             if (result != nullptr)
-            {
-                *retval = (cef_v8value_t *)result;
-            }
+                *retval = reinterpret_cast<cef_v8value_t *>(result);
 
-            return true;
+            handled = true;
         }
 
-        return false;
+        cef_string_utf8_clear(&func);
+        return handled;
     }
 };
 
 static void ExposeNativeFunctions(V8Object *window)
 {
     auto native = V8Object::create();
+    auto handler = new NativeV8Handler();
 
-    for (const auto &it : m_nativeDelegateMap)
-    {
-        auto name = CefStr(it.first);
-        auto function = V8Value::function(&name, new NativeV8Handler());
-        native->set(&name, function, V8_PROPERTY_ATTRIBUTE_READONLY);
+    auto list = {
+        v8_DataStoreEntries,
+        v8_HelperEntries,
+    };
+
+    for (auto &entries : list) {
+        for (auto entry = entries; entry->name; entry++) {
+            handler->map_[entry->name] = entry->func;
+            auto name = CefStr(entry->name);
+            auto function = V8Value::function(&name, handler);
+            native->set(&name, function, V8_PROPERTY_ATTRIBUTE_READONLY);
+        }
     }
 
     window->set(&u"__native"_s, native, V8_PROPERTY_ATTRIBUTE_READONLY);
 
     window->set(&u"__llver"_s, V8Value::string(&CefStr(PL_VERSION)), V8_PROPERTY_ATTRIBUTE_READONLY);
+}
+
+static void ExposeOsObject(V8Object *window)
+{
+    auto object = V8Object::create();
+
+    object->set(&u"name"_s, V8Value::string(&CefStr(PLATFORM_NAME)), V8_PROPERTY_ATTRIBUTE_READONLY);
+    object->set(&u"version"_s, V8Value::string(&CefStr(platform::get_os_version())), V8_PROPERTY_ATTRIBUTE_READONLY);
+    object->set(&u"build"_s, V8Value::string(&CefStr(platform::get_os_build())), V8_PROPERTY_ATTRIBUTE_READONLY);
+
+    window->set(&u"os"_s, object, V8_PROPERTY_ATTRIBUTE_READONLY);
 }
 
 static void LoadPlugins(V8Object *window)
@@ -216,17 +169,23 @@ static void LoadPlugins(V8Object *window)
     auto superPotato = V8Value::boolean(config::options::SuperLowSpecMode());
     pengu->set(&u"superPotato"_s, superPotato, V8_PROPERTY_ATTRIBUTE_READONLY);
 
-    pengu->set(&u"os"_s, V8Value::string(&u"win"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
-    pengu->set(&u"osVersion"_s, V8Value::string(&u"10"_s), V8_PROPERTY_ATTRIBUTE_READONLY);
+    pengu->set(&u"isMac"_s,
+#ifdef OS_MAC
+        V8Value::boolean(true),
+#else
+        V8Value::boolean(false),
+#endif
+        V8_PROPERTY_ATTRIBUTE_READONLY);
 
     // Pengu.entries
-    auto entries = GetPluginEntries();
+    auto entries = get_plugin_entries();
     auto pluginEntries = V8Array::create((int)entries.size());
 
     for (int index = 0; index < (int)entries.size(); index++)
     {
-        auto entry = V8Value::string(&CefStr(entries[index]));
-        pluginEntries->set(index, entry);
+        auto entry = CefStr::from_path(entries[index]);
+        auto value = V8Value::string(&entry);
+        pluginEntries->set(index, value);
     }
 
     // Should add to parent objet after init.
@@ -239,18 +198,17 @@ static void LoadPlugins(V8Object *window)
 static void ExecutePreloadScript(cef_frame_t *frame)
 {
 #ifdef _DEBUG
-    str script{};
-    if (utils::readFile(config::loaderDir() / "../plugins/dist/preload.js", script))
+    void *buffer; size_t length;
+    path preload_path = config::loader_dir() / "../plugins/dist/preload.js";
+
+    if (file::read_file(preload_path, &buffer, &length))
     {
-        CefStr code{ script.c_str(), script.length() };
-        frame->execute_java_script(frame, &code, &u"https://plugins/@/preload"_s, 1);
-    }
-    else
-    {
-        printf("preload is not found, please start dev server and reload your client\n");
+        CefStr script((const char *)buffer, length);
+        frame->execute_java_script(frame, &script, &u"https://plugins/@/preload"_s, 1);
+        free(buffer);
     }
 #else
-#   include "../plugins/dist/preload.g.h"
+#   include "../../plugins/dist/preload.g.h"
     CefStr script{ (const char *)_preload_script, _preload_script_size };
     frame->execute_java_script(frame, &script, nullptr, 1);
 #endif
@@ -264,26 +222,25 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
     struct _cef_v8context_t* context)
 {
     CefScopedStr url = frame->get_url(frame);
-    OnContextCreated(self, browser, frame, context);
 
     // Detect main page.
-    if (is_main_ && url.search(L"^https:\\/\\/riot:.+\\/index\\.html", true))
+    if (is_main_ && url.startw("https://riot:") && url.endw("/index.html"))
     {
+#if OS_WIN && _DEBUG
         // Open console window.
-#if _DEBUG
         AllocConsole();
         SetConsoleTitleA("League Client (main renderer process)");
         freopen("CONOUT$", "w", stdout);
-
-        wprintf(L"main frame: %.*s\n", (int)url.length, url.str);
 #endif
-
         auto window = context->get_global(context);
 
+        ExposeOsObject(reinterpret_cast<V8Object *>(window));
         ExposeNativeFunctions(reinterpret_cast<V8Object *>(window));
         LoadPlugins(reinterpret_cast<V8Object *>(window));
         ExecutePreloadScript(frame);
     }
+
+    OnContextCreated(self, browser, frame, context);
 }
 
 static decltype(cef_render_process_handler_t::on_context_released) OnContextReleased;
@@ -322,15 +279,7 @@ static int CEF_CALLBACK Hooked_OnProcessMessageReceived(
 {
     if (is_main_ && source_process == PID_BROWSER)
     {
-        CefScopedStr msg = message->get_name(message);
-
-        if (msg.equal(L"__rclient"))
-        {
-            // Received RCLIENT HWND.
-            auto args = message->get_argument_list(message);
-            RCLIENT_WINDOW = reinterpret_cast<HWND>((intptr_t)args->get_int(args, 0));
-            return 1;
-        }
+        // CefScopedStr msg = message->get_name(message);
     }
 
     return OnProcessMessageReceived(self, browser, frame, source_process, message);
@@ -350,17 +299,17 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
         OnContextCreated = handler->on_context_created;
         handler->on_context_created = Hooked_OnContextCreated;
 
-        // Hook OnContextReleased().
-        OnContextReleased = handler->on_context_released;
-        handler->on_context_released = Hooked_OnContextReleased;
+        // // Hook OnContextReleased().
+        // OnContextReleased = handler->on_context_released;
+        // handler->on_context_released = Hooked_OnContextReleased;
 
         // Hook OnBrowserCreated().
         OnBrowserCreated = handler->on_browser_created;
         handler->on_browser_created = Hooked_OnBrowserCreated;
 
-        // Hook OnProcessMessageReceived().
-        OnProcessMessageReceived = handler->on_process_message_received;
-        handler->on_process_message_received = Hooked_OnProcessMessageReceived;
+        // // Hook OnProcessMessageReceived().
+        // OnProcessMessageReceived = handler->on_process_message_received;
+        // handler->on_process_message_received = Hooked_OnProcessMessageReceived;
 
         return handler;
     };
@@ -371,5 +320,9 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
 void HookRendererProcess()
 {
     // Hook CefExecuteProcess().
-    CefExecuteProcess.hook("libcef.dll", "cef_execute_process", Hooked_CefExecuteProcess);
+#if OS_WIN
+    CefExecuteProcess.hook(LIBCEF_MODULE_NAME, "cef_execute_process", Hooked_CefExecuteProcess);
+#elif OS_MAC
+    CefExecuteProcess.hook(cef_execute_process, Hooked_CefExecuteProcess);
+#endif
 }

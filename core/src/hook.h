@@ -1,41 +1,55 @@
-#pragma once
+#ifndef _HOOK_H_
+#define _HOOK_H_
 
+#include "platform.h"
 #include <stdint.h>
 #include <string.h>
-#include <windows.h>
 #include <mutex>
+
+#if OS_WIN
+#include <windows.h>
+#elif OS_MAC
+#include <mach/mach_init.h>
+#include <mach/mach_vm.h>
+#include <sys/mman.h>
+#include <dlfcn.h>
+#endif
 
 namespace hook
 {
     struct Shellcode
     {
+#if OS_WIN
         uint8_t opcodes[12];
-
+#elif OS_MAC
+        uint8_t opcodes[16];
+#endif
         Shellcode(intptr_t addr)
         {
+            memset(opcodes, 0, sizeof(opcodes));
+#if OS_WIN
             // movabs rax [addr]
             opcodes[0] = 0x48;
             opcodes[1] = 0xB8;
             memcpy(&opcodes[2], &addr, sizeof(intptr_t));
-
             // push rax
             opcodes[10] = 0x50;
-
             // ret
             opcodes[11] = 0xC3;
-
-            // TODO: macOS amd64
-            // jmp qword ptr [rip + offset]
-            // 0xFF 0x25 [offset 4] [addr 8] [pad 2]
+#elif OS_MAC
+            // jmp qword ptr [rip + offset] ; pad 2
+            opcodes[0] = 0xFF;
+            opcodes[1] = 0x25;
+            memset(&opcodes[2], 0, sizeof(int32_t));
+            memcpy(&opcodes[6], &addr, sizeof(intptr_t));
+#endif
         }
     };
 
     struct Restorable
     {
-        Restorable(void* func, const void* code, size_t size)
-            : func_(func)
-            , backup_(new uint8_t[size]{})
-            , size_(size)
+        Restorable(void *func, const void *code, size_t size)
+            : func_(func), size_(size), backup_(new uint8_t[size])
         {
             memcpy(backup_, func, size);
             memcpy_safe(func, code, size);
@@ -53,40 +67,55 @@ namespace hook
         }
 
     private:
-        void* func_;
-        uint8_t* backup_;
+        void *func_;
+        uint8_t *backup_;
         size_t size_;
 
-        static void memcpy_safe(void* dst, const void* src, size_t size)
+        static bool memcpy_safe(void *dst, const void *src, size_t size)
         {
+#if OS_WIN
             DWORD op;
-            VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &op);
+            BOOL success = VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &op);
+            if (success == 0)
+                return false;
             memcpy(dst, src, size);
-            VirtualProtect(dst, size, op, &op);
+            success = VirtualProtect(dst, size, op, &op);
+            return success != 0;
+#elif OS_MAC
+            kern_return_t kr;
+            kr = mach_vm_protect(mach_task_self(),
+                                 (mach_vm_address_t)dst, (mach_vm_size_t)size,
+                                 FALSE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE | VM_PROT_COPY);
+            if (kr != KERN_SUCCESS)
+                return false;
+
+            kr = mach_vm_write(mach_task_self(),
+                               (mach_vm_address_t)dst, (vm_offset_t)src, size);
+            if (kr != KERN_SUCCESS)
+                return false;
+
+            kr = mach_vm_protect(mach_task_self(),
+                                 (mach_vm_address_t)dst, (mach_vm_size_t)size,
+                                 FALSE, VM_PROT_READ | VM_PROT_EXECUTE);
+            return kr == KERN_SUCCESS;
+#endif
         }
     };
 
-    template<typename>
+    template <typename>
     class Hook;
 
-    template<typename R, typename ...Args>
-    class Hook<R(*)(Args...)>
+    template <typename R, typename... Args>
+    class Hook<R (*)(Args...)>
     {
     public:
-        using Fn = R(*)(Args...);
-
-        Hook()
-            : orig_(nullptr)
-            , rest_(nullptr)
-            , mutex_{}
-        {
-        }
+        using Fn = R (*)(Args...);
 
         ~Hook()
         {
-            if (rest_ != nullptr)
+            if (rest_)
             {
-                std::lock_guard<std::mutex> _lock(mutex_);
+                std::lock_guard<std::mutex> _l(mutex_);
                 {
                     delete rest_;
                 }
@@ -95,29 +124,31 @@ namespace hook
 
         bool hook(Fn orig, Fn hook)
         {
-            if (orig == nullptr || hook == nullptr)
+            if (!orig || !hook)
                 return false;
 
             orig_ = orig;
-
             Shellcode code(reinterpret_cast<intptr_t>(hook));
-            rest_ = new Restorable(orig, &code.opcodes, sizeof(code.opcodes));
-
+            rest_ = new Restorable((void *)orig, code.opcodes, sizeof(code.opcodes));
             return true;
         }
 
-        bool hook(const char* lib, const char* proc, Fn hook)
+        bool hook(const char *lib, const char *proc, Fn hook)
         {
+#if OS_WIN
             if (HMODULE mod = GetModuleHandleA(lib))
                 if (Fn orig = reinterpret_cast<Fn>(GetProcAddress(mod, proc)))
+#elif OS_MAC
+            if (void *mod = dlopen(lib, RTLD_NOLOAD | RTLD_LAZY))
+                if (Fn orig = reinterpret_cast<Fn>(dlsym(mod, proc)))
+#endif
                     return this->hook(orig, hook);
-
             return false;
         }
 
-        R operator ()(Args ...args)
+        R operator()(Args... args)
         {
-            std::lock_guard<std::mutex> _lock(mutex_);
+            std::lock_guard<std::mutex> _l(mutex_);
             {
                 Restorable _t = rest_->swap();
                 {
@@ -127,8 +158,10 @@ namespace hook
         }
 
     protected:
-        Fn orig_;
-        Restorable* rest_;
+        Fn orig_ = nullptr;
+        Restorable *rest_ = nullptr;
         std::mutex mutex_;
     };
 }
+
+#endif

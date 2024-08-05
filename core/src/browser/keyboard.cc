@@ -1,11 +1,13 @@
-#include "commons.h"
+#include "browser.h"
 #include "include/capi/cef_client_capi.h"
 #include "include/capi/cef_keyboard_handler_capi.h"
 
-extern HWND rclient_;
-extern int main_browser_id_;
+// BROWSER PROCESS ONLY.
 
-void OpenDevTools(cef_browser_t *browser);
+#ifndef OS_WIN
+#define VK_F12    0x7B
+#define VK_RETURN 0x0D
+#endif
 
 static decltype(cef_keyboard_handler_t::on_pre_key_event) OnPreKeyEvent;
 static int CEF_CALLBACK Hooked_OnPreKeyEvent(
@@ -16,15 +18,20 @@ static int CEF_CALLBACK Hooked_OnPreKeyEvent(
     int* is_keyboard_shortcut)
 {
     int code = event->windows_key_code;
-    bool ctrl_shift = (event->modifiers & EVENTFLAG_CONTROL_DOWN)
-        && (event->modifiers & EVENTFLAG_SHIFT_DOWN);
+    bool ctrl_shift =
+#if OS_MAC
+        // use command + options (alt) on mac
+        (event->modifiers & (EVENTFLAG_COMMAND_DOWN | EVENTFLAG_ALT_DOWN));
+#else
+        (event->modifiers & (EVENTFLAG_CONTROL_DOWN | EVENTFLAG_SHIFT_DOWN));
+#endif
 
     if (event->focus_on_editable_field)
         goto _next;
 
     if (code == VK_F12 || (ctrl_shift && code == 'I'))
     {
-        OpenDevTools(browser);
+        browser::open_devtools(browser);
         return true;
     }
     else if (ctrl_shift && code == 'R')
@@ -34,26 +41,13 @@ static int CEF_CALLBACK Hooked_OnPreKeyEvent(
     }
     else if (ctrl_shift && code == VK_RETURN)
     {
-        if (main_browser_id_ == browser->get_identifier(browser))
+        if (dialog::confirm("Do you want to do a full League Client restart?", "Pengu Loader"))
         {
-            static auto thread = [](LPVOID param) -> DWORD
-            {
-                auto browser = static_cast<cef_browser_t *>(param);
-
-                if (dialog::confirm("Do you want to do a full League Client restart?",
-                    "Pengu Loader", dialog::DIALOG_QUESTION, rclient_))
-                {
-                    auto frame = browser->get_main_frame(browser);
-                    frame->execute_java_script(frame,
-                        &u"fetch('/riotclient/kill-and-restart-ux', { method: 'POST' })"_s, nullptr, 1);
-                }
-
-                return 0;
-            };
-
-            CreateThread(nullptr, 0, thread, browser, 0, nullptr);
-            return true;
+            auto frame = browser->get_main_frame(browser);
+            frame->execute_java_script(frame,
+                &u"fetch('/riotclient/kill-and-restart-ux', { method: 'POST' })"_s, nullptr, 1);
         }
+        return true;
     }
 
 _next:

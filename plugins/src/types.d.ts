@@ -25,7 +25,7 @@ interface Action {
 }
 
 interface CommandBar {
-  addAction: (action) => void
+  addAction: (action: Action) => void
   show: () => void
   update: () => void
 }
@@ -46,21 +46,23 @@ interface DataStore {
   remove: (key: string) => boolean
 }
 
-type ThemeName = 'light' | 'dark';
-type EffectName = 'mica' | 'blurbehind' | 'blur' | 'acrylic' | 'unified' | 'transparent';
+interface ApplyEffectFn {
+  (type: 'transparent' | 'blurbehind' | 'acrylic' | 'unified', options?: { color: string }): void
+  (type: 'mica', options?: { material?: 'auto' | 'mica' | 'acrylic' | 'tabbed' }): void
+  (type: 'vibrancy', options: { material: string, alwaysOn?: boolean }): void
+}
 
 interface Effect {
-  get current(): EffectName | null
-  apply: (name: EffectName, options?: any) => boolean
+  apply: ApplyEffectFn
   clear: () => void
-  setTheme: (theme: ThemeName) => boolean
+  setTheme: (theme: 'light' | 'dark') => void
 }
 
-interface FileStat {
-  fileName: string
-  length: number
-  isDir: boolean
-}
+// interface FileStat {
+//   fileName: string
+//   length: number
+//   isDir: boolean
+// }
 
 // interface PluginFS {
 //   read: (path: string) => Promise<string | undefined>
@@ -79,19 +81,26 @@ declare interface Window {
   CommandBar: CommandBar;
   Toast: Toast;
   Effect: Effect;
+
   Pengu: {
     version: string
     superPotato: boolean
     plugins: string[]
+    isMac: boolean
     // fs: PluginFS
   };
 
-  openDevTools: typeof openDevTools;
-  openAssetsFolder: typeof openAssetsFolder;
-  openPluginsFolder: typeof openPluginsFolder;
-  reloadClient: typeof reloadClient;
-  restartClient: typeof restartClient;
-  getScriptPath: typeof getScriptPath;
+  os: {
+    name: 'win' | 'mac'
+    version: string
+    build: string
+  };
+
+  openDevTools: () => void;
+  openPluginsFolder: (subdir?: string) => void;
+  reloadClient: () => void;
+  restartClient: () => void;
+  getScriptPath: () => string | undefined;
 
   __llver: string;
 }
