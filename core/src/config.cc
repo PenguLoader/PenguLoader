@@ -56,11 +56,6 @@ path config::loader_dir()
     return path;
 }
 
-path config::plugins_dir()
-{
-    return loader_dir() / "plugins";
-}
-
 path config::datastore_path()
 {
     return loader_dir() / "datastore";
@@ -96,6 +91,12 @@ path config::league_dir()
 #endif
 }
 
+static void trim_tring(std::string &str)
+{
+    str.erase(str.find_last_not_of(' ') + 1);
+    str.erase(0, str.find_first_not_of(' '));
+}
+
 static auto get_config_map()
 {
     static bool cached = false;
@@ -111,15 +112,20 @@ static auto get_config_map()
             std::string line;
             while (std::getline(file, line))
             {
-                if (!line.empty() && line[0] != ';')
+                // ignore empty line or comment
+                if (line.empty() || line[0] == ';' || line[0] == '#')
+                    continue;
+
+                size_t pos = line.find('=');
+                if (pos != std::string::npos)
                 {
-                    size_t pos = line.find("=");
-                    if (pos != std::string::npos)
-                    {
-                        std::string key = line.substr(0, pos);
-                        std::string value = line.substr(pos + 1);
-                        map[key] = value;
-                    }
+                    std::string key = line.substr(0, pos);
+                    std::string value = line.substr(pos + 1);
+
+                    trim_tring(key);
+                    trim_tring(value);
+
+                    map[key] = value;
                 }
             }
             file.close();
@@ -172,32 +178,64 @@ static int get_config_value_int(const char *key, int fallback)
     return value;
 }
 
+path config::plugins_dir()
+{
+    std::string cpath = get_config_value(__func__, "");
+    if (!cpath.empty())
+        return (const char8_t *)cpath.c_str();
+
+    return loader_dir() / "plugins";
+}
+
+std::string config::disabled_plugins()
+{
+    return get_config_value(__func__, "");
+}
+
 namespace config::options
 {
-    bool AllowProxyServer()
+    bool use_hotkeys()
     {
-        return get_config_value_bool("AllowProxyServer", false) || !get_config_value_bool("NoProxyServer", true);
+        return get_config_value_bool(__func__, true);
     }
 
-    int RemoteDebuggingPort()
+    bool optimed_client()
     {
-        return get_config_value_int("RemoteDebuggingPort", 0);
-    }
-    bool DisableWebSecurity()
-    {
-        return get_config_value_bool("DisableWebSecurity", false);
-    }
-    bool IgnoreCertificateErrors()
-    {
-        return get_config_value_bool("IgnoreCertificateErrors", false);
+        return get_config_value_bool(__func__, true);
     }
 
-    bool OptimizeClient()
+    bool super_potato()
     {
-        return get_config_value_bool("OptimizeClient", true);
+        return get_config_value_bool(__func__, false);
     }
-    bool SuperLowSpecMode()
+
+    bool silent_mode()
     {
-        return get_config_value_bool("SuperLowSpecMode", false);
+        return get_config_value_bool(__func__, false);
+    }
+
+    bool isecure_mode()
+    {
+        return get_config_value_bool(__func__, false);
+    }
+
+    bool use_devtools()
+    {
+        return get_config_value_bool(__func__, false);
+    }
+
+    bool use_riotclient()
+    {
+        return get_config_value_bool(__func__, false);
+    }
+
+    bool use_proxy()
+    {
+        return get_config_value_bool(__func__, false);
+    }
+
+    int debug_port()
+    {
+        return get_config_value_int(__func__, 0);
     }
 }

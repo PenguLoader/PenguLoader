@@ -56,6 +56,9 @@ _next:
 
 void HookKeyboardHandler(cef_client_t *client)
 {
+    if (!config::options::use_hotkeys())
+        return;
+
     static auto GetKeyboardHandler = client->get_keyboard_handler;
     client->get_keyboard_handler = [](cef_client_t *self) -> cef_keyboard_handler_t *
     {

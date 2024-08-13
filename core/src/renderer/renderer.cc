@@ -5,10 +5,6 @@
 #include "include/capi/cef_app_capi.h"
 #include "include/capi/cef_render_process_handler_capi.h"
 
-static const char *PL_VERSION {
-#   include "../../loader/version.cs"
-};
-
 // RENDERER PROCESS ONLY.
 
 static bool is_main_ = false;
@@ -99,7 +95,7 @@ private:
         cef_v8value_t** retval,
         cef_string_t* exception)
     {
-        cef_string_utf8_t func{};
+        cef_string_utf8_t func{""};
         cef_string_to_utf8(name->str, name->length, &func);
 
         bool handled = false;
@@ -142,8 +138,6 @@ static void ExposeNativeFunctions(V8Object *window)
     }
 
     window->set(&u"__native"_s, native, V8_PROPERTY_ATTRIBUTE_READONLY);
-
-    window->set(&u"__llver"_s, V8Value::string(&CefStr(PL_VERSION)), V8_PROPERTY_ATTRIBUTE_READONLY);
 }
 
 static void ExposeOsObject(V8Object *window)
@@ -161,12 +155,12 @@ static void LoadPlugins(V8Object *window)
 {
     auto pengu = V8Object::create();
 
-    // Pengu.version
-    auto version = V8Value::string(&CefStr(PL_VERSION));
-    pengu->set(&u"version"_s, version, V8_PROPERTY_ATTRIBUTE_READONLY);
+    // Pengu.version, set it later
+    auto version = V8Value::string(&CefStr(""));
+    pengu->set(&u"version"_s, version, V8_PROPERTY_ATTRIBUTE_NONE);
 
     // Pengu.superPotato
-    auto superPotato = V8Value::boolean(config::options::SuperLowSpecMode());
+    auto superPotato = V8Value::boolean(config::options::super_potato());
     pengu->set(&u"superPotato"_s, superPotato, V8_PROPERTY_ATTRIBUTE_READONLY);
 
     pengu->set(&u"isMac"_s,
@@ -177,7 +171,7 @@ static void LoadPlugins(V8Object *window)
 #endif
         V8_PROPERTY_ATTRIBUTE_READONLY);
 
-    // Pengu.entries
+    // Pengu.plugins
     auto entries = get_plugin_entries();
     auto pluginEntries = V8Array::create((int)entries.size());
 
@@ -188,8 +182,12 @@ static void LoadPlugins(V8Object *window)
         pluginEntries->set(index, value);
     }
 
-    // Should add to parent objet after init.
+    // array must add to parent objet after init.
     pengu->set(&u"plugins"_s, pluginEntries, V8_PROPERTY_ATTRIBUTE_READONLY);
+
+    // Pengu.disabledPlugins
+    auto disabledPlugins = CefStr(config::disabled_plugins());
+    pengu->set(&u"disabledPlugins"_s, V8Value::string(&disabledPlugins), V8_PROPERTY_ATTRIBUTE_NONE);
 
     // Add Pengu to window.
     window->set(&u"Pengu"_s, pengu, V8_PROPERTY_ATTRIBUTE_READONLY);
@@ -230,7 +228,7 @@ static void CEF_CALLBACK Hooked_OnContextCreated(
         // Open console window.
         AllocConsole();
         SetConsoleTitleA("League Client (main renderer process)");
-        freopen("CONOUT$", "w", stdout);
+        FILE *_fp; freopen_s(&_fp, "CONOUT$", "w", stdout);
 #endif
         auto window = context->get_global(context);
 

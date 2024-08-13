@@ -192,22 +192,27 @@ namespace platform
 namespace config
 {
     path loader_dir();
-    path plugins_dir();
     path datastore_path();
 
     path cache_dir();
     path league_dir();
 
+    path plugins_dir();
+    std::string disabled_plugins();
+
     namespace options
     {
-        bool AllowProxyServer();
-        int RemoteDebuggingPort();
+        bool use_hotkeys();
+        bool optimed_client();
+        bool silent_mode();
+        bool super_potato();
+        bool isecure_mode();
+        bool use_devtools();
+        bool use_riotclient();
+        bool use_proxy();
 
-        bool DisableWebSecurity();
-        bool IgnoreCertificateErrors();
-
-        bool OptimizeClient();
-        bool SuperLowSpecMode();
+        // undocumented
+        int debug_port();
     }
 }
 

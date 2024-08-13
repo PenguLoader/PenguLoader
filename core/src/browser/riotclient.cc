@@ -166,6 +166,9 @@ struct RiotClientSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t
 
 void browser::register_riotclient_domain()
 {
+    if (!config::options::use_riotclient())
+        return;
+
     auto scheme = u"https"_s;
     auto domain = u"riotclient"_s;
     auto factory = new RiotClientSchemeHandlerFactory();
@@ -174,6 +177,9 @@ void browser::register_riotclient_domain()
 
 void browser::set_riotclient_credentials(const char *port, const char *token)
 {
+    if (!config::options::use_riotclient())
+        return;
+
     url_origin_.assign("https://127.0.0.1:");
     url_origin_.append(port);
 

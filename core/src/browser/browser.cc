@@ -155,7 +155,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     // Extract args string.
     auto args = CefScopedStr(command_line->get_command_line_string(command_line)).to_utf16();
 
-    if (config::options::AllowProxyServer())
+    if (config::options::use_proxy())
     {
         size_t pos = args.find(u"--no-proxy-server");
         if (pos != std::wstring::npos)
@@ -170,27 +170,22 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 #endif
 
 #if OS_WIN
-    if (int rdport = config::options::RemoteDebuggingPort())
+    int rdport = config::options::debug_port();
+    if (rdport > 0 && rdport < UINT16_MAX)
     {
         // Set remote debugging port.
         command_line->append_switch_with_value(command_line,
             &u"remote-debugging-port"_s, &CefStr(std::to_string(rdport)));
     }
 
-    if (config::options::DisableWebSecurity())
+    if (config::options::isecure_mode())
     {
         // Disable web security.
         command_line->append_switch(command_line, &u"disable-web-security"_s);
     }
-
-    if (config::options::IgnoreCertificateErrors())
-    {
-        // Ignore invalid certs.
-        command_line->append_switch(command_line, &u"ignore-certificate-errors"_s);
-    }
 #endif
 
-    if (config::options::OptimizeClient())
+    if (config::options::optimed_client())
     {
         // Optimize Client.
         command_line->append_switch(command_line, &u"disable-async-dns"_s);
@@ -213,7 +208,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &u"no-sandbox"_s);
     }
 
-    if (config::options::SuperLowSpecMode())
+    if (config::options::super_potato())
     {
         // Super Low Spec Mode.
         command_line->append_switch(command_line, &u"disable-smooth-scrolling"_s);
@@ -262,7 +257,7 @@ void HookBrowserProcess()
     // Open console window.
     AllocConsole();
     SetConsoleTitleA("League Client (browser process)");
-    freopen("CONOUT$", "w", stdout);
+    FILE *_fp; freopen_s(&_fp, "CONOUT$", "w", stdout);
 #endif
 
     // Hook CefInitialize().

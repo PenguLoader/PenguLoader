@@ -170,6 +170,9 @@ struct DevToolsClient : CefRefCount<cef_client_t>
 
 void browser::open_devtools(cef_browser_t *browser)
 {
+    if (!config::options::use_devtools())
+        return;
+
     int browser_id = browser->get_identifier(browser);
     const auto &it = devtools_map_.find(browser_id);
 
