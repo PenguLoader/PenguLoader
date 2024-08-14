@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "include/capi/cef_client_capi.h"
 #include "include/capi/cef_urlrequest_capi.h"
+#include "include/cef_version.h"
 
 // BROWSER PROCESS ONLY.
 
@@ -192,10 +193,18 @@ void browser::open_devtools(cef_browser_t *browser)
         wi.style = WS_OVERLAPPEDWINDOW
             | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
 #endif
+
+        cef_rect_t *wrect;
+#if CEF_VERSION_MAJOR >= 108
+        wrect = &wi.bounds;
+#else
+        wrect = (cef_rect_t *)&wi.x;
+#endif
+
         // position next to the client window
-        window::get_rect(hview, &wi.x, &wi.y, &wi.width, &wi.height);
-        wi.x += 100;
-        wi.y += 100;
+        window::get_rect(hview, &wrect->x, &wrect->y, &wrect->width, &wrect->height);
+        wrect->x += 100;
+        wrect->y += 100;
 
         char caption[512];
         strcpy(caption, "League Client DevTools - ");

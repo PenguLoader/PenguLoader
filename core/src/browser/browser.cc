@@ -188,10 +188,10 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     if (config::options::optimed_client())
     {
         // Optimize Client.
-        command_line->append_switch(command_line, &u"disable-async-dns"_s);
-        command_line->append_switch(command_line, &u"disable-plugins"_s);
-        command_line->append_switch(command_line, &u"disable-extensions"_s);
-        command_line->append_switch(command_line, &u"disable-background-networking"_s);
+        //command_line->append_switch(command_line, &u"disable-async-dns"_s);
+        //command_line->append_switch(command_line, &u"disable-plugins"_s);
+        //command_line->append_switch(command_line, &u"disable-extensions"_s);
+        //command_line->append_switch(command_line, &u"disable-background-networking"_s);
         command_line->append_switch(command_line, &u"disable-background-timer-throttling"_s);
         command_line->append_switch(command_line, &u"disable-backgrounding-occluded-windows"_s);
         command_line->append_switch(command_line, &u"disable-renderer-backgrounding"_s);
@@ -204,7 +204,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &u"enable-parallel-downloading"_s);
         command_line->append_switch(command_line, &u"enable-new-download-backend"_s);
         command_line->append_switch(command_line, &u"enable-quic"_s);
-        command_line->append_switch(command_line, &u"no-pings"_s);
+        //command_line->append_switch(command_line, &u"no-pings"_s);
         command_line->append_switch(command_line, &u"no-sandbox"_s);
     }
 
