@@ -309,10 +309,11 @@ struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
     }
 };
 
-void browser::register_plugins_domain()
+void browser::register_plugins_domain(cef_request_context_t *ctx)
 {
     auto scheme = u"https"_s;
     auto domain = u"plugins"_s;
     auto factory = new AssetsSchemeHandlerFactory();
-    cef_register_scheme_handler_factory(&scheme, &domain, factory);
+
+    ctx->register_scheme_handler_factory(ctx, &scheme, &domain, factory);
 }

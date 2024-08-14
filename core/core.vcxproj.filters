@@ -46,14 +46,8 @@
     <ClCompile Include="src\dllproxy.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\renderer\winbrancy.cc">
-      <Filter>src\renderer</Filter>
-    </ClCompile>
     <ClCompile Include="src\browser\keyboard.cc">
       <Filter>src\browser</Filter>
-    </ClCompile>
-    <ClCompile Include="src\renderer\fs.cc">
-      <Filter>src\renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\renderer\v8_datastore.cc">
       <Filter>src\renderer</Filter>

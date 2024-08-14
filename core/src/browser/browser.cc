@@ -8,6 +8,25 @@
 
 void *browser::view_handle = NULL;
 
+static hook::Hook<decltype(&cef_request_context_create_context)> CefRequestContext_CreateContext;
+static cef_request_context_t *Hooked_CefRequestContext_CreateContext(
+    const struct _cef_request_context_settings_t *settings,
+    struct _cef_request_context_handler_t *handler)
+{
+    const_cast<cef_request_context_settings_t *>(settings)->cache_path
+        = CefStr::from_path(config::cache_dir()).forward();
+
+    //const_cast<cef_request_context_settings_t *>(settings)->persist_session_cookies = 1;
+    //const_cast<cef_request_context_settings_t *>(settings)->persist_user_preferences = 1;
+
+    auto ctx = CefRequestContext_CreateContext(settings, handler);
+
+    browser::register_plugins_domain(ctx);
+    browser::register_riotclient_domain(ctx);
+
+    return ctx;
+}
+
 static void enhance_browser_window(cef_browser_t *browser)
 {
     if (browser::view_handle) return;
@@ -138,7 +157,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
         HookMainBrowserClient(client);
     }
 
-    return CefBrowserHost_CreateBrowser(windowInfo, client, url, settings, extra_info, nullptr);
+    return CefBrowserHost_CreateBrowser(windowInfo, client, url, settings, extra_info, request_context);
 }
 
 static decltype(cef_app_t::on_before_command_line_processing) OnBeforeCommandLineProcessing;
@@ -229,24 +248,24 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
-    const_cast<cef_settings_t *>(settings)->cache_path
-        = CefStr::from_path(config::cache_dir()).forward();
+    //const_cast<cef_settings_t *>(settings)->cache_path
+    //    = CefStr::from_path(config::cache_dir()).forward();
 
-    static auto GetBrowserProcessHandler = app->get_browser_process_handler;
-    app->get_browser_process_handler = [](cef_app_t *self)
-    {
-        auto handler = GetBrowserProcessHandler(self);
-        
-        static auto OnContextIntialized = handler->on_context_initialized;
-        handler->on_context_initialized = [](cef_browser_process_handler_t *self)
-        {
-            browser::register_plugins_domain();
-            browser::register_riotclient_domain();
-            OnContextIntialized(self);
-        };
+    //static auto GetBrowserProcessHandler = app->get_browser_process_handler;
+    //app->get_browser_process_handler = [](cef_app_t *self)
+    //{
+    //    auto handler = GetBrowserProcessHandler(self);
+    //    
+    //    static auto OnContextIntialized = handler->on_context_initialized;
+    //    handler->on_context_initialized = [](cef_browser_process_handler_t *self)
+    //    {
+    //        browser::register_plugins_domain();
+    //        browser::register_riotclient_domain();
+    //        OnContextIntialized(self);
+    //    };
 
-        return handler;
-    };
+    //    return handler;
+    //};
 
     return CefInitialize(args, settings, app, windows_sandbox_info);
 }
@@ -267,4 +286,8 @@ void HookBrowserProcess()
     // Hook CefBrowserHost::CreateBrowser().
     CefBrowserHost_CreateBrowser.hook(LIBCEF_MODULE_NAME,
         "cef_browser_host_create_browser", Hooked_CefBrowserHost_CreateBrowser);
+    
+    // Hook CefRequestContext::CreateContext().
+    CefRequestContext_CreateContext.hook(LIBCEF_MODULE_NAME,
+        "cef_request_context_create_context", Hooked_CefRequestContext_CreateContext);
 }
