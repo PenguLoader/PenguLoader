@@ -85,9 +85,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\commons.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\hook.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -98,6 +95,9 @@
       <Filter>src\browser</Filter>
     </ClInclude>
     <ClInclude Include="src\platform.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pengu.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
