@@ -18,6 +18,7 @@ static cef_request_context_t *Hooked_CefRequestContext_CreateContext(
 
     //const_cast<cef_request_context_settings_t *>(settings)->persist_session_cookies = 1;
     //const_cast<cef_request_context_settings_t *>(settings)->persist_user_preferences = 1;
+    //const_cast<cef_request_context_settings_t *>(settings)->ignore_certificate_errors = 1;
 
     auto ctx = CefRequestContext_CreateContext(settings, handler);
 
@@ -166,50 +167,47 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     const cef_string_t* process_type,
     struct _cef_command_line_t* command_line)
 {
-    CefScopedStr rc_port = command_line->get_switch_value(command_line, &u"riotclient-app-port"_s);
-    CefScopedStr rc_token = command_line->get_switch_value(command_line, &u"riotclient-auth-token"_s);
-    browser::set_riotclient_credentials(rc_port.to_utf8().c_str(), rc_token.to_utf8().c_str());
+    if (config::options::use_riotclient())
+    {
+        // RiotClient auth will be removed after OnBeforeCommandLineProcessing().
+        CefScopedStr rc_port = command_line->get_switch_value(command_line, &u"riotclient-app-port"_s);
+        CefScopedStr rc_token = command_line->get_switch_value(command_line, &u"riotclient-auth-token"_s);
+        browser::set_riotclient_credentials(rc_port.to_utf8().c_str(), rc_token.to_utf8().c_str());
+    }
 
-#if OS_WIN
-    // Extract args string.
-    auto args = CefScopedStr(command_line->get_command_line_string(command_line)).to_utf16();
+    command_line->base.add_ref(&command_line->base);
+    OnBeforeCommandLineProcessing(self, process_type, command_line);
 
     if (config::options::use_proxy())
     {
+        // Rebuild the command line.
+        auto args = CefScopedStr(command_line->get_command_line_string(command_line)).to_utf16();
+
         size_t pos = args.find(u"--no-proxy-server");
         if (pos != std::wstring::npos)
             args.replace(pos, 17, u"");
+
+        command_line->reset(command_line);
+        command_line->init_from_string(command_line, &CefStr(args));
     }
 
-    // Rebuild it.
-    command_line->reset(command_line);
-    command_line->init_from_string(command_line, &CefStr(args));
-
-    OnBeforeCommandLineProcessing(self, process_type, command_line);
-#endif
-
-#if OS_WIN
     int rdport = config::options::debug_port();
     if (rdport > 0 && rdport < UINT16_MAX)
     {
-        // Set remote debugging port.
         command_line->append_switch_with_value(command_line,
             &u"remote-debugging-port"_s, &CefStr(std::to_string(rdport)));
     }
 
     if (config::options::isecure_mode())
     {
-        // Disable web security.
         command_line->append_switch(command_line, &u"disable-web-security"_s);
     }
-#endif
 
     if (config::options::optimed_client())
     {
-        // Optimize Client.
         //command_line->append_switch(command_line, &u"disable-async-dns"_s);
-        //command_line->append_switch(command_line, &u"disable-plugins"_s);
-        //command_line->append_switch(command_line, &u"disable-extensions"_s);
+        command_line->append_switch(command_line, &u"disable-plugins"_s);
+        command_line->append_switch(command_line, &u"disable-extensions"_s);
         //command_line->append_switch(command_line, &u"disable-background-networking"_s);
         command_line->append_switch(command_line, &u"disable-background-timer-throttling"_s);
         command_line->append_switch(command_line, &u"disable-backgrounding-occluded-windows"_s);
@@ -229,15 +227,12 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
 
     if (config::options::super_potato())
     {
-        // Super Low Spec Mode.
         command_line->append_switch(command_line, &u"disable-smooth-scrolling"_s);
         command_line->append_switch(command_line, &u"wm-window-animations-disabled"_s);
         command_line->append_switch_with_value(command_line, &u"animation-duration-scale"_s, &u"0"_s);
     }
 
-#if OS_MAC
-    OnBeforeCommandLineProcessing(self, process_type, command_line);
-#endif
+    command_line->base.release(&command_line->base);
 }
 
 static hook::Hook<decltype(&cef_initialize)> CefInitialize;
@@ -248,8 +243,8 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
-    //const_cast<cef_settings_t *>(settings)->cache_path
-    //    = CefStr::from_path(config::cache_dir()).forward();
+    const_cast<cef_settings_t *>(settings)->cache_path
+        = CefStr::from_path(config::cache_dir()).forward();
 
     //static auto GetBrowserProcessHandler = app->get_browser_process_handler;
     //app->get_browser_process_handler = [](cef_app_t *self)
