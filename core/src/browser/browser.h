@@ -6,7 +6,9 @@
 
 namespace browser
 {
-    extern void *view_handle;
+    extern cef_window_handle_t window;
+    void setup_window(cef_browser_t *browser);
+
     void open_devtools(cef_browser_t *browser);
 
     void register_riotclient_domain(cef_request_context_t *ctx);

@@ -13,11 +13,11 @@
 
 static std::unordered_map<int, void *> devtools_map_{};
 
-static void enhance_devtools_window(void *handle)
+static void setup_devtools_window(void *handle)
 {
 #if OS_WIN
     HWND window = static_cast<HWND>(handle);
-    HWND rclient = static_cast<HWND>(browser::view_handle);
+    HWND rclient = static_cast<HWND>(browser::window);
 
     // Copy window icon.
     HICON hicon = (HICON)SendMessageW(rclient, WM_GETICON, ICON_BIG, 0);
@@ -61,7 +61,7 @@ struct DevToolsLifeSpan : CefRefCount<cef_life_span_handler_t>
         double zoom_level = window::get_scaling(window) - 1.0;
         host->set_zoom_level(host, zoom_level);
 
-        enhance_devtools_window(window);
+        setup_devtools_window(window);
         host->base.release(&host->base);
     };
 

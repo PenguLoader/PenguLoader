@@ -23,6 +23,9 @@
 #ifdef _MSC_VER
 #define NOMINMAX
 #define _CRT_SECURE_NO_WARNINGS
+#ifndef UNICODE
+#define UNICODE 1
+#endif
 #endif
 
 #ifndef COUNT_OF

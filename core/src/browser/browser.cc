@@ -6,8 +6,6 @@
 
 // BROWSER PROCESS ONLY.
 
-void *browser::view_handle = NULL;
-
 static hook::Hook<decltype(&cef_request_context_create_context)> CefRequestContext_CreateContext;
 static cef_request_context_t *Hooked_CefRequestContext_CreateContext(
     const struct _cef_request_context_settings_t *settings,
@@ -28,44 +26,12 @@ static cef_request_context_t *Hooked_CefRequestContext_CreateContext(
     return ctx;
 }
 
-static void enhance_browser_window(cef_browser_t *browser)
-{
-    if (browser::view_handle) return;
-    auto host = browser->get_host(browser);
-
-#if OS_WIN
-    // Get needed windows.
-    HWND browserWin = host->get_window_handle(host);
-    // Retrieve top-level window (RCLIENT).
-    HWND rclient = GetAncestor(browserWin, GA_ROOT);
-    browser::view_handle = (void *)rclient;
-
-    HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
-    //HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
-
-    // Ensure transparency effect.
-    //   hide Chrome_RenderWidgetHostHWND
-    //ShowWindow(widgetHost, SW_HIDE);
-    //   hide CefBrowserWindow
-    ShowWindow(browserWin, SW_HIDE);
-    //   bring Chrome_WidgetWin_0 to top-level children
-    SetParent(widgetWin, rclient);
-#elif OS_MAC
-    browser::view_handle = (void*)host->get_window_handle(host);
-#endif
-
-    window::set_theme(browser::view_handle, true);
-    window::enable_shadow(browser::view_handle);
-
-    host->base.release(&host->base);
-}
-
 static decltype(cef_life_span_handler_t::on_after_created) OnAfterCreated;
 static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* self,
     struct _cef_browser_t* browser)
 {
     OnAfterCreated(self, browser);
-    enhance_browser_window(browser);
+    ::browser::setup_window(browser);
 }
 
 static void HookMainBrowserClient(cef_client_t *client)
@@ -112,19 +78,19 @@ static void HookMainBrowserClient(cef_client_t *client)
             else if (name.equal("@set-window-vibrancy"))
             {
                 if (margs->get_type(margs, 0) == VTYPE_NULL)
-                    window::clear_vibrancy(browser::view_handle);
+                    window::clear_vibrancy(browser::window);
                 else
                 {
                     uint32_t param1 = (uint32_t)margs->get_double(margs, 0);
                     uint32_t param2 = (uint32_t)margs->get_double(margs, 1);
-                    window::apply_vibrancy(browser::view_handle, param1, param2);
+                    window::apply_vibrancy(browser::window, param1, param2);
                 }
                 return 1;
             }
             else if (name.equal("@set-window-theme"))
             {
                 bool dark = margs->get_bool(margs, 0);
-                window::set_theme(browser::view_handle, dark);
+                window::set_theme(browser::window, dark);
                 return 1;
             }
         }
