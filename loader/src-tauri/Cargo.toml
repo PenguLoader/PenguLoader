@@ -16,7 +16,8 @@ tauri-build = { version = "1", features = [] }
 
 [dependencies]
 libc = "0.2"
-tauri = { version = "1", features = [ "window-hide",
+tauri = { version = "1", features = [
+  "window-hide",
   "system-tray",
   "dialog-all",
   "window-close",
