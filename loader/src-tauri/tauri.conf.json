@@ -26,7 +26,9 @@
         "removeFile": false,
         "renameFile": true,
         "writeFile": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       },
       "path": {
         "all": true
@@ -40,7 +42,7 @@
         "center": false,
         "close": true,
         "create": false,
-        "hide": false,
+        "hide": true,
         "maximize": false,
         "minimize": true,
         "print": false,
@@ -75,17 +77,21 @@
     "windows": [
       {
         "title": "Pengu Loader",
-        "width": 1152,
-        "height": 648,
-        "minWidth": 1152,
-        "minHeight": 648,
+        "width": 940,
+        "height": 560,
         "center": true,
         "resizable": false,
         "maximizable": false,
         "minimizable": true,
-        "decorations": false
+        "hiddenTitle": true,
+        "titleBarStyle": "Overlay"
       }
     ],
+    "systemTray": {
+      "title": "Pengu Loader",
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": false
+    },
     "security": {
       "csp": null
     },

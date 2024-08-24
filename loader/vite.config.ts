@@ -1,4 +1,4 @@
-import { defineConfig, Plugin } from 'vite'
+import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
 import solid from 'vite-plugin-solid'
 import autoprefixer from 'autoprefixer'
@@ -17,12 +17,12 @@ export default defineConfig({
     }
   },
   define: {
-
+    '__VERSION__': JSON.stringify(pkg.version),
+    '__PLATFORM__':  JSON.stringify(process.platform),
   },
   publicDir: false,
   plugins: [
     solid(),
-    penguEnv(),
   ],
   resolve: {
     alias: {
@@ -44,27 +44,3 @@ export default defineConfig({
     },
   },
 })
-
-function penguEnv(): Plugin {
-  const pluginName = 'pengu-env'
-  const virtualModuleId = 'virtual:' + pluginName
-  const resolvedVirtualModuleId = '\0' + virtualModuleId
-
-  return {
-    name: pluginName,
-    resolveId(id) {
-      if (id === virtualModuleId) {
-        return resolvedVirtualModuleId
-      }
-    },
-    async load(id) {
-      if (id === resolvedVirtualModuleId) {
-        const env = {
-          isMac: process.platform === 'darwin',
-          version: pkg.version
-        }
-        return `export default ${JSON.stringify(env)};`
-      }
-    },
-  }
-}

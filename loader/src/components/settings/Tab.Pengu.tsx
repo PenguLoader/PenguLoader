@@ -1,9 +1,35 @@
-import { Component } from 'solid-js'
+import { Component, createSignal, onMount, Show } from 'solid-js'
 import { dialog } from '@tauri-apps/api'
 import { Config, useConfig } from '~/lib/config'
 import { LeagueClient } from '~/lib/league-client'
-import { OptionSet, RadioOption } from './templates'
+import { CheckOption, OptionSet, RadioOption } from './templates'
 import { ActivationMode, CoreModule } from '~/lib/core-module'
+import { Startup } from '~/lib/startup'
+
+const LaunchSettings: Component = () => {
+  const [startup, setSatrtup] = createSignal(false)
+
+  const toggleStartup = async () => {
+    let enable = !await Startup.isEnabled()
+    await Startup.setEnable(enable)
+    setSatrtup(enable)
+  }
+
+  onMount(async () => {
+    setSatrtup(await Startup.isEnabled())
+  })
+
+  return (
+    <OptionSet name="Launch Settings">
+      <CheckOption
+        caption="Run on startup"
+        message="Automatically run Pengu when your computer starts."
+        checked={startup()}
+        onClick={toggleStartup}
+      />
+    </OptionSet>
+  )
+}
 
 export const TabPengu: Component = () => {
 
@@ -53,34 +79,43 @@ export const TabPengu: Component = () => {
         </span>
       </OptionSet>
 
-      <OptionSet name="LoL Client Location" disabled={app.activation_mode() === ActivationMode.Universal}>
-        <span
-          class="block text-base text-neutral-200 px-3 py-1 hover:bg-neutral-400/20 rounded-md"
-          onClick={changeLeagueDir}>
-          {app.league_dir() || '(not selected)'}
-        </span>
-      </OptionSet>
+      <Show when={!window.isMac}>
+        <OptionSet name="LoL Client Location" disabled={app.activation_mode() === ActivationMode.Universal}>
+          <span
+            class="block text-base text-neutral-200 px-3 py-1 hover:bg-neutral-400/20 rounded-md"
+            onClick={changeLeagueDir}>
+            {app.league_dir() || '(not selected)'}
+          </span>
+        </OptionSet>
+      </Show>
+
+      <Show when={window.isMac}>
+        <LaunchSettings />
+      </Show>
 
       <OptionSet name="Activation Mode">
-        <RadioOption
-          caption="Universal"
-          message="Apply to all League Clients, including live and PBE."
-          checked={app.activation_mode() === ActivationMode.Universal}
-          onClick={() => setActivationMode(ActivationMode.Universal)}
-        />
-        <RadioOption
-          caption="Targeted"
-          message="Apply to a specific League Client to avoid UnauthorizedAccess issue on some Windows."
-          checked={app.activation_mode() === ActivationMode.Targeted}
-          onClick={() => setActivationMode(ActivationMode.Targeted)}
-        />
-        <RadioOption
-          disabled
-          caption="On-demand"
-          message="Apply to a specific League Client that you launch, by tracking Riot Client. You have to keep Pengu running in background."
-          checked={app.activation_mode() === ActivationMode.OnDemand}
-          onClick={() => setActivationMode(ActivationMode.OnDemand)}
-        />
+        <Show when={!window.isMac}>
+          <RadioOption
+            caption="Universal"
+            message="Apply to all League Clients, including live and PBE."
+            checked={app.activation_mode() === ActivationMode.Universal}
+            onClick={() => setActivationMode(ActivationMode.Universal)}
+          />
+          <RadioOption
+            caption="Targeted"
+            message="Apply to a specific League Client to avoid UnauthorizedAccess issue on some Windows."
+            checked={app.activation_mode() === ActivationMode.Targeted}
+            onClick={() => setActivationMode(ActivationMode.Targeted)}
+          />
+        </Show>
+        <Show when={window.isMac}>
+          <RadioOption
+            caption="On-demand"
+            message="Apply to a specific League Client that you launch from the Riot Client. You have to keep Pengu running in background."
+            disabled
+            checked
+          />
+        </Show>
       </OptionSet>
 
     </div>

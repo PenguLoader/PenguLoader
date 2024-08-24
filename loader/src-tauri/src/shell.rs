@@ -13,7 +13,7 @@ fn expand_folder(path: &str) {
         .unwrap();
 
     #[cfg(target_os = "macos")]
-    Command::new("open").args(["-R", path]).spawn().unwrap();
+    Command::new("open").arg(path).spawn().unwrap();
 }
 
 #[tauri::command]
@@ -25,7 +25,7 @@ fn reveal_file(path: &str) {
         .unwrap();
 
     #[cfg(target_os = "macos")]
-    expand_folder(path);
+    Command::new("open").args(["-R", path]).spawn().unwrap();
 }
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {

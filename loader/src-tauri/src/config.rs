@@ -8,18 +8,13 @@ use tauri::{
     Runtime,
 };
 
-#[cfg(windows)]
-const CORE_FNAME: &str = "core.dll";
-#[cfg(target_os = "macos")]
-const CORE_FNAME: &str = "core.dylib";
-
 /// Base dir is the exe dir.
 /// In dev, it should be the bin folder in root project.
 pub fn base_dir() -> PathBuf {
     let path = std::env::current_exe().unwrap();
     let dir = path.parent().unwrap();
 
-    if cfg!(debug_assertions) && cfg!(windows) {
+    if cfg!(debug_assertions) {
         return dir
             .parent()
             .unwrap()
@@ -37,8 +32,12 @@ pub fn base_dir() -> PathBuf {
 
 /// Get core module path.
 pub fn core_path() -> PathBuf {
-    let dir = base_dir();
-    dir.join(CORE_FNAME)
+    let mut path = base_dir().join("core");
+    #[cfg(windows)]
+    path.set_extension("dll");
+    #[cfg(target_os = "macos")]
+    path.set_extension("dylib");
+    path
 }
 
 /// Get config path.
@@ -48,6 +47,7 @@ pub fn config_path() -> PathBuf {
 }
 
 /// Get League dir from the config.
+#[allow(dead_code)]
 pub fn league_dir() -> Option<PathBuf> {
     if let Ok(file) = File::open(config_path()) {
         let reader = BufReader::new(file);

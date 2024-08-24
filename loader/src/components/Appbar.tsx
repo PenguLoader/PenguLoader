@@ -4,9 +4,7 @@ import { twMerge } from 'tailwind-merge'
 import { SettingsIcon, StoreIcon } from './Icons'
 import { useRoot } from '../lib/root'
 import { useTippy } from '../lib/utils'
-import penguIcon from '../assets/icon.png'
-
-import Env from 'virtual:pengu-env'
+import icon from '../assets/icon-sm.png'
 
 const Command: Component<JSX.HTMLAttributes<HTMLSpanElement>> = (props) => {
   const [local, rest] = splitProps(props, ['class'])
@@ -22,15 +20,21 @@ export const Appbar: Component<{
   isHome: boolean
 }> = (props) => {
 
-  const { settings, isStore, setStore } = useRoot()
+  const { settings, setStore } = useRoot()
   const [focus, setFocus] = createSignal(true)
 
   const minimize = () => appWindow.minimize()
-  const close = () => appWindow.close()
+  const close = () => {
+    if (window.isMac) {
+      appWindow.hide()
+    } else {
+      appWindow.close()
+    }
+  }
 
   onMount(async () => {
-    appWindow.onFocusChanged(e => setFocus(e.payload))
     setFocus(await appWindow.isFocused())
+    appWindow.onFocusChanged(e => setFocus(e.payload))
   })
 
   return (
@@ -41,9 +45,9 @@ export const Appbar: Component<{
     >
 
       <div class="flex items-center px-[10px] h-full pointer-events-none">
-        <img src={penguIcon} class="size-5" />
+        <img src={icon} class="size-5 rounded-sm" />
         <span class="px-2 text-sm">Pengu Loader</span>
-        <span class="text-sm text-foreground/50">v{Env.version}</span>
+        <span class="text-sm text-foreground/50">v{window.appVersion}</span>
       </div>
 
       <div class="flex justify-center h-full text-foreground/80">

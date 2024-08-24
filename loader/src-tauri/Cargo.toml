@@ -16,7 +16,9 @@ tauri-build = { version = "1", features = [] }
 
 [dependencies]
 libc = "0.2"
-tauri = { version = "1", features = [ "dialog-all",
+tauri = { version = "1", features = [ "window-hide",
+  "system-tray",
+  "dialog-all",
   "window-close",
   "window-minimize",
   "window-set-title",
@@ -41,6 +43,13 @@ named-lock = "0.4"
 winreg = "0.52"
 is_elevated = "0.1"
 runas = "1.2"
+
+[target."cfg(target_os = \"macos\")".dependencies]
+objc = "0.2"
+base64 = "0.22"
+native-tls = "0.2"
+tungstenite = { version = "0.23", features = ["default", "native-tls"] }
+auto-launch = "0.5"
 
 [dependencies.sysinfo]
 version = "0.31"

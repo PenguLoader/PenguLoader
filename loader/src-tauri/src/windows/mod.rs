@@ -1,15 +1,12 @@
 use core::fmt;
 use std::io::ErrorKind;
 use tauri::{
-    plugin::{Builder, TauriPlugin},
-    Runtime,
+    plugin::{Builder, TauriPlugin}, Manager, Runtime
 };
 
 mod mod_ifeo;
 mod mod_symlink;
 mod utils;
-
-pub use utils::enable_shadow;
 
 /// Enabling activation requires admin rights,
 /// so we should encode the result to exitcode
@@ -118,13 +115,24 @@ fn core_do_activate(symlink: bool, active: bool) -> String {
     result_to_string(result)
 }
 
-pub fn init<R: Runtime>() -> TauriPlugin<R> {
+fn plugin<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("windows")
         .invoke_handler(tauri::generate_handler![
             core_is_activated,
             core_do_activate,
         ])
         .build()
+}
+
+impl<R: Runtime> super::CustomBuild for tauri::Builder<R> {
+    fn setup_platform(self) -> Self {
+        self.setup(|app| {
+            let window = app.get_window("main").unwrap();
+            utils::enable_shadow(window.hwnd().unwrap().0);
+            Ok(())
+        })
+        .plugin(plugin())
+    }
 }
 
 pub fn do_entry() {

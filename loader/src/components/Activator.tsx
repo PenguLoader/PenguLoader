@@ -1,7 +1,7 @@
 import { Component, createSignal, onMount } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { CoreModule } from '../lib/core-module'
-import { dialog } from '@tauri-apps/api'
+import { dialog, event } from '@tauri-apps/api'
 import { BoltIcon, PowerIcon } from './Icons'
 
 export const Activator: Component = () => {
@@ -42,6 +42,12 @@ export const Activator: Component = () => {
   onMount(async () => {
     setActive(await CoreModule.isActivated())
     setLoading(false)
+
+    if (window.isMac) {
+      event.listen('active-status', (e) => {
+        setActive(Boolean(e.payload))
+      })
+    }
   })
 
   return (

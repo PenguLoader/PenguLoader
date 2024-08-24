@@ -40,6 +40,9 @@ export const CoreModule = new class {
    * Check if the core module is activated or not.
    */
   async isActivated(): Promise<boolean> {
+    if (window.isMac) {
+      return await invoke<boolean>('plugin:macos|cmd_is_active')
+    }
     return await invoke<boolean>('plugin:windows|core_is_activated', {
       symlink: this.useSymlink()
     })
@@ -47,13 +50,23 @@ export const CoreModule = new class {
 
   /**
    * Perform activation.
-   * @returns a boolean that indicates the new active state, otherwise throws an error message.
+   * @returns A boolean that indicates the new active state,
+   *    the action is successful when error message is empty.
    */
   async doActivate(active: boolean): Promise<{ error: string, activated: boolean }> {
-    const error = await invoke<string>('plugin:windows|core_do_activate', {
-      active: active,
-      symlink: this.useSymlink(),
-    })
+    let error = ''
+
+    if (window.isMac) {
+      await invoke('plugin:macos|cmd_set_active', {
+        active: active,
+      })
+    } else {
+      error = await invoke<string>('plugin:windows|core_do_activate', {
+        active: active,
+        symlink: this.useSymlink(),
+      })
+    }
+
     return {
       error: error,
       activated: await this.isActivated(),

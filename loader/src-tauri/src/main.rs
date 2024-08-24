@@ -3,7 +3,6 @@
 
 use named_lock::{Error, NamedLock};
 use std::env;
-use tauri::Manager;
 
 mod config;
 mod shell;
@@ -14,6 +13,15 @@ mod windows;
 #[cfg(target_os = "macos")]
 mod macos;
 
+#[macro_export]
+macro_rules! dprintln {
+    ($($arg:tt)*) => (#[cfg(debug_assertions)] println!("[D] {}", format!($($arg)*)));
+}
+
+pub trait CustomBuild {
+    fn setup_platform(self) -> Self;
+}
+
 fn main() -> Result<(), Error> {
     #[cfg(windows)]
     windows::do_entry();
@@ -23,26 +31,12 @@ fn main() -> Result<(), Error> {
     let lock = NamedLock::create("989d2110-46da-4c8d-84c1-c4a42e43c424")?;
     let _guard = lock.try_lock()?;
 
-    match tauri::Builder::default() {
-        builder => {
-            #[cfg(windows)]
-            {
-                builder.plugin(windows::init()).setup(|app| {
-                    let window = app.get_window("main").unwrap();
-                    windows::enable_shadow(window.hwnd().unwrap().0);
-                    Ok(())
-                })
-            }
-            #[cfg(target_os = "macos")]
-            {
-                builder.plugin(macos::init())
-            }
-        }
-    }
-    .plugin(config::init())
-    .plugin(shell::init())
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    tauri::Builder::default()
+        .setup_platform()
+        .plugin(config::init())
+        .plugin(shell::init())
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 
     Ok(())
 }
