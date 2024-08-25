@@ -32,9 +32,24 @@ bool check_libcef_version(bool is_browser)
     {
         auto get_version = reinterpret_cast<decltype(&cef_version_info)>(dylib::find_proc(libcef, "cef_version_info"));
 
+        if (get_version == nullptr)
+            return false;
+
         // Check CEF version
-        if (get_version == nullptr || get_version(0) != CEF_VERSION_MAJOR)
+        if (get_version(0) != CEF_VERSION_MAJOR)
         {
+#if OS_WIN
+            // Try to load old CEF 91 core module
+            if (get_version(0) == 91)
+            {
+                auto dll_path = config::loader_dir() / "core_91.dll";
+                if (file::is_file(dll_path))
+                {
+                    LoadLibraryW(dll_path.c_str());
+                }
+                return false;
+            }
+#endif
             if (is_browser)
                 dialog::alert("Pengu does not support your Client version.", "Pengu Loader");
             return false;
