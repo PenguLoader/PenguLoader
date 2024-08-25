@@ -1,5 +1,4 @@
 import { rcp, socket } from './rcp';
-// import { FS } from './api/PluginFS';
 
 async function loadPlugin(entry: string) {
   let stage = 'load';
@@ -15,8 +14,6 @@ async function loadPlugin(entry: string) {
       const initContext = { rcp, socket };
       // If it's not top-level JS
       if (pluginName) {
-        // initContext['fs'] = new FS(pluginName);
-
         const meta = { name: pluginName };
         initContext['meta'] = meta;
       }
