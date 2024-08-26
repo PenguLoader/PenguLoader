@@ -1,7 +1,7 @@
 {
   "name": "pengujs",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
