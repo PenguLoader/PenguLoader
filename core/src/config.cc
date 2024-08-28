@@ -197,7 +197,7 @@ namespace config::options
 {
     bool use_hotkeys()
     {
-#if CEF_VERSION_MAJOR == 91
+#if 1 // CEF_VERSION_MAJOR == 91
         return true;
 #endif
         return get_config_value_bool(__func__, true);
@@ -205,7 +205,7 @@ namespace config::options
 
     bool optimed_client()
     {
-#if CEF_VERSION_MAJOR == 91
+#if 1 // CEF_VERSION_MAJOR == 91
         return get_config_value_bool("OptimizeClient", true);
 #endif
         return get_config_value_bool(__func__, true);
@@ -213,7 +213,7 @@ namespace config::options
 
     bool super_potato()
     {
-#if CEF_VERSION_MAJOR == 91
+#if 1 // CEF_VERSION_MAJOR == 91
         return get_config_value_bool("SuperLowSpecMode", false);
 #endif
         return get_config_value_bool(__func__, false);
@@ -226,7 +226,7 @@ namespace config::options
 
     bool isecure_mode()
     {
-#if CEF_VERSION_MAJOR == 91
+#if 1 // CEF_VERSION_MAJOR == 91
         return get_config_value_bool("DisableWebSecurity", false);
 #endif
         return get_config_value_bool(__func__, false);
@@ -234,7 +234,7 @@ namespace config::options
 
     bool use_devtools()
     {
-#if CEF_VERSION_MAJOR == 91
+#if 1 // CEF_VERSION_MAJOR == 91
         return true;
 #endif
         return get_config_value_bool(__func__, false);
@@ -242,7 +242,7 @@ namespace config::options
 
     bool use_riotclient()
     {
-#if CEF_VERSION_MAJOR == 91
+#if 1 // CEF_VERSION_MAJOR == 91
         return true;
 #endif
         return get_config_value_bool(__func__, false);
@@ -255,7 +255,7 @@ namespace config::options
 
     int debug_port()
     {
-#if CEF_VERSION_MAJOR == 91
+#if 1 // CEF_VERSION_MAJOR == 91
         return get_config_value_int("RemoteDebuggingPort", 0);
 #endif
         return get_config_value_int(__func__, 0);
