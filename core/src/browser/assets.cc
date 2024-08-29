@@ -392,6 +392,7 @@ private:
                 {
                     response->set_header_by_name(response, &u"Content-Length"_s, &CefStr(std::to_string(contentLength)), 1);
                     response->set_header_by_name(response, &u"Content-Range"_s, &CefStr(contentRange), 1);
+                    response->set_header_by_name(response, &u"Accept-Ranges"_s, &CefStr("bytes"), 1);
 
                     *response_length = contentLength;
                     response->set_status(response, 206);
