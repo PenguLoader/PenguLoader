@@ -94,7 +94,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cp -r "loader/src-tauri/target/universal-apple-darwin/release/bundle/macos/Pengu Loader.app" bin/
-          cp "loader/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg" bin/
+          cp "loader/src-tauri/target/universal-apple-darwin/release/bundle/dmg/"*.dmg bin/
           clang -O2 -o bin/insert_dylib core/insert_dylib.c
 
       - name: Upload build output

@@ -1,4 +1,4 @@
 [submodule "core/cef"]
 	path = core/cef
 	url = https://github.com/PenguLoader/cef-headers.git
-	branch = 5359
+	branch = 4472
