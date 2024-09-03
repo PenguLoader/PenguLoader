@@ -7,10 +7,13 @@ use tauri::{
 #[tauri::command]
 fn expand_folder(path: &str) {
     #[cfg(windows)]
-    Command::new("explorer")
-        .args(["/expand,", path])
-        .spawn()
-        .unwrap();
+    {
+        let path = path.replace("/", "\\");
+        Command::new("explorer")
+            .args(["/expand,", &path])
+            .spawn()
+            .unwrap();
+    }
 
     #[cfg(target_os = "macos")]
     Command::new("open").arg(path).spawn().unwrap();
@@ -19,10 +22,13 @@ fn expand_folder(path: &str) {
 #[tauri::command]
 fn reveal_file(path: &str) {
     #[cfg(windows)]
-    Command::new("explorer")
-        .args(["/select,", path])
-        .spawn()
-        .unwrap();
+    {
+        let path = path.replace("/", "\\");
+        Command::new("explorer")
+            .args(["/select,", &path])
+            .spawn()
+            .unwrap();
+    }
 
     #[cfg(target_os = "macos")]
     Command::new("open").args(["-R", path]).spawn().unwrap();
