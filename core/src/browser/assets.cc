@@ -353,7 +353,7 @@ private:
         }
 
         char buf[64];
-        size_t len = sprintf_s(buf, "bytes %d-%d/%d", rangeStart, rangeEnd, totalBytes);
+        size_t len = snprintf(buf, sizeof(buf) - 1, "bytes %d-%d/%d", rangeStart, rangeEnd, totalBytes);
 
         contentRange.assign(buf, len);
         contentLength = totalBytes - rangeStart;
