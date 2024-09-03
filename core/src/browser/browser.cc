@@ -150,7 +150,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         auto args = CefScopedStr(command_line->get_command_line_string(command_line)).to_utf16();
 
         size_t pos = args.find(u"--no-proxy-server");
-        if (pos != std::wstring::npos)
+        if (pos != std::string::npos)
             args.replace(pos, 17, u"");
 
         command_line->reset(command_line);
@@ -169,7 +169,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &u"disable-web-security"_s);
     }
 
-    if (config::options::optimed_client())
+    if (config::options::optimized_client())
     {
         //command_line->append_switch(command_line, &u"disable-async-dns"_s);
         command_line->append_switch(command_line, &u"disable-plugins"_s);

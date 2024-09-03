@@ -13,7 +13,7 @@ const defaultConfig = {
   },
   client: {
     use_hotkeys: true,
-    optimed_client: true,
+    optimized_client: true,
     silent_mode: false,
     super_potato: false,
     insecure_mode: false,

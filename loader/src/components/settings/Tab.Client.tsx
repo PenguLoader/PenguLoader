@@ -38,10 +38,10 @@ export const TabClient: Component = () => {
 
       <OptionSet name="Tweaks">
         <CheckOption
-          caption="Optimed Client"
+          caption="Optimized Client"
           message="Enable caching and disable some unnecessary things under the Client. This option does not cause your connection issues."
-          checked={client.optimed_client()}
-          onChange={client.optimed_client}
+          checked={client.optimized_client()}
+          onChange={client.optimized_client}
         />
         <CheckOption
           caption="Super Potato Mode"

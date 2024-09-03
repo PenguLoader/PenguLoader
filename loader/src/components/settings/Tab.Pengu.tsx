@@ -103,7 +103,7 @@ export const TabPengu: Component = () => {
           />
           <RadioOption
             caption="Targeted"
-            message="Apply to a specific League Client to avoid UnauthorizedAccess issue on some Windows."
+            message="Apply to a specific League Client that you choose. Use it if you get access denied in Universal mode, except the Tencent server."
             checked={app.activation_mode() === ActivationMode.Targeted}
             onClick={() => setActivationMode(ActivationMode.Targeted)}
           />

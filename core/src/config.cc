@@ -199,7 +199,7 @@ namespace config::options
         return get_config_value_bool(__func__, true);
     }
 
-    bool optimed_client()
+    bool optimized_client()
     {
         return get_config_value_bool(__func__, true);
     }

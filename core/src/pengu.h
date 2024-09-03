@@ -328,7 +328,7 @@ namespace config
     namespace options
     {
         bool use_hotkeys();
-        bool optimed_client();
+        bool optimized_client();
         bool silent_mode();
         bool super_potato();
         bool isecure_mode();
