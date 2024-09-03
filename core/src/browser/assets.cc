@@ -62,20 +62,6 @@ const content = await fetch(url).then(r => r.text());
 export default JSON.parse(content);
 )";
 
-static const auto SCRIPT_IMPORT_TOML = R"(
-const { parse } = __p('toml');
-const url = import.meta.url.replace(/\?.*$/, '');
-const content = await fetch(url).then(r => r.text());
-export default parse(content);
-)";
-
-static const auto SCRIPT_IMPORT_YAML = R"(
-const { parse } = __p('yaml');
-const url = import.meta.url.replace(/\?.*$/, '');
-const content = await fetch(url).then(r => r.text());
-export default parse(content);
-)";
-
 static const auto SCRIPT_IMPORT_RAW = R"(
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
@@ -177,10 +163,6 @@ private:
                         module_code = SCRIPT_IMPORT_CSS;
                     else if (ext == u"json")
                         module_code = SCRIPT_IMPORT_JSON;
-                    else if (ext == u"toml")
-                        module_code = SCRIPT_IMPORT_TOML;
-                    else if (ext == u"yml" || ext == u"yaml")
-                        module_code = SCRIPT_IMPORT_YAML;
                     else if (KNOWN_ASSETS_SET.find(fnv32_1a(ext.c_str(), ext.length())) != KNOWN_ASSETS_SET.end())
                         module_code = SCRIPT_IMPORT_URL;
                 }
