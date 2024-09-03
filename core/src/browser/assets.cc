@@ -80,11 +80,13 @@ public:
     AssetsResourceHandler()
         : CefRefCount(this)
         , stream_(nullptr)
+        , offset_(0)
         , length_(0)
         , no_cache_(false)
     {
         cef_bind_method(AssetsResourceHandler, open);
         cef_bind_method(AssetsResourceHandler, get_response_headers);
+        cef_bind_method(AssetsResourceHandler, skip);
         cef_bind_method(AssetsResourceHandler, read);
     }
 
@@ -96,7 +98,9 @@ public:
 
 private:
     cef_stream_reader_t *stream_;
+    int64 offset_;
     int64 length_;
+    std::string range_header_;
     std::u16string mime_;
     bool no_cache_;
 
@@ -107,7 +111,7 @@ private:
 
         CefScopedStr url = request->get_url(request);
         std::u16string path, query_part;
-        path.append((char16_t *)url.str + 15, url.length - 15); // skip 'https://plugins'
+        path.assign((char16_t *)url.str + 15, url.length - 15); // skip 'https://plugins'
 
         // Check query part.
         if ((pos = path.rfind('?')) != std::u16string::npos)
@@ -191,7 +195,7 @@ private:
                 mime_.assign(u"text/javascript");
                 no_cache_ = true;
             }
-            else if ((pos = path.rfind(L'.')) != std::u16string::npos)
+            else if ((pos = path.rfind(u'.')) != std::u16string::npos)
             {
                 // Get MIME type from file extension.
                 auto ext = path.substr(pos + 1);
@@ -200,9 +204,17 @@ private:
             }
         }
 
-        *handle_request = true;
-        callback->cont(callback);
-        return true;
+        // get range header
+        CefScopedStr range{ request->get_header_by_name(request, &u"Range"_s) };
+        if (!range.empty())
+        {
+            // save it
+            range_header_.assign(range.to_utf8());
+        }
+
+        *handle_request = 1;
+        //callback->cont(callback);
+        return 1;
     }
 
     void _get_response_headers(struct _cef_response_t* response, int64* response_length, cef_string_t* redirectUrl)
@@ -234,8 +246,62 @@ private:
                 set_etag(response);
             }
 
-            *response_length = length_;
+            if (!range_header_.empty())
+            {
+                std::string contentRange;
+                int contentLength;
+
+                // parse range header
+                if (try_get_range_header(contentRange, contentLength))
+                {
+                    response->set_header_by_name(response, &u"Accept-Ranges"_s, &CefStr("bytes"), 1);
+                    response->set_header_by_name(response, &u"Content-Length"_s, &CefStr(std::to_string(contentLength)), 1);
+                    response->set_header_by_name(response, &u"Content-Range"_s, &CefStr(contentRange), 1);
+
+                    *response_length = contentLength;
+                    response->set_status(response, 206);
+                    response->set_status_text(response, &u"Partial Content"_s);
+                }
+                else
+                {
+                    *response_length = -1;
+                    response->set_status(response, 416);
+                    response->set_status_text(response, &u"Requested Range Not Satisfiable"_s);
+                }
+            }
+            else
+            {
+                // normal content length
+                *response_length = length_;
+            }
         }
+    }
+
+    int _skip(int64 bytes_to_skip, int64 *bytes_skipped, struct _cef_resource_skip_callback_t *callback)
+    {
+        if (stream_ == nullptr || stream_->eof(stream_))
+        {
+            // eof
+            *bytes_skipped = -2;
+        }
+        else if (stream_->tell(stream_) == (length_ - 1))
+        {
+            // done
+            *bytes_skipped = 0;
+        }
+        else
+        {
+            int oldPosition = static_cast<int>(stream_->tell(stream_));
+            int result = stream_->seek(stream_, bytes_to_skip, SEEK_CUR);
+            int position = static_cast<int>(stream_->tell(stream_));
+            *bytes_skipped = position - oldPosition;
+            *bytes_skipped = bytes_to_skip;
+
+            // skip
+            offset_ = position;
+        }
+
+        return *bytes_skipped > 0;
     }
 
     int _read(void* data_out, int bytes_to_read, int* bytes_read, struct _cef_resource_read_callback_t* callback)
@@ -245,8 +311,54 @@ private:
         if (stream_ == nullptr)
             return false;
 
-        *bytes_read = static_cast<int>(stream_->read(stream_, data_out, 1, bytes_to_read));
+        int read = static_cast<int>(stream_->read(stream_, data_out, 1, bytes_to_read));
+        *bytes_read = read;
+        offset_ += read;
+
         return (*bytes_read > 0);
+    }
+
+    bool try_get_range_header(std::string &contentRange, int &contentLength)
+    {
+        contentRange.clear();
+        contentLength = 0;
+        
+        // skip 'bytes='
+        auto range = range_header_.substr(6);
+
+        // 'start-end'
+        int rangeStart = std::atoi(range.c_str());
+        int rangeEnd = 0;
+
+        size_t pos = range.rfind('-');
+        if (pos != std::string::npos)
+        {
+            rangeEnd = std::atoi(range.substr(pos + 1).c_str());
+        }
+
+        int totalBytes = static_cast<int>(length_);
+        if (totalBytes == 0)
+            return false;
+
+        if (rangeEnd == 0)
+            rangeEnd = totalBytes - 1;
+
+        if (rangeStart > rangeEnd)
+            return false;
+
+        if (rangeStart != offset_)
+        {
+            stream_->seek(stream_, rangeStart, SEEK_SET);
+            offset_ = rangeStart;
+        }
+
+        char buf[64];
+        size_t len = sprintf_s(buf, "bytes %d-%d/%d", rangeStart, rangeEnd, totalBytes);
+
+        contentRange.assign(buf, len);
+        contentLength = totalBytes - rangeStart;
+
+        return true;
     }
 
     static void set_etag(cef_response_t *response)
@@ -264,7 +376,8 @@ private:
 
     static void decode_uri(std::u16string &uri)
     {
-        auto rule = cef_uri_unescape_rule_t(UU_SPACES | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS);
+        auto rule = cef_uri_unescape_rule_t(UU_SPACES
+            | UU_URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS);
 
         cef_string_t input{ (char16 *)uri.data(), uri.length(), nullptr };
         CefScopedStr output{ cef_uridecode(&input, true, rule) };
