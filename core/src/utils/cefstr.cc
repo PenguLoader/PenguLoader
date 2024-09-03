@@ -152,22 +152,17 @@ cef_string_t CefStr::forward()
     return cef_string_t{ str, length, dtor_ };
 }
 
-CefStrBase CefStr::borrow(const cef_string_t *s)
+const CefStrBase &CefStr::borrow(const cef_string_t *s)
 {
-    CefStrBase base{};
-
     if (s != nullptr)
     {
-        base.str = s->str;
-        base.length = s->length;
+        return *reinterpret_cast<const CefStrBase *>(s);
     }
     else
     {
-        base.str = (char16 *)u"";
-        base.length = 0;
+        static CefStrBase empty{};
+        return empty;
     }
-
-    return base;
 }
 
 // userfree scoped string

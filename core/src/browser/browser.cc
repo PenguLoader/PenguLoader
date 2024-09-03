@@ -108,7 +108,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
     struct _cef_dictionary_value_t* extra_info,
     struct _cef_request_context_t* request_context)
 {
-    auto url_ = CefStr::borrow(url);
+    auto &url_ = CefStr::borrow(url);
 
     // Hook main browser only.
     if (url_.startw("https://riot:") && url_.endw("/bootstrap.html"))
