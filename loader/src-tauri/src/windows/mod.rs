@@ -165,4 +165,22 @@ pub fn do_entry() {
         let result = do_activate(symlink, active);
         std::process::exit(encode_result(result))
     }
+
+    if !utils::is_webview2_installed() {
+        #[link(name = "user32")]
+        extern "system" {
+            fn MessageBoxA(_: isize, message: *const u8, caption: *const u8, flags: u32) -> i32;
+        }
+        unsafe {
+            MessageBoxA(
+                0,
+                "WebView2 is not installed on your system.\n\
+                Please install WebView2 to run the app.\0"
+                    .as_ptr(),
+                "Pengu Loader\0".as_ptr(),
+                0x30,
+            );
+        }
+        std::process::exit(1)
+    }
 }

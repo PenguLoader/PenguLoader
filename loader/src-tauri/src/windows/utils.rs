@@ -1,4 +1,4 @@
-use std::io::Error;
+use std::{io::Error, path::PathBuf};
 use winreg::{
     enums::{HKEY_LOCAL_MACHINE, KEY_READ},
     RegKey,
@@ -58,4 +58,22 @@ pub fn enable_shadow(hwnd: isize) {
         };
         DwmExtendFrameIntoClientArea(hwnd, &margins);
     }
+}
+
+/// Check if webview2 is installed or not.
+pub fn is_webview2_installed() -> bool {
+    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+    const REG_KEY: &str =
+        r"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}";
+
+    if let Ok(key) = hklm.open_subkey_with_flags(REG_KEY, KEY_READ) {
+        if let Ok(location) = key.get_value("location") as Result<String, Error> {
+            if let Ok(pv) = key.get_value("pv") as Result<String, Error> {
+                let exe_path = [&location, &pv, "msedge.exe"].join("\\");
+                return PathBuf::from(exe_path).exists();
+            }
+        }
+    }
+
+    false
 }
