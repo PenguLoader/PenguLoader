@@ -74,19 +74,6 @@
         "unminimize": true
       }
     },
-    "windows": [
-      {
-        "title": "Pengu Loader",
-        "width": 940,
-        "height": 560,
-        "center": true,
-        "resizable": false,
-        "maximizable": false,
-        "minimizable": true,
-        "hiddenTitle": true,
-        "titleBarStyle": "Overlay"
-      }
-    ],
     "systemTray": {
       "title": "Pengu Loader",
       "iconPath": "icons/icon.png",

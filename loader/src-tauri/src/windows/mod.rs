@@ -2,7 +2,7 @@ use core::fmt;
 use std::io::ErrorKind;
 use tauri::{
     plugin::{Builder, TauriPlugin},
-    Manager, Runtime,
+    Runtime,
 };
 
 mod mod_ifeo;
@@ -128,20 +128,8 @@ fn plugin<R: Runtime>() -> TauriPlugin<R> {
 impl<R: Runtime> super::CustomBuild for tauri::Builder<R> {
     fn setup_platform(self) -> Self {
         self.setup(|app| {
-            let window = app.get_window("main").unwrap();
-            let config = app.config();
-            let window_conf = &config.tauri.windows[0];
-
-            window.set_decorations(false).unwrap();
-            window
-                .set_size(tauri::LogicalSize {
-                    width: window_conf.width,
-                    height: window_conf.height,
-                })
-                .unwrap();
-
+            let window = super::build_window(app);
             utils::enable_shadow(window.hwnd().unwrap().0);
-
             Ok(())
         })
         .plugin(plugin())

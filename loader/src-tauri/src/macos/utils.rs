@@ -51,8 +51,8 @@ pub fn get_riotclient_info() -> Option<(SocketAddr, String)> {
     None
 }
 
-/// Remove the traffic light controls from window.
-pub fn remove_traffic_lights(window: *mut std::ffi::c_void) {
+/// Hide the traffic light controls from window.
+pub fn hide_traffic_lights(window: *mut std::ffi::c_void) {
     unsafe {
         let window: *mut Object = std::mem::transmute(window);
 
@@ -63,6 +63,16 @@ pub fn remove_traffic_lights(window: *mut std::ffi::c_void) {
         let _: () = msg_send![min_button, setHidden: true];
         let _: () = msg_send![close_button, setHidden: true];
         let _: () = msg_send![max_button, setHidden: true];
+    }
+}
+
+/// Hide window's title bar.
+pub fn hide_title_bar(window: *mut std::ffi::c_void) {
+    unsafe {
+        let window: *mut Object = std::mem::transmute(window);
+
+        let _: () = msg_send![window, setTitlebarAppearsTransparent: true];
+        let _: () = msg_send![window, setTitleVisibility: 1];
     }
 }
 

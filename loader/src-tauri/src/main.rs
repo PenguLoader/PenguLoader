@@ -22,11 +22,34 @@ pub trait CustomBuild {
     fn setup_platform(self) -> Self;
 }
 
+pub fn build_window<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Window<R> {
+    match tauri::WindowBuilder::new(app, "main", tauri::WindowUrl::default())
+        .title("Pengu Loader")
+        .inner_size(940.0, 560.0)
+        .disable_file_drop_handler()
+        .resizable(false)
+        .maximizable(false)
+        .center()
+        .focused(true)
+    {
+        builder => {
+            #[cfg(windows)]
+            {
+                builder.decorations(false)
+            }
+            #[cfg(target_os = "macos")]
+            {
+                builder.title_bar_style(tauri::TitleBarStyle::Overlay)
+            }
+        }
+    }
+    .build()
+    .expect("error while building main window")
+}
+
 fn main() -> Result<(), Error> {
     #[cfg(windows)]
     windows::do_entry();
-
-    // todo: add webview2 check on windows
 
     let lock = NamedLock::create("989d2110-46da-4c8d-84c1-c4a42e43c424")?;
     let _guard = lock.try_lock()?;

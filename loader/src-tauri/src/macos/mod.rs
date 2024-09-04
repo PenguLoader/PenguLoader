@@ -36,8 +36,9 @@ pub fn cmd_set_active<R: Runtime>(app: AppHandle<R>, active: bool) {
 }
 
 fn initialize<R: Runtime>(app: &App<R>) {
-    let window = app.get_window("main").unwrap();
-    utils::remove_traffic_lights(window.ns_window().unwrap());
+    let window = super::build_window(app);
+    utils::hide_title_bar(window.ns_window().unwrap());
+    utils::hide_traffic_lights(window.ns_window().unwrap());
 
     utils::set_app_delegate_hook(move || {
         window.center().unwrap();
