@@ -43,10 +43,12 @@ all: debug
 
 debug: CXXFLAGS += -DDEBUG -g
 debug: $(LIB_OUT_PATH)
+debug: $(INSERT_DYLIB_PATH)
 
 release: CXXFLAGS += -DNDEBUG -O3
 release: LDFLAGS += -flto
 release: clean $(LIB_OUT_PATH)
+release: $(INSERT_DYLIB_PATH)
 
 # Rule to compile C++ source files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc ${INC_HEADERS}

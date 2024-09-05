@@ -7,6 +7,7 @@ use tauri::{
 };
 
 mod core;
+mod dylib;
 mod socket;
 mod startup;
 mod tray;
