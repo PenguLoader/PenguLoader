@@ -55,6 +55,12 @@ export const TabClient: Component = () => {
           checked={client.silent_mode()}
           onChange={client.silent_mode}
         />
+        <CheckOption
+          caption="Disable Logging"
+          message="Prevent the Client from collecting and storing log files, which may include sensitive information."
+          checked={client.no_logging()}
+          onChange={client.no_logging}
+        />
       </OptionSet>
 
       <OptionSet name="Developer">

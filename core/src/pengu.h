@@ -343,8 +343,9 @@ namespace config
     {
         bool use_hotkeys();
         bool optimized_client();
-        bool silent_mode();
         bool super_potato();
+        bool silent_mode();
+        bool no_logging();
         bool isecure_mode();
         bool use_devtools();
         bool use_riotclient();

@@ -16,6 +16,7 @@ const defaultConfig = {
     optimized_client: true,
     silent_mode: false,
     super_potato: false,
+    no_logging: false,
     insecure_mode: false,
     use_devtools: false,
     use_riotclient: false,

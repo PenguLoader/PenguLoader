@@ -214,6 +214,11 @@ namespace config::options
         return get_config_value_bool(__func__, false);
     }
 
+    bool no_logging()
+    {
+        return get_config_value_bool(__func__, false);
+    }
+
     bool isecure_mode()
     {
         return get_config_value_bool(__func__, false);

@@ -34,6 +34,17 @@ static void CEF_CALLBACK Hooked_OnAfterCreated(struct _cef_life_span_handler_t* 
     ::browser::setup_window(browser);
 }
 
+static decltype(cef_display_handler_t::on_console_message) OnConsoleMessage;
+static int CEF_CALLBACK Hooked_OnConsoleMessage(cef_display_handler_t *self,
+    struct _cef_browser_t *browser,
+    cef_log_severity_t level,
+    const cef_string_t *message,
+    const cef_string_t *source,
+    int line)
+{
+    return 0;
+}
+
 static void HookMainBrowserClient(cef_client_t *client)
 {
     void HookKeyboardHandler(cef_client_t *client);
@@ -52,6 +63,20 @@ static void HookMainBrowserClient(cef_client_t *client)
 
         return handler;
     };
+
+    if (config::options::no_logging())
+    {
+        static auto GetDisplayHandler = client->get_display_handler;
+        client->get_display_handler = [](struct _cef_client_t *self) -> cef_display_handler_t *
+            {
+                auto handler = GetDisplayHandler(self);
+
+                OnConsoleMessage = handler->on_console_message;
+                handler->on_console_message = Hooked_OnConsoleMessage;
+
+                return handler;
+            };
+    }
 
     static auto OnProcessMessageReceived = client->on_process_message_received;
     client->on_process_message_received = [](struct _cef_client_t* self,
@@ -196,6 +221,11 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &u"disable-smooth-scrolling"_s);
         command_line->append_switch(command_line, &u"wm-window-animations-disabled"_s);
         command_line->append_switch_with_value(command_line, &u"animation-duration-scale"_s, &u"0"_s);
+    }
+
+    if (config::options::no_logging())
+    {
+        command_line->append_switch_with_value(command_line, &u"log-severity"_s, &u"disable"_s);
     }
 
     command_line->base.release(&command_line->base);
