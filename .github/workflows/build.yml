@@ -93,8 +93,8 @@ jobs:
       - name: Move loader output (macos)
         if: runner.os == 'macOS'
         run: |
-          cp -r "loader/src-tauri/target/universal-apple-darwin/release/bundle/macos/Pengu Loader.app" bin/
-          cp "loader/src-tauri/target/universal-apple-darwin/release/bundle/dmg/"*.dmg bin/
+          cp -r "loader/src-tauri/target" bin/
+        # cp "loader/src-tauri/target/universal-apple-darwin/release/bundle/dmg/"*.dmg bin/
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
