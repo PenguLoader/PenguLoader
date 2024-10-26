@@ -83,6 +83,26 @@
       "act_create_normal": "創建5V5單排房間",
       "act_practice_tool": "創建練習模式",
       "act_quit_pvp": "跳GAME(僅限PVP模式)"
+    },
+        {
+      "_locales": [
+        "tr-TR"
+      ],
+      "welcome_msg": "Merhaba sihirdar! Pengu'n başarılı bir şekilde çalıştı! Umarım iyi bir zaman geçirirsin. Topluluğumuza katılarak 😎 temalara ve eklentilere ulaşabilirsin! 👇",
+      "dont_show_again": "Bir daha gösterme",
+      "active_status": "Pengu Loader çalışıyor!",
+      "update_available": "Yeni güncelleme mevcut",
+      "update_hint":  "Bu işlem için istemciyi kapatıp Pengu loader'ı tekrardan açmanız gerekiyor.",
+      "cmdbar_type_hint": "Komut yaz veya ara...",
+      "act_visit_home": "Anasayfaya git",
+      "act_open_devtools": "DevTools'u aç",
+      "act_open_plugins": "Eklentiler dosyasını aç",
+      "act_reload": "İstemciyi Yenile",
+      "act_restart": "İstemciyi Tekrardan Başlat",
+      "act_create_aram": "ARAM Lobisi Kur",
+      "act_create_normal": "Sihirdar Vadisi 5v5 Lobi Kur",
+      "act_practice_tool": "Antrenman Modu Kur",
+      "act_quit_pvp": "PvP champ-select'den çık"
     }
   ]
 }
