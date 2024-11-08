@@ -8,19 +8,25 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.platform.name }}
-    runs-on: ${{ matrix.platform.os }}
+    name: build-${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
 
     defaults:
       run:
-        shell: ${{ matrix.platform.shell }}
+        shell: ${{ matrix.shell }}
 
     strategy:
       fail-fast: false
       matrix:
-        platform:
-        - { name: Windows, os: windows-2022, shell: bash,  artifact: 'pengu-windows' }
-        - { name: MacOS,   os: macos-12,     shell: sh,    artifact: 'pengu-macos'   }
+        include:
+          - platform: windows
+            os: windows-2022
+            shell: bash
+            tauri_args: ""
+          - platform: macos
+            os: macos-latest
+            shell: sh
+            tauri_args: --target universal-apple-darwin
 
     steps:
       - name: Checkout repository
@@ -32,11 +38,21 @@ jobs:
       - name: Prepare environment variables
         run: |
           echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
-          echo "APP_VERSION=`cat loader/Version.cs | grep -o '[0-9].[0-9].[0-9]'`" >> $GITHUB_ENV
+          echo "APP_VERSION=`node -p "require('./loader/package.json').version"`" >> $GITHUB_ENV
 
       - name: Setup MSBuild
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v2
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Setup Rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "loader/src-tauri -> target"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -44,28 +60,46 @@ jobs:
           node-version: 20
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
+          run_install: |
+            - recursive: true
 
       - name: Build preload plugins
         run: |
           cd plugins
-          pnpm install
           pnpm build
 
-      - name: Build solution
+      - name: Build core (windows)
         if: runner.os == 'Windows'
         run: msbuild.exe pengu.sln -t:build -p:Configuration=Release -p:Platform=x64
 
-      - name: Build makefile
+      - name: Build core (macos)
         if: runner.os == 'macOS'
         run: make release
 
-      - name: Upload build outputs
+      - name: Build loader
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: "loader"
+          args: ${{ matrix.tauri_args }}
+
+      - name: Move loader output (windows)
+        if: runner.os == 'Windows'
+        run: |
+          cp "loader/src-tauri/target/release/Pengu Loader.exe" bin/
+
+      - name: Move loader output (macos)
+        if: runner.os == 'macOS'
+        run: |
+          cp -r "loader/src-tauri/target/universal-apple-darwin/release/bundle/macos/Pengu Loader.app" bin/
+          cp "loader/src-tauri/target/universal-apple-darwin/release/bundle/dmg/"*.dmg bin/
+
+      - name: Upload build output
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform.artifact }}-v${{ env.APP_VERSION }}-dev-${{ env.SHORT_SHA }}
+          name: pengu-v${{ env.APP_VERSION }}-dev-${{ env.SHORT_SHA }}-${{ matrix.platform }}
           path: |
             bin/
             !bin/obj/

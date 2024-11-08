@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -16,6 +16,7 @@
     <ClCompile Include="src\browser\devtools.cc" />
     <ClCompile Include="src\browser\keyboard.cc" />
     <ClCompile Include="src\browser\riotclient.cc" />
+    <ClCompile Include="src\browser\window.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\dllproxy.cc" />
@@ -35,7 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\browser\browser.h" />
-    <ClInclude Include="src\commons.h" />
+    <ClInclude Include="src\pengu.h" />
     <ClInclude Include="src\hook.h" />
     <ClInclude Include="src\platform.h" />
     <ClInclude Include="src\renderer\v8_wrapper.h" />
@@ -102,6 +103,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ConformanceMode>false</ConformanceMode>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -129,6 +131,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ConformanceMode>false</ConformanceMode>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

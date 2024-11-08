@@ -1,13 +1,10 @@
-@import "@fontsource/inter/400.css";
-@import "@fontsource/inter/600.css";
-
 body {
   position: relative;
 }
 
 #pengu-root {
   font-size: .875rem;
-  font-family: 'Inter', sans-serif;
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 div[id^=index_loading_div] {

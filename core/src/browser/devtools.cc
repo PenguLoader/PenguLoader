@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "include/capi/cef_client_capi.h"
 #include "include/capi/cef_urlrequest_capi.h"
+#include "include/cef_version.h"
 
 // BROWSER PROCESS ONLY.
 
@@ -12,11 +13,11 @@
 
 static std::unordered_map<int, void *> devtools_map_{};
 
-static void enhance_devtools_window(void *handle)
+static void setup_devtools_window(void *handle)
 {
 #if OS_WIN
     HWND window = static_cast<HWND>(handle);
-    HWND rclient = static_cast<HWND>(browser::view_handle);
+    HWND rclient = static_cast<HWND>(browser::window);
 
     // Copy window icon.
     HICON hicon = (HICON)SendMessageW(rclient, WM_GETICON, ICON_BIG, 0);
@@ -60,7 +61,7 @@ struct DevToolsLifeSpan : CefRefCount<cef_life_span_handler_t>
         double zoom_level = window::get_scaling(window) - 1.0;
         host->set_zoom_level(host, zoom_level);
 
-        enhance_devtools_window(window);
+        setup_devtools_window(window);
         host->base.release(&host->base);
     };
 
@@ -170,6 +171,9 @@ struct DevToolsClient : CefRefCount<cef_client_t>
 
 void browser::open_devtools(cef_browser_t *browser)
 {
+    if (!config::options::use_devtools())
+        return;
+
     int browser_id = browser->get_identifier(browser);
     const auto &it = devtools_map_.find(browser_id);
 
@@ -189,10 +193,18 @@ void browser::open_devtools(cef_browser_t *browser)
         wi.style = WS_OVERLAPPEDWINDOW
             | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
 #endif
+
+        cef_rect_t *wrect;
+#if CEF_VERSION_MAJOR >= 108
+        wrect = &wi.bounds;
+#else
+        wrect = (cef_rect_t *)&wi.x;
+#endif
+
         // position next to the client window
-        window::get_rect(hview, &wi.x, &wi.y, &wi.width, &wi.height);
-        wi.x += 100;
-        wi.y += 100;
+        window::get_rect(hview, &wrect->x, &wrect->y, &wrect->width, &wrect->height);
+        wrect->x += 100;
+        wrect->y += 100;
 
         char caption[512];
         strcpy(caption, "League Client DevTools - ");
