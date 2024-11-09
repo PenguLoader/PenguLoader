@@ -1,4 +1,8 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
+
+fn get_insert_dylib() -> PathBuf {
+    crate::config::base_dir().join("insert_dylib")
+}
 
 fn get_target_dylib_path(lol_dir: &PathBuf) -> PathBuf {
     lol_dir
@@ -36,15 +40,29 @@ fn restore_module(lol_dir: &PathBuf) {
 pub fn install_module(lol_dir: &PathBuf) -> bool {
     backup_module(lol_dir);
 
-    let core_path = crate::config::core_path();
-    let target_path = get_target_dylib_path(lol_dir);
+    if get_insert_dylib().exists() {
+        if let Ok(status) = Command::new(get_insert_dylib())
+            .arg("--all-yes")
+            .arg("--inplace")
+            .arg(crate::config::core_path().to_str().unwrap())
+            .arg(get_target_dylib_path(lol_dir).to_str().unwrap())
+            .status()
+        {
+            status.success()
+        } else {
+            false
+        }
+    } else {
+        let core_path = crate::config::core_path();
+        let target_path = get_target_dylib_path(lol_dir);
 
-    unsafe {
-        super::dylib::insert(
-            core_path.to_str().unwrap(),
-            target_path.to_str().unwrap(),
-            false,
-        )
+        unsafe {
+            super::dylib::insert(
+                core_path.to_str().unwrap(),
+                target_path.to_str().unwrap(),
+                false,
+            )
+        }
     }
 }
 
