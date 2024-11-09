@@ -37,7 +37,7 @@
 #define LIBCEF_MODULE_NAME "libcef.dll"
 #elif OS_MAC
 #define PLATFORM_NAME "mac"
-#define LIBCEF_MODULE_NAME "Chromium Embedded Framework.framework/Chromium Embedded Framework"
+#define LIBCEF_MODULE_NAME "League of Legends.app/Contents/Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework"
 #endif
 
 #ifndef NDEBUG
