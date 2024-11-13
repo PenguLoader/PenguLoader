@@ -211,6 +211,9 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
 
     const_cast<cef_settings_t *>(settings)->cache_path
         = CefStr::from_path(config::cache_dir()).forward();
+    
+    const_cast<cef_settings_t *>(settings)->root_cache_path
+        = CefStr::from_path(config::cache_dir()).forward();
 
     //static auto GetBrowserProcessHandler = app->get_browser_process_handler;
     //app->get_browser_process_handler = [](cef_app_t *self)
