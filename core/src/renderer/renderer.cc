@@ -318,9 +318,5 @@ static int Hooked_CefExecuteProcess(const cef_main_args_t* args, cef_app_t* app,
 void HookRendererProcess()
 {
     // Hook CefExecuteProcess().
-#if OS_WIN
     CefExecuteProcess.hook(LIBCEF_MODULE_NAME, "cef_execute_process", Hooked_CefExecuteProcess);
-#elif OS_MAC
-    CefExecuteProcess.hook(cef_execute_process, Hooked_CefExecuteProcess);
-#endif
 }

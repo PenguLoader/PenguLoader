@@ -13,7 +13,7 @@ static void fix_browser_background(const void *rladdr)
 #if OS_WIN
     const char *pattern = "41 83 F8 01 74 0B 41 83 F8 02 75 0A 45 31 C0";
 #elif OS_MAC
-    const char *pattern = "55 48 89 E5 83 FA 01 74 0A 83 FA 02 75 0A 45 31 C0";
+    const char *pattern = "55 48 89 E5 83 FA 01 74 ?? 83 FA 02 75 ??";
 #endif
     using Fn = decltype(&get_background_color);
     static hook::Hook<Fn> GetBackgroundColor;

@@ -6,6 +6,8 @@ use crate::dprintln;
 use libc::*;
 use std::mem::{transmute, zeroed};
 
+static CODESIG_FLAG: i32 = 0;
+
 const FAT_MAGIC: u32 = 0xcafebabe;
 const FAT_CIGAM: u32 = 0xbebafeca; /* NXSwapLong(FAT_MAGIC) */
 
@@ -159,6 +161,7 @@ unsafe fn check_load_commands(
     commands_offset: off_t,
     dylib_path: *const c_char,
     slice_size: &mut off_t,
+    cont_anyway: bool,
 ) -> bool {
     fseeko(f, commands_offset, SEEK_SET);
 
@@ -184,13 +187,16 @@ unsafe fn check_load_commands(
                 let mut fix_header = false;
 
                 if i == ncmds - 1 {
-                    // if CODESIG_FLAG == 2 {
-                    //     return true;
-                    // }
+                    if CODESIG_FLAG == 2 {
+                        return true;
+                    }
 
-                    // if codesig_flag == 0 && !ask("LC_CODE_SIGNATURE load command found. Remove it?") {
-                    //     return true;
-                    // }
+                    if CODESIG_FLAG == 0 {
+                        dprintln!("LC_CODE_SIGNATURE load command found. Remove it?");
+                        if !cont_anyway {
+                            return true;
+                        }
+                    }
 
                     let cmd: &mut linkedit_data_command = transmute(read_load_command(f, cmdsize));
 
@@ -312,7 +318,9 @@ unsafe fn check_load_commands(
                     dprintln!(
                         "Binary already contains a load command for that dylib. Continue anyway?"
                     );
-                    return false;
+                    if !cont_anyway {
+                        return false;
+                    }
                 }
             }
 
@@ -354,6 +362,7 @@ unsafe fn insert_dylib(
     dylib_path: *const c_char,
     slice_size: &mut off_t,
     weak: bool,
+    cont_anyway: bool,
 ) -> bool {
     fseeko(f, header_offset, SEEK_SET);
 
@@ -378,6 +387,7 @@ unsafe fn insert_dylib(
         commands_offset,
         dylib_path,
         slice_size,
+        cont_anyway,
     );
     if !cont {
         return true;
@@ -424,8 +434,10 @@ unsafe fn insert_dylib(
     }
 
     if !empty {
-        dprintln!("It doesn't seem like there is enough empty space.");
-        return false;
+        dprintln!("It doesn't seem like there is enough empty space. Continue anyway?");
+        if !cont_anyway {
+            return false;
+        }
     }
 
     fseeko(f, -(cmdsize as off_t), SEEK_CUR);
@@ -453,7 +465,7 @@ unsafe fn insert_dylib(
 /// the action will break signature of `binary_path`. To use `LC_LOAD_WEAK_DYLIB`,
 /// set `weak` to true.
 ///
-pub unsafe fn insert(dylib_path: &str, binary_path: &str, weak: bool) -> bool {
+pub unsafe fn insert(dylib_path: &str, binary_path: &str, weak: bool, cont_anyway: bool) -> bool {
     let dylib_path = [dylib_path, "\0"].join("");
     let binary_path = [binary_path, "\0"].join("");
 
@@ -530,6 +542,7 @@ pub unsafe fn insert(dylib_path: &str, binary_path: &str, weak: bool) -> bool {
                     dylib_path.as_ptr() as *const i8,
                     &mut slice_size,
                     weak,
+                    cont_anyway,
                 );
                 if !r {
                     dprintln!("Failed to add {} to arch #{}!", lc_name, i + 1);
@@ -579,9 +592,16 @@ pub unsafe fn insert(dylib_path: &str, binary_path: &str, weak: bool) -> bool {
         }
 
         MH_MAGIC_64 | MH_CIGAM_64 | MH_MAGIC | MH_CIGAM => {
-            if insert_dylib(f, 0, dylib_path.as_ptr() as *const i8, &mut file_size, weak) {
+            if insert_dylib(
+                f,
+                0,
+                dylib_path.as_ptr() as *const i8,
+                &mut file_size,
+                weak,
+                cont_anyway,
+            ) {
                 ftruncate(fileno(f), file_size);
-                dprintln!("Added {} to {}\n", lc_name, binary_path);
+                dprintln!("Added {} to {}", lc_name, binary_path);
             } else {
                 dprintln!("Failed to add {}!", lc_name);
                 success = false;
