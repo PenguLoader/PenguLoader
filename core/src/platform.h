@@ -1,5 +1,8 @@
-#ifndef _PLATFORM_H_
-#define _PLATFORM_H_
+#pragma once
+
+#ifdef __cplusplus
+class __platform__;
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -42,6 +45,4 @@
 
 #ifndef NDEBUG
 #define _DEBUG 1
-#endif
-
 #endif
