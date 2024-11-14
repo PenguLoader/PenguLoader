@@ -1,0 +1,26 @@
+{
+  "languages": [
+    {
+      "id": "en",
+      "name": "English",
+      "translations": {
+        "welcome": "Welcome",
+        "choose_lang": "Choose your language",
+        "accept_tos": "Accept terms and conditions",
+        "tos_content": "Pengu Loader is SAFE, but using exploit plugins could get you banned.",
+        "get_started": "Get Started"
+      }
+    },
+    {
+      "id": "vi",
+      "name": "Tiếng Việt",
+      "translations": {
+        "welcome": "Xin Chào",
+        "choose_lang": "Chọn ngôn ngữ",
+        "accept_tos": "Tôi đồng với ý các điều khoản",
+        "tos_content": "Pengu Loader an toàn, nhưng sử dụng các plugin khai thác lỗ hổng có thể bị khóa tài khoản.",
+        "get_started": "Bắt Đầu"
+      }
+    }
+  ]
+}

@@ -43,40 +43,40 @@
     <ClCompile Include="src\renderer\renderer.cc">
       <Filter>src\renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\utils\file.cc">
-      <Filter>src\utils</Filter>
+    <ClCompile Include="src\dllproxy.cc">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\utils\misc.cc">
-      <Filter>src\utils</Filter>
+    <ClCompile Include="src\browser\keyboard.cc">
+      <Filter>src\browser</Filter>
     </ClCompile>
-    <ClCompile Include="src\renderer\datastore.cc">
+    <ClCompile Include="src\renderer\v8_datastore.cc">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\v8_helper.cc">
       <Filter>src\renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\utils\cefstr.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
-    <ClCompile Include="src\dllproxy.cc">
-      <Filter>src</Filter>
+    <ClCompile Include="src\utils\dylib.cc">
+      <Filter>src\utils</Filter>
     </ClCompile>
-    <ClCompile Include="src\renderer\winbrancy.cc">
-      <Filter>src\renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="src\browser\keyboard.cc">
-      <Filter>src\browser</Filter>
-    </ClCompile>
-    <ClCompile Include="src\renderer\fs.cc">
-      <Filter>src\renderer</Filter>
+    <ClCompile Include="src\utils\file.cc">
+      <Filter>src\utils</Filter>
     </ClCompile>
     <ClCompile Include="src\utils\shell.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
-    <ClCompile Include="src\utils\dialog.cc">
+    <ClCompile Include="src\utils\window.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def">
       <Filter>res</Filter>
+    </None>
+    <None Include="src\utils\cocoa.mm">
+      <Filter>src\utils</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -85,7 +85,19 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\commons.h">
+    <ClInclude Include="src\hook.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\v8_wrapper.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\browser\browser.h">
+      <Filter>src\browser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\platform.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pengu.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

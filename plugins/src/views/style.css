@@ -1,12 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-
 body {
   position: relative;
 }
 
 #pengu-root {
   font-size: .875rem;
-  font-family: 'Inter', sans-serif;
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 div[id^=index_loading_div] {
@@ -31,7 +29,7 @@ div[id^=index_loading_div]:after {
   margin-top: 32px;
   content: "Pengu-Powered";
   color: #e2e1e1;
-  font-family: 'Open Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1rem;
   text-transform: uppercase;
 }

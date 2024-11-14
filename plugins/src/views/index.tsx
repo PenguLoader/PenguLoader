@@ -1,11 +1,11 @@
 /* @refresh reload */
 import { render } from 'solid-js/web';
-import App from './App.tsx';
+import App from './App';
 import './style.css';
 
 import install from '@twind/with-web-components';
 import config from '../../twind.config';
-import { loadTranslation } from './lib/i18n.ts';
+import { loadTranslation } from './lib/i18n';
 
 const rootId = 'pengu-root';
 const withTwind = install(config);

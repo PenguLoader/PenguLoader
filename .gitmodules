@@ -1,4 +1,4 @@
-[submodule "core/include"]
-	path = core/include
-	url = https://github.com/nomi-san/cef-include.git
-	branch = 91.1.22-win
+[submodule "core/cef"]
+	path = core/cef
+	url = https://github.com/PenguLoader/cef-headers.git
+	branch = 5359

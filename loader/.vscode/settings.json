@@ -1,0 +1,16 @@
+{
+  "files.exclude": {
+    "dist/": true,
+    "node_modules/": true,
+    "src-tauri/target": true,
+  },
+  "editor.tabSize": 2,
+  "typescript.preferences.quoteStyle": "single",
+  "typescript.format.semicolons": "remove",
+  "javascript.preferences.quoteStyle": "single",
+  // "rust-analyzer.checkOnSave": true,
+  // "rust-analyzer.diagnostics.enable": true,
+  "[rust]": {
+    "editor.tabSize": 4,
+  },
+}
