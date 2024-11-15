@@ -12,6 +12,6 @@ interface Native {
   SetWindowTheme: (dark: boolean) => void;
   SetWindowVibrancy: (kind: number | null, state?: number) => void;
 
-  LoadDataStore: () => string;
-  SaveDataStore: (data: string) => void;
+  LoadDataStore: () => Promise<string>;
+  SaveDataStore: (data: string) => Promise<void>;
 }

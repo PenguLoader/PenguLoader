@@ -1,51 +1,57 @@
 import { native } from './native';
 
-let data_: Map<string, any>;
+let data_ = new Map<string, any>();
 
-function data() {
+async function initDataStore() {
   if (data_ === undefined) {
     try {
-      var object = JSON.parse(native.LoadDataStore());
+      const json = await native.LoadDataStore();
+      const object = JSON.parse(json);
       data_ = new Map(Object.entries(object));
     } catch {
-      data_ = new Map();
+      console.warn('Failed to parse DataStore, empty data will be used.');
     }
   }
   return data_;
 }
 
-function commit() {
-  var object = Object.fromEntries(data_);
-  native.SaveDataStore(JSON.stringify(object));
+async function commit() {
+  const object = Object.fromEntries(data_);
+  const json = JSON.stringify(object);
+  await native.SaveDataStore(json);
 }
 
 window.DataStore = {
 
   has(key) {
-    return data().has(String(key));
+    return data_.has(String(key));
   },
 
   get(key, fallback) {
     if (typeof key !== 'string') {
       return undefined;
-    } else if (data().has(key)) {
-      return data().get(key);
+    } else if (data_.has(key)) {
+      return data_.get(key);
     }
     return fallback;
   },
 
-  set(key, value) {
+  async set(key, value) {
     if (typeof key !== 'string') {
       return false;
     }
-    data().set(String(key), value);
-    commit();
+    data_.set(String(key), value);
+    await commit();
     return true;
   },
 
-  remove(key) {
-    var result = data().delete(String(key));
-    commit();
+  async remove(key) {
+    let result = data_.delete(String(key));
+    await commit();
     return result;
   }
+}
+
+export {
+  initDataStore
 }

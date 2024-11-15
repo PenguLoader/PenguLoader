@@ -1,4 +1,5 @@
 import { rcp, socket } from './rcp';
+import { initDataStore } from './api/DataStore';
 
 const plugins = window.Pengu.plugins
 
@@ -73,9 +74,10 @@ async function loadPlugin(entry: string) {
 }
 
 // Load all plugins asynchronously
-const waitable = Promise.all(
-  plugins.map(loadPlugin)
-);
+const waitable = Promise.all([
+  initDataStore(),
+  ...plugins.map(loadPlugin)
+]);
 
 // Listen for the first rcp, it's also the first listener
 rcp.preInit('rcp-fe-common-libs', async function () {

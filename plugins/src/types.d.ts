@@ -42,8 +42,8 @@ interface Toast {
 interface DataStore {
   has: (key: string) => boolean
   get: <T>(key: string, fallback?: T) => T | undefined
-  set: (key: string, value: any) => boolean
-  remove: (key: string) => boolean
+  set: (key: string, value: any) => Promise<boolean>
+  remove: (key: string) => Promise<boolean>
 }
 
 interface ApplyEffectFn {
