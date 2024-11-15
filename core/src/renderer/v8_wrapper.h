@@ -1,6 +1,4 @@
-#ifndef _V8_WRAPPER_H_
-#define _V8_WRAPPER_H_
-
+#pragma once
 #include "include/capi/cef_v8_capi.h"
 
 struct V8ValueBase
@@ -27,6 +25,7 @@ struct V8Value : V8ValueBase
     inline bool isObject() { return _.is_object(&_); }
     inline bool isArray() { return _.is_array(&_); }
     inline bool isFunction() { return _.is_function(&_); }
+    inline bool isPromise() { return _.is_promise(&_); }
 
     inline bool asBool() { return _.get_bool_value(&_); }
     inline int asInt() { return _.get_int_value(&_); }
@@ -36,6 +35,7 @@ struct V8Value : V8ValueBase
 
     inline struct V8Array *asArray() { return reinterpret_cast<struct V8Array *>(&_); }
     inline struct V8Object *asObject() { return reinterpret_cast<struct V8Object *>(&_); }
+    inline struct V8Promise *asPromise() { return reinterpret_cast<struct V8Promise *>(&_); }
 
     static inline V8Value *undefined()
     {
@@ -119,6 +119,34 @@ struct V8Object : V8ValueBase
     }
 };
 
+struct V8Promise : V8ValueBase
+{
+    inline void addRef()
+    {
+        _.base.add_ref(&_.base);
+    }
+
+    inline bool release()
+    {
+        return _.base.release(&_.base);
+    }
+
+    inline bool resolve(V8Value *arg)
+    {
+        return _.resolve_promise(&_, (cef_v8value_t *)arg);
+    }
+
+    inline bool reject(const cef_string_t *err)
+    {
+        return _.reject_promise(&_, err);
+    }
+
+    static inline V8Promise *create()
+    {
+        return (V8Promise *)cef_v8value_create_promise();
+    }
+};
+
 typedef V8Value *(*V8FunctionHandler)(V8Value *const argv[], int argc);
 
 struct V8HandlerFunctionEntry
@@ -126,5 +154,3 @@ struct V8HandlerFunctionEntry
     const char *name;
     V8FunctionHandler func;
 };
-
-#endif
