@@ -26,7 +26,7 @@ namespace PenguLoader
             ShowInTaskbar = true;
 
             btnPlugins.Content = $"Open plugins ({Plugins.CountEntries()})";
-            txtVersion.Text = $"v{Version.VERSION}.{Version.BUILD_NUMBER}";
+            txtVersion.Text = $"v{Program.VERSION}";
         }
 
         private void InitializeButtons()

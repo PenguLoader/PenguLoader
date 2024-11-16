@@ -15,6 +15,8 @@ namespace PenguLoader
         public static string GithubUrl => $"https://github.com/{GithubRepo}";
         public static string GithubIssuesUrl => $"https://github.com/{GithubRepo}/issues";
 
+        public const string VERSION = "1.1.6";
+
         [STAThread]
         private static int Main(string[] args)
         {

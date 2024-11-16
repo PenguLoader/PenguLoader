@@ -124,8 +124,8 @@ namespace PenguLoader.Main
                     if (vtag.StartsWith("v"))
                         vtag = vtag.Substring(1);
 
-                    var remote = new System.Version(vtag);
-                    var local = new System.Version(Version.VERSION);
+                    var remote = new Version(vtag);
+                    var local = new Version(Program.VERSION);
 
                     if (remote.CompareTo(local) > 0)
                     {
