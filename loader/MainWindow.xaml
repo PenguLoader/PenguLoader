@@ -8,7 +8,7 @@
     xmlns:local="clr-namespace:PenguLoader"
     xmlns:views="clr-namespace:PenguLoader.Views"
     mc:Ignorable="d"
-    Height="300" Width="500"
+    Height="320" Width="540"
     ResizeMode="CanMinimize"
     BorderThickness="0"
     WindowStyle="None"

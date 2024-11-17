@@ -153,6 +153,7 @@ namespace PenguLoader.Views
         {
             var fbd = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog();
             fbd.Description = "Select Riot Games, League of Legends or LeagueClient folder.";
+            fbd.UseDescriptionForTitle = true;
 
             if (fbd.ShowDialog() == true && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
             {
