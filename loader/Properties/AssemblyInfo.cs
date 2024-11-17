@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using System.Resources;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 
@@ -8,12 +6,16 @@ using System.Windows;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Pengu Loader")]
-[assembly: AssemblyDescription("A JavaScript plugin loader for League of Legends Client")]
-[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyDescription("The ultimate plugin loader for LoL Client")]
+#if DEBUG
+ [assembly: AssemblyConfiguration("Debug")]
+#else
+[assembly: AssemblyConfiguration("Release")]
+#endif
 [assembly: AssemblyCompany("GitHub, Inc.")]
 [assembly: AssemblyProduct("Pengu Loader")]
-[assembly: AssemblyCopyright("Copyright © 2023")]
-[assembly: AssemblyTrademark("Application")]
+[assembly: AssemblyCopyright("Copyright © 2024")]
+[assembly: AssemblyTrademark("Pengu Loader")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible
