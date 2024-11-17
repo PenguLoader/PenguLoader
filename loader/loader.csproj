@@ -29,18 +29,18 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
-    <ApplicationManifest>App.manifest</ApplicationManifest>
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
+    <ApplicationManifest>Properties\App.manifest</ApplicationManifest>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <AutoGenerateBindingRedirects>False</AutoGenerateBindingRedirects>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="Properties\App.config" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="icon.ico" />
+    <Resource Include="Resources\icon.ico" />
     <Resource Include="Resources\*.png" />
     <Resource Include="FodyWeavers.xml" />
   </ItemGroup>

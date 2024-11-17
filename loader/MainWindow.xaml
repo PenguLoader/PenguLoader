@@ -26,7 +26,7 @@
     <Grid>
         <ui:TitleBarControl
             VerticalAlignment="Top"
-            Icon="icon.ico"
+            Icon="Resources/icon.ico"
             IsIconVisible="False"
             IsActive="True"
             Background="{DynamicResource SystemControlForegroundChromeMediumBrush}"
@@ -40,13 +40,13 @@
             Focusable="False"
         >
             <TabControl.Items>
-                <TabItem Header="Loader">
+                <TabItem Header="Loader" Width="120">
                     <ui:TabItemHelper.Icon>
-                        <ui:BitmapIcon UriSource="icon.ico" ShowAsMonochrome="False" />
+                        <ui:BitmapIcon UriSource="Resources/icon.ico" ShowAsMonochrome="False" />
                     </ui:TabItemHelper.Icon>
                     <Frame Source="Views/MainPage.xaml" Focusable="False" />
                 </TabItem>
-                <TabItem Header="Plugins">
+                <TabItem Header="Plugins" Width="120">
                     <ui:TabItemHelper.Icon>
                         <Image Source="Resources/icon_js.png" />
                     </ui:TabItemHelper.Icon>
