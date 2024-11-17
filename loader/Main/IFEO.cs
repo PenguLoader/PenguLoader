@@ -3,18 +3,22 @@ using Microsoft.Win32;
 
 namespace PenguLoader.Main
 {
-    static class IFEO
+    internal static class IFEO
     {
-        private const string IFEO_PATH = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
-        private const string VALUE_NAME = "Debugger";
+        private static string IFEO_PATH => @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
+        private static string VALUE_NAME => "Debugger";
 
         public static string GetDebugger(string target)
         {
-            using (var key = OpenIFEOKey())
+            using (var key = OpenIFEOKey(writable: false))
             {
-                using (var image = key?.OpenSubKey(target))
+                if (key == null) return string.Empty;
+
+                using (var image = key.OpenSubKey(target))
                 {
-                    return image?.GetValue(VALUE_NAME) as string;
+                    if (image == null) return string.Empty;
+
+                    return image.GetValue(VALUE_NAME) as string;
                 }
             }
         }
@@ -49,6 +53,7 @@ namespace PenguLoader.Main
             }
         }
 
-        private static RegistryKey OpenIFEOKey(bool writable = false) => Registry.LocalMachine.OpenSubKey(IFEO_PATH, writable);
+        private static RegistryKey OpenIFEOKey(bool writable)
+            => Registry.LocalMachine.OpenSubKey(IFEO_PATH, writable);
     }
 }

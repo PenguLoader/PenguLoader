@@ -4,7 +4,7 @@ using System.IO;
 
 namespace PenguLoader.Main
 {
-    static class Utils
+    internal static class Utils
     {
         public static void OpenFolder(string path) => Process.Start("explorer.exe", $"\"{path}\"");
 
@@ -46,6 +46,13 @@ namespace PenguLoader.Main
         {
             if (!File.Exists(path))
                 File.Create(path).Close();
+        }
+
+        public static string NormalizePath(string path)
+        {
+            return Path.GetFullPath(new Uri(path).LocalPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                .ToUpperInvariant();
         }
     }
 }

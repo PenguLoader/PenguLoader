@@ -8,8 +8,11 @@ using System.Threading.Tasks;
 
 namespace PenguLoader.Main
 {
-    static class LCU
+    internal static class LCU
     {
+        public static string ClientProcessName => "LeagueClient.exe";
+        public static string ClientUxProcessName => "LeagueClientUx.exe";
+
         private static readonly HttpClient Http;
 
         static LCU()
@@ -19,16 +22,22 @@ namespace PenguLoader.Main
             ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
         }
 
-        public static bool IsRunning() => Process.GetProcessesByName("LeagueClientUx").Length > 0;
+        private static Process[] GetUxProcesses()
+        {
+            var name = ClientUxProcessName.Replace(".exe", "");
+            return Process.GetProcessesByName("LeagueClientUx");
+        }
+
+        public static bool IsRunning() => GetUxProcesses().Length > 0;
 
         public static string GetDir()
         {
-            var procs = Process.GetProcessesByName("LeagueClientUx");
+            var procs = GetUxProcesses();
+            if (procs.Length == 0)
+                return string.Empty;
 
-            if (procs.Length == 0) return "";
-
-            var lcux = procs[0];
-            return Directory.GetParent(lcux.MainModule.FileName).FullName;
+            var found = procs[0];
+            return Directory.GetParent(found.MainModule.FileName).FullName;
         }
 
         public static async Task<string> Request(string api, string method, string body = null)
@@ -93,6 +102,14 @@ namespace PenguLoader.Main
 
             port = pass = string.Empty;
             return false;
+        }
+
+        public static bool IsValidDir(string path)
+        {
+            return !string.IsNullOrEmpty(path)
+                && Directory.Exists(path)
+                && File.Exists(Path.Combine(path, ClientProcessName))
+                && File.Exists(Path.Combine(path, ClientUxProcessName));
         }
     }
 }

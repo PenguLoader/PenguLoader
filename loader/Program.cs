@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Windows;
 using PenguLoader.Main;
@@ -20,12 +19,30 @@ namespace PenguLoader
         [STAThread]
         private static int Main(string[] args)
         {
-            bool isUninstall = args.Contains("--uninstall");
-            bool createdNew;
+            var arg = args.Length > 0 ? args[0] : null;
 
-            using (var mutex = new Mutex(true, "989d2110-46da-4c8d-84c1-c4a42e43c424", out createdNew))
+            if (DataStore.IsDataStore(arg))
             {
-                return isUninstall ? HandleUninstall(createdNew) : RunApplication(createdNew);
+                DataStore.DumpDataStore(arg);
+                return 0;
+            }
+
+            using (var mutex = new Mutex(true, "989d2110-46da-4c8d-84c1-c4a42e43c424", out var createdNew))
+            {
+                if (arg != null)
+                {
+                    switch (arg)
+                    {
+                        case "--install":
+                            return HandleInstall(createdNew, true);
+                        case "--uninstall":
+                            return HandleInstall(createdNew, false);
+                        default:
+                            break;
+                    }
+                }
+
+                return RunApplication(createdNew);
             }
         }
 
@@ -48,16 +65,17 @@ namespace PenguLoader
             return 0;
         }
 
-        private static int HandleUninstall(bool createdNew)
+        private static int HandleInstall(bool createdNew, bool active)
         {
-            if (!createdNew || Module.IsLoaded())
+            if (!createdNew || Module.IsLoaded)
             {
-                MessageBox.Show("Please close the running League Client and Loader menu before uninstalling it.",
+                var action = active ? "installing" : "uninstalling";
+                MessageBox.Show($"Please close the running League Client and Loader menu before {action} it.",
                     Name, MessageBoxButton.OK, MessageBoxImage.Information);
                 return -1;
             }
 
-            Module.Deactivate();
+            Module.SetActive(active);
             return 0;
         }
 

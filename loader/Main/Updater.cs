@@ -85,7 +85,7 @@ namespace PenguLoader.Main
                 ZipFile.ExtractToDirectory(tempFile, updateDir);
                 Utils.DeletePath(tempFile);
 
-                while (Module.IsLoaded())
+                while (Module.IsLoaded)
                 {
                     MessageBox.Show("Please close your League of Legends Client to apply update.",
                         Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);

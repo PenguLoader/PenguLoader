@@ -1,22 +1,37 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
+using System.Windows;
 
 namespace PenguLoader.Main
 {
-    static class DataStore
+    internal static class DataStore
     {
-        public static void Dump()
+        public static bool IsDataStore(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            return Path.GetFileName(path).Equals("datastore", StringComparison.OrdinalIgnoreCase)
+                && File.Exists(path);
+        }
+
+        public static void DumpDataStore(string path)
         {
             try
             {
-                var bytes = File.ReadAllBytes(Config.DataStorePath);
-                Transform(bytes);
+                var output = Path.GetTempFileName();
+                var bytes = File.ReadAllBytes(path);
 
-                var text = Encoding.UTF8.GetString(bytes);
-                var output = Config.DataStorePath + ".d";
-                File.WriteAllText(output, text);
+                if (bytes.Length == 0)
+                {
+                    MessageBox.Show("Your DataStore is empty!",
+                        Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                Transform(bytes);
+                File.WriteAllBytes(output, bytes);
 
                 Process.Start(new ProcessStartInfo
                 {
@@ -27,19 +42,21 @@ namespace PenguLoader.Main
             }
             catch
             {
+                MessageBox.Show($"Failed to dump DataStore from path: {path}",
+                    Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
         static void Transform(byte[] bytes)
         {
-            if (bytes == null || bytes.Length == 0)
-                return;
+            const string KEY = "A5dgY6lz9fpG9kGNiH1mZ";
 
-            const string key = "A5dgY6lz9fpG9kGNiH1mZ";
-
-            for (int i = 0; i < bytes.Length; i++)
+            if (bytes != null && bytes.Length > 0)
             {
-                bytes[i] ^= (byte)key[i % key.Length];
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] ^= (byte)KEY[i % KEY.Length];
+                }
             }
         }
     }
