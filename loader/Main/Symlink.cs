@@ -14,11 +14,7 @@ namespace PenguLoader.Main
 
         public static string Resolve(string path)
         {
-            if (!File.Exists(path))
-                return string.Empty;
-
-            var info = new FileInfo(path);
-            if (!info.Attributes.HasFlag(FileAttributes.ReparsePoint))
+            if (!IsSymlink(path))
                 return path;
 
             var h = CreateFile(path,
@@ -61,7 +57,7 @@ namespace PenguLoader.Main
 
         [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode)]
         private static extern uint GetFinalPathNameByHandle(IntPtr hFile,
-            [MarshalAs(UnmanagedType.LPTStr)] StringBuilder lpszFilePath, int cchFilePath, uint dwFlags);
+            [MarshalAs(UnmanagedType.LPWStr)] StringBuilder lpszFilePath, int cchFilePath, uint dwFlags);
 
         [DllImport("kernel32.dll", EntryPoint = "CloseHandle")]
         [return: MarshalAs(UnmanagedType.Bool)]
