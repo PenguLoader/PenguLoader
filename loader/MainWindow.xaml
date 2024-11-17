@@ -87,7 +87,7 @@
                 Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
                 Focusable="False" HorizontalAlignment="Right" Margin="0,90,25,0" VerticalAlignment="Top" Width="150"
             />
-            <TextBlock x:Name="txtVersion" Margin="112,-26,0,0" TextWrapping="Wrap" Text="v0.0.0"
+            <TextBlock x:Name="txtVersion" Margin="112,-26,0,0" TextWrapping="Wrap"
                 TextAlignment="Left" FontSize="13" VerticalAlignment="Top" HorizontalAlignment="Left" Width="108" Height="19"/>
             <Button
                 x:Name="btnDiscord"
