@@ -8,7 +8,6 @@
     mc:Ignorable="d" 
     
     xmlns:ui="http://schemas.modernwpf.com/2019"
-    xmlns:fa5="http://schemas.fontawesome.com/icons/"
     d:DesignHeight="260" d:DesignWidth="450"
     
     Background="{DynamicResource SystemControlPageBackgroundAltHighBrush}"
@@ -22,11 +21,9 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
-        <fa5:ImageAwesome
-            Width="20" Height="20" Icon="Solid_Plug"
-            Spin="{Binding Path=IsLoading}"
-            Visibility="{Binding Path=IsLoading, Converter={StaticResource BoolToVis}}"
-            Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
+        <TextBlock
+            Text="Loading..." FontSize="14"
+            Visibility="{Binding Path=IsLoading, Converter={StaticResource BoolToVis}}" HorizontalAlignment="Center" VerticalAlignment="Center"
         />
         <ListView Grid.Row="0" x:Name="_plugins" VirtualizingPanel.VirtualizationMode="Recycling" SelectionMode="Single" VerticalAlignment="Center" />
         <Grid Grid.Row="1" Background="#2AAA">

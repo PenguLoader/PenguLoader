@@ -29,7 +29,7 @@ namespace PenguLoader.Main
             return Process.GetProcessesByName("LeagueClientUx");
         }
 
-        public static bool IsRunning() => GetUxProcesses().Length > 0;
+        public static bool IsRunning => GetUxProcesses().Length > 0;
 
         public static string GetDir()
         {

@@ -11,7 +11,6 @@
     mc:Ignorable="d" 
     
     xmlns:ui="http://schemas.modernwpf.com/2019"
-    xmlns:fa5="http://schemas.fontawesome.com/icons/"
     d:DesignHeight="270" d:DesignWidth="500"
     
     Background="{DynamicResource SystemControlPageBackgroundAltHighBrush}"
@@ -27,10 +26,9 @@
         <Grid Grid.Row="0">
             <TextBlock HorizontalAlignment="Left" FontSize="14" FontWeight="SemiBold" Height="20" VerticalAlignment="Bottom" Margin="20,0,0,0">
                 <TextBlock.Text>
-                    <MultiBinding StringFormat=" {0} v{1} #{2}">
+                    <MultiBinding StringFormat=" {0} v{1}">
                         <Binding Source="{x:Static root:Program.Name}" Path="." />
                         <Binding Source="{x:Static root:Program.VERSION}" Path="." />
-                        <Binding Source="{x:Static root:Program.CommitSha1}" Path="." />
                     </MultiBinding>
                 </TextBlock.Text>
             </TextBlock>
@@ -41,30 +39,27 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <Button Click="HomePageButtonClick" Background="Transparent" BorderBrush="#6888" Focusable="False" HorizontalAlignment="Stretch" Margin="20,5">
+                    <TextBlock Text="https://pengu.lol" />
+                </Button>
                 <Grid Margin="20,5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Button Click="DiscordButtonClick" Grid.Column="0" Background="Transparent" BorderBrush="#6888" Focusable="False" HorizontalAlignment="Stretch" Margin="0">
-                        <TextBlock>Discord<fa5:ImageAwesome
-                        Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                        Icon="Brands_Discord" Width="14" Margin="5,0,0,-1" />
-                        </TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="/Resources/icon_discord.png" Width="16" Height="16" />
+                            <TextBlock Text="Discord" Margin="8,0,0,0" />
+                        </StackPanel>
                     </Button>
                     <Button Click="GitHubButtonClick" Grid.Column="1" Background="Transparent" BorderBrush="#6888" Focusable="False" HorizontalAlignment="Stretch" Margin="5,0,0,0">
-                        <TextBlock>GitHub<fa5:ImageAwesome
-                        Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                        Icon="Brands_Github" Width="14" Margin="5,0,0,-1" />
-                        </TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="/Resources/icon_github.png" Width="16" Height="16" />
+                            <TextBlock Text="GitHub" Margin="8,0,0,0" />
+                        </StackPanel>
                     </Button>
                 </Grid>
-                <Button Click="HomePageButtonClick" Background="Transparent" BorderBrush="#6888" Focusable="False" HorizontalAlignment="Stretch" Margin="20,5">
-                    <TextBlock>Pengu.lol <fa5:ImageAwesome
-                        Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}"
-                        Icon="Solid_Link" Width="14" Margin="5,0,0,-1" />
-                    </TextBlock>
-                </Button>
                 <ComboBox
                     ItemsSource="{Binding Source={x:Static root:App.Languages}}"
                     SelectedItem="{Binding Path=(root:App.Language), Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -87,7 +82,7 @@
                 Cursor="Hand" MouseEnter="LeaguePath_MouseEnter" MouseLeave="LeaguePath_MouseLeave" MouseUp="LeaguePath_MouseUp"
             >
                 <TextBlock FontWeight="SemiBold" Text="League path" Margin="0,0,8,0" />
-                <TextBlock x:Name="tLeaguePath" Text="D:\Riot Games\League of Legend" />
+                <TextBlock x:Name="tLeaguePath" Text="..." />
             </TextBlock>
         </Grid>
         <Grid Grid.Row="3" Background="#2AAA">

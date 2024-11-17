@@ -70,17 +70,17 @@ namespace PenguLoader.Views
                     return;
                 }
 
-                if (!Utils.IsAdmin())
-                {
-                    MessageBox.Show(Owner, "Failed to perform activation, please make sure you are running Pengu Loader as Admin.",
-                        Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+                //if (!Utils.IsAdmin())
+                //{
+                //    MessageBox.Show(Owner, "Failed to perform activation, please make sure you are running Pengu Loader as Admin.",
+                //        Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
 
-                    return;
-                }
+                //    return;
+                //}
 
                 try
                 {
-                    if (Module.UseSymlink && !LCU.IsValidDir(Config.LeaguePath))
+                    if (Config.UseSymlink && !LCU.IsValidDir(Config.LeaguePath))
                     {
                         if (!DoSelectLeaguePath())
                             return;
@@ -120,7 +120,7 @@ namespace PenguLoader.Views
         {
             InitializeComponent();
 
-            if (Module.UseSymlink)
+            if (Config.UseSymlink)
             {
                 SetLeaguePath(Config.LeaguePath);
                 gLeaguePath.Visibility = Visibility.Visible;
@@ -146,37 +146,36 @@ namespace PenguLoader.Views
 
         private void HomePageButtonClick(object sender, RoutedEventArgs e)
         {
-            Utils.OpenLink(Program.HomePageUrl);
+            Utils.OpenLink(Program.HomepageUrl);
         }
 
         bool DoSelectLeaguePath()
         {
-            using (var fbd = new Forms.FolderBrowserDialog())
+            var fbd = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog();
+            fbd.Description = "Select Riot Games, League of Legends or LeagueClient folder.";
+
+            if (fbd.ShowDialog() == true && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
             {
-                fbd.Description = "Select Riot Games, League of Legends or LeagueClient folder.";
-                if (fbd.ShowDialog() == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+                var path = fbd.SelectedPath;
+                var selected = fbd.SelectedPath;
+
+                if (LCU.IsValidDir(path)) { }
+                else if (LCU.IsValidDir(path = Path.Combine(selected, "LeagueClient"))) { }
+                else if (LCU.IsValidDir(path = Path.Combine(selected, "League of Legends"))) { }
+                else if (LCU.IsValidDir(path = Path.Combine(selected, "Riot Games", "League of Legends"))) { }
+                else
                 {
-                    var path = fbd.SelectedPath;
-                    var selected = fbd.SelectedPath;
-
-                    if (LCU.IsValidDir(path)) { }
-                    else if (LCU.IsValidDir(path = Path.Combine(selected, "LeagueClient"))) { }
-                    else if (LCU.IsValidDir(path = Path.Combine(selected, "League of Legends"))) { }
-                    else if (LCU.IsValidDir(path = Path.Combine(selected, "Riot Games", "League of Legends"))) { }
-                    else
-                    {
-                        MessageBox.Show(Owner, "Your selected folder is not valid, please make sure it contains \"LeagueClient.exe\".",
-                            Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return false;
-                    }
-
-                    Config.LeaguePath = path;
-                    SetLeaguePath(path);
-                    return true;
+                    MessageBox.Show(Owner, "Your selected folder is not valid, please make sure it contains \"LeagueClient.exe\".",
+                        Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
                 }
 
-                return false;
+                Config.LeaguePath = path;
+                SetLeaguePath(path);
+                return true;
             }
+
+            return false;
         }
 
         void SetLeaguePath(string path)

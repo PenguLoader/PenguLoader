@@ -5,7 +5,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.modernwpf.com/2019"
-    xmlns:fa5="http://schemas.fontawesome.com/icons/"
     xmlns:local="clr-namespace:PenguLoader"
     xmlns:views="clr-namespace:PenguLoader.Views"
     mc:Ignorable="d"
@@ -49,7 +48,7 @@
                 </TabItem>
                 <TabItem Header="Plugins">
                     <ui:TabItemHelper.Icon>
-                        <fa5:ImageAwesome Icon="Brands_Js" Foreground="#e4a228" />
+                        <Image Source="Resources/icon_js.png" />
                     </ui:TabItemHelper.Icon>
                     <Frame Source="Views/PluginsPage.xaml" Focusable="False" />
                 </TabItem>
@@ -63,7 +62,7 @@
             VerticalAlignment="Top"
             HorizontalAlignment="Right"
         >
-            <fa5:ImageAwesome Icon="Solid_Adjust" Width="12" Foreground="{DynamicResource SystemControlBackgroundBaseMediumHighBrush}" />
+            <Image Source="Resources/icon_theme.png" Width="16" Height="16" />
         </ui:TitleBarButton>
     </Grid>
 </Window>

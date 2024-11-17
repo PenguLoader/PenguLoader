@@ -41,6 +41,7 @@
 
   <ItemGroup>
     <Resource Include="icon.ico" />
+    <Resource Include="Resources\*.png" />
     <Resource Include="FodyWeavers.xml" />
   </ItemGroup>
 
@@ -71,9 +72,6 @@
       <Version>4.2.1</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="FontAwesome.WPF">
-      <Version>4.7.0.9</Version>
     </PackageReference>
     <PackageReference Include="ModernWpfUI">
       <Version>0.9.6</Version>
