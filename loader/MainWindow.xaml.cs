@@ -68,11 +68,11 @@ namespace PenguLoader
                 : ApplicationTheme.Light;
         }
 
-        private void BtnAssets_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.AssetsDir);
+        private void BtnAssets_Click(object sender, RoutedEventArgs e) { } // => Utils.OpenFolder(Config.AssetsDir);
 
         private void BtnPlugins_Click(object sender, RoutedEventArgs e) => Utils.OpenFolder(Config.PluginsDir);
 
-        private void BtnDataStore_Click(object sender, RoutedEventArgs e) => DataStore.Dump();
+        private void BtnDataStore_Click(object sender, RoutedEventArgs e) => DataStore.DumpDataStore(Config.DataStorePath);
 
         private void BtnActivate_Toggled(object sender, RoutedEventArgs e)
         {
@@ -98,13 +98,13 @@ namespace PenguLoader
 
         private void ToggleActivation()
         {
-            if (!Module.IsActivated())
+            if (!Module.IsActivated)
             {
-                if (!Module.Exists())
+                if (!Module.IsFound)
                 {
                     ShowMessage("Failed to activate the Loader: \"core.dll\" not found.", Program.Name, MessageBoxImage.Error);
                 }
-                else if (Module.Activate())
+                else if (Module.SetActive(true))
                 {
                     PromptRestart("The Loader has been activated successfully.", false);
                 }
@@ -115,7 +115,7 @@ namespace PenguLoader
             }
             else
             {
-                Module.Deactivate();
+                Module.SetActive(false);
                 PromptRestart("The Loader has been deactivated successfully.", true);
             }
         }
@@ -127,7 +127,7 @@ namespace PenguLoader
 
         private void PromptRestart(string message, bool isDeactivaed)
         {
-            if ((LCU.IsRunning() && !isDeactivaed) || (Module.IsLoaded() && isDeactivaed))
+            if ((LCU.IsRunning() && !isDeactivaed) || (Module.IsLoaded && isDeactivaed))
             {
                 if (MessageBox.Show(this, "Do you want to restart the running League of Legends Client now?",
                     Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
@@ -145,7 +145,7 @@ namespace PenguLoader
         void UpdateActiveState()
         {
             btnActivate.Toggled -= BtnActivate_Toggled;
-            btnActivate.IsOn = Module.IsActivated();
+            btnActivate.IsOn = Module.IsActivated;
             btnActivate.Toggled += BtnActivate_Toggled;
         }
 

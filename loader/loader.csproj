@@ -9,8 +9,8 @@
     <UseWPF>true</UseWPF>
     <ErrorReport>prompt</ErrorReport>
     <Prefer32Bit>false</Prefer32Bit>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -18,18 +18,21 @@
     <AssemblyName>Pengu Loader</AssemblyName>
     <RootNamespace>PenguLoader</RootNamespace>
     <StartupObject>PenguLoader.Program</StartupObject>
+	<SignAssembly>true</SignAssembly>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <OutputType>WinExe</OutputType>
-    <DebugSymbols>false</DebugSymbols>
-    <Deterministic>true</Deterministic>
+	<DebugType>none</DebugType>
+	<DebugSymbols>false</DebugSymbols>
+	<Deterministic>true</Deterministic>
   </PropertyGroup>
 
   <PropertyGroup>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <ApplicationManifest>App.manifest</ApplicationManifest>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <AutoGenerateBindingRedirects>False</AutoGenerateBindingRedirects>
   </PropertyGroup>
 
   <ItemGroup>
