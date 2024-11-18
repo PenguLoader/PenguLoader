@@ -1,5 +1,7 @@
 #include "browser.h"
+#include <functional>
 #include <unordered_set>
+#include "include/capi/cef_task_capi.h"
 #include "include/capi/cef_parser_capi.h"
 #include "include/capi/cef_scheme_capi.h"
 #include "include/capi/cef_stream_capi.h"
@@ -58,8 +60,19 @@ static const auto SCRIPT_IMPORT_CSS = R"(
 
 static const auto SCRIPT_IMPORT_JSON = R"(
 const url = import.meta.url.replace(/\?.*$/, '');
-const content = await fetch(url).then(r => r.text());
-export default JSON.parse(content);
+const json = await fetch(url).then(r => r.json());
+
+json.$write = async (space) => {
+    if (!space) {
+        space = '\t';
+    }
+    await fetch(url, {
+        method: 'PUT',
+        body: JSON.stringify(json, null, space),
+    });
+};
+
+export default json;
 )";
 
 static const auto SCRIPT_IMPORT_RAW = R"(
@@ -74,9 +87,8 @@ export default url;
 )";
 
 // Custom resource handler for local assets.
-class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
+struct AssetsResourceHandler : CefRefCount<cef_resource_handler_t>
 {
-public:
     AssetsResourceHandler()
         : CefRefCount(this)
         , stream_(nullptr)
@@ -103,6 +115,7 @@ private:
     std::string range_header_;
     std::u16string mime_;
     bool no_cache_;
+public:
 
     int _open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
     {
@@ -386,20 +399,116 @@ private:
     }
 };
 
+struct PluginBackgroundTask : CefRefCount<cef_task_t>
+{
+    std::function<void()> func_;
+
+    PluginBackgroundTask(std::function<void()> func) : CefRefCount(this), func_(func)
+    {
+        cef_bind_method(PluginBackgroundTask, execute);
+    }
+
+    void CEF_CALLBACK _execute()
+    {
+        func_();
+    }
+};
+
+struct PluginResourceWriter : CefRefCount<cef_resource_handler_t>
+{
+    void *data_;
+    size_t length_;
+    cef_stream_writer_t *writer_;
+
+    PluginResourceWriter() : CefRefCount(this), data_(nullptr), length_(0), writer_(nullptr)
+    {
+        cef_bind_method(PluginResourceWriter, open);
+        cef_bind_method(PluginResourceWriter, get_response_headers);
+    }
+
+    ~PluginResourceWriter()
+    {
+        if (writer_)
+            writer_->base.release(&writer_->base);
+
+        if (data_)
+            free(data_);
+    }
+
+    void parse_path(cef_request_t *request, std::u16string &path)
+    {
+        CefScopedStr url = request->get_url(request);
+        path.assign((char16_t *)url.str + 15, url.length - 15);
+
+        size_t pos;
+        if ((pos = path.rfind('?')) != std::u16string::npos)
+            path = path.substr(0, pos);
+
+        AssetsResourceHandler::decode_uri(path);
+        path = config::plugins_dir().u16string().append(path);
+    }
+
+    void parse_body(cef_request_t *request)
+    {
+        auto body = request->get_post_data(request);
+        size_t count = body->get_element_count(body);
+        auto elements = new cef_post_data_element_t *[count];
+
+        memset(elements, 0, count * sizeof(cef_post_data_element_t *));
+        body->get_elements(body, &count, elements);
+
+        length_ = elements[0]->get_bytes_count(elements[0]);
+        data_ = malloc(length_);
+        elements[0]->get_bytes(elements[0], length_, data_);
+
+        body->base.release(&body->base);
+    }
+
+    int CEF_CALLBACK _open(cef_request_t *request, int *handle_request, cef_callback_t *callback)
+    {
+        std::u16string path;
+        parse_path(request, path);
+        parse_body(request);
+
+        cef_string_t _path = CefStr::wrap(path);
+        writer_ = cef_stream_writer_create_for_file(&_path);
+
+        cef_post_task(TID_FILE_BACKGROUND, new PluginBackgroundTask([this, callback]
+            {
+                writer_->write(writer_, data_, 1, length_);
+                callback->cont(callback);
+            }));
+
+        *handle_request = false;
+        return 1;
+    }
+
+    void CEF_CALLBACK _get_response_headers(cef_response_t *response, int64 *response_length, cef_string_t *)
+    {
+        response->set_header_by_name(response, &u"Access-Control-Allow-Origin"_s, &u"*"_s, 1);
+        *response_length = 0;
+    }
+};
+
 struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
 {
     AssetsSchemeHandlerFactory() : CefRefCount(this)
     {
-        cef_scheme_handler_factory_t::create = create;
+        cef_bind_method(AssetsSchemeHandlerFactory, create);
     }
 
-    static cef_resource_handler_t* CEF_CALLBACK create(
-        struct _cef_scheme_handler_factory_t* self,
+    cef_resource_handler_t* CEF_CALLBACK _create(
         struct _cef_browser_t* browser,
         struct _cef_frame_t* frame,
         const cef_string_t* scheme_name,
         struct _cef_request_t* request)
     {
+        CefScopedStr method = request->get_method(request);
+        if (method.equal("PUT"))
+        {
+            return new PluginResourceWriter();
+        }
+
         return new AssetsResourceHandler();
     }
 };
