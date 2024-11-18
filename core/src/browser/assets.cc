@@ -10,9 +10,8 @@
 // BROWSER PROCESS ONLY.
 
 template <typename T>
-static constexpr uint32_t fnv32_1a(const T *in, size_t len)
+static constexpr uint32_t fnv32_1a(const T *in, size_t len, uint32_t hash = 2166136261u)
 {
-    uint32_t hash = 2166136261u;
     for (size_t i = 0; i < len; ++i) {
         hash ^= in[i];
         hash *= 16777619u;
@@ -69,6 +68,7 @@ json.$write = async (space) => {
     await fetch(url, {
         method: 'PUT',
         body: JSON.stringify(json, null, space),
+        headers: { 'x-hash': hash },
     });
 };
 
@@ -89,11 +89,20 @@ export default url;
 // Custom resource handler for local assets.
 struct AssetsResourceHandler : CefRefCount<cef_resource_handler_t>
 {
-    AssetsResourceHandler()
+    cef_stream_reader_t *stream_;
+    int64 offset_;
+    int64 length_;
+    std::string range_header_;
+    std::u16string mime_;
+    uint32_t hash_;
+    bool no_cache_;
+
+    AssetsResourceHandler(uint32_t hash)
         : CefRefCount(this)
         , stream_(nullptr)
         , offset_(0)
         , length_(0)
+        , hash_(hash)
         , no_cache_(false)
     {
         cef_bind_method(AssetsResourceHandler, open);
@@ -107,15 +116,6 @@ struct AssetsResourceHandler : CefRefCount<cef_resource_handler_t>
         if (stream_ != nullptr)
             stream_->base.release(&stream_->base);
     }
-
-private:
-    cef_stream_reader_t *stream_;
-    int64 offset_;
-    int64 length_;
-    std::string range_header_;
-    std::u16string mime_;
-    bool no_cache_;
-public:
 
     int _open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
     {
@@ -166,7 +166,8 @@ public:
 
         if (file::is_file(path))
         {
-            const char *module_code = nullptr;
+            std::string module_code{};
+
             if (request->get_resource_type(request) == RT_SCRIPT)
             {
                 if (query_part == u"url")
@@ -179,16 +180,21 @@ public:
                     if (ext == u"css")
                         module_code = SCRIPT_IMPORT_CSS;
                     else if (ext == u"json")
-                        module_code = SCRIPT_IMPORT_JSON;
+                    {
+                        module_code = "const hash = '";
+                        module_code += std::to_string(hash_);
+                        module_code += "';\n";
+                        module_code += SCRIPT_IMPORT_JSON;
+                    }
                     else if (KNOWN_ASSETS_SET.find(fnv32_1a(ext.c_str(), ext.length())) != KNOWN_ASSETS_SET.end())
                         module_code = SCRIPT_IMPORT_URL;
                 }
             }
 
-            if (module_code != nullptr)
+            if (!module_code.empty())
             {
                 js_mime = true;
-                stream_ = cef_stream_reader_create_for_data((void *)module_code, strlen(module_code));
+                stream_ = cef_stream_reader_create_for_data(module_code.data(), module_code.length());
             }
             else
             {
@@ -473,10 +479,16 @@ struct PluginResourceWriter : CefRefCount<cef_resource_handler_t>
         cef_string_t _path = CefStr::wrap(path);
         writer_ = cef_stream_writer_create_for_file(&_path);
 
+        callback->base.add_ref(&callback->base);
+
         cef_post_task(TID_FILE_BACKGROUND, new PluginBackgroundTask([this, callback]
             {
+                writer_->seek(writer_, 0, SEEK_SET);
                 writer_->write(writer_, data_, 1, length_);
+                writer_->flush(writer_);
+
                 callback->cont(callback);
+                callback->base.release(&callback->base);
             }));
 
         *handle_request = false;
@@ -492,8 +504,11 @@ struct PluginResourceWriter : CefRefCount<cef_resource_handler_t>
 
 struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
 {
+    std::unordered_set<uint32_t> signed_urls_;
+
     AssetsSchemeHandlerFactory() : CefRefCount(this)
     {
+        signed_urls_.clear();
         cef_bind_method(AssetsSchemeHandlerFactory, create);
     }
 
@@ -506,10 +521,37 @@ struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
         CefScopedStr method = request->get_method(request);
         if (method.equal("PUT"))
         {
-            return new PluginResourceWriter();
+            CefScopedStr x_hash = request->get_header_by_name(request, &u"x-hash"_s);
+            if (!x_hash.empty())
+            {
+                auto hash_str = x_hash.to_utf8();
+                uint32_t hash = strtoul(hash_str.c_str(), nullptr, 10);
+                if (signed_urls_.find(hash) != signed_urls_.end())
+                {
+                    return new PluginResourceWriter();
+                }
+            }
+
+            return nullptr;
         }
 
-        return new AssetsResourceHandler();
+        uint32_t hash = hash_request(request);
+        signed_urls_.insert(hash);
+
+        return new AssetsResourceHandler(hash);
+    }
+
+    static uint32_t hash_request(cef_request_t *req)
+    {
+        CefScopedStr url = req->get_url(req);
+        uint32_t type = (uint32_t)req->get_resource_type(req);
+        time_t now = time(nullptr);
+
+        uint32_t hash = fnv32_1a(url.str, url.length);
+        hash = fnv32_1a((const uint8_t *)&type, sizeof(uint32_t), hash);
+        hash = fnv32_1a((const uint8_t *)&now, sizeof(time_t), hash);
+
+        return hash;
     }
 };
 
