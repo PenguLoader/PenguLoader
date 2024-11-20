@@ -127,3 +127,16 @@ std::vector<path> file::read_dir(const path &dir)
 
     return files;
 }
+
+bool file::make_dir(const path &dir)
+{
+    bool success = false;
+
+#if OS_WIN
+    success = CreateDirectoryW(dir.c_str(), NULL) != FALSE;
+#elif OS_MAC
+    success = mkdir(dir.string().c_str(), 0777) == 0;
+#endif
+
+    return success;
+}

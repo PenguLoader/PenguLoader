@@ -401,6 +401,13 @@ namespace file
     /// @returns A vector of file paths.
     /// 
     std::vector<path> read_dir(const path &dir);
+
+    ///
+    /// Create a directory.
+    /// @param path Path to dir.
+    /// @returns true if success.
+    /// 
+    bool make_dir(const path &dir);
 }
 
 namespace dialog
