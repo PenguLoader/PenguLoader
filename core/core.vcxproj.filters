@@ -70,6 +70,12 @@
     <ClCompile Include="src\utils\window.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\browser\window.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\v8_filesystem.cc">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def">

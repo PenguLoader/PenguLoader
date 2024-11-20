@@ -56,6 +56,12 @@ static const auto SCRIPT_IMPORT_CSS = R"(
 })();
 )";
 
+static const auto SCRIPT_IMPORT_DIR = R"(
+const url = import.meta.url.replace(/\?.*$/, '');
+const dir = new DirectoryModule(url);
+export default dir;
+)";
+
 static const auto SCRIPT_IMPORT_JSON = R"(
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());
@@ -151,36 +157,35 @@ private:
             }
         }
 
-        if (file::is_file(path))
+        const char *module_code = nullptr;
+        if (request->get_resource_type(request) == RT_SCRIPT)
         {
-            const char *module_code = nullptr;
-            if (request->get_resource_type(request) == RT_SCRIPT)
+            if (query_part == u"url")
+                module_code = SCRIPT_IMPORT_URL;
+            else if (query_part == u"raw")
+                module_code = SCRIPT_IMPORT_RAW;
+            else if (query_part == u"dir")
+                module_code = SCRIPT_IMPORT_DIR;
+            else if ((pos = path.rfind('.')) != std::u16string::npos)
             {
-                if (query_part == u"url")
+                auto ext = path.substr(pos + 1);
+                if (ext == u"css")
+                    module_code = SCRIPT_IMPORT_CSS;
+                else if (ext == u"json")
+                    module_code = SCRIPT_IMPORT_JSON;
+                else if (KNOWN_ASSETS_SET.find(fnv32_1a(ext.c_str(), ext.length())) != KNOWN_ASSETS_SET.end())
                     module_code = SCRIPT_IMPORT_URL;
-                else if (query_part == u"raw")
-                    module_code = SCRIPT_IMPORT_RAW;
-                else if ((pos = path.rfind('.')) != std::u16string::npos)
-                {
-                    auto ext = path.substr(pos + 1);
-                    if (ext == u"css")
-                        module_code = SCRIPT_IMPORT_CSS;
-                    else if (ext == u"json")
-                        module_code = SCRIPT_IMPORT_JSON;
-                    else if (KNOWN_ASSETS_SET.find(fnv32_1a(ext.c_str(), ext.length())) != KNOWN_ASSETS_SET.end())
-                        module_code = SCRIPT_IMPORT_URL;
-                }
             }
+        }
 
-            if (module_code != nullptr)
-            {
-                js_mime = true;
-                stream_ = cef_stream_reader_create_for_data((void *)module_code, strlen(module_code));
-            }
-            else
-            {
-                stream_ = cef_stream_reader_create_for_file(&CefStr::wrap(path));
-            }
+        if (module_code != nullptr)
+        {
+            js_mime = true;
+            stream_ = cef_stream_reader_create_for_data((void *)module_code, strlen(module_code));
+        }
+        else if (file::is_file(path))
+        {
+            stream_ = cef_stream_reader_create_for_file(&CefStr::wrap(path));
         }
 
         if (stream_ != nullptr)

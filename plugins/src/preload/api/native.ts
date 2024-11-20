@@ -14,4 +14,8 @@ interface Native {
 
   LoadDataStore: () => Promise<string>;
   SaveDataStore: (data: string) => Promise<void>;
+
+  DirExists: (path: string) => Promise<boolean>;
+  DirFiles: (path: string) => Promise<string[]>;
+  DirReveal: (path: string, create: boolean) => void;
 }

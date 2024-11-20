@@ -11,6 +11,7 @@ static bool is_main_ = false;
 
 extern V8HandlerFunctionEntry v8_DataStoreEntries[];
 extern V8HandlerFunctionEntry v8_HelperEntries[];
+extern V8HandlerFunctionEntry v8_FileSystemEntries[];
 
 static std::vector<path> get_plugin_entries()
 {
@@ -126,6 +127,7 @@ static void ExposeNativeFunctions(V8Object *window)
     auto list = {
         v8_DataStoreEntries,
         v8_HelperEntries,
+        v8_FileSystemEntries,
     };
 
     for (auto &entries : list) {
