@@ -3,16 +3,13 @@ import { native } from './native';
 let data_ = new Map<string, any>();
 
 async function initDataStore() {
-  if (data_ === undefined) {
-    try {
-      const json = await native.LoadDataStore();
-      const object = JSON.parse(json);
-      data_ = new Map(Object.entries(object));
-    } catch {
-      console.warn('Failed to parse DataStore, empty data will be used.');
-    }
+  try {
+    const json = await native.LoadDataStore();
+    const object = JSON.parse(json);
+    data_ = new Map(Object.entries(object));
+  } catch {
+    console.warn('Failed to parse DataStore, empty data will be used.');
   }
-  return data_;
 }
 
 async function commit() {
