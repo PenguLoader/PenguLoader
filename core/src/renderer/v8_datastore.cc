@@ -49,7 +49,7 @@ static void save_datastore(cef_string_utf8_t *json)
 
 static V8Value *v8_load_datastore(V8Value *const args[], int argc)
 {
-    auto task = new V8Task();
+    auto task = new V8PromiseTask();
     return task->execute([task]
         {
             auto json = new cef_string_t{};
@@ -70,7 +70,7 @@ static V8Value *v8_save_datastore(V8Value *const args[], int argc)
 {
     cef_string_userfree_t json = args[0]->asString();
 
-    auto task = new V8Task();
+    auto task = new V8PromiseTask();
     return task->execute([task, json]
         {
             auto utf8 = new cef_string_utf8_t{};
