@@ -147,9 +147,9 @@ private:
                 V8Value *val = resolver_.value()();
                 promise_->resolve_promise(promise_, val->ptr());
             }
-            catch (const std::exception &ex)
+            catch (const std::string &err)
             {
-                CefStr msg(ex.what());
+                CefStr msg(err);
                 promise_->reject_promise(promise_, &msg);
             }
         }
@@ -199,7 +199,7 @@ public:
     {
         resolve([err]() -> V8Value *
             {
-                throw new std::exception(err.c_str());
+                throw new std::string(err.c_str());
             }
         );
     }
