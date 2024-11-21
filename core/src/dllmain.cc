@@ -165,23 +165,24 @@ __attribute__((constructor)) static void dllmain(int argc, const char **argv)
     std::string prog(argv[0]);
     prog = prog.substr(prog.rfind('/') + 1);
 
-    if (prog == "LeagueClientUx") {
-        if (check_libcef_version(true)) {
+    if (prog == "LeagueClientUx")
+    {
 #if _DEBUG
-            char msg[128];
-            snprintf(msg, sizeof(msg)-1, "Debug me: %d", getpid());
-            dialog::alert("Continue debugging...", msg);
+        char msg[128];
+        snprintf(msg, sizeof(msg)-1, "Debug me: %d", getpid());
+        dialog::alert("Continue debugging...", msg);
 #endif
+        if (check_libcef_version(true))
+        {
             HookBrowserProcess();
         }
-        else {
-            _exit(0);
-        }
     }
-    else if (prog == "LeagueClientUx Helper (Renderer)") {
-        // if (check_libcef_version(true)) {
+    else if (prog == "LeagueClientUx Helper (Renderer)")
+    {
+        if (check_libcef_version(false))
+        {
             HookRendererProcess();
-        // }
+        }
     }
 }
 

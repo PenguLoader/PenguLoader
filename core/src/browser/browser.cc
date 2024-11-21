@@ -172,8 +172,8 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
     if (config::options::optimized_client())
     {
         //command_line->append_switch(command_line, &u"disable-async-dns"_s);
-        command_line->append_switch(command_line, &u"disable-plugins"_s);
-        command_line->append_switch(command_line, &u"disable-extensions"_s);
+        //command_line->append_switch(command_line, &u"disable-plugins"_s);
+        //command_line->append_switch(command_line, &u"disable-extensions"_s);
         //command_line->append_switch(command_line, &u"disable-background-networking"_s);
         command_line->append_switch(command_line, &u"disable-background-timer-throttling"_s);
         command_line->append_switch(command_line, &u"disable-backgrounding-occluded-windows"_s);
@@ -184,9 +184,9 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &u"disable-translate"_s);
         command_line->append_switch(command_line, &u"disable-gpu-watchdog"_s);
         command_line->append_switch(command_line, &u"disable-renderer-accessibility"_s);
-        command_line->append_switch(command_line, &u"enable-parallel-downloading"_s);
-        command_line->append_switch(command_line, &u"enable-new-download-backend"_s);
-        command_line->append_switch(command_line, &u"enable-quic"_s);
+        //command_line->append_switch(command_line, &u"enable-parallel-downloading"_s);
+        //command_line->append_switch(command_line, &u"enable-new-download-backend"_s);
+        //command_line->append_switch(command_line, &u"enable-quic"_s);
         //command_line->append_switch(command_line, &u"no-pings"_s);
         command_line->append_switch(command_line, &u"no-sandbox"_s);
     }
@@ -210,6 +210,9 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
     const_cast<cef_settings_t *>(settings)->cache_path
+        = CefStr::from_path(config::cache_dir()).forward();
+    
+    const_cast<cef_settings_t *>(settings)->root_cache_path
         = CefStr::from_path(config::cache_dir()).forward();
 
     //static auto GetBrowserProcessHandler = app->get_browser_process_handler;

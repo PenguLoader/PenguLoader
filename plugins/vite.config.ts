@@ -20,7 +20,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     publicDir: false,
     server: {
-      https: true,
+      // https: true,
       port: port
     },
     esbuild: {

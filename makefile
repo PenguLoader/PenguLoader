@@ -1,4 +1,4 @@
-VERSION := 1.1.0
+VERSION := 1.2.0
 
 # Directories
 SRC_DIR := core/src
@@ -39,7 +39,7 @@ CPP_OBJS := $(patsubst $(SRC_DIR)/%.cc,$(OBJ_DIR)/%.o,$(CPP_SRCS))
 OBJCXX_OBJS := $(patsubst $(SRC_DIR)/%.mm,$(OBJ_DIR)/%.o,$(OBJCXX_SRCS))
 
 # Default target
-all: debug
+all: release
 
 debug: CXXFLAGS += -DDEBUG -g
 debug: $(LIB_OUT_PATH)

@@ -11,10 +11,17 @@ const rootId = 'pengu-root';
 const withTwind = install(config);
 
 class PenguRoot extends withTwind(HTMLElement) {
+  #root?: ShadowRoot
   constructor() {
     super();
-    const shadow = this.attachShadow({ mode: 'open' });
-    render(() => <App />, shadow);
+    if (this.parentElement) {
+      this.#root = this.attachShadow({ mode: 'open' });
+    }
+  }
+  connectedCallback() {
+    if (this.#root) {
+      render(() => <App />, this.#root);
+    }
   }
 }
 
