@@ -90,11 +90,19 @@ jobs:
         run: |
           cp "loader/src-tauri/target/release/Pengu Loader.exe" bin/
 
-      - name: Move loader output (macos)
+      - name: Create DMG distro (macos)
         if: runner.os == 'macOS'
         run: |
-          cp -r "loader/src-tauri/target/universal-apple-darwin/release/bundle/macos/Pengu Loader.app" bin/
-          cp "loader/src-tauri/target/universal-apple-darwin/release/bundle/dmg/"*.dmg bin/
+          brew install create-dmg
+          cp bin/core.dylib "loader/src-tauri/target/universal-apple-darwin/release/bundle/macos/Pengu Loader.app/Contents/MacOS"
+          cp bin/insert_dylib "loader/src-tauri/target/universal-apple-darwin/release/bundle/macos/Pengu Loader.app/Contents/MacOS"
+          create-dmg \
+            --volname "Pengu Loader" \
+            --icon-size 100 \
+            --icon "Pengu Loader.app" 150 150 \
+            --app-drop-link 350 150 \
+            "bin/pengu-v${{ env.APP_VERSION }}-universal.dmg" \
+            "loader/src-tauri/target/universal-apple-darwin/release/bundle/macos/Pengu Loader.app"
 
       - name: Upload build output
         uses: actions/upload-artifact@v4

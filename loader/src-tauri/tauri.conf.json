@@ -84,7 +84,7 @@
     },
     "bundle": {
       "active": true,
-      "targets": "all",
+      "targets": "app",
       "identifier": "com.pengu.lol",
       "icon": [
         "icons/32x32.png",
