@@ -14,11 +14,12 @@ class PenguRoot extends withTwind(HTMLElement) {
   #root?: ShadowRoot
   constructor() {
     super();
-    if (this.parentElement) {
+    if (this.parentElement && this.isConnected) {
       this.#root = this.attachShadow({ mode: 'open' });
     }
   }
   connectedCallback() {
+    super.connectedCallback();
     if (this.#root) {
       render(() => <App />, this.#root);
     }
