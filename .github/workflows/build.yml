@@ -23,10 +23,10 @@ jobs:
             os: windows-2022
             shell: bash
             tauri_args: ""
-          - platform: macos
-            os: macos-latest
-            shell: sh
-            tauri_args: --target universal-apple-darwin
+          # - platform: macos
+          #   os: macos-latest
+          #   shell: sh
+          #   tauri_args: --target universal-apple-darwin
 
     steps:
       - name: Checkout repository
