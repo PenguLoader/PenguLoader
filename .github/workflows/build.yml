@@ -6,6 +6,10 @@ on:
       - release/*
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: build-${{ matrix.platform }}
@@ -23,10 +27,10 @@ jobs:
             os: windows-2022
             shell: bash
             tauri_args: ""
-          # - platform: macos
-          #   os: macos-latest
-          #   shell: sh
-          #   tauri_args: --target universal-apple-darwin
+          - platform: macos
+            os: macos-latest
+            shell: sh
+            tauri_args: --target universal-apple-darwin
 
     steps:
       - name: Checkout repository
@@ -40,7 +44,7 @@ jobs:
           echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
           echo "APP_VERSION=`node -p "require('./loader/package.json').version"`" >> $GITHUB_ENV
 
-      - name: Setup MSBuild
+      - name: Setup MSBuild (windows)
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v2
 
@@ -118,7 +122,7 @@ jobs:
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: 3266cfcb-08d8-431b-81e1-23bf93287eb4
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: PenguLoader
           signing-policy-slug: test-signing
           artifact-configuration-slug: portable-app
