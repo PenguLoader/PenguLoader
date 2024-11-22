@@ -106,8 +106,24 @@ jobs:
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
+        id: artifact-upload-step
         with:
           name: pengu-v${{ env.APP_VERSION }}-dev-${{ env.SHORT_SHA }}-${{ matrix.platform }}
           path: |
             bin/
             !bin/obj/
+
+      - name: Sign the build (windows)
+        if: runner.os == 'Windows'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: 3266cfcb-08d8-431b-81e1-23bf93287eb4
+          project-slug: PenguLoader
+          signing-policy-slug: test-signing
+          artifact-configuration-slug: portable-app
+          github-artifact-id: "${{steps.artifact-upload-step.outputs.artifact-id}}"
+          wait-for-completion: true
+          output-artifact-directory: "bin-signed"
+          parameters: |
+            Version: "${{ env.APP_VERSION }}"
