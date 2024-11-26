@@ -3,44 +3,45 @@ import { render } from 'solid-js/web';
 import App from './App';
 import './style.css';
 
-import install from '@twind/with-web-components';
+import { twind, cssom, observe } from '@twind/core';
 import config from '../../twind.config';
 import { loadTranslation } from './lib/i18n';
 
-const rootId = 'pengu-root';
-const withTwind = install(config);
-
-class PenguRoot extends withTwind(HTMLElement) {
-  #root?: ShadowRoot
-  constructor() {
-    super();
-    if (this.parentElement && this.isConnected) {
-      this.#root = this.attachShadow({ mode: 'open' });
-    }
+async function layerManager() {
+  // browser env
+  if (!navigator.userAgent.includes('League')) {
+    return document.body;
   }
-  connectedCallback() {
-    super.connectedCallback();
-    if (this.#root) {
-      render(() => <App />, this.#root);
-    }
+  while (true) {
+    let elm = document.getElementById('lol-uikit-layer-manager');
+    if (elm != null) return elm;
+    await new Promise(r => setTimeout(r, 100));
   }
 }
 
 async function mount() {
 
   await loadTranslation();
+  const manager = await layerManager();
 
+  const rootId = 'pengu-root';
   let root = document.getElementById(rootId);
+
   if (!root) {
     root = document.createElement('div');
     root.setAttribute('id', rootId);
-    document.body.appendChild(root);
+    manager.appendChild(root);
   }
 
-  await customElements.whenDefined(rootId);
-  const twind = document.createElement(rootId);
-  root.appendChild(twind);
+  const sheet = cssom(new CSSStyleSheet());
+  const tw = twind(config, sheet);
+
+  const shadow = root.attachShadow({ mode: 'open' });
+
+  shadow!.adoptedStyleSheets = [sheet.target];
+  observe(tw, shadow);
+
+  render(() => <App />, shadow);
 }
 
-customElements.define(rootId, PenguRoot);
 window.addEventListener('load', mount);
