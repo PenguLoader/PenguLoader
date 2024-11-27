@@ -67,7 +67,7 @@ $(LIB_OUT_PATH): $(CPP_OBJS) $(OBJCXX_OBJS)
 #	@install_name_tool -change "libcef.d.dylib" "@loader_path/../Chromium Embedded Framework" $@
 
 $(INSERT_DYLIB_PATH):
-	$(CC) -O2 -o $@ core/insert_dylib.c
+	$(CC) -arch x86_64 -O2 -o $@ core/insert_dylib.c
 
 install: $(LIB_OUT_PATH) $(INSERT_DYLIB_PATH)
 	cp -n $(TARGET_LIB_PATH) $(TARGET_LIB_PATH).bak || true
