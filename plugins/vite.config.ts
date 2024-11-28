@@ -1,8 +1,8 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { defineConfig } from 'vite';
-
-// Vite plugins
+import autoprefixer from 'autoprefixer';
+import tailwindcss from 'tailwindcss';
 import solidPlugin from 'vite-plugin-solid';
 import bundleCssInJs from 'vite-plugin-css-injected-by-js';
 
@@ -15,6 +15,14 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     publicDir: false,
+    css: {
+      postcss: {
+        plugins: [
+          autoprefixer,
+          tailwindcss,
+        ]
+      }
+    },
     esbuild: {
       legalComments: 'none',
     },
@@ -22,6 +30,7 @@ export default defineConfig(({ command, mode }) => {
       assetsInlineLimit: 1024 * 64,
       minify: !dev,
       modulePreload: false,
+      sourcemap: dev ? 'inline' : false,
       lib: {
         name: 'preload',
         entry: 'src/index.ts',
@@ -30,7 +39,7 @@ export default defineConfig(({ command, mode }) => {
       rollupOptions: {
         output: {
           format: 'iife',
-          sourcemap: dev ? 'inline' : false,
+          // sourcemap: dev ? 'inline' : false,
           entryFileNames: 'preload.js'
         }
       }

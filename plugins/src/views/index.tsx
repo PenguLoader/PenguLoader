@@ -1,11 +1,10 @@
 /* @refresh reload */
 import { render } from 'solid-js/web';
-import App from './App';
-import './style.css';
-
-import { twind, cssom, observe } from '@twind/core';
-import config from '../../twind.config';
 import { loadTranslation } from './lib/i18n';
+import App from './App';
+
+import './styles/global.css';
+import styles from './styles/scoped.css?inline';
 
 async function layerManager() {
   // browser env
@@ -33,13 +32,11 @@ async function mount() {
     manager.appendChild(root);
   }
 
-  const sheet = cssom(new CSSStyleSheet());
-  const tw = twind(config, sheet);
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(styles);
 
   const shadow = root.attachShadow({ mode: 'open' });
-
-  shadow!.adoptedStyleSheets = [sheet.target];
-  observe(tw, shadow);
+  shadow.adoptedStyleSheets.push(sheet);
 
   render(() => <App />, shadow);
 }
