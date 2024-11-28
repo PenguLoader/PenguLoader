@@ -1,15 +1,11 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { defineConfig } from 'vite';
-import { build } from 'esbuild';
 
 // Vite plugins
-import mkcert from 'vite-plugin-mkcert';
 import solidPlugin from 'vite-plugin-solid';
 import bundleCssInJs from 'vite-plugin-css-injected-by-js';
-import viteRestart from 'vite-plugin-restart';
 
-const port = 3001;
 const root = (...args: string[]) => path.join(__dirname, ...args);
 
 export default defineConfig(({ command, mode }) => {
@@ -19,10 +15,6 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     publicDir: false,
-    server: {
-      // https: true,
-      port: port
-    },
     esbuild: {
       legalComments: 'none',
     },
@@ -44,7 +36,6 @@ export default defineConfig(({ command, mode }) => {
       }
     },
     plugins: [
-      mkcert(),
       solidPlugin(),
       bundleCssInJs({
         topExecutionPriority: false,
@@ -56,30 +47,6 @@ export default defineConfig(({ command, mode }) => {
           });
         }
       }),
-      viteRestart({
-        restart: 'src/preload/**/*.ts'
-      }),
-      {
-        name: 'pengu-serve',
-        apply: 'serve',
-        enforce: 'post',
-        transform(code, id) {
-          if (/\.(ts|tsx)$/i.test(id)) return;
-          return code.replace(/\/src\//g, `https://localhost:${port}/src/`)
-        },
-        async configResolved() {
-          await build({
-            entryPoints: [root('src/preload/index.ts')],
-            outfile: root('dist/preload.js'),
-            bundle: true,
-            format: 'iife',
-            sourcemap: 'inline',
-            footer: {
-              'js': generateDevLoader(port)
-            }
-          });
-        },
-      },
       {
         name: 'pengu-build',
         apply: 'build',
@@ -93,18 +60,6 @@ export default defineConfig(({ command, mode }) => {
     ]
   }
 });
-
-function generateDevLoader(port: number) {
-  const template = function (port) {
-    document.addEventListener('DOMContentLoaded', async () => {
-      // @ts-ignore
-      await import(`https://localhost:${port}/@vite/client`);
-      // @ts-ignore
-      await import(`https://localhost:${port}/src/views/index.tsx`);
-    });
-  }
-  return `!(${template.toString()})(${port});`;
-}
 
 function generateHeader(code: string, name: string, lineLength = 12) {
   const bytes = [...Buffer.from(code, 'utf-8')]
