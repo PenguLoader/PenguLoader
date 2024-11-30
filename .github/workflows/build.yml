@@ -1,41 +1,23 @@
 on:
-  push:
-    branches:
-      - main
-      - dev
-      - release/*
   workflow_dispatch:
 
 jobs:
   build:
-    name: ${{ matrix.platform.name }}
-    runs-on: ${{ matrix.platform.os }}
-
-    defaults:
-      run:
-        shell: ${{ matrix.platform.shell }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-        - { name: Windows, os: windows-2022, shell: bash,  artifact: 'pengu-windows' }
-        - { name: MacOS,   os: macos-12,     shell: sh,    artifact: 'pengu-macos'   }
-
+    runs-on: windows-2019
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
+          fetch-depth: 0
           submodules: true
 
-      - name: Prepare environment variables
+      - name: Prepare envars
         run: |
-          echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
-          echo "APP_VERSION=`cat loader/Version.cs | grep -o '[0-9].[0-9].[0-9]'`" >> $GITHUB_ENV
+          echo "COMMIT_HASH=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
+          echo "APP_VERSION=$((Select-String -Path "loader\Program.cs" -Pattern 'VERSION = "(.+)"' -AllMatches).Matches.Groups[1].Value)" >> $env:GITHUB_ENV
 
       - name: Setup MSBuild
-        if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v2
 
       - name: Setup Node.js
@@ -44,9 +26,11 @@ jobs:
           node-version: 20
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
+          run_install: |
+            - recursive: true
 
       - name: Build preload plugins
         run: |
@@ -55,17 +39,16 @@ jobs:
           pnpm build
 
       - name: Build solution
-        if: runner.os == 'Windows'
-        run: msbuild.exe pengu.sln -t:build -p:Configuration=Release -p:Platform=x64
-
-      - name: Build makefile
-        if: runner.os == 'macOS'
-        run: make release
+        run: |
+          mkdir bin
+          echo "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}" >> bin/version
+          msbuild pengu.sln /t:Restore,Build /m /p:Configuration=Release /p:Platform=x64
 
       - name: Upload build outputs
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform.artifact }}-v${{ env.APP_VERSION }}-dev-${{ env.SHORT_SHA }}
+          name: pengu-v${{ env.APP_VERSION }}-${{ env.COMMIT_HASH }}
           path: |
-            bin/
-            !bin/obj/
+            bin/*.exe
+            bin/*.dll
+            bin/version
