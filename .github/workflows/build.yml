@@ -86,14 +86,14 @@ jobs:
           artifact-configuration-slug: zipped-app
           github-artifact-id: "${{ steps.artifact-upload-step.outputs.artifact-id }}"
           wait-for-completion: true
-          output-artifact-directory: bin-signed
+          output-artifact-directory: bin
 
       - name: Make installer & zip app
         if: ${{ inputs.release }}
         run: |
+          mkdir bin-signed
+          Compress-Archive -Path bin/* -DestinationPath bin-signed/pengu-v${{ env.APP_VERSION }}-portable.zip -Force
           & "$env:ProgramFiles (x86)\Inno Setup 6\iscc.exe" /O"bin" /F"pengu-v${{ env.APP_VERSION }}-setup" scripts\setup.iss
-          Compress-Archive -Path bin-signed/* -DestinationPath bin-signed/pengu-v${{ env.APP_VERSION }}-portable.zip -Force
-          Remove-Item bin-signed/* -Exclude *.zip
 
       - name: Upload installer output
         if: ${{ inputs.release }}
