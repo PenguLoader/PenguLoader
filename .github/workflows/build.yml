@@ -25,7 +25,7 @@ jobs:
         run: |
           mkdir downloads && cd downloads
           curl -LJO https://download.microsoft.com/download/7/1/7/71795fde-1cca-41b0-b495-00b1ab656994/NDP472-DevPack-ENU.exe
-          NDP472-DevPack-ENU.exe /q
+          start /wait "" "NDP472-DevPack-ENU.exe" /q
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
