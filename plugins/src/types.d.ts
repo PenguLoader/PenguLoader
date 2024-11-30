@@ -72,7 +72,6 @@ declare interface Window {
     superPotato: boolean
     plugins: string[]
     isMac: boolean
-    // fs: PluginFS
   };
 
   os: {

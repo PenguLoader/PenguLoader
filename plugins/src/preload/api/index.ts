@@ -2,7 +2,6 @@ import { native } from './native';
 
 import './DataStore';
 import './Effect';
-import './npm';
 
 window.openDevTools = function () {
   native.OpenDevTools();
