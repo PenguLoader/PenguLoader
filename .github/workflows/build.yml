@@ -77,8 +77,36 @@ jobs:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: PenguLoader
           signing-policy-slug: test-signing
-          artifact-configuration-slug: portable-app
+          artifact-configuration-slug: zipped-app
           github-artifact-id: "${{ steps.artifact-upload-step.outputs.artifact-id }}"
+          wait-for-completion: true
+          output-artifact-directory: bin-signed
+
+      - name: Make installer & zip app
+        if: ${{ inputs.release }}
+        run: |
+          & "$env:ProgramFiles (x86)\Inno Setup 6\iscc.exe" /O"bin" /F"pengu-v${{ env.APP_VERSION }}-setup" scripts\setup.iss
+          Compress-Archive -Path bin-signed/* -DestinationPath bin-signed/pengu-v${{ env.APP_VERSION }}-portable.zip -Force
+          Remove-Item bin-signed/* -Exclude *.zip
+
+      - name: Upload installer output
+        if: ${{ inputs.release }}
+        uses: actions/upload-artifact@v4
+        id: artifact-upload-installer-step
+        with:
+          name: ${{ env.ARTIFACT_NAME }}-installer
+          path: bin/pengu-*-setup.exe
+
+      - name: Sign the installer
+        if: ${{ inputs.release }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: PenguLoader
+          signing-policy-slug: test-signing
+          artifact-configuration-slug: zipped-installer
+          github-artifact-id: "${{ steps.artifact-upload-installer-step.outputs.artifact-id }}"
           wait-for-completion: true
           output-artifact-directory: bin-signed
 
