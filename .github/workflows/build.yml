@@ -5,6 +5,10 @@ on:
         description: Build for release
         type: boolean
         default: false
+      release-signing:
+        description: Use release code signing
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -78,7 +82,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: PenguLoader
-          signing-policy-slug: test-signing
+          signing-policy-slug: ${{ inputs.release && 'release' || 'test' }}-signing
           artifact-configuration-slug: zipped-app
           github-artifact-id: "${{ steps.artifact-upload-step.outputs.artifact-id }}"
           wait-for-completion: true
@@ -106,7 +110,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: PenguLoader
-          signing-policy-slug: test-signing
+          signing-policy-slug: ${{ inputs.release && 'release' || 'test' }}-signing
           artifact-configuration-slug: zipped-installer
           github-artifact-id: "${{ steps.artifact-upload-installer-step.outputs.artifact-id }}"
           wait-for-completion: true
