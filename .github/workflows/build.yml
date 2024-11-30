@@ -1,5 +1,10 @@
 on:
   workflow_dispatch:
+    inputs:
+      release:
+        description: Build for release
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -14,8 +19,11 @@ jobs:
 
       - name: Prepare envars
         run: |
-          echo "COMMIT_HASH=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
-          echo "APP_VERSION=$((Select-String -Path "loader\Program.cs" -Pattern 'VERSION = "(.+)"' -AllMatches).Matches.Groups[1].Value)" >> $env:GITHUB_ENV
+          $commit_hash = "${{ github.sha }}".SubString(0, 8)
+          $app_version = (Select-String -Path "loader\Program.cs" -Pattern 'VERSION = "(.+)"' -AllMatches).Matches.Groups[1].Value
+          echo "COMMIT_HASH=$commit_hash" >> $env:GITHUB_ENV
+          echo "APP_VERSION=$app_version" >> $env:GITHUB_ENV
+          echo "ARTIFACT_NAME=pengu-v$app_version-$commit_hash" >> $env:GITHUB_ENV
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -51,11 +59,38 @@ jobs:
           echo "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}" >> bin/version
           msbuild pengu.sln /t:Restore,Build /m /p:Configuration=Release /p:Platform=x64
 
-      - name: Upload build outputs
+      - name: Upload build output
         uses: actions/upload-artifact@v4
+        id: artifact-upload-step
         with:
-          name: pengu-v${{ env.APP_VERSION }}-${{ env.COMMIT_HASH }}
+          name: ${{ env.ARTIFACT_NAME }}
           path: |
             bin/*.exe
             bin/*.dll
             bin/version
+
+      - name: Sign the build
+        if: ${{ inputs.release }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: PenguLoader
+          signing-policy-slug: test-signing
+          artifact-configuration-slug: portable-app
+          github-artifact-id: "${{ steps.artifact-upload-step.outputs.artifact-id }}"
+          wait-for-completion: true
+          output-artifact-directory: bin-signed
+
+      - name: Delete unwanted artifacts
+        if: ${{ inputs.release }}
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: "*"
+
+      - name: Upload signed output
+        if: ${{ inputs.release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: bin-signed/
