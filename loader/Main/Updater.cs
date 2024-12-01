@@ -70,7 +70,7 @@ namespace PenguLoader.Main
 
             try
             {
-                var updateDir = Path.Combine(Directory.GetCurrentDirectory(), ".update");
+                var updateDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".update");
 
                 var tempFile = Path.GetTempFileName();
                 await DownloadFile(update.DownloadUrl, tempFile, (downloaded, total, percent_) =>
@@ -189,8 +189,9 @@ namespace PenguLoader.Main
 
         static void ApplyUpdate()
         {
-            var exe = AppDomain.CurrentDomain.FriendlyName;
-            var dir = Directory.GetCurrentDirectory();
+            var domain = AppDomain.CurrentDomain;
+            var exe = domain.FriendlyName;
+            var dir = domain.BaseDirectory;
             var updateDir = Path.Combine(dir, ".update");
 
             var args = new[]

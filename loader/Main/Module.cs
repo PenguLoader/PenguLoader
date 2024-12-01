@@ -7,46 +7,11 @@ namespace PenguLoader.Main
     {
         private static string ModuleName => "core.dll";
         private static string TargetName => LCU.ClientUxProcessName;
-        private static string ModulePath => Path.Combine(Directory.GetCurrentDirectory(), ModuleName);
+        private static string ModulePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ModuleName);
         private static string DebuggerValue => $"rundll32 \"{ModulePath}\", #6000 ";
 
         private static string SymlinkName => "version.dll";
         private static string SymlinkPath => Path.Combine(Config.LeaguePath, SymlinkName);
-
-        static Module()
-        {
-            if (Config.UseSymlink)
-                return;
-
-            try
-            {
-                // uncomment it to test
-                //throw new UnauthorizedAccessException();
-
-                if (LCU.IsValidDir(Config.LeaguePath)
-                    && Symlink.IsSymlink(SymlinkPath))
-                {
-                    Config.UseSymlink = true;
-                }
-                else
-                {
-                    var value = IFEO.GetDebugger(TargetName);
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        IFEO.RemoveDebugger(TargetName);
-                        IFEO.SetDebugger(TargetName, value);
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-                Config.UseSymlink = true;
-            }
-            catch
-            {
-                // TODO: handle some other errors
-            }
-        }
 
         public static bool IsFound => File.Exists(ModulePath);
 
@@ -79,8 +44,6 @@ namespace PenguLoader.Main
             if (IsActivated == active)
                 return true;
 
-            bool success;
-
             if (Config.UseSymlink)
             {
                 var path = SymlinkPath;
@@ -90,24 +53,20 @@ namespace PenguLoader.Main
                 {
                     Symlink.Create(path, ModulePath);
                 }
-
-                success = true;
             }
             else
             {
                 if (active)
                 {
-                    success = IFEO.SetDebugger(TargetName, DebuggerValue);
-                    return success && IsActivated == true;
+                    IFEO.SetDebugger(TargetName, DebuggerValue);
                 }
                 else
                 {
-                    success = true;
                     IFEO.RemoveDebugger(TargetName);
                 }
             }
 
-            return success && IsActivated == active;
+            return IsActivated == active;
         }
     }
 }

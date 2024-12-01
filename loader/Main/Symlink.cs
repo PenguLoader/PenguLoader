@@ -65,7 +65,7 @@ namespace PenguLoader.Main
 
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode)]
         private static extern IntPtr CreateFile(
-                [MarshalAs(UnmanagedType.LPTStr)] string filename,
+                [MarshalAs(UnmanagedType.LPWStr)] string filename,
                 [MarshalAs(UnmanagedType.U4)] uint access,
                 [MarshalAs(UnmanagedType.U4)] FileShare share,
                 IntPtr securityAttributes, // optional SECURITY_ATTRIBUTES struct or IntPtr.Zero

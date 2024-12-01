@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using Microsoft.Win32;
 
 namespace PenguLoader.Main
@@ -10,50 +12,56 @@ namespace PenguLoader.Main
 
         public static string GetDebugger(string target)
         {
-            using (var key = OpenIFEOKey(writable: false))
+            using (var key = Registry.LocalMachine.OpenSubKey(IFEO_PATH))
             {
-                if (key == null) return string.Empty;
+                if (key == null)
+                    return string.Empty;
 
                 using (var image = key.OpenSubKey(target))
                 {
-                    if (image == null) return string.Empty;
+                    if (image == null)
+                        return string.Empty;
 
                     return image.GetValue(VALUE_NAME) as string;
                 }
             }
         }
 
-        public static bool SetDebugger(string target, string debugger)
+        public static void SetDebugger(string t, string d)
         {
-            using (var key = OpenIFEOKey(writable: true))
+            d = d.Replace("\"", "\\\"");
+            Invoke($"reg add \"HKLM\\{IFEO_PATH}\\{t}\" /v \"{VALUE_NAME}\" /t REG_SZ /d \"{d}\" /f");
+        }
+
+        public static void RemoveDebugger(string t)
+        {
+            Invoke($"reg delete \"HKLM\\{IFEO_PATH}\\{t}\" /f");
+        }
+
+        public static void Invoke(string args)
+        {
+            using (var process = new Process
             {
-                if (key == null) return false;
-
-                using (var image = key.CreateSubKey(target))
+                StartInfo = new ProcessStartInfo
                 {
-                    if (image == null) return false;
+                    FileName = "cmd.exe",
+                    Arguments = $"/C {args}",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            })
+            {
+                process.Start();
+                process.WaitForExit();
+                var error = process.StandardError.ReadToEnd();
 
-                    image.SetValue(VALUE_NAME, debugger, RegistryValueKind.String);
-                    return true;
+                if (process.ExitCode != 0 || !string.IsNullOrEmpty(error))
+                {
+                    throw new InvalidOperationException(error);
                 }
             }
         }
-
-        public static void RemoveDebugger(string target)
-        {
-            using (var key = OpenIFEOKey(writable: true))
-            {
-                using (var image = key?.OpenSubKey(target, true))
-                {
-                    if (image == null) return;
-
-                    image.DeleteValue(VALUE_NAME);
-                    key.DeleteSubKey(target, false);
-                }
-            }
-        }
-
-        private static RegistryKey OpenIFEOKey(bool writable)
-            => Registry.LocalMachine.OpenSubKey(IFEO_PATH, writable);
     }
 }

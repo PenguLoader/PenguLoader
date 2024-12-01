@@ -79,9 +79,9 @@ namespace PenguLoader
             return 0;
         }
 
-        static Program()
-        {
-            CosturaUtility.Initialize();
-        }
+        //static Program()
+        //{
+        //    CosturaUtility.Initialize();
+        //}
     }
 }

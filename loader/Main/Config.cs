@@ -86,9 +86,9 @@ namespace PenguLoader.Main
             set => SetBool("SuperLowSpecMode", value);
         }
 
-        static string GetPath(string folderName)
+        static string GetPath(string subpath)
         {
-            return Path.Combine(Environment.CurrentDirectory, folderName);
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, subpath);
         }
 
         static string Get(string key, string @default = "")

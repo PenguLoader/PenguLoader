@@ -12,11 +12,8 @@ using System.Windows;
 #else
 [assembly: AssemblyConfiguration("Release")]
 #endif
-[assembly: AssemblyCompany("GitHub, Inc.")]
 [assembly: AssemblyProduct("Pengu Loader")]
 [assembly: AssemblyCopyright("Copyright © 2024")]
-[assembly: AssemblyTrademark("Pengu Loader")]
-[assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible
 // to COM components.  If you need to access a type in this assembly from
