@@ -49,6 +49,7 @@ Name: "{commonappdata}\{#MyAppName}\plugins"; Permissions: everyone-full; Flags:
 [Files]
 Source: "..\bin\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\bin\core.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\bin\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\bin\version"; DestDir: "{app}"; Flags: skipifsourcedoesntexist
 
 [Tasks]

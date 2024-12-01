@@ -75,6 +75,11 @@ jobs:
             bin/*.dll
             bin/version
 
+      - name: Delete build output
+        if: ${{ inputs.release }}
+        run: |
+          Remove-Item bin/* -Recurse -Force
+
       - name: Sign the build
         if: ${{ inputs.release }}
         uses: signpath/github-action-submit-signing-request@v1
