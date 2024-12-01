@@ -1,5 +1,4 @@
-#ifndef _PENGU_H_
-#define _PENGU_H_
+#pragma once
 #include "platform.h"
 
 #include <stdint.h>
@@ -227,11 +226,25 @@ struct CefStr : CefStrBase
     CefStr(const std::string &s);
     CefStr(const std::u16string &s);
 
+    ///
+    /// Forward the underlying string value.
+    /// The current dtor() is set to null.
+    /// 
     cef_string_t forward();
-    static CefStrBase borrow(const cef_string_t *s);
+    
+    ///
+    /// Get reference to base string from const pointer.
+    /// 
+    static const CefStrBase &borrow(const cef_string_t *s);
+
+    ///
+    /// Convert fs path to string.
+    /// 
     static CefStr from_path(const path &path);
 
-    // wrap u16string in cef_string_t on stack
+    ///
+    /// Wrap u16string in cef_string_t on stack.
+    /// 
     static cef_string_t wrap(const std::u16string &utf16) {
         return cef_string_t{
             (char16 *)utf16.data(),
@@ -328,7 +341,7 @@ namespace config
     namespace options
     {
         bool use_hotkeys();
-        bool optimed_client();
+        bool optimized_client();
         bool silent_mode();
         bool super_potato();
         bool isecure_mode();
@@ -513,5 +526,3 @@ namespace dylib
     ///
     void *find_memory(const void *rladdr, const char *pattern);
 }
-
-#endif

@@ -13,7 +13,7 @@ static void fix_browser_background(const void *rladdr)
 #if OS_WIN
     const char *pattern = "41 83 F8 01 74 0B 41 83 F8 02 75 0A 45 31 C0";
 #elif OS_MAC
-    const char *pattern = "55 48 89 E5 83 FA 01 74 0A 83 FA 02 75 0A 45 31 C0";
+    const char *pattern = "55 48 89 E5 83 FA 01 74 ?? 83 FA 02 75 ??";
 #endif
     using Fn = decltype(&get_background_color);
     static hook::Hook<Fn> GetBackgroundColor;
@@ -32,24 +32,9 @@ bool check_libcef_version(bool is_browser)
     {
         auto get_version = reinterpret_cast<decltype(&cef_version_info)>(dylib::find_proc(libcef, "cef_version_info"));
 
-        if (get_version == nullptr)
-            return false;
-
         // Check CEF version
-        if (get_version(0) != CEF_VERSION_MAJOR)
+        if (get_version == nullptr || get_version(0) != CEF_VERSION_MAJOR)
         {
-#if OS_WIN
-            // Try to load old CEF 91 core module
-            if (get_version(0) == 91)
-            {
-                auto dll_path = config::loader_dir() / "core_91.dll";
-                if (file::is_file(dll_path))
-                {
-                    LoadLibraryW(dll_path.c_str());
-                }
-                return false;
-            }
-#endif
             if (is_browser)
                 dialog::alert("Pengu does not support your Client version.", "Pengu Loader");
             return false;

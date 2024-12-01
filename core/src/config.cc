@@ -203,7 +203,7 @@ namespace config::options
         return get_config_value_bool(__func__, true);
     }
 
-    bool optimed_client()
+    bool optimized_client()
     {
 #if 1 // CEF_VERSION_MAJOR == 91
         return get_config_value_bool("OptimizeClient", true);

@@ -108,7 +108,7 @@ static int Hooked_CefBrowserHost_CreateBrowser(
     struct _cef_dictionary_value_t* extra_info,
     struct _cef_request_context_t* request_context)
 {
-    auto url_ = CefStr::borrow(url);
+    auto &url_ = CefStr::borrow(url);
 
     // Hook main browser only.
     if (url_.startw("https://riot:") && url_.endw("/bootstrap.html"))
@@ -150,7 +150,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         auto args = CefScopedStr(command_line->get_command_line_string(command_line)).to_utf16();
 
         size_t pos = args.find(u"--no-proxy-server");
-        if (pos != std::wstring::npos)
+        if (pos != std::string::npos)
             args.replace(pos, 17, u"");
 
         command_line->reset(command_line);
@@ -169,7 +169,7 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &u"disable-web-security"_s);
     }
 
-    if (config::options::optimed_client())
+    if (config::options::optimized_client())
     {
         //command_line->append_switch(command_line, &u"disable-async-dns"_s);
         //command_line->append_switch(command_line, &u"disable-plugins"_s);
@@ -210,6 +210,9 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
     const_cast<cef_settings_t *>(settings)->cache_path
+        = CefStr::from_path(config::cache_dir()).forward();
+    
+    const_cast<cef_settings_t *>(settings)->root_cache_path
         = CefStr::from_path(config::cache_dir()).forward();
 
     //static auto GetBrowserProcessHandler = app->get_browser_process_handler;
