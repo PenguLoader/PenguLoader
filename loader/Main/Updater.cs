@@ -70,18 +70,19 @@ namespace PenguLoader.Main
 
             try
             {
-                var updateDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".update");
+                var rnd = new Random().Next().ToString("x");
+                var updateDir = Path.Combine(Path.GetTempPath(), "pengu_update_" + rnd);
+                Directory.CreateDirectory(updateDir);
 
                 var tempFile = Path.GetTempFileName();
                 await DownloadFile(update.DownloadUrl, tempFile, (downloaded, total, percent_) =>
                 {
                     percent = percent_;
-                    message = String.Format("{0:0.##} / {1:0.##} MB received.",
+                    message = string.Format("{0:0.##} / {1:0.##} MB received.",
                         (double)downloaded / 1024 / 1024,
                         (double)total / 1024 / 1024);
                 });
 
-                Utils.DeletePath(updateDir, true);
                 ZipFile.ExtractToDirectory(tempFile, updateDir);
                 Utils.DeletePath(tempFile);
 
@@ -91,7 +92,7 @@ namespace PenguLoader.Main
                         Program.Name, MessageBoxButton.OK, MessageBoxImage.Information);
                 }
 
-                ApplyUpdate();
+                ApplyUpdate(updateDir);
                 Environment.Exit(0);
             }
             catch
@@ -187,12 +188,11 @@ namespace PenguLoader.Main
             }
         }
 
-        static void ApplyUpdate()
+        static void ApplyUpdate(string updateDir)
         {
             var domain = AppDomain.CurrentDomain;
             var exe = domain.FriendlyName;
             var dir = domain.BaseDirectory;
-            var updateDir = Path.Combine(dir, ".update");
 
             var args = new[]
             {
