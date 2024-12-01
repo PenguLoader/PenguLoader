@@ -45,6 +45,7 @@ namespace PenguLoader
             { "Tiếng Việt", "vi-VN.xaml" },
             { "日本語", "ja-JP.xaml" },
             { "中文", "zh-CN.xaml" },
+            { "Deutsch", "de-DE.xaml" },
             { "Español", "es-ES.xaml" },
             { "Français", "fr-FR.xaml"},
             { "Português", "pt-BR.xaml" },
