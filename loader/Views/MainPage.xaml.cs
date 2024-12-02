@@ -100,6 +100,19 @@ namespace PenguLoader.Views
                 }
                 catch (Exception ex)
                 {
+                    if (!Config.UseSymlink)
+                    {
+                        if (MessageBox.Show(Owner,
+                            "Failed to activate the core module globally, want to use symlink mode locally?",
+                            Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                        {
+                            Config.UseSymlink = true;
+                            SetLeaguePath(Config.LeaguePath);
+                            gLeaguePath.Visibility = Visibility.Visible;
+                            return;
+                        }
+                    }
+
                     var msg = App.GetTranslation("t_msg_activation_fail");
                     msg += string.Format("\n\n[{0}] - {1}\n{2}", ex.GetType().Name, ex.Message, ex.StackTrace);
 
@@ -108,7 +121,8 @@ namespace PenguLoader.Views
 
                     msg += "\n\n";
 
-                    if (MessageBox.Show(Owner, msg, Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                    if (MessageBox.Show(Owner, msg, Program.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning)
+                        == MessageBoxResult.Yes)
                     {
                         Utils.OpenLink(Program.GithubIssuesUrl);
                     }
@@ -181,8 +195,9 @@ namespace PenguLoader.Views
 
         void SetLeaguePath(string path)
         {
-            if (string.IsNullOrEmpty(path))
+            if (string.IsNullOrEmpty(path) || !LCU.IsValidDir(path))
             {
+                Config.LeaguePath = string.Empty;
                 tLeaguePath.Text = "[not selected]";
             }
             else
