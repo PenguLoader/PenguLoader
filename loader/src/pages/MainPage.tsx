@@ -1,13 +1,12 @@
-import { Component, Match, Show, Switch } from 'solid-js'
-import { Activator } from '../components/Activator'
-import { Settings } from '../components/settings'
-import { PluginGallery } from '../components/PluginGallery'
-import { PluginStore } from '../components/PluginStore'
-import { useRoot } from '~/lib/root'
+import { Component, Match, Show, Switch } from "solid-js";
+import { Activator } from "../components/Activator";
+import { Settings } from "../components/settings";
+import { PluginGallery } from "../components/PluginGallery";
+import { PluginStore } from "../components/PluginStore";
+import { useRoot } from "~/lib/root";
 
 export const MainPage: Component = () => {
-
-  const { isStore } = useRoot()
+  const { isStore } = useRoot();
 
   return (
     <div class="flex flex-col flex-1 overflow-hidden">
@@ -20,5 +19,5 @@ export const MainPage: Component = () => {
       <Show when={!isStore()} children={Activator} />
       <Settings />
     </div>
-  )
-}
+  );
+};
