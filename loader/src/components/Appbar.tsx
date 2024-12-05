@@ -33,7 +33,7 @@ export const Appbar: Component<{
   }
 
   onMount(async () => {
-    setFocus(await appWindow.isFocused())
+    await appWindow.setFocus();
     appWindow.onFocusChanged(e => setFocus(e.payload))
   })
 
