@@ -1,41 +1,52 @@
-import { Component, createSignal, JSX, onMount, Show, splitProps } from 'solid-js'
-import { appWindow } from '@tauri-apps/api/window'
-import { twMerge } from 'tailwind-merge'
-import { SettingsIcon, StoreIcon } from './Icons'
-import { useRoot } from '../lib/root'
-import { useTippy } from '../lib/utils'
-import icon from '../assets/icon-sm.png'
+import {
+  Component,
+  createSignal,
+  JSX,
+  onMount,
+  Show,
+  splitProps,
+} from "solid-js";
+import { appWindow } from "@tauri-apps/api/window";
+import { twMerge } from "tailwind-merge";
+import { SettingsIcon, StoreIcon } from "./Icons";
+import { useRoot } from "../lib/root";
+import { useTippy } from "../lib/utils";
+import icon from "../assets/icon-sm.png";
+import { useI18n } from "~/lib/i18n";
 
 const Command: Component<JSX.HTMLAttributes<HTMLSpanElement>> = (props) => {
-  const [local, rest] = splitProps(props, ['class'])
+  const [local, rest] = splitProps(props, ["class"]);
   return (
     <span
-      class={twMerge("flex justify-center items-center w-12 h-full hover:bg-foreground/15", local.class)}
+      class={twMerge(
+        "flex justify-center items-center w-12 h-full hover:bg-foreground/15",
+        local.class
+      )}
       {...rest}
     />
-  )
-}
+  );
+};
 
 export const Appbar: Component<{
-  isHome: boolean
+  isHome: boolean;
 }> = (props) => {
+  const i18n = useI18n();
+  const { settings, setStore } = useRoot();
+  const [focus, setFocus] = createSignal(true);
 
-  const { settings, setStore } = useRoot()
-  const [focus, setFocus] = createSignal(true)
-
-  const minimize = () => appWindow.minimize()
+  const minimize = () => appWindow.minimize();
   const close = () => {
     if (window.isMac) {
-      appWindow.hide()
+      appWindow.hide();
     } else {
-      appWindow.close()
+      appWindow.close();
     }
-  }
+  };
 
   onMount(async () => {
-    setFocus(await appWindow.isFocused())
-    appWindow.onFocusChanged(e => setFocus(e.payload))
-  })
+    setFocus(await appWindow.isFocused());
+    appWindow.onFocusChanged((e) => setFocus(e.payload));
+  });
 
   return (
     <div
@@ -43,7 +54,6 @@ export const Appbar: Component<{
       class="flex items-center justify-between h-10 aria-busy:bg-neutral-700 aria-busy:opacity-85"
       aria-busy={!focus()}
     >
-
       <div class="flex items-center px-[10px] h-full pointer-events-none">
         <img src={icon} class="size-5 rounded-sm" />
         <span class="px-2 text-sm">Pengu Loader</span>
@@ -52,10 +62,13 @@ export const Appbar: Component<{
 
       <div class="flex justify-center h-full text-foreground/80">
         <Show when={props.isHome}>
-          <Command onClick={() => setStore(true)} ref={useTippy('Plugin Store')}>
+          <Command
+            onClick={() => setStore(true)}
+            ref={useTippy(i18n.t("plugin_store"))}
+          >
             <StoreIcon size={16} />
           </Command>
-          <Command onClick={settings.show} ref={useTippy('Settings')}>
+          <Command onClick={settings.show} ref={useTippy(i18n.t("settings"))}>
             <SettingsIcon size={16} />
           </Command>
         </Show>
@@ -70,7 +83,6 @@ export const Appbar: Component<{
           </svg>
         </Command>
       </div>
-
     </div>
-  )
-}
+  );
+};
