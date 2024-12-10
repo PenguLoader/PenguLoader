@@ -5,12 +5,13 @@ import { LeagueClient } from '~/lib/league-client'
 import { CheckOption, OptionSet, RadioOption } from './templates'
 import { ActivationMode, CoreModule } from '~/lib/core-module'
 import { Startup } from '~/lib/startup'
+import { useI18n } from '~/lib/i18n'
 
 const LaunchSettings: Component = () => {
   const [startup, setSatrtup] = createSignal(false)
 
   const toggleStartup = async () => {
-    let enable = !await Startup.isEnabled()
+    let enable = !(await Startup.isEnabled())
     await Startup.setEnable(enable)
     setSatrtup(enable)
   }
@@ -20,10 +21,10 @@ const LaunchSettings: Component = () => {
   })
 
   return (
-    <OptionSet name="Launch Settings">
+    <OptionSet name='Launch Settings'>
       <CheckOption
-        caption="Run on startup"
-        message="Automatically run Pengu when your computer starts."
+        caption='Run on startup'
+        message='Automatically run Pengu when your computer starts.'
         checked={startup()}
         onClick={toggleStartup}
       />
@@ -32,7 +33,7 @@ const LaunchSettings: Component = () => {
 }
 
 export const TabPengu: Component = () => {
-
+  const i18n = useI18n()
   const { app } = useConfig()
 
   const changePluginsDir = async () => {
@@ -48,7 +49,9 @@ export const TabPengu: Component = () => {
 
   const setActivationMode = async (mode: ActivationMode) => {
     if (await CoreModule.isActivated()) {
-      await dialog.message('Please deactivate Pengu before changing the activation mode.', { type: 'warning' })
+      await dialog.message(i18n.t('desactivate_before_activation_change'), {
+        type: 'warning',
+      })
     } else {
       await app.activation_mode(mode)
     }
@@ -56,35 +59,39 @@ export const TabPengu: Component = () => {
 
   const changeLeagueDir = async () => {
     const dir = await dialog.open({
-      directory: true
+      directory: true,
     })
 
     if (typeof dir === 'string') {
       if (await LeagueClient.validateDir(dir)) {
         await app.league_dir(dir)
       } else {
-        await dialog.message('Your selected path is not valid.', { type: 'warning' })
+        await dialog.message(i18n.t('invalid_path'), { type: 'warning' })
       }
     }
   }
 
   return (
-    <div class="space-y-4">
-
-      <OptionSet name="Plugins Folder">
+    <div class='space-y-4'>
+      <OptionSet name={i18n.t('plugins_folder')}>
         <span
-          class="block text-base text-neutral-200 px-3 py-1 hover:bg-neutral-400/20 rounded-md"
-          onClick={changePluginsDir}>
+          class='block text-base text-neutral-200 px-3 py-1 hover:bg-neutral-400/20 rounded-md'
+          onClick={changePluginsDir}
+        >
           {app.plugins_dir() || './plugins'}
         </span>
       </OptionSet>
 
       <Show when={!window.isMac}>
-        <OptionSet name="LoL Client Location" disabled={app.activation_mode() === ActivationMode.Universal}>
+        <OptionSet
+          name={i18n.t('lol_client_location')}
+          disabled={app.activation_mode() === ActivationMode.Universal}
+        >
           <span
-            class="block text-base text-neutral-200 px-3 py-1 hover:bg-neutral-400/20 rounded-md"
-            onClick={changeLeagueDir}>
-            {app.league_dir() || '(not selected)'}
+            class='block text-base text-neutral-200 px-3 py-1 hover:bg-neutral-400/20 rounded-md'
+            onClick={changeLeagueDir}
+          >
+            {app.league_dir() || `(${i18n.t('not_selected')})`}
           </span>
         </OptionSet>
       </Show>
@@ -93,31 +100,30 @@ export const TabPengu: Component = () => {
         <LaunchSettings />
       </Show>
 
-      <OptionSet name="Activation Mode">
+      <OptionSet name={i18n.t('activation_mode')}>
         <Show when={!window.isMac}>
           <RadioOption
-            caption="Universal"
-            message="Apply to all League Clients, including live and PBE."
+            caption={i18n.t('activation_universal')}
+            message={i18n.t('activation_universal_description')}
             checked={app.activation_mode() === ActivationMode.Universal}
             onClick={() => setActivationMode(ActivationMode.Universal)}
           />
           <RadioOption
-            caption="Targeted"
-            message="Apply to a specific League Client that you choose. Use it if you get access denied in Universal mode, except the Tencent server."
+            caption={i18n.t('activation_targeted')}
+            message={i18n.t('activation_targeted_description')}
             checked={app.activation_mode() === ActivationMode.Targeted}
             onClick={() => setActivationMode(ActivationMode.Targeted)}
           />
         </Show>
         <Show when={window.isMac}>
           <RadioOption
-            caption="On-demand"
-            message="Apply to a specific League Client that you launch from the Riot Client. You have to keep Pengu running in background."
+            caption={i18n.t('activation_on_demand')}
+            message={i18n.t('activation_on_demand_description')}
             disabled
             checked
           />
         </Show>
       </OptionSet>
-
     </div>
   )
 }

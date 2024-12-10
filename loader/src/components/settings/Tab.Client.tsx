@@ -1,89 +1,106 @@
 import { Component } from 'solid-js'
 import { useConfig } from '~/lib/config'
 import { CheckOption, OptionSet } from './templates'
+import { useI18n } from '~/lib/i18n'
 
 export const TabClient: Component = () => {
-
+  const i18n = useI18n()
   const { client } = useConfig()
 
   return (
-    <div class="space-y-4">
+    <div class='space-y-4'>
+      <p class='text-sm text-neutral-400'>
+        {i18n.t('client_settings_observation')}
+      </p>
 
-      <p class="text-sm text-neutral-400">*These options work within the Client, restart it to take effect.</p>
-
-      <OptionSet name="Hot Keys">
+      <OptionSet name={i18n.t('hot_keys')}>
         <CheckOption
-          caption="Enable hot keys"
-          message="Allow Pengu to catch these hot keys when you press in the Client to perform functions below."
+          caption={i18n.t('enable_hot_keys')}
+          message={i18n.t('enable_hot_keys_description')}
           checked={client.use_hotkeys()}
           onChange={client.use_hotkeys}
         />
-        <div class="space-y-2 ml-8 aria-disabled:opacity-50" aria-disabled={!client.use_hotkeys()}>
-          <div class="flex items-center space-x-2">
-            <kbd class="px-2 py-0.5 rounded-sm text-xs bg-neutral-500/30">Ctrl Shift R</kbd>
-            <p class="text-sm text-neutral-400">Reload the Client</p>
+        <div
+          class='space-y-2 ml-8 aria-disabled:opacity-50'
+          aria-disabled={!client.use_hotkeys()}
+        >
+          <div class='flex items-center space-x-2'>
+            <kbd class='px-2 py-0.5 rounded-sm text-xs bg-neutral-500/30'>
+              Ctrl Shift R
+            </kbd>
+            <p class='text-sm text-neutral-400'>{i18n.t('reload_client')}</p>
           </div>
-          <div class="flex items-center space-x-2">
-            <kbd class="px-2 py-0.5 rounded-sm text-xs bg-neutral-500/30">Ctrl Shift Enter</kbd>
-            <p class="text-sm text-neutral-400">Restart the UX</p>
+          <div class='flex items-center space-x-2'>
+            <kbd class='px-2 py-0.5 rounded-sm text-xs bg-neutral-500/30'>
+              Ctrl Shift Enter
+            </kbd>
+            <p class='text-sm text-neutral-400'>
+              {i18n.t('restart_interface')}
+            </p>
           </div>
-          <div class="flex items-center space-x-2 aria-disabled:line-through" aria-disabled={!client.use_devtools()}>
-            <kbd class="px-2 py-0.5 rounded-sm text-xs bg-neutral-500/30">Ctrl Shift I</kbd>
+          <div
+            class='flex items-center space-x-2 aria-disabled:line-through'
+            aria-disabled={!client.use_devtools()}
+          >
+            <kbd class='px-2 py-0.5 rounded-sm text-xs bg-neutral-500/30'>
+              Ctrl Shift I
+            </kbd>
             <span>/</span>
-            <kbd class="px-2 py-0.5 rounded-sm text-xs bg-neutral-500/30">F12</kbd>
-            <p class="text-sm text-neutral-400">Open Chrome DevTools</p>
+            <kbd class='px-2 py-0.5 rounded-sm text-xs bg-neutral-500/30'>
+              F12
+            </kbd>
+            <p class='text-sm text-neutral-400'>{i18n.t('open_dev_tools')}</p>
           </div>
         </div>
       </OptionSet>
 
-      <OptionSet name="Tweaks">
+      <OptionSet name={i18n.t('tweaks')}>
         <CheckOption
-          caption="Optimized Client"
-          message="Enable caching and disable some unnecessary things under the Client. This option does not cause your connection issues."
+          caption={i18n.t('optimize_client')}
+          message={i18n.t('optimize_client_description')}
           checked={client.optimized_client()}
           onChange={client.optimized_client}
         />
         <CheckOption
-          caption="Super Potato Mode"
-          message="Disable all animations and transitions, also reduce input lag from the Client."
+          caption={i18n.t('super_potato_mode')}
+          message={i18n.t('super_potato_mode_description')}
           checked={client.super_potato()}
           onChange={client.super_potato}
         />
         <CheckOption
-          caption="Silent Mode"
-          message="Suppress all notifications and flashing foreground window when matchmaking found."
+          caption={i18n.t('silent_mode')}
+          message={i18n.t('silent_mode_description')}
           checked={client.silent_mode()}
           onChange={client.silent_mode}
         />
       </OptionSet>
 
-      <OptionSet name="Developer">
+      <OptionSet name={i18n.t('developer')}>
         <CheckOption
-          caption="Developer Tools"
-          message="Allow you to open Chrome DevTools to debug the UX and plugins."
+          caption={i18n.t('developer_tools')}
+          message={i18n.t('developer_tools_description')}
           checked={client.use_devtools()}
           onChange={client.use_devtools}
         />
         <CheckOption
-          caption="Insecure Mode"
-          message="Disable all web security features like CORS and CSP."
+          caption={i18n.t('secure_mode')}
+          message={i18n.t('secure_mode_description')}
           checked={client.insecure_mode()}
           onChange={client.insecure_mode}
         />
         <CheckOption
-          caption="RiotClient API"
-          message="Allow you to access RiotClient API via 'riotclient' domain."
+          caption={i18n.t('riot_client_api')}
+          message={i18n.t('riot_client_api_description')}
           checked={client.use_riotclient()}
           onChange={client.use_riotclient}
         />
         <CheckOption
-          caption="Allow Proxy"
-          message="Allow the UX requests traffic through network proxy."
+          caption={i18n.t('allow_proxy')}
+          message={i18n.t('allow_proxy_description')}
           checked={client.use_proxy()}
           onChange={client.use_proxy}
         />
       </OptionSet>
-
     </div>
   )
 }
