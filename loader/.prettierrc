@@ -1,4 +1,7 @@
 {
   "tabWidth": 2,
-  "useTabs": false
+  "useTabs": false,
+  "singleQuote": true,
+  "jsxSingleQuote": true,
+  "semi": false
 }
