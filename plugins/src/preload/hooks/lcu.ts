@@ -1,4 +1,4 @@
-import { rcp } from './hooks';
+import { rcp } from './rcp';
 
 interface EventData {
   data: any;
@@ -10,26 +10,26 @@ interface ApiListener {
   (message: EventData): void;
 }
 
-let ws: WebSocket;
-const eventQueue = Array<string>();
-const listenersMap = new Map<string, Array<ApiListener>>();
+let _ws: WebSocket;
+const _eventQueue = Array<string>();
+const _listenersMap = new Map<string, Array<ApiListener>>();
 
 rcp.preInit('rcp-fe-common-libs', async function (provider) {
   const { _endpoint } = provider.context.socket;
-  ws = new WebSocket(_endpoint, 'wamp');
-  ws.addEventListener('open', () => {
-    for (const e of eventQueue.splice(0, eventQueue.length)) {
-      ws.send(JSON.stringify([5, e]));
+  _ws = new WebSocket(_endpoint, 'wamp');
+  _ws.addEventListener('open', () => {
+    for (const e of _eventQueue.splice(0, _eventQueue.length)) {
+      _ws.send(JSON.stringify([5, e]));
     }
   });
-  ws.addEventListener('message', handleMessage);
-  window.addEventListener('beforeunload', () => ws.close());
+  _ws.addEventListener('message', handleMessage);
+  window.addEventListener('beforeunload', () => _ws.close());
 });
 
 function handleMessage(e: MessageEvent<string>) {
   const [type, endpoint, data] = JSON.parse(e.data);
-  if (type === 8 && listenersMap.has(endpoint)) {
-    const listeners = listenersMap.get(endpoint)!;
+  if (type === 8 && _listenersMap.has(endpoint)) {
+    const listeners = _listenersMap.get(endpoint)!;
     for (const callback of listeners) {
       setTimeout(() => callback(<EventData>data), 0);
     }
@@ -50,17 +50,17 @@ function observe(api: string, listener: ApiListener) {
   const endpoint = buildApi(api);
   listener = listener.bind(self);
 
-  if (listenersMap.has(endpoint)) {
-    const arr = listenersMap.get(endpoint);
+  if (_listenersMap.has(endpoint)) {
+    const arr = _listenersMap.get(endpoint);
     arr!.push(listener);
   } else {
-    listenersMap.set(endpoint, [listener]);
+    _listenersMap.set(endpoint, [listener]);
   }
 
-  if (ws?.readyState === 1) {
-    ws.send(JSON.stringify([5, endpoint]));
+  if (_ws?.readyState === 1) {
+    _ws.send(JSON.stringify([5, endpoint]));
   } else {
-    eventQueue.push(endpoint);
+    _eventQueue.push(endpoint);
   }
 
   return {
@@ -70,20 +70,20 @@ function observe(api: string, listener: ApiListener) {
 
 function disconnect(api: string, listener: ApiListener) {
   const endpoint = buildApi(api);
-  if (listenersMap.has(endpoint)) {
-    const arr = listenersMap.get(endpoint)!.filter(x => x !== listener);
+  if (_listenersMap.has(endpoint)) {
+    const arr = _listenersMap.get(endpoint)!.filter(x => x !== listener);
     if (arr.length === 0) {
-      ws.send(JSON.stringify([6, endpoint]));
-      listenersMap.delete(endpoint);
+      _ws.send(JSON.stringify([6, endpoint]));
+      _listenersMap.delete(endpoint);
     } else {
-      listenersMap.set(endpoint, arr);
+      _listenersMap.set(endpoint, arr);
     }
     return true;
   }
   return false;
 }
 
-export const socket = {
+export const lcu = {
   observe,
   disconnect,
 };
