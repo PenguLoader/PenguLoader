@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="LICENSE" />
+    <File Path="makefile" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="core\core.vcxproj" Id="0c5bb758-5a09-4d96-bbbc-5f03d3512b58" />
+  <Project Path="loader/loader.csproj" Id="b735b916-95b3-4b5d-bf81-787b4e9ee23b" />
+  <Project Path="loader_v/loader_v.vcxproj" Id="23fd1fcd-26f1-4610-8500-35e7dc3fd81f" />
+</Solution>

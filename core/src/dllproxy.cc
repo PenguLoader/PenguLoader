@@ -25,10 +25,12 @@ static FARPROC GetFunction(Module index, const char *name)
         BOOL wow64 = FALSE;
         WCHAR path[MAX_PATH];
 
-        if (IsWow64Process(GetCurrentProcess(), &wow64) && wow64)
-            GetSystemWow64DirectoryW(path, MAX_PATH);
-        else
-            GetSystemDirectoryW(path, MAX_PATH);
+        //if (IsWow64Process(GetCurrentProcess(), &wow64) && wow64)
+        //    GetSystemWow64DirectoryW(path, MAX_PATH);
+        //else
+
+		// 64-bit only for now
+        GetSystemDirectoryW(path, MAX_PATH);
 
         lstrcatW(path, L"\\");
         lstrcatW(path, module_dlls[index]);
@@ -99,9 +101,9 @@ EXTERN_C void WINAPI D3DPERF_SetRegion(DWORD col, LPCWSTR wszName)
 // ==============================
 #define Forward_DWRITE(F) _Forward(DWRITE_DLL, #F, F)
 
-EXTERN_C HRESULT WINAPI DWriteCreateFactory(int factoryType, REFIID iid, IUnknown **factory)
+EXTERN_C HRESULT WINAPI DWriteCreateFactory(int factoryType, REFIID iid, LPVOID *ppPactory)
 {
-    return Forward_DWRITE(DWriteCreateFactory)(factoryType, iid, factory);
+    return Forward_DWRITE(DWriteCreateFactory)(factoryType, iid, ppPactory);
 }
 
 // VERSION DLL
