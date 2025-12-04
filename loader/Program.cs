@@ -1,19 +1,27 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Pengu.Loader
 {
     static partial class Program
     {
-        [UnmanagedCallersOnly]
-        public static int Entry()
+        static int Main(string[] args)
         {
-            MessageBoxW(IntPtr.Zero, "Hello from Pengu Loader", "Pengu Loader", 0);
+            Task.Run(async () =>
+            {
+                var dbg = new RiotClient.Debugger(8889);
+
+                RiotClient.Window.SetupWindow(dbg);
+
+                await dbg.Connect();
+
+                //await Debugger.DevTools.SetBypassCSP(true);
+                //await Debugger.DevTools.ReloadPage(true);
+                //await InjectScripts(Debugger.DevTools);
+            });
+
             return 0;
         }
-
-        // MessageBox
-        [LibraryImport("user32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
-        private static partial int MessageBoxW(IntPtr hWnd, string lpText, string lpCaption, uint uType);
     }
 }

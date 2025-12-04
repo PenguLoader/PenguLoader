@@ -8,12 +8,16 @@
 		<PublishAot>true</PublishAot>
 		<InvariantGlobalization>true</InvariantGlobalization>
 		<RootNamespace>Pengu.Loader</RootNamespace>
-		
+
 		<OutputPath>../bin/$(Configuration)/</OutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 
 		<IsAotCompatible>true</IsAotCompatible>
-		
+
 	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Websocket.Client" Version="5.3.0" />
+	</ItemGroup>
 
 </Project>
