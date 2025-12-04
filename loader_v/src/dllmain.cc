@@ -12,13 +12,14 @@
 #include <hostfxr.h>
 #include <nethost.h>
 
-#pragma warning(disable : 4996) // 'function': This function or variable may be unsafe.
-
 /// This DLL should be loaded by rundll32.exe
 /// to load .NET runtime and launch loader.dll for debugging purposes.
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define THIS_MODULE ((HMODULE)&__ImageBase)
+
+#undef MAX_PATH
+#define MAX_PATH 2048
 
 static bool _wcsi_endw(LPCWSTR str, LPCWSTR suffix)
 {
@@ -38,8 +39,8 @@ static hostfxr_initialize_for_runtime_config_fn hostfxr_initialize_for_runtime_c
 
 static bool LoadHostfxr()
 {
-	WCHAR dll_path[MAX_PATH + 1]{};
-	size_t path_size = ARRAYSIZE(dll_path);
+	WCHAR dll_path[MAX_PATH]{};
+	size_t path_size = MAX_PATH;
 
 	if (get_hostfxr_path(dll_path, &path_size, nullptr) != 0)
 		return false;
@@ -57,8 +58,8 @@ static bool LoadHostfxr()
 
 static std::wstring GetThisPath(bool dir)
 {
-	WCHAR pathbuf[2048]{};
-	size_t length = GetModuleFileNameW(THIS_MODULE, pathbuf, ARRAYSIZE(pathbuf));
+	WCHAR pathbuf[MAX_PATH]{};
+	size_t length = GetModuleFileNameW(THIS_MODULE, pathbuf, MAX_PATH);
 
 	std::wstring dllPath{ pathbuf, length };
 	if (!dir)
@@ -74,32 +75,56 @@ static bool FileExists(const std::wstring &path)
 		&& !(attrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 
+static bool IsLoaderDll(std::wstring &out, const std::wstring &path, bool from_dir)
+{
+    std::wstring path2 = from_dir ? path
+		: path.substr(0, path.find_last_of(L"/\\"));
+
+    path2 += L"\\loader.dll";
+
+	if (FileExists(path2))
+	{
+		out = path2;
+		return true;
+    }
+
+    return false;
+}
+
 static bool FindLoaderDll(std::wstring &out_path)
 {
 	out_path.clear();
 	auto this_dll = GetThisPath(false);
-	auto drive_name = this_dll.substr(0, this_dll.find(L":\\") + 1);
 
-	printf("Searching for loader.dll links for %ls\n", this_dll.c_str());
-	printf("Drive name: '%ls'\n", drive_name.c_str());
-
-	// assuming this dll is hard linked
-	// so enumerate all links to find the dir containing loader.dll
+    // first check the same dir (IFEO mode)
+	if (IsLoaderDll(out_path, this_dll, false))
+        return true;
 
 	HANDLE h = CreateFile(
 		this_dll.c_str(), GENERIC_READ, FILE_SHARE_READ,
 		NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 
-	WCHAR finalPath[2048]{};
-	DWORD pathLength = GetFinalPathNameByHandleW(h, finalPath, 2048, FILE_NAME_OPENED);
+    // check if symlink, then get the final path
+	if ((GetFileAttributes(this_dll.c_str()) & FILE_ATTRIBUTE_REPARSE_POINT) == FILE_ATTRIBUTE_REPARSE_POINT)
+	{
+        WCHAR _dest[MAX_PATH];
+		DWORD len = GetFinalPathNameByHandleW(h, _dest, MAX_PATH, FILE_NAME_OPENED);
 
-	printf("Final path: %ls\n", finalPath);
+        std::wstring dest{ _dest, len };
 
-	if (h == INVALID_HANDLE_VALUE)
-		return false;
+		// remove prepended '\\?\'
+		if (dest.find(L"\\\\?\\") == 0)
+			dest.erase(0, 4);
 
-	DWORD size = 2048;
-	WCHAR buffer[2048];
+		CloseHandle(h);
+        return IsLoaderDll(out_path, dest, false);
+    }
+
+	// otherwise this dll is hard linked
+	// enumerate all links to find the dir containing loader.dll
+
+	DWORD size = MAX_PATH;
+	WCHAR buffer[MAX_PATH];
 
 	HANDLE hEnum = FindFirstFileNameW(
 		this_dll.c_str(),
@@ -110,21 +135,16 @@ static bool FindLoaderDll(std::wstring &out_path)
 	if (hEnum == INVALID_HANDLE_VALUE)
 		return false;
 
+	auto drive_name = this_dll.substr(0, this_dll.find(L":\\") + 1);
+
 	do
 	{
 		std::wstring path{ buffer, size };
-		printf("Found link: %ls\n", path.c_str());
+		size = MAX_PATH;
 
-		std::wstring dir = drive_name + path.substr(0, path.find_last_of(L"/\\"));
-		std::wstring target = dir + L"\\loader.dll";
-
-		if (FileExists(target))
-		{
-			out_path = target;
+		if (IsLoaderDll(out_path, drive_name + path, false))
 			break;
-		}
 
-		size = 2048;
 	} while (FindNextFileNameW(hEnum, &size, buffer));
 
 	FindClose(hEnum);
@@ -253,6 +273,7 @@ int APIENTRY LaunchLoaderAppW(HWND hwnd, HINSTANCE hinst, LPWSTR cmdline, int)
 	return 0;
 }
 
+static std::wstring g_extraCmdLine;
 static auto Old_GetCommandLineW = &GetCommandLineW;
 static LPWSTR WINAPI Hooked_GetCommandLineW()
 {
@@ -260,47 +281,10 @@ static LPWSTR WINAPI Hooked_GetCommandLineW()
 	if (!modified[0])
 	{
 		wcscpy_s(modified, Old_GetCommandLineW());
-		wcscat_s(modified, L" --remote-debugging-port=8888 ");
+		wcscat_s(modified, g_extraCmdLine.c_str());
 	}
 
 	return modified;
-}
-
-static void AppendCommandLine(const std::wstring &str)
-{
-	static WCHAR buffer[32768]{};
-
-	//PTEB tebPtr = (PTEB)__readgsqword((DWORD) & (*(NT_TIB *)NULL).Self);
-	//PPEB pebPtr = tebPtr->ProcessEnvironmentBlock;
-	//PRTL_USER_PROCESS_PARAMETERS ppPtr = pebPtr->ProcessParameters;
-
-	//wcscpy_s(buffer, ppPtr->CommandLine.Buffer);
-	//wcscat_s(buffer, str.c_str());
-
-	//ppPtr->CommandLine.Buffer = buffer;
-	//ppPtr->CommandLine.Length = (USHORT)(wcslen(buffer) * sizeof(WCHAR));
-	//ppPtr->CommandLine.MaximumLength = sizeof(buffer);
-
-	wchar_t *cachedCmdLine = GetCommandLineW();
-	size_t newLen = wcslen(buffer);
-
-	printf("Original cmdline: %ls\n", cachedCmdLine);
-
-	//// Overwrite the existing buffer if it’s big enough
-	//wcsncpy(cachedCmdLine, buffer, newLen);
-	//cachedCmdLine[newLen] = L'\0';
-
-	//MessageBox(NULL,
-	//	L"Command line modified successfully.",
-	//	L"[loader_v] Info", MB_OK | MB_ICONINFORMATION);
-
-	//DetourTransactionBegin();
-
-	//DetourAttach(
-	//	(LPVOID *)&Old_GetCommandLineW,
-	//	(LPVOID)Hooked_GetCommandLineW);
-
-	//DetourTransactionCommit();
 }
 
 static void Initialize()
@@ -310,9 +294,21 @@ static void Initialize()
 	freopen_s((FILE **)stdout, "CONOUT$", "w", stdout);
 #endif
 	
-	// add --remote-debugging-port=9222 to command line
+	extern int PickFreeTcpPort();
+	int port = 8889;// PickFreeTcpPort();
 
-	AppendCommandLine(L" --remote-debugging-port=8888 ");
+    printf("[LOADER_V] Selected free TCP port: %d\n", port);
+
+    // append cmdline
+	g_extraCmdLine = L" --remote-debugging-port=";
+    g_extraCmdLine += std::to_wstring(port);
+
+    // hook GetCommandLineW
+	DetourTransactionBegin();
+	DetourAttach(
+		(LPVOID *)&Old_GetCommandLineW,
+		(LPVOID)Hooked_GetCommandLineW);
+	DetourTransactionCommit();
 
 	LoadLoaderEntry(nullptr);
 }
@@ -329,8 +325,8 @@ BOOL APIENTRY DllMain(HMODULE hinst, DWORD reason, LPVOID)
 		if (initialized)
 			break;
 
-		WCHAR exe_path[2048]{};
-		GetModuleFileNameW(NULL, exe_path, ARRAYSIZE(exe_path));
+		WCHAR exe_path[MAX_PATH]{};
+		GetModuleFileNameW(NULL, exe_path, MAX_PATH);
 
 		// check if 'Riot Client.exe'
 		if (_wcsi_endw(exe_path, L"Riot Client.exe"))

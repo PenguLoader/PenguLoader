@@ -35,7 +35,7 @@ path config::loader_dir()
 
         std::wstring dir{ finalPath, pathLength };
         // Remove prepended '\\?\' by GetFinalPathNameByHandle()
-        if (dir.rfind(L"\\\\?\\", 0) == 0)
+        if (dir.find(L"\\\\?\\") == 0)
             dir.erase(0, 4);
 
         // Get parent folder.
