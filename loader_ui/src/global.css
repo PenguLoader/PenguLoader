@@ -1,0 +1,22 @@
+.settings-drawer-dialog {
+  box-shadow: inset 0 0 0 2px var(--rcds-color-form-field-border-disabled);
+  bottom: 32px;
+  height: auto;
+  border-radius: 12px;
+}
+
+.settings-drawer-dialog .version-info span.text {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.settings-drawer-dialog .version-info::after {
+  content: 'Pengu Loader v2.0.1' attr(data-version);
+  text-transform: uppercase;
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .8px;
+  line-height: 14px;
+  font-family: var(--font-family);
+}
