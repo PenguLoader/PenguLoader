@@ -310,7 +310,7 @@ static void Initialize()
 		(LPVOID)Hooked_GetCommandLineW);
 	DetourTransactionCommit();
 
-	LoadLoaderEntry(nullptr);
+	//LoadLoaderEntry(nullptr);
 }
 
 BOOL APIENTRY DllMain(HMODULE hinst, DWORD reason, LPVOID)
