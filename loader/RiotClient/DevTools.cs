@@ -36,6 +36,12 @@ namespace Pengu.Loader.RiotClient
         public DevTools()
         {
             _client = new WebsocketClient(new Uri("ws://_"));
+            _client.ReconnectTimeout = null;
+            _client.MessageReceived.Subscribe(HandleMessage);
+            _client.DisconnectionHappened.Subscribe(info =>
+            {
+                Logger.Debug("DevTools disconnected: {0}", info.Type);
+            });
         }
 
         public void Dispose()
@@ -46,8 +52,6 @@ namespace Pengu.Loader.RiotClient
         public async Task Connect(string debuggerUrl)
         {
             _client.Url = new Uri(debuggerUrl);
-            _client.ReconnectTimeout = TimeSpan.FromSeconds(30);
-            _client.MessageReceived.Subscribe(HandleMessage);
 
             await _client.StartOrFail();
         }
