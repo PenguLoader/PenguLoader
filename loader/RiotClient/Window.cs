@@ -37,6 +37,8 @@ namespace Pengu.Loader.RiotClient
                             // Hook window proc
                             delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, IntPtr, nint> ptr = &HookWndProc;
                             SetWindowLongPtr(hwnd, -4, (nint)ptr);
+
+                            SetWindowText(hwnd, "Riot Client ft. Pengu Loader");
                         }
 
                         break;
@@ -68,7 +70,7 @@ namespace Pengu.Loader.RiotClient
                                 return 0;
 
                             case 'R':
-                                _dbg?.DevTools.ReloadPage();
+                                _dbg?.ReloadPage();
                                 return 0;
                         }
                     }
@@ -89,6 +91,9 @@ namespace Pengu.Loader.RiotClient
 
         [LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
         private static partial nint SetWindowLongPtr(nint hwnd, int nIndex, nint dwNewLong);
+
+        [LibraryImport("user32.dll", EntryPoint = "SetWindowTextW", StringMarshalling = StringMarshalling.Utf16)]
+        private static partial int SetWindowText(nint hwnd, string lpString);
 
         [LibraryImport("user32.dll", SetLastError = true)]
         private static partial uint GetWindowThreadProcessId(nint hWnd, out int pid);

@@ -8,18 +8,24 @@ using System.Threading.Tasks;
 
 namespace Pengu.Loader.RiotClient
 {
-    partial class Debugger
+    partial class Debugger : IDisposable
     {
-        private int Port;
-        public DevTools DevTools { get; }
-        public string? FrontEndUrl { get; private set; }
-        public string? WebSocketUrl { get; private set; }
+        readonly int _port;
+        readonly DevTools _devTools;
 
+        private bool _connected = false;
+        private string? _frontEndUrl;
+        private string? _webSocketUrl;
 
         public Debugger(int port)
         {
-            this.Port = port;
-            this.DevTools = new DevTools();
+            _port = port;
+            _devTools = new DevTools();
+        }
+
+        public void Dispose()
+        {
+            _devTools.Dispose();
         }
 
         public async Task Connect()
@@ -31,7 +37,7 @@ namespace Pengu.Loader.RiotClient
 
             }, disposeHandler: true);
 
-            var url = $"http://127.0.0.1:{Port}/json";
+            var url = $"http://127.0.0.1:{_port}/json";
             int delayMs = 100;
 
             while (true)
@@ -40,7 +46,7 @@ namespace Pengu.Loader.RiotClient
                 try
                 {
                     using var tcp = new TcpClient();
-                    var connectTask = tcp.ConnectAsync("127.0.0.1", Port);
+                    var connectTask = tcp.ConnectAsync("127.0.0.1", _port);
                     await connectTask.WaitAsync(TimeSpan.FromSeconds(5));
                     // If we get here, the port accepted TCP connection
                 }
@@ -61,19 +67,49 @@ namespace Pengu.Loader.RiotClient
                     {
                         var item = list!.Find(e => e.title == "Riot Client" && e.type == "page");
 
-                        FrontEndUrl = item!.devtoolsFrontendUrl;
-                        WebSocketUrl = item!.webSocketDebuggerUrl;
+                        _frontEndUrl = item!.devtoolsFrontendUrl;
+                        _webSocketUrl = item!.webSocketDebuggerUrl;
 
-                        await DevTools.Connect(WebSocketUrl);
+                        await _devTools.Connect(_webSocketUrl);
+                        await Initialize(item.url);
+
                         break;
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger.Error("Failed to connect to Riot Client debugger:", ex);
+                    break;
                 }
 
                 await Task.Delay(delayMs);
             }
+        }
+
+        private async Task Initialize(string url)
+        {
+            _connected = true;
+
+            Logger.Debug("Connected to Riot Client debugger");
+            Logger.Debug("Frontend URL: {0}", url);
+
+            // Intercept the main page to inject our scripts
+            await _devTools.InterceptResponse(url, (url, resp) =>
+            {
+                var patch = new Utils.HtmlPatcher(resp.body!)
+                    // Allow loading scripts from Vite dev server
+                    .AddCspSource("http://localhost:3000")
+                    // Inject Vite HMR client and our main script
+                    .AddScriptTag("http://localhost:3000/@vite/client", module: true)
+                    // Inject our main script
+                    .AddScriptTag("http://localhost:3000/src/index.tsx", module: true);
+
+                resp.body = patch.Html;
+                return Task.CompletedTask;
+            });
+
+            // Reload the page to apply changes
+            await _devTools.ReloadPage();
         }
 
         record DebuggerItem(
@@ -90,9 +126,43 @@ namespace Pengu.Loader.RiotClient
         {
         }
 
+        public void ReloadPage()
+        {
+            if (_connected)
+            {
+                Logger.Debug("Reloading Riot Client page...");
+                _ = _devTools.ReloadPage();
+            }
+            else
+            {
+                Logger.Debug("Cannot reload Riot Client page: Not connected to debugger.");
+            }
+        }
+
         public void OpenRemoteDevTools()
         {
-            Utils.Shell.OpenUrlAsBrowserApp($"http://localhost:{Port}{FrontEndUrl}");
+            if (_connected)
+            {
+                Logger.Debug("Opening Riot Client DevTools in browser...");
+                Utils.Shell.OpenUrlAsBrowserApp($"http://127.0.0.1:{_port}{_frontEndUrl}");
+            }
+            else
+            {
+                Logger.Debug("Cannot open Riot Client DevTools: Not connected to debugger.");
+            }
+        }
+
+        public void BlockSentry()
+        {
+            if (_connected)
+            {
+                Logger.Debug("Blocking Sentry requests...");
+                _ = _devTools.BlockUrls(["sentry-ipc://sentry-electron.scope/*"]);
+            }
+            else
+            {
+                Logger.Debug("Cannot block Sentry requests: Not connected to debugger.");
+            }
         }
     }
 }
