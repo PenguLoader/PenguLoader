@@ -20,3 +20,13 @@
   line-height: 14px;
   font-family: var(--font-family);
 }
+
+.general-settings .section-caption {
+  color: var(--rcds-color-text-primary);
+  margin-bottom: 16px;
+}
+
+.general-settings .section-caption > span {
+  color: var(--rcds-color-text-base);
+  margin-bottom: var(--rcds-spacing-around-small);
+}

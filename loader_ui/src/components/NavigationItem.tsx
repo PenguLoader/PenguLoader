@@ -10,7 +10,7 @@ type NavigationItemProps = {
 export const NavigationItem: VoidComponent<NavigationItemProps> = (props) => {
   return (
     <li data-selected={props.active || 'false'} class="settings-navigation-item" onClick={() => props.onClick?.(props.caption)}>
-      <a>
+      <a href='/products/league_of_legends/patchlines/live?settings=true&settings-page=league_of_legends'>
         {props.icon}
         <span class="text formatted-message settings-navigation-item-name" data-family="sans" data-bold="false" data-scale="LabelM" data-testid="settings-navigation-item-name">{props.caption}</span>
       </a>
