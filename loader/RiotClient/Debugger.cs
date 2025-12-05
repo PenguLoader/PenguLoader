@@ -10,12 +10,11 @@ namespace Pengu.Loader.RiotClient
 {
     partial class Debugger
     {
-        int Port;
-
+        private int Port;
+        public DevTools DevTools { get; }
         public string? FrontEndUrl { get; private set; }
         public string? WebSocketUrl { get; private set; }
 
-        public DevTools DevTools;
 
         public Debugger(int port)
         {

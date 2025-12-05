@@ -13,38 +13,23 @@ namespace Pengu.Loader.RiotClient
     {
         WebsocketClient Client;
 
-        long _IdCount = 0;
-        long NextId => Interlocked.Increment(ref _IdCount);
+        private long _IdCount = 0;
+        private long NextId => Interlocked.Increment(ref _IdCount);
+
+        public event Action? PageLoaded;
 
         public DevTools()
         {
-            Client = new WebsocketClient(new Uri("ws://_"));
-            Client.ReconnectTimeout = TimeSpan.FromSeconds(30);
-            Client.MessageReceived.Subscribe(HandleMessage);
         }
 
         public async Task Connect(string debuggerUrl)
         {
-            Client.Url = new Uri(debuggerUrl);
+            Client = new WebsocketClient(new Uri(debuggerUrl));
+            Client.ReconnectTimeout = TimeSpan.FromSeconds(30);
+            Client.MessageReceived.Subscribe(HandleMessage);
+
+            //Client.Url = new Uri(debuggerUrl);
             await Client.StartOrFail();
-
-            await SendMethod("Page.enable");
-            await SendMethod("Page.reload");
-
-            //try
-            //{
-            //    await BlockUrls(
-            //    [
-            //        "sentry-ipc://sentry-electron.scope/*",
-            //                ]);
-
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("[LOADER_W] DevTools BlockUrls failed: {0}", ex);
-            //}
-
-            //await EnableFetchInterception([new("https://example.com", "Request")]);
         }
 
         private void HandleMessage(ResponseMessage msg)
@@ -56,20 +41,21 @@ namespace Pengu.Loader.RiotClient
             if (string.IsNullOrEmpty(json))
                 return;
 
-            var ev = JsonSerializer.Deserialize(json,
-                DevToolsJsonContext.Default.MethodOnlyEvent);
-
-            if (ev != null && ev.method == "Page.loadEventFired")
+            try
             {
-                int port = 3000;
-                _ = this.EvaluateScript(
-                    $$"""
-                    (async () => {
-                        console.log("LOADER: Injecting Vite client and app code...");
-                        await import(`https://localhost:{{port}}/@vite/client`);
-                        await import(`https://localhost:{{port}}/src/index.tsx`);
-                    })();
-                    """);
+                var ev = JsonSerializer.Deserialize(json,
+                    DevToolsJsonContext.Default.MethodOnlyEvent);
+
+                Console.WriteLine("[LOADER][I] DevTools received method: {0}", ev?.method);
+
+                if (ev != null && ev.method == "Page.loadEventFired")
+                {
+                    PageLoaded?.Invoke();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[LOADER][D] DevTools failed to parse message: {0}", ex);
             }
         }
 
