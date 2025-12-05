@@ -4,8 +4,8 @@ console.log('App loaded');
 
 const App: Component = () => {
   return (
-    <p class="text-4xl text-green-700 text-center py-20">
-      Hello{' '}
+    <p xclass="text-4xl text-green-700 text-center py-20">
+      {/* Hello{' '}
       <a
         class="text-pink-600 hover:font-bold hover:border-1"
         href="https://antfu.me/posts/reimagine-atomic-css"
@@ -13,7 +13,7 @@ const App: Component = () => {
       >
         Atomic CSS
       </a>
-      !
+      ! */}
     </p>
   );
 };
