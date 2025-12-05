@@ -10,11 +10,11 @@ export default defineConfig({
     UnocssPlugin({
       // your config or in uno.config.ts
     }),
-    mkcert(),
+    // mkcert(),
   ],
   server: {
     port: 3000,
-    https: true,
+    // https: true,
   },
   build: {
     target: 'esnext',
