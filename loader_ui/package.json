@@ -11,6 +11,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^20",
     "@unocss/preset-mini": "^66.5.0",
     "@unocss/vite": "^66.5.0",
     "solid-devtools": "^0.34.3",

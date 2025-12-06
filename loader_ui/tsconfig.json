@@ -15,6 +15,13 @@
 
     // Type Checking & Safety
     "strict": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+
+    // Paths & Aliases
+    "paths": {
+      "@assets/*": ["./src/assets/*"],
+      "@components/*": ["./src/components/*"],
+      "@lib/*": ["./src/lib/*"],
+    }
   }
 }
