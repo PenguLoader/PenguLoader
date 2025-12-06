@@ -34,20 +34,18 @@ export function waitForElement(selector: string): Promise<Element> {
 }
 
 /**
- * Watches for an element matching the selector to appear in the DOM.
+ * Watches for an element matching the selector to change in the DOM.
  */
-export function watchElement(selector: string, callback: (el: Element) => void) {
-  let last: Element | null = document.querySelector(selector)
+export function watchElement<T = Element>(selector: string, callback: (el: T | undefined) => void) {
+  let last: T | undefined = <T>document.querySelector(selector)
   if (last) {
     callback(last)
   }
   const observer = new MutationObserver(() => {
-    const el = document.querySelector(selector)
+    const el = <T>document.querySelector(selector)
     if (el !== last) {
       last = el
-      if (el) {
-        callback(el)
-      }
+      callback(el || undefined)
     }
   })
   observer.observe(document.documentElement, {

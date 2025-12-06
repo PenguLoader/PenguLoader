@@ -41,7 +41,7 @@ type ToggleSettingProps = {
 
 export const ToggleSetting: VoidComponent<ToggleSettingProps> = (props) => {
   return (
-    <div class="settings-toggle-block-content-wrapper">
+    <div class="settings-toggle-block-content-wrapper justify-between">
       <div class="settings-toggle-block-text-wrapper">
         <span class="text formatted-message settings-toggle-block-label" data-family="sans" data-bold="false" data-scale="LabelM" data-testid="text">
           <span class="formatted-message">{props.caption}</span>
