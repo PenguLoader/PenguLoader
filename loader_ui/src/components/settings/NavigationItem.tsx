@@ -17,6 +17,7 @@ const SubNavigationItem: VoidComponent<{
   id: string
   name: string
   icon?: JSXElement
+  page: VoidComponent
 }> = (props) => {
 
   const nav = useContext(NavContext)!
@@ -31,6 +32,7 @@ const SubNavigationItem: VoidComponent<{
     nav.setCurrent(props.id)
     settings.setPageId(props.id)
     settings.setTitle(`${nav.rootName} - ${props.name}`)
+    settings.setPageComponent(() => props.page)
   }
 
   return (

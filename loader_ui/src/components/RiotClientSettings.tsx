@@ -1,5 +1,5 @@
 import { createEffect, createSignal, Match, onCleanup, onMount, Show, Switch, VoidComponent } from 'solid-js'
-import { Portal } from 'solid-js/web'
+import { Dynamic, Portal } from 'solid-js/web'
 import { watchElement } from '@lib/dom-utils'
 import { SettingsContext } from './settings/context'
 import NavigationItem from './settings/NavigationItem'
@@ -9,8 +9,9 @@ import { SettingsDrawer } from './settings/SettingsDrawer'
 import { PenguGeneralSettings, PenguLoLClientSettings, PenguRiotClientSettings } from './PenguSettings'
 
 const RiotClientSettings: VoidComponent = () => {
-  const [pageId, setPageId] = createSignal<string>('/')
   const [title, setTitle] = createSignal<string>('')
+  const [pageId, setPageId] = createSignal<string>('/')
+  const [pageComponent, setPageComponent] = createSignal<VoidComponent>()
   const [navList, setNavList] = createSignal<HTMLUListElement>()
 
   const restoreExtPage = () => {
@@ -79,7 +80,7 @@ const RiotClientSettings: VoidComponent = () => {
   })
 
   return (
-    <SettingsContext.Provider value={{ pageId, setPageId, title, setTitle }}>
+    <SettingsContext.Provider value={{ pageId, setPageId, title, setTitle, pageComponent, setPageComponent }}>
       <Portal mount={navList()}>
         <NavigationItem
           name="Pengu Loader"
@@ -89,33 +90,26 @@ const RiotClientSettings: VoidComponent = () => {
             id="pengu-general"
             name="General"
             icon={<Icons.GeneralIcon />}
+            page={PenguGeneralSettings}
           />
           <NavigationItem.SubItem
             id="pengu-riot-client"
             name="Riot Client"
             icon={<Icons.RiotIcon />}
+            page={PenguRiotClientSettings}
           />
           <NavigationItem.SubItem
             id="pengu-lol-client"
             name="LoL Client"
             icon={<Icons.LeagueFlatIcon />}
+            page={PenguLoLClientSettings}
           />
         </NavigationItem>
       </Portal>
       <Show when={!pageId().startsWith('/')}>
         <Portal mount={document.querySelector('#settings-drawer-content .settings-drawer-details')?.parentElement!}>
           <SettingsDrawer title={title()} icon={<img src={PenguIcon} class="settings-header-title-icon-image" />}>
-            <Switch>
-              <Match when={pageId() === 'pengu-general'}>
-                <PenguGeneralSettings />
-              </Match>
-              <Match when={pageId() === 'pengu-riot-client'}>
-                <PenguRiotClientSettings />
-              </Match>
-              <Match when={pageId() === 'pengu-lol-client'}>
-                <PenguLoLClientSettings />
-              </Match>
-            </Switch>
+            <Dynamic component={pageComponent()} />
           </SettingsDrawer>
         </Portal>
       </Show>

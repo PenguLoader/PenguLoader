@@ -1,4 +1,4 @@
-import { createContext, Accessor, Setter } from 'solid-js'
+import { createContext, Accessor, Setter, VoidComponent } from 'solid-js'
 
 export const SettingsContext = createContext<{
   lastRCPage?: string
@@ -6,4 +6,6 @@ export const SettingsContext = createContext<{
   setTitle: Setter<string>
   pageId: Accessor<string>
   setPageId: Setter<string>
+  pageComponent: Accessor<VoidComponent | undefined>
+  setPageComponent: Setter<VoidComponent | undefined>
 }>()
