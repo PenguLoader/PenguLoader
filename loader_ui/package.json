@@ -1,10 +1,9 @@
 {
-  "name": "vite-template-solid",
+  "name": "pengu-loader-ui",
   "version": "0.0.0",
   "description": "",
   "type": "module",
   "scripts": {
-    "start": "vite",
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview"
