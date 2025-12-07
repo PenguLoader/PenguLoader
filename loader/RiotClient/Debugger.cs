@@ -94,7 +94,7 @@ namespace Pengu.Loader.RiotClient
             Logger.Debug("Frontend URL: {0}", url);
 
             // Intercept the main page to inject our scripts
-            await _devTools.InterceptResponse(url, (url, resp) =>
+            await _devTools.InterceptResponse(url, async (url, resp) =>
             {
                 var patch = new Utils.HtmlPatcher(resp.body!)
                     // Allow loading scripts from Vite dev server
@@ -105,11 +105,96 @@ namespace Pengu.Loader.RiotClient
                     .AddScriptTag("http://localhost:3000/src/index.tsx", module: true);
 
                 resp.body = patch.Html;
-                return Task.CompletedTask;
+                Logger.Debug("Patched index.html response");
+
+                await ExposeIpc();
             });
 
             // Reload the page to apply changes
             await _devTools.ReloadPage();
+        }
+
+        private async Task ExposeIpc()
+        {
+            // Add the binding for the internal send function
+            await _devTools.RegisterJsBinding("__pengu_ipc__", HandleIpcRequest);
+
+            // Inject JavaScript to define the async window.__ipc function
+            string jsCode = """
+            (function() {
+                if (window.__penguIpc) return;     
+                window.__penguIpc = new class {
+                    #id = 0;
+                    #promises = new Map();
+
+                    resolve(id, data) {
+                        const p = this.#promises.get(id);
+                        if (p) {
+                            p.resolve(data);
+                            this.#promises.delete(id);
+                        }
+                    }
+
+                    reject(id, error) {
+                        const p = this.#promises.get(id);
+                        if (p) {
+                            p.reject(new Error(error));
+                            this.#promises.delete(id);
+                        }
+                    }
+
+                    async send(type, ...args) {
+                        const id = ++this.#id;
+                        const p = new Promise((resolve, reject) => {
+                            this.#promises.set(id, {resolve, reject});
+                        });
+                        try {
+                            const data = { id, type, args };
+                            window.__pengu_ipc__(JSON.stringify(data));
+                        } catch (e) {
+                            this.#promises.delete(id);
+                            throw e;
+                        }
+                        return p;
+                    }
+                };
+            })();
+            """;
+            await _devTools.EvaluateScript(jsCode);
+
+            Logger.Debug("Exposed __penguIpc to browser runtime");
+        }
+
+        private async Task HandleIpcRequest(string cmd, string payload)
+        {
+            using var json = JsonDocument.Parse(payload);
+            var root = json.RootElement;
+
+            long requestId = root.GetProperty("id").GetInt64();
+            var type = root.GetProperty("type").GetString();
+            using var args = root.GetProperty("args").EnumerateArray();
+
+            try
+            {
+                // Send the resolution back to JS
+                object result = await HandleIpcCommand(type!, args);
+                var jsExpr = $"window.__penguIpc.resolve({requestId}, {result})";
+
+                await _devTools.EvaluateScript(jsExpr);
+            }
+            catch (Exception ex)
+            {
+                // Send the rejection back to JS
+                var error = JsValue.String(ex.Message);
+                var jsExpr = $"window.__penguIpc.reject({requestId}, {error})";
+
+                await _devTools.EvaluateScript(jsExpr);
+            }
+        }
+
+        private async Task<JsValue> HandleIpcCommand(string type, JsonElement.ArrayEnumerator args)
+        {
+            throw new NotImplementedException($"IPC command '{type}' is not implemented.");
         }
 
         record DebuggerItem(

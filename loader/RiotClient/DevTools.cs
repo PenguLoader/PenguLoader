@@ -27,9 +27,11 @@ namespace Pengu.Loader.RiotClient
         }
 
         public delegate Task ResponseInterceptor(string url, HttpResponse resp);
+        public delegate Task JsBindingHandler(string name, string payload);
 
         readonly List<(string pattern, ResponseInterceptor intercept)> _responseInterceptors = new();
         readonly ConcurrentDictionary<long, TaskCompletionSource<JsonElement>> _pendingRequests = new();
+        readonly ConcurrentDictionary<string, JsBindingHandler> _jsBindings = new();
 
         public event Action? PageLoaded;
 
@@ -105,6 +107,41 @@ namespace Pengu.Loader.RiotClient
                         return;
                     }
 
+                    // Handle Runtime.bindingCalled (JS -> client binding)
+                    if (method == "Runtime.bindingCalled")
+                    {
+                        try
+                        {
+                            if (!root.TryGetProperty("params", out var paramsEl))
+                                return;
+
+                            var name = paramsEl.GetProperty("name").GetString();
+                            var payload = paramsEl.GetProperty("payload").GetString();
+
+                            if (name != null && _jsBindings.TryGetValue(name, out var handler) && handler != null)
+                            {
+                                // Fire-and-forget to avoid blocking protocol message processing.
+                                Task.Run(async () =>
+                                {
+                                    try
+                                    {
+                                        await handler(name, payload ?? string.Empty).ConfigureAwait(false);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Logger.Error("JS binding handler threw", ex);
+                                    }
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error("DevTools binding handling failed", ex);
+                        }
+
+                        return;
+                    }
+
                     // Handle Fetch.requestPaused for interception
                     if (method == "Fetch.requestPaused")
                     {
@@ -135,7 +172,7 @@ namespace Pengu.Loader.RiotClient
                             {
                                 try
                                 {
-                                    await ContinueResponse(requestId, requestUrl, statusCode, interceptor.intercept);
+                                    await ContinueResponse(requestId, requestUrl, statusCode, interceptor.intercept).ConfigureAwait(false);
                                 }
                                 catch (Exception ex)
                                 {
@@ -200,22 +237,23 @@ namespace Pengu.Loader.RiotClient
         }
 
         record Page_reload(bool ignoreCache);
-        record Runtime_evaluate(string expression);
         record Fetch_enable(RequestPattern[]? patterns);
         record Fetch_getResponseBody(string requestId);
         record HeaderEntry(string name, string value);
         record Fetch_fulfillRequest(string requestId, int responseCode, HeaderEntry[] responseHeaders, string body);
         record RequestPattern(string urlPattern, string requestStage);
-
         record Network_setBlockedURLs(string[] urls);
+        record Runtime_addBinding(string name);
+        record Runtime_evaluate(string expression);
 
         [JsonSerializable(typeof(Page_reload))]
-        [JsonSerializable(typeof(Runtime_evaluate))]
         [JsonSerializable(typeof(Fetch_enable))]
         [JsonSerializable(typeof(Fetch_getResponseBody))]
         [JsonSerializable(typeof(HeaderEntry))]
         [JsonSerializable(typeof(Fetch_fulfillRequest))]
         [JsonSerializable(typeof(Network_setBlockedURLs))]
+        [JsonSerializable(typeof(Runtime_addBinding))]
+        [JsonSerializable(typeof(Runtime_evaluate))]
         partial class DevToolsJsonContext : JsonSerializerContext
         {
         }
@@ -283,6 +321,18 @@ namespace Pengu.Loader.RiotClient
 
             // Ensure Fetch domain is enabled with responseHandling
             var @params = new Fetch_enable([new(pattern, "Response")]);
+            var json = CreatePayloadJson(NextId, @params);
+            await _client.SendInstant(json);
+        }
+
+        public async Task RegisterJsBinding(string name, JsBindingHandler handler)
+        {
+            if (string.IsNullOrEmpty(name) || handler == null)
+                return;
+
+            _jsBindings[name] = handler;
+
+            var @params = new Runtime_addBinding(name);
             var json = CreatePayloadJson(NextId, @params);
             await _client.SendInstant(json);
         }
