@@ -74,5 +74,32 @@ namespace Pengu.Loader.Utils
 
             return this;
         }
+
+        public HtmlPatcher AddScriptCode(string code, bool module)
+        {
+            var sid = Guid.NewGuid().ToString("N");
+            var scriptTag = module
+                ? $"<script nonce=\"{sid}\" type=\"module\">{code}</script>"
+                : $"<script nonce=\"{sid}\">{code}</script>";
+
+            // Insert before </head>
+            _html = Regex.Replace(_html, @"</head>",
+                scriptTag + "</head>", RegexOptions.IgnoreCase);
+            // Also add nonce to CSP
+            _html = AddCspSource($"'nonce-{sid}'")._html;
+
+            return this;
+        }
+
+        public HtmlPatcher AddStyleCode(string code)
+        {
+            var styleTag = $"<style>{code}</style>";
+
+            // Insert before </head>
+            _html = Regex.Replace(_html, @"</head>",
+                styleTag + "</head>", RegexOptions.IgnoreCase);
+
+            return this;
+        }
     }
 }

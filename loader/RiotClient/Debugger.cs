@@ -99,6 +99,13 @@ namespace Pengu.Loader.RiotClient
                 var patch = new Utils.HtmlPatcher(resp.body!)
                     // Allow loading scripts from Vite dev server
                     .AddCspSource("http://localhost:3000")
+                    // Inject our global config
+                    .AddScriptCode($$"""
+                        window.__riot = {
+                            appPort: {{Services.AppPort}},
+                            authToken: `{{Services.AuthToken}}`,
+                        };
+                        """, false)
                     // Inject Vite HMR client and our main script
                     .AddScriptTag("http://localhost:3000/@vite/client", module: true)
                     // Inject our main script
@@ -122,7 +129,11 @@ namespace Pengu.Loader.RiotClient
             // Inject JavaScript to define the async window.__ipc function
             string jsCode = """
             (function() {
-                if (window.__penguIpc) return;     
+                if (window.__penguIpc) return;
+
+                const ipcSend = window.__pengu_ipc__;
+                delete window.__pengu_ipc__;
+
                 window.__penguIpc = new class {
                     #id = 0;
                     #promises = new Map();
@@ -150,7 +161,7 @@ namespace Pengu.Loader.RiotClient
                         });
                         try {
                             const data = { id, type, args };
-                            window.__pengu_ipc__(JSON.stringify(data));
+                            ipcSend(JSON.stringify(data));
                         } catch (e) {
                             this.#promises.delete(id);
                             throw e;
