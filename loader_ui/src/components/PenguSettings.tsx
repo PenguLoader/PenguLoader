@@ -24,20 +24,35 @@ export const PenguGeneralSettings: Component = () => {
   )
 }
 
+export const PenguRiotClientSettings: Component = () => {
+  return (
+    <>
+      <div>
+        <SectionSettings name="Riot Client tweaks" />
+        <ToggleSetting
+          caption="Disable Sentry"
+          description="Disables the Sentry error reporting and telemetry. Restart Riot Client to take effect."
+        />
+        <ToggleSetting
+          caption="Potato mode"
+          description="Disables all animation and transition effects, better when 'hardware acceleration' is disabled. Restart Riot Client to take effect."
+        />
+      </div>
+    </>
+  )
+}
+
 export const PenguLoLClientSettings: Component = () => {
   return (
     <>
       <div>
-        <SectionSettings name="Client tweaks" />
+        <SectionSettings name="League Client tweaks" />
         <ToggleSetting
           caption="Enable hot keys" checked recommended
           description="Allows Pengu to capture the hotkeys below to perform corresponding actions."
         />
 
         <div>
-          <span class="text formatted-message" data-family="sans" data-bold="false" data-scale="LabelXS" data-testid="text">
-            <span class="formatted-message case-upper">Hot keys</span>
-          </span>
           <div class="flex items-center mt-2 gap-2">
             <div class="chip-container" data-inline-chip="false">
               <span class="text formatted-message chip-title" data-family="riot-sans" data-bold="false" data-scale="LabelXS" data-testid="text">

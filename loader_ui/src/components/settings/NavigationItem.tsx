@@ -13,14 +13,6 @@ const NavContext = createContext<{
   setCurrent: Setter<string>
 }>()
 
-// function updatePageView(rootName: string, subName: string) {
-//   const peers = document.querySelectorAll('.settings-navigation-product-list>li')
-//   peers.forEach(el => el.setAttribute('data-selected', 'false'))
-
-//   const caption = document.querySelector('.settings-header-title-text>span')!
-//   caption.textContent = `${rootName} - ${subName}`
-// }
-
 const SubNavigationItem: VoidComponent<{
   id: string
   name: string

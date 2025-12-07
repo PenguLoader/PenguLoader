@@ -6,10 +6,10 @@ import NavigationItem from './settings/NavigationItem'
 import * as Icons from './Icons'
 import PenguIcon from '@assets/pengu-icon.png?inline'
 import { SettingsDrawer } from './settings/SettingsDrawer'
-import { PenguGeneralSettings, PenguLoLClientSettings } from './PenguSettings'
+import { PenguGeneralSettings, PenguLoLClientSettings, PenguRiotClientSettings } from './PenguSettings'
 
 const RiotClientSettings: VoidComponent = () => {
-  const [pageId, setPageId] = createSignal<string>('')
+  const [pageId, setPageId] = createSignal<string>('/')
   const [title, setTitle] = createSignal<string>('')
   const [navList, setNavList] = createSignal<HTMLUListElement>()
 
@@ -21,7 +21,7 @@ const RiotClientSettings: VoidComponent = () => {
     // }
   }
 
-  createEffect(() => {
+  createEffect(async () => {
     const id = pageId()
     if (id.startsWith('/')) {
       setExtDrawerVisible(true)
@@ -41,7 +41,7 @@ const RiotClientSettings: VoidComponent = () => {
   const clearExtActive = () => {
     const ul = navList()
     if (ul) {
-      const lis = ul.querySelectorAll(':scope>li')
+      const lis = ul.querySelectorAll(':scope>li[data-selected="true"]')
       lis.forEach(li => li.setAttribute('data-selected', 'false'))
     }
   }
@@ -51,12 +51,12 @@ const RiotClientSettings: VoidComponent = () => {
     const target = e.target as HTMLElement
 
     ul.querySelectorAll('li').forEach((li) => {
-      const link = li.firstChild as HTMLAnchorElement
-      const href = link?.getAttribute('href')
-
       if (li.contains(target)) {
+        const link = li.firstChild as HTMLAnchorElement
+        const href = link?.getAttribute('href')
         if (href) {
           setPageId(href)
+          li.setAttribute('data-selected', 'true')
         }
       }
     })
@@ -91,6 +91,11 @@ const RiotClientSettings: VoidComponent = () => {
             icon={<Icons.GeneralIcon />}
           />
           <NavigationItem.SubItem
+            id="pengu-riot-client"
+            name="Riot Client"
+            icon={<Icons.RiotIcon />}
+          />
+          <NavigationItem.SubItem
             id="pengu-lol-client"
             name="LoL Client"
             icon={<Icons.LeagueFlatIcon />}
@@ -103,6 +108,9 @@ const RiotClientSettings: VoidComponent = () => {
             <Switch>
               <Match when={pageId() === 'pengu-general'}>
                 <PenguGeneralSettings />
+              </Match>
+              <Match when={pageId() === 'pengu-riot-client'}>
+                <PenguRiotClientSettings />
               </Match>
               <Match when={pageId() === 'pengu-lol-client'}>
                 <PenguLoLClientSettings />
