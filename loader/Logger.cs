@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Microsoft.Extensions.Logging;
 using ZLogger;
 
@@ -13,16 +14,24 @@ namespace Pengu.Loader
         {
             s_factory = LoggerFactory.Create(builder =>
             {
-                var path = AppContext.BaseDirectory + @"/pengu.log";
-
                 builder
                     .ClearProviders()
-                    .AddZLoggerFile(path)
+                    .AddZLoggerFile(Path.Combine(Config.UserDir, "debug.log"), options =>
+                    {
+                        options.UsePlainTextFormatter(fmt =>
+                        {
+                            fmt.SetPrefixFormatter($"{0:yyyy-MM-dd HH:mm:ss.fff} [{1:short}] ",
+                                (in MessageTemplate template, in LogInfo info) =>
+                                {
+                                    template.Format(info.Timestamp, info.LogLevel);
+                                });
+                        });
+                    })
                     .AddZLoggerConsole(options =>
                     {
-                        options.UsePlainTextFormatter(formatter =>
+                        options.UsePlainTextFormatter(fmt =>
                         {
-                            formatter.SetPrefixFormatter($"{0}{2:HH:mm:ss} [{3:short}]{1} ",
+                            fmt.SetPrefixFormatter($"{0}{2:HH:mm:ss} [{3:short}]{1} ",
                                 (in MessageTemplate template, in LogInfo info) =>
                                 {
                                     var cc = info.LogLevel switch
@@ -63,6 +72,7 @@ namespace Pengu.Loader
 
         public static void Shutdown()
         {
+            s_logger.ZLogInformation($"========================================\n\n");
             s_factory.Dispose();
         }
     }

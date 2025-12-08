@@ -10,6 +10,7 @@ namespace Pengu.Loader
         static int Main(string[] args)
         {
             Logger.Info("Pengu Loader started.");
+            Config.Load();
 
             var debugger = new RiotClient.Debugger(8889);
 
