@@ -16,15 +16,29 @@
 
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<OutputType>Library</OutputType>
+		<PublishAot>true</PublishAot>
+		<PublishTrimmed>true</PublishTrimmed>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="CsToml" Version="1.8.0" />
 		<PackageReference Include="CsToml.Generator" Version="1.8.0">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="MimeTypes" Version="2.5.2">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Websocket.Client" Version="5.3.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
 		<PackageReference Include="ZLogger" Version="2.5.10" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="../loader_ui/dist/**" Visible="false" LogicalName="WebAssets/$([System.String]::Copy('%(RecursiveDir)').Replace('\','/'))%(Filename)%(Extension)" />
 	</ItemGroup>
 
 </Project>

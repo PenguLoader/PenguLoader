@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,13 +7,21 @@ namespace Pengu.Loader
 {
     static partial class Program
     {
+        [UnmanagedCallersOnly(EntryPoint = nameof(NativeMain))]
+        public static int NativeMain()
+        {
+
+
+            return Main(["-native"]);
+        }
+
         [STAThread]
         static int Main(string[] args)
         {
             Logger.Info("Pengu Loader started.");
             Config.Load();
 
-            var debugger = new RiotClient.Debugger(8889);
+            var debugger = new RiotClient.Debugger(8889, 3000, true);
 
             Task.Run(async () =>
             {
@@ -62,19 +71,6 @@ namespace Pengu.Loader
             Logger.Shutdown();
 
             return 0;
-        }
-
-        static void InjectFrontend(RiotClient.DevTools dt)
-        {
-            string viteDevServerUrl = "https://localhost:3000";
-            _ = dt.EvaluateScript(
-                $$"""
-                console.log("Injecting Vite Dev Server frontend from {{viteDevServerUrl}}");
-                (async () => {
-                    await import(`{{viteDevServerUrl}}/@vite/client`);
-                    await import(`{{viteDevServerUrl}}/src/index.tsx`);
-                })();
-                """);
         }
     }
 }

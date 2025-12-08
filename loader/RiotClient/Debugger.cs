@@ -11,15 +11,19 @@ namespace Pengu.Loader.RiotClient
     partial class Debugger : IDisposable
     {
         readonly int _port;
+        readonly int _webPort;
+        readonly bool _vite;
         readonly DevTools _devTools;
 
         private bool _connected = false;
         private string? _frontEndUrl;
         private string? _webSocketUrl;
 
-        public Debugger(int port)
+        public Debugger(int port, int webPort, bool vite)
         {
             _port = port;
+            _webPort = webPort;
+            _vite = vite;
             _devTools = new DevTools();
         }
 
@@ -97,19 +101,36 @@ namespace Pengu.Loader.RiotClient
             await _devTools.InterceptResponse(url, async (url, resp) =>
             {
                 var patch = new Utils.HtmlPatcher(resp.body!)
-                    // Allow loading scripts from Vite dev server
-                    .AddCspSource("http://localhost:3000")
+                    // Allow loading from our server
+                    .AddCspSource($"http://localhost:{_webPort}")
                     // Inject our global config
                     .AddScriptCode($$"""
                         window.__riot = {
                             appPort: {{Services.AppPort}},
                             authToken: `{{Services.AuthToken}}`,
                         };
-                        """, false)
-                    // Inject Vite HMR client and our main script
-                    .AddScriptTag("http://localhost:3000/@vite/client", module: true)
-                    // Inject our main script
-                    .AddScriptTag("http://localhost:3000/src/index.tsx", module: true);
+                        """, false);
+
+                if (_vite)
+                {
+                    patch
+                        // Vite HMR client
+                        .AddScriptTag($"http://localhost:{_webPort}/@vite/client", module: true)
+                        // Main Vite script
+                        .AddScriptTag($"http://localhost:{_webPort}/src/index.tsx", module: true);
+
+                    Logger.Info("Vite mode enabled: Injecting Vite HMR client and scripts");
+                }
+                else
+                {
+                    patch
+                        // Built main script
+                        .AddScriptTag($"http://localhost:{_webPort}/assets/index.js", module: true)
+                        // Built stylesheet
+                        .AddStyleTag($"http://localhost:{_webPort}/assets/index.css");
+
+                    Logger.Info("Production mode enabled: Injecting built scripts");
+                }
 
                 if (Config.I.riot_potato_mode)
                 {

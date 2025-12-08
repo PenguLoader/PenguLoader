@@ -101,5 +101,16 @@ namespace Pengu.Loader.Utils
 
             return this;
         }
+
+        public HtmlPatcher AddStyleTag(string href)
+        {
+            var linkTag = $"<link rel=\"stylesheet\" href=\"{href}\">";
+
+            // Insert before </head>
+            _html = Regex.Replace(_html, @"</head>",
+                linkTag + "</head>", RegexOptions.IgnoreCase);
+
+            return this;
+        }
     }
 }
