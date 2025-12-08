@@ -300,7 +300,15 @@ static void Initialize()
     printf("[LOADER_V] Selected free TCP port: %d\n", port);
 
     // append cmdline
-	g_extraCmdLine = L" --remote-debugging-port=";
+    g_extraCmdLine.clear();
+
+	if (/*confg::riot_potato_mode*/ false)
+	{
+		g_extraCmdLine += L" --disable-smooth-scrolling --force-prefers-reduced-motion";
+		g_extraCmdLine += L" --wm-window-animations-disabled --animation-duration-scale=0";
+	}
+
+	g_extraCmdLine += L" --remote-debugging-port=";
     g_extraCmdLine += std::to_wstring(port);
 
     // hook GetCommandLineW

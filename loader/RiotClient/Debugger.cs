@@ -111,6 +111,18 @@ namespace Pengu.Loader.RiotClient
                     // Inject our main script
                     .AddScriptTag("http://localhost:3000/src/index.tsx", module: true);
 
+                if (Config.I.riot_potato_mode)
+                {
+                    patch.AddStyleCode("""
+                        *, *:before, *:after {
+                          transition: none !important;
+                          transition-property: none !important;
+                          animation: none !important;
+                        }
+                        """);
+                    Logger.Info("Riot Client Potato Mode enabled!");
+                }
+
                 resp.body = patch.Html;
                 Logger.Debug("Patched index.html response");
 
