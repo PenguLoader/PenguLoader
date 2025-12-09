@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net9.0-windows</TargetFramework>
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<PublishAot>true</PublishAot>
@@ -13,6 +13,16 @@
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	</PropertyGroup>
+
+	<PropertyGroup Label="version-info">
+		<Title>Pengu Loader</Title>
+		<Company>GitHub, Inc.</Company>
+		<Product>$(Title)</Product>
+		<Description>$(Title) Application</Description>
+		<Copyright>Copyright (c) Pengu Loader</Copyright>
+		<FileVersion>$(Version)</FileVersion>
+		<AssemblyVersion>$(Version)</AssemblyVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Label="aot-compatible">
@@ -26,10 +36,12 @@
 		<IsAotCompatible>true</IsAotCompatible>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+	<PropertyGroup Label="aot-release" Condition="'$(Configuration)'=='Release'">
 		<OutputType>Library</OutputType>
 		<PublishAot>true</PublishAot>
 		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>full</TrimMode>
+		<OptimizationPreference>Size</OptimizationPreference>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -45,6 +57,15 @@
 		<PackageReference Include="Websocket.Client" Version="5.3.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
 		<PackageReference Include="ZLogger" Version="2.5.10" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\loader_v\loader_v.vcxproj">
+			<Private>true</Private>
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+			<OutputItemType>Content</OutputItemType>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</ProjectReference>
 	</ItemGroup>
 
 	<ItemGroup>
