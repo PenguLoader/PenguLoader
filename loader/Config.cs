@@ -4,7 +4,7 @@ using CsToml;
 
 namespace Pengu.Loader
 {
-    [TomlSerializedObject]
+    [TomlSerializedObject(NamingConvention = TomlNamingConvention.None)]
     partial class Config
     {
         public static Config I { get; } = new();
@@ -13,6 +13,10 @@ namespace Pengu.Loader
         public static string UserDir => Path.Join(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "pengu_loader");
+
+        public static string BaseDir
+            => Environment.GetEnvironmentVariable("LOADER_BASE_DIR")
+            ?? AppContext.BaseDirectory;
 
         static Config()
         {

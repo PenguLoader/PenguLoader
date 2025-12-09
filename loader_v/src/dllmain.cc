@@ -209,6 +209,10 @@ static void Initialize()
 	SetEnvironmentVariableA("ELECTRON_NO_ASAR", NULL);
 	SetEnvironmentVariableA("ELECTRON_RUN_AS_NODE", NULL);
 
+	// Set base directory to env
+	std::wstring loader_dir = loader_dll.substr(0, loader_dll.find_last_of(L"/\\"));
+	SetEnvironmentVariableW(L"LOADER_BASE_DIR", loader_dir.c_str());
+
     // In AOT mode, just load loader.dll directly
     HMODULE hLoader = LoadLibraryW(loader_dll.c_str());
 	if (hLoader == nullptr) {
