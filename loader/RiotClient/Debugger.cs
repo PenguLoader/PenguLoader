@@ -152,6 +152,13 @@ namespace Pengu.Loader.RiotClient
 
             // Reload the page to apply changes
             await _devTools.ReloadPage();
+
+            if (Config.I.riot_disable_sentry)
+            {
+                await _devTools.SendMethod("Network.enable");
+                await _devTools.BlockUrls(["sentry-ipc://sentry-electron.scope/*"]);
+                Logger.Info("Riot Client Sentry blocking enabled!");
+            }
         }
 
         private async Task ExposeIpc()
@@ -278,19 +285,6 @@ namespace Pengu.Loader.RiotClient
             else
             {
                 Logger.Debug("Cannot open Riot Client DevTools: Not connected to debugger.");
-            }
-        }
-
-        public void BlockSentry()
-        {
-            if (_connected)
-            {
-                Logger.Debug("Blocking Sentry requests...");
-                _ = _devTools.BlockUrls(["sentry-ipc://sentry-electron.scope/*"]);
-            }
-            else
-            {
-                Logger.Debug("Cannot block Sentry requests: Not connected to debugger.");
             }
         }
     }
