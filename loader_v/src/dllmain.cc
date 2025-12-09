@@ -1,60 +1,45 @@
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winternl.h>
-#include <initializer_list>
-#include <string>
+#include "common.h"
+#include "../../core/src/hook.h"
 #include <vector>
 #include <thread>
-#include <detours/detours.h>
 
+#ifdef _DEBUG
 #define NETHOST_USE_AS_STATIC
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
 #include <nethost.h>
 
-/// This DLL should be loaded by rundll32.exe
-/// to load .NET runtime and launch loader.dll for debugging purposes.
-
-EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-#define THIS_MODULE ((HMODULE)&__ImageBase)
-
-#undef MAX_PATH
-#define MAX_PATH 2048
-
-static bool _wcsi_endw(LPCWSTR str, LPCWSTR suffix)
-{
-	size_t str_len = wcslen(str);
-	size_t suffix_len = wcslen(suffix);
-	if (str_len < suffix_len)
-		return false;
-	return _wcsicmp(str + (str_len - suffix_len), suffix) == 0;
-}
-
-static hostfxr_initialize_for_dotnet_command_line_fn hostfxr_init_for_cmd_line_fptr;
-static hostfxr_get_runtime_delegate_fn hostfxr_get_delegate_fptr;
+static hostfxr_initialize_for_dotnet_command_line_fn hostfxr_init_fptr;
 static hostfxr_run_app_fn hostfxr_run_app_fptr;
 static hostfxr_close_fn hostfxr_close_fptr;
 static hostfxr_set_error_writer_fn hostfxr_set_error_writer;
-static hostfxr_initialize_for_runtime_config_fn hostfxr_initialize_for_runtime_config;
 
-static bool LoadHostfxr()
+static bool LoadHostfxr(const char_t *assembly_path)
 {
+    get_hostfxr_parameters params{};
+    params.size = sizeof(get_hostfxr_parameters);
+    params.assembly_path = assembly_path;
+
 	WCHAR dll_path[MAX_PATH]{};
 	size_t path_size = MAX_PATH;
 
 	if (get_hostfxr_path(dll_path, &path_size, nullptr) != 0)
 		return false;
 
+    DebugLog("Found hostfxr path: %ls", dll_path);
+
 	HMODULE lib = LoadLibrary(dll_path);
 	if (lib == nullptr)
 		return false;
 
-	(LPVOID &)hostfxr_init_for_cmd_line_fptr = GetProcAddress(lib, "hostfxr_initialize_for_dotnet_command_line");
-	(LPVOID &)hostfxr_get_delegate_fptr = GetProcAddress(lib, "hostfxr_get_runtime_delegate");
+	(LPVOID &)hostfxr_init_fptr = GetProcAddress(lib, "hostfxr_initialize_for_dotnet_command_line");
 	(LPVOID &)hostfxr_run_app_fptr = GetProcAddress(lib, "hostfxr_run_app");
 	(LPVOID &)hostfxr_close_fptr = GetProcAddress(lib, "hostfxr_close");
 	(LPVOID &)hostfxr_set_error_writer = GetProcAddress(lib, "hostfxr_set_error_writer");
+
+	return hostfxr_init_fptr && hostfxr_run_app_fptr;
 }
+#endif
 
 static std::wstring GetThisPath(bool dir)
 {
@@ -153,139 +138,34 @@ static bool FindLoaderDll(std::wstring &out_path)
 	return !out_path.empty();
 }
 
-static bool LoadLoaderEntry(const std::initializer_list<LPCWSTR> *pArgs)
+#if _DEBUG
+static void LoadLoaderAssembly(const std::wstring &path)
 {
-	if (!LoadHostfxr()) {
-		MessageBox(0, L"Failed to load hostfxr", L"[loader_v] Error", MB_OK | MB_ICONWARNING);
-		return false;
+	if (!LoadHostfxr(path.c_str())) {
+		ShowWraning("Failed to load hostfxr");
+		return;
 	}
 
 	hostfxr_set_error_writer([](const char_t *err)
 		{
-			MessageBox(0, err, L"[loader_v] Hostfxr Error", MB_OK | MB_ICONWARNING);
+			ShowWraning("Hostfxr error: %ws", err);
 		});
 
-	std::wstring loader_dll;
-	if (!FindLoaderDll(loader_dll)) {
-		MessageBox(0, L"Failed to find loader.dll", L"[loader_v] Error", MB_OK | MB_ICONWARNING);
-		return false;
-	}
-
 	std::vector<LPCWSTR> args{};
-	args.insert(args.begin(), loader_dll.c_str());
-
-	if (pArgs != nullptr)
-		args.insert(args.end(), *pArgs);
-	else
-		args.push_back(L"-loader_v");
+	args.push_back(path.c_str());
+    args.push_back(L"-loader_v");
 
 	hostfxr_handle ctx = nullptr;
-	hostfxr_init_for_cmd_line_fptr((int)args.size(), args.data(), nullptr, &ctx);
+	hostfxr_init_fptr((int)args.size(), args.data(), nullptr, &ctx);
 
-	std::thread([ctx]()
+	std::thread([ctx]
 		{
 			hostfxr_run_app_fptr(ctx);
 			hostfxr_close_fptr(ctx);
-		}).detach();
-
-	return true;
+		}
+	).detach();
 }
-
-static void InjectThisDll(HANDLE target)
-{
-	auto this_dll = GetThisPath(false);
-	size_t path_size = (this_dll.length() + 1) * sizeof(WCHAR);
-
-	LPVOID path_addr = VirtualAllocEx(target, NULL, path_size, MEM_COMMIT, PAGE_READWRITE);
-	if (!path_addr)
-	{
-		MessageBox(NULL,
-			__FUNCTIONW__ L": Failed to allocate memory in target process.",
-			L"[loader_v] Error", MB_OK | MB_ICONWARNING);
-		return;
-	}
-
-	BOOL success = WriteProcessMemory(target, path_addr, this_dll.c_str(), path_size, NULL);
-	if (!success)
-	{
-		MessageBox(NULL,
-			__FUNCTIONW__ L": Failed to write process memory.",
-			L"[loader_v] Error", MB_OK | MB_ICONWARNING);
-		return;
-	}
-
-	HANDLE thread = CreateRemoteThread(target, NULL, 0, (LPTHREAD_START_ROUTINE)&LoadLibraryW, path_addr, 0, NULL);
-	if (!thread)
-	{
-		MessageBox(NULL,
-			__FUNCTIONW__ L": Failed to create remote thread.",
-			L"[loader_v] Error", MB_OK | MB_ICONWARNING);
-		return;
-	}
-
-	WaitForSingleObject(thread, INFINITE);
-	CloseHandle(thread);
-
-	VirtualFreeEx(target, path_addr, 0, MEM_RELEASE);
-	CreateRemoteThread(target, NULL, 0, (LPTHREAD_START_ROUTINE)&LoadLoaderEntry, NULL, 0, NULL);
-}
-
-// Entry point for rundll32.exe
-EXTERN_C __declspec(dllexport)
-int APIENTRY LaunchLoaderAppW(HWND hwnd, HINSTANCE hinst, LPWSTR cmdline, int)
-{
-	LONG(NTAPI * NtQueryInformationProcess)(HANDLE, DWORD, PVOID, ULONG, PULONG);
-	LONG(NTAPI * NtRemoveProcessDebug)(HANDLE, HANDLE);
-	LONG(NTAPI * NtClose)(HANDLE Handle);
-
-	STARTUPINFOW si;
-	PROCESS_INFORMATION pi;
-	ZeroMemory(&si, sizeof(si));
-	si.cb = sizeof(si);
-
-	if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE,
-		CREATE_SUSPENDED | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &si, &pi))
-	{
-		char msg[128];
-		sprintf_s(msg, "Failed to create LeagueClientUx process, last error: 0x%08X.", GetLastError());
-		MessageBoxA(NULL, msg, "Pengu Loader bootstrapper", MB_ICONWARNING | MB_OK | MB_TOPMOST);
-		return 1;
-	}
-
-	HMODULE ntdll = GetModuleHandleA("ntdll");
-	(LPVOID &)NtQueryInformationProcess = GetProcAddress(ntdll, "NtQueryInformationProcess");
-	(LPVOID &)NtRemoveProcessDebug = GetProcAddress(ntdll, "NtRemoveProcessDebug");
-	(LPVOID &)NtClose = GetProcAddress(ntdll, "NtClose");
-
-	HANDLE hDebug;
-	if (NtQueryInformationProcess(pi.hProcess, 30, &hDebug, sizeof(HANDLE), 0) >= 0)
-	{
-		NtRemoveProcessDebug(pi.hProcess, hDebug);
-		NtClose(hDebug);
-	}
-
-	InjectThisDll(pi.hProcess);
-	ResumeThread(pi.hThread);
-	WaitForSingleObject(pi.hProcess, INFINITE);
-
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
-	return 0;
-}
-
-static std::wstring g_extraCmdLine;
-static auto Old_GetCommandLineW = &GetCommandLineW;
-static LPWSTR WINAPI Hooked_GetCommandLineW()
-{
-	static WCHAR modified[32768]{};
-	if (!modified[0])
-	{
-		wcscpy_s(modified, Old_GetCommandLineW());
-		wcscat_s(modified, g_extraCmdLine.c_str());
-	}
-
-	return modified;
-}
+#endif
 
 static void Initialize()
 {
@@ -294,31 +174,57 @@ static void Initialize()
 	freopen_s((FILE **)stdout, "CONOUT$", "w", stdout);
 #endif
 	
-	extern int PickFreeTcpPort();
-	int port = 8889;// PickFreeTcpPort();
+#if _DEBUG
+	int rdp_port = 8889;
+    DebugLog("Remote debugging port: %d", rdp_port);
 
-    printf("[LOADER_V] Selected free TCP port: %d\n", port);
+	static std::wstring s_cmd_line{};
+	s_cmd_line.append(GetCommandLineW());
 
-    // append cmdline
-    g_extraCmdLine.clear();
-
-	if (/*confg::riot_potato_mode*/ false)
+	if (/*confg::riot_potato_mode()*/ false)
 	{
-		g_extraCmdLine += L" --disable-smooth-scrolling --force-prefers-reduced-motion";
-		g_extraCmdLine += L" --wm-window-animations-disabled --animation-duration-scale=0";
+		s_cmd_line += L" --disable-smooth-scrolling --force-prefers-reduced-motion";
+		s_cmd_line += L" --wm-window-animations-disabled --animation-duration-scale=0";
 	}
 
-	g_extraCmdLine += L" --remote-debugging-port=";
-    g_extraCmdLine += std::to_wstring(port);
+	s_cmd_line += L" --remote-debugging-port=";
+	s_cmd_line += std::to_wstring(rdp_port);
 
     // hook GetCommandLineW
-	DetourTransactionBegin();
-	DetourAttach(
-		(LPVOID *)&Old_GetCommandLineW,
-		(LPVOID)Hooked_GetCommandLineW);
-	DetourTransactionCommit();
+	static hook::Hook<decltype(&GetCommandLineW)> Old_GetCommandLineW;
+	Old_GetCommandLineW.hook(&GetCommandLineW, []() -> LPWSTR { return s_cmd_line.data(); });
+#endif
 
-	//LoadLoaderEntry(nullptr);
+	std::wstring loader_dll;
+	if (!FindLoaderDll(loader_dll)) {
+		ShowWraning("Failed to find loader.dll");
+		return;
+    }
+
+#if _DEBUG
+	LoadLoaderAssembly(loader_dll);
+#else
+    // Clear unwanted env vars
+	SetEnvironmentVariableA("NODE_OPTIONS", NULL);
+	SetEnvironmentVariableA("ELECTRON_NO_ASAR", NULL);
+	SetEnvironmentVariableA("ELECTRON_RUN_AS_NODE", NULL);
+
+    // In AOT mode, just load loader.dll directly
+    HMODULE hLoader = LoadLibraryW(loader_dll.c_str());
+	if (hLoader == nullptr) {
+		ShowWraning("Failed to load loader.dll");
+		return;
+    }
+
+    using NativeMain = void(*)();
+    auto pNativeMain = (NativeMain)GetProcAddress(hLoader, "NativeMain");
+    if (pNativeMain == nullptr) {
+        ShowWraning("Failed to find NativeMain in loader.dll");
+        return;
+    }
+
+    pNativeMain();
+#endif
 }
 
 BOOL APIENTRY DllMain(HMODULE hinst, DWORD reason, LPVOID)
