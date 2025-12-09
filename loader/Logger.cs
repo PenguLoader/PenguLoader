@@ -16,7 +16,7 @@ namespace Pengu.Loader
             {
                 builder
                     .ClearProviders()
-                    .AddZLoggerFile(Path.Combine(Config.UserDir, "debug.log"), options =>
+                    .AddZLoggerFile(Path.Combine(AppContext.BaseDirectory, "debug.log"), options =>
                     {
                         options.UsePlainTextFormatter(fmt =>
                         {

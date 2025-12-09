@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Pengu.Loader.Utils
 {
-    internal class MessageBox
+    internal partial class MessageBox
     {
         const string Title = "Riot Client";
         public static IntPtr Owner { get; set; }
@@ -16,7 +16,7 @@ namespace Pengu.Loader.Utils
             MsgBox(Owner, message, Title, flags);
         }
 
-        [DllImport("user32.dll", EntryPoint = "MessageBoxW", CharSet = CharSet.Unicode)]
-        static extern int MsgBox(IntPtr hwnd, string msg, string title, int flags);
+        [LibraryImport("user32.dll", EntryPoint = "MessageBoxW", StringMarshalling = StringMarshalling.Utf16)]
+        private static partial int MsgBox(IntPtr hwnd, string msg, string title, int flags);
     }
 }

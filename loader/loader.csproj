@@ -11,9 +11,19 @@
 
 		<OutputPath>../bin/$(Configuration)/</OutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	</PropertyGroup>
 
+	<PropertyGroup Label="aot-compatible">
+		<DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
+		<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+		<BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+		<DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+		<InvariantGlobalization>false</InvariantGlobalization>
+
+		<PublishTrimmed>true</PublishTrimmed>
 		<IsAotCompatible>true</IsAotCompatible>
-
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">

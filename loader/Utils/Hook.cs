@@ -11,9 +11,7 @@ namespace Pengu.Loader.Utils
         private void* code_;
         private Lock lock_;
 
-        const int SHELLCODE_SIZE = 12;
-
-        [StructLayout(LayoutKind.Sequential, Size = SHELLCODE_SIZE, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = Shellcode.SizeOf, Pack = 1)]
         unsafe struct Shellcode
         {
             public byte movabs = 0x48;
@@ -23,6 +21,7 @@ namespace Pengu.Loader.Utils
             public byte ret = 0xC3;
 
             public Shellcode() { }
+            public const int SizeOf = 12;
         }
 
         public Hook()
@@ -48,13 +47,13 @@ namespace Pengu.Loader.Utils
                 return;
 
             func_ = (void*)orig;
-            code_ = NativeMemory.AllocZeroed(SHELLCODE_SIZE);
-            NativeMemory.Copy((void*)orig, code_, SHELLCODE_SIZE);
+            code_ = NativeMemory.AllocZeroed(Shellcode.SizeOf);
+            NativeMemory.Copy((void*)orig, code_, Shellcode.SizeOf);
 
             var code = new Shellcode();
             code.addr = Marshal.GetFunctionPointerForDelegate<T>(hook);
 
-            ProtectedMemcpy((void*)orig, &code, sizeof(Shellcode));
+            Native.ProtectedMemcpy((void*)orig, &code, Shellcode.SizeOf);
         }
 
         public void Dispose()
@@ -63,7 +62,7 @@ namespace Pengu.Loader.Utils
             {
                 lock (lock_)
                 {
-                    ProtectedMemcpy(func_, code_, SHELLCODE_SIZE);
+                    Native.ProtectedMemcpy(func_, code_, Shellcode.SizeOf);
                     NativeMemory.Free(code_);
                 }
             }
@@ -72,14 +71,6 @@ namespace Pengu.Loader.Utils
         public CallGuard GetCall()
         {
             return new CallGuard(func_, code_, lock_);
-        }
-
-        static void ProtectedMemcpy(void *dst, void *src, int size)
-        {
-            int op;
-            Native.VirtualProtect(dst, size, /*PAGE_EXECUTE_READWRITE*/0x40, out op);
-            NativeMemory.Copy(src, dst, (nuint)size);
-            Native.VirtualProtect(dst, size, op, out op);
         }
 
         public class CallGuard : IDisposable
@@ -97,15 +88,15 @@ namespace Pengu.Loader.Utils
                 @lock.Enter();
 
                 func_ = func;
-                backup_ = NativeMemory.AllocZeroed(SHELLCODE_SIZE);
+                backup_ = NativeMemory.AllocZeroed(Shellcode.SizeOf);
 
-                NativeMemory.Copy(func, backup_, SHELLCODE_SIZE);
-                ProtectedMemcpy(func, code, SHELLCODE_SIZE);
+                NativeMemory.Copy(func, backup_, Shellcode.SizeOf);
+                Native.ProtectedMemcpy(func, code, Shellcode.SizeOf);
             }
 
             public void Dispose()
             {
-                ProtectedMemcpy(func_, backup_, SHELLCODE_SIZE);
+                Native.ProtectedMemcpy(func_, backup_, Shellcode.SizeOf);
                 NativeMemory.Free(backup_);
                 
                 lock_.Exit();
@@ -118,5 +109,13 @@ namespace Pengu.Loader.Utils
         [LibraryImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static unsafe partial bool VirtualProtect(void* addr, int size, int newProt, out int oldProt);
+
+        public static unsafe void ProtectedMemcpy(void* dst, void* src, int size)
+        {
+            int op;
+            VirtualProtect(dst, size, /*PAGE_EXECUTE_READWRITE*/0x40, out op);
+            NativeMemory.Copy(src, dst, (nuint)size);
+            VirtualProtect(dst, size, op, out op);
+        }
     }
 }

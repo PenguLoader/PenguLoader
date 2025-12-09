@@ -6,13 +6,25 @@ namespace Pengu.Loader.Utils
 {
     static class Network
     {
-        public static int GetFreeTcpPort()
+        public static IDisposable GetFreeTcpPort(out int port)
         {
             var l = new TcpListener(IPAddress.Loopback, 0);
             l.Start();
-            int port = ((IPEndPoint)l.LocalEndpoint).Port;
-            l.Stop();
-            return port;
+            port = ((IPEndPoint)l.LocalEndpoint).Port;
+            return new TcpPortHolder(l);
+        }
+
+        private class TcpPortHolder : IDisposable
+        {
+            private TcpListener listener;
+            public TcpPortHolder(TcpListener listener)
+            {
+                this.listener = listener;
+            }
+            public void Dispose()
+            {
+                listener.Stop();
+            }
         }
     }
 }

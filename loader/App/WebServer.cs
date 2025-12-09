@@ -11,13 +11,12 @@ namespace Pengu.Loader.App
         private CancellationTokenSource _cts;
         private readonly HttpListener _listener;
 
-        public WebServer(string prefix)
+        public WebServer(int port)
         {
             _cts = new CancellationTokenSource();
             _listener = new HttpListener();
 
-            if (!prefix.EndsWith('/'))
-                prefix += '/';
+            var prefix = $"http://localhost:{port}/";
             _listener.Prefixes.Add(prefix);
         }
 
