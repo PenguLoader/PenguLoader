@@ -135,7 +135,7 @@ namespace Pengu.Loader.RiotClient
                 if (Config.I.riot_potato_mode)
                 {
                     patch.AddStyleCode("""
-                        *, *:before, *:after {
+                        *:not(.campaign-button-wrapper), *::before, *::after {
                           transition: none !important;
                           transition-property: none !important;
                           animation: none !important;
