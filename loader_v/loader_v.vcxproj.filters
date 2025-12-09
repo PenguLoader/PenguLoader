@@ -18,10 +18,18 @@
     <ClCompile Include="src\dllmain.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rundll32.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\exports.def">
+    <None Include="src\_lib.def">
       <Filter>Source Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

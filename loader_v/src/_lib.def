@@ -35,4 +35,4 @@ EXPORTS
 	VerQueryValueW
     
 ; ENTRY POINTS
-    LaunchLoaderAppW			@5000
+    Rundll32EntryW		@5000
