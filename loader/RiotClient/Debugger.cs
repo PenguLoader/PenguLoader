@@ -109,6 +109,9 @@ namespace Pengu.Loader.RiotClient
                             appPort: {{Services.AppPort}},
                             authToken: `{{Services.AuthToken}}`,
                         };
+                        window.__pengu = {
+                            webPort: {{_webPort}},
+                        };
                         """, false);
 
                 if (_vite)
