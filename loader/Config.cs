@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using CsToml;
 
@@ -18,20 +19,25 @@ namespace Pengu.Loader
             => Environment.GetEnvironmentVariable("LOADER_BASE_DIR")
             ?? AppContext.BaseDirectory;
 
+        public static string PluginsDir
+            => !string.IsNullOrEmpty(I.plugins_dir)
+            ? Path.GetFullPath(I.plugins_dir, BaseDir)
+            : Path.Join(UserDir, "plugins");
+
         static Config()
         {
             if (File.Exists(_path))
             {
                 try
                 {
-                    using var fs = File.Open(_path, FileMode.Open, FileAccess.Read);
+                    using var fs = File.OpenRead(_path);
                     I = CsTomlSerializer.Deserialize<Config>(fs);
 
                     return;
                 }
                 catch (Exception ex)
                 {
-                    Logger.Debug("Failed to load config, using defaults. Exception: {0}", ex);
+                    Logger.Debug("Failed to load config, using defaults. {0}", ex.Message);
                 }
             }
         }
@@ -48,8 +54,8 @@ namespace Pengu.Loader
 
             try
             {
-                using var mem = CsTomlSerializer.Serialize(I);
-                File.WriteAllBytes(_path, mem.ByteSpan);
+                using var fs = File.OpenWrite(_path);
+                CsTomlSerializer.Serialize(fs, I);
             }
             catch (Exception ex)
             {
@@ -57,8 +63,14 @@ namespace Pengu.Loader
             }
         }
 
+
         /// APP CONFIG
 
+        [TomlValueOnSerialized(NullHandling = TomlNullHandling.Ignore)]
+        public string? plugins_dir { get; set; }
+
+        [TomlValueOnSerialized(NullHandling = TomlNullHandling.Ignore)]
+        public HashSet<string>? disabled_plugins { get; set; }
 
 
         /// RIOT CLIENT CONFIG
