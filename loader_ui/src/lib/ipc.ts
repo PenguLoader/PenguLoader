@@ -5,6 +5,9 @@ declare global {
       appPort: number
       authToken: string
     }
+    __pengu: {
+      webPort: number
+    }
     __penguIpc: {
       send<T>(type: string, ...args: any[]): Promise<T>
     }
@@ -22,6 +25,19 @@ export function ipcInvoke<T>(type: string, ...args: any[]): Promise<T> {
     return window.__penguIpc.send<T>(type, ...args)
   }
   return Promise.reject(new Error('Pengu IPC not available'))
+}
+
+export function apiGET(path: string): Promise<Response> {
+  const port = window.__pengu.webPort
+  return fetch(`http://127.0.0.1:${port}${path}`)
+}
+
+export function apiPOST(path: string, body?: any): Promise<Response> {
+  const port = window.__pengu.webPort
+  return fetch(`http://127.0.0.1:${port}${path}`, {
+    method: 'POST',
+    body: body,
+  })
 }
 
 export function getRiotAuth() {
