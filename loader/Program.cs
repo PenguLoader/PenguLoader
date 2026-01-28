@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,9 +65,23 @@ namespace Pengu.Loader
         static int Main(string[] args)
         {
             Config.Load();
-            Log.Info("Pengu Loader started with args: {0}", Environment.CommandLine);
+            Log.Info("Pengu Loader started with args: [{0}]", string.Join(", ", args));
 
             var debugger = new RiotClient.Debugger(8889, 3000, true);
+
+            // Check if we're running in loader mode
+            if (args.Contains("-loader_v", StringComparer.OrdinalIgnoreCase))
+            {
+                Log.Info("Running in loader mode (within Riot Client).");
+
+                Task.Run(debugger.Connect);
+                RiotClient.Window.SetupWindow(debugger);
+
+                return 0;
+            }
+
+            // Standalone mode (run directly exe)
+            Log.Info("Running in standalone mode.");
 
             Task.Run(async () =>
             {
@@ -75,8 +90,6 @@ namespace Pengu.Loader
                 await debugger.Connect();
 
                 Log.Info("Press Q to quit, R to reload, I or D to open devtools.");
-
-                //RiotClient.Window.SetupWindow(debugger);
             });
 
             bool running = true;
