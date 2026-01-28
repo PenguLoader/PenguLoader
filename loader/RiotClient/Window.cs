@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -17,9 +18,17 @@ namespace Pengu.Loader.RiotClient
             Task.Run(async () =>
             {
                 int pid = GetCurrentProcessId();
+                var sw = Stopwatch.StartNew();
 
                 while (true)
                 {
+                    // Timeout after 1 minutes
+                    if (sw.Elapsed.TotalMinutes > 1)
+                    {
+                        Log.Warn("Failed to find Riot Client window within timeout.");
+                        break;
+                    }
+
                     // Find main browser window
                     nint hwnd = FindWindow("Chrome_WidgetWin_1", "Riot Client");
                     GetWindowThreadProcessId(hwnd, out int wPid);
@@ -27,24 +36,31 @@ namespace Pengu.Loader.RiotClient
                     // It should be in the current process
                     if (hwnd != 0 && pid == wPid)
                     {
-                        // Set owner for message boxes
-                        Utils.MessageBox.Owner = hwnd;
-
-                        unsafe
+                        // Get exstyle to exclude the topmost splash window
+                        nint exStyle = GetWindowLongPtr(hwnd, /*GWL_EXSTYLE*/ -20);
+                        if ((exStyle & /*WS_EX_TOPMOST*/ 0x8) == 0)
                         {
-                            _oldWndProc = GetWindowLongPtr(hwnd, -4);
+                            Log.Info("Found Riot Client window: 0x{0:X}", hwnd);
 
-                            // Hook window proc
-                            delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, IntPtr, nint> ptr = &HookWndProc;
-                            SetWindowLongPtr(hwnd, -4, (nint)ptr);
+                            // Set owner for message boxes
+                            Utils.MessageBox.Owner = hwnd;
 
-                            SetWindowText(hwnd, "Riot Client ft. Pengu Loader");
+                            unsafe
+                            {
+                                _oldWndProc = GetWindowLongPtr(hwnd, /*GWL_WNDPROC*/ -4);
+
+                                // Hook window proc
+                                delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, IntPtr, nint> ptr = &HookWndProc;
+                                SetWindowLongPtr(hwnd, /*GWL_WNDPROC*/ -4, (nint)ptr);
+
+                                SetWindowText(hwnd, "Riot Client ft. Pengu Loader");
+                            }
+
+                            break;
                         }
-
-                        break;
                     }
 
-                    await Task.Delay(50);
+                    await Task.Delay(100);
                 }
             });
         }
