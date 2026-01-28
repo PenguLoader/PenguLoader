@@ -17,8 +17,10 @@ namespace Pengu.Loader.Utils
             public byte movabs = 0x48;
             public byte mov_eax = 0xB8;
             public IntPtr addr;
-            public byte push_eax = 0x50;
-            public byte ret = 0xC3;
+            //public byte push_eax = 0x50;
+            //public byte ret = 0xC3;
+            public byte jmp_ = 0xFF;
+            public byte _rax = 0xE0;
 
             public Shellcode() { }
             public const int SizeOf = 12;
