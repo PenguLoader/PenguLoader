@@ -42,7 +42,7 @@ namespace Pengu.Loader.RiotClient
             _client.MessageReceived.Subscribe(HandleMessage);
             _client.DisconnectionHappened.Subscribe(info =>
             {
-                Logger.Debug("DevTools disconnected: {0}", info.Type);
+                Log.Debug("DevTools disconnected: {0}", info.Type);
             });
         }
 
@@ -129,14 +129,14 @@ namespace Pengu.Loader.RiotClient
                                     }
                                     catch (Exception ex)
                                     {
-                                        Logger.Error("JS binding handler threw", ex);
+                                        Log.Error("JS binding handler threw", ex);
                                     }
                                 });
                             }
                         }
                         catch (Exception ex)
                         {
-                            Logger.Error("DevTools binding handling failed", ex);
+                            Log.Error("DevTools binding handling failed", ex);
                         }
 
                         return;
@@ -176,20 +176,20 @@ namespace Pengu.Loader.RiotClient
                                 }
                                 catch (Exception ex)
                                 {
-                                    Logger.Error("DevTools ContinueResponse failed", ex);
+                                    Log.Error("DevTools ContinueResponse failed", ex);
                                 }
                             });
                         }
                         catch (Exception ex)
                         {
-                            Logger.Error("DevTools interception failed", ex);
+                            Log.Error("DevTools interception failed", ex);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error("DevTools failed to parse message", ex);
+                Log.Error("DevTools failed to parse message", ex);
             }
         }
 

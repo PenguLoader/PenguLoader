@@ -37,7 +37,7 @@ namespace Pengu.Loader
                 }
                 catch (Exception ex)
                 {
-                    Logger.Debug("Failed to load config, using defaults. {0}", ex.Message);
+                    Log.Debug("Failed to load config, using defaults. {0}", ex.Message);
                 }
             }
         }
@@ -59,7 +59,7 @@ namespace Pengu.Loader
             }
             catch (Exception ex)
             {
-                Logger.Debug("Failed to save config. Exception: {0}", ex);
+                Log.Debug("Failed to save config. Exception: {0}", ex);
             }
         }
 

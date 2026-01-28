@@ -82,7 +82,7 @@ namespace Pengu.Loader.RiotClient
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error("Failed to connect to Riot Client debugger:", ex);
+                    Log.Error("Failed to connect to Riot Client debugger:", ex);
                     break;
                 }
 
@@ -94,8 +94,8 @@ namespace Pengu.Loader.RiotClient
         {
             _connected = true;
 
-            Logger.Debug("Connected to Riot Client debugger");
-            Logger.Debug("Frontend URL: {0}", url);
+            Log.Debug("Connected to Riot Client debugger");
+            Log.Debug("Frontend URL: {0}", url);
 
             // Intercept the main page to inject our scripts
             await _devTools.InterceptResponse(url, async (url, resp) =>
@@ -122,7 +122,7 @@ namespace Pengu.Loader.RiotClient
                         // Main Vite script
                         .AddScriptTag($"http://localhost:{_webPort}/src/index.tsx", module: true);
 
-                    Logger.Info("Vite mode enabled: Injecting Vite HMR client and scripts");
+                    Log.Info("Vite mode enabled: Injecting Vite HMR client and scripts");
                 }
                 else
                 {
@@ -132,7 +132,7 @@ namespace Pengu.Loader.RiotClient
                         // Built stylesheet
                         .AddStyleTag($"http://localhost:{_webPort}/assets/index.css");
 
-                    Logger.Info("Production mode enabled: Injecting built scripts");
+                    Log.Info("Production mode enabled: Injecting built scripts");
                 }
 
                 if (Config.I.riot_potato_mode)
@@ -144,11 +144,11 @@ namespace Pengu.Loader.RiotClient
                           animation: none !important;
                         }
                         """);
-                    Logger.Info("Riot Client Potato Mode enabled!");
+                    Log.Info("Riot Client Potato Mode enabled!");
                 }
 
                 resp.body = patch.Html;
-                Logger.Debug("Patched index.html response");
+                Log.Debug("Patched index.html response");
 
                 await ExposeIpc();
             });
@@ -160,7 +160,7 @@ namespace Pengu.Loader.RiotClient
             {
                 await _devTools.SendMethod("Network.enable");
                 await _devTools.BlockUrls(["sentry-ipc://sentry-electron.scope/*"]);
-                Logger.Info("Riot Client Sentry blocking enabled!");
+                Log.Info("Riot Client Sentry blocking enabled!");
             }
         }
 
@@ -216,7 +216,7 @@ namespace Pengu.Loader.RiotClient
             """;
             await _devTools.EvaluateScript(jsCode);
 
-            Logger.Debug("Exposed __penguIpc to browser runtime");
+            Log.Debug("Exposed __penguIpc to browser runtime");
         }
 
         private async Task HandleIpcRequest(string cmd, string payload)
@@ -269,12 +269,12 @@ namespace Pengu.Loader.RiotClient
         {
             if (_connected)
             {
-                Logger.Debug("Reloading Riot Client page...");
+                Log.Debug("Reloading Riot Client page...");
                 _ = _devTools.ReloadPage();
             }
             else
             {
-                Logger.Debug("Cannot reload Riot Client page: Not connected to debugger.");
+                Log.Debug("Cannot reload Riot Client page: Not connected to debugger.");
             }
         }
 
@@ -282,12 +282,12 @@ namespace Pengu.Loader.RiotClient
         {
             if (_connected)
             {
-                Logger.Debug("Opening Riot Client DevTools in browser...");
+                Log.Debug("Opening Riot Client DevTools in browser...");
                 Utils.Shell.OpenUrlAsBrowserApp($"http://127.0.0.1:{_port}{_frontEndUrl}");
             }
             else
             {
-                Logger.Debug("Cannot open Riot Client DevTools: Not connected to debugger.");
+                Log.Debug("Cannot open Riot Client DevTools: Not connected to debugger.");
             }
         }
     }

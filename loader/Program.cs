@@ -64,17 +64,17 @@ namespace Pengu.Loader
         static int Main(string[] args)
         {
             Config.Load();
-            Logger.Info("Pengu Loader started.");
+            Log.Info("Pengu Loader started with args: {0}", Environment.CommandLine);
 
             var debugger = new RiotClient.Debugger(8889, 3000, true);
 
             Task.Run(async () =>
             {
-                Logger.Info("Connecting to Riot Client...");
+                Log.Info("Connecting to Riot Client...");
 
                 await debugger.Connect();
 
-                Logger.Info("Press Q to quit, R to reload, I or D to open devtools.");
+                Log.Info("Press Q to quit, R to reload, I or D to open devtools.");
 
                 //RiotClient.Window.SetupWindow(debugger);
             });
@@ -112,8 +112,8 @@ namespace Pengu.Loader
                 Thread.Sleep(50);
             }
 
-            Logger.Info("Loader exiting...");
-            Logger.Shutdown();
+            Log.Info("Loader exiting...");
+            Log.Shutdown();
 
             return 0;
         }
