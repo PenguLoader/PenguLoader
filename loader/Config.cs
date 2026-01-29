@@ -9,7 +9,7 @@ namespace Pengu.Loader
     partial class Config
     {
         public static Config I { get; } = new();
-        static string _path = Path.Join(UserDir, "config");
+        static string _path = Path.Join(UserDir, "config.toml");
 
         public static string UserDir => Path.Join(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -81,6 +81,8 @@ namespace Pengu.Loader
         [TomlValueOnSerialized]
         public bool riot_disable_sentry { get; set; } = false;
 
+        [TomlValueOnSerialized]
+        public string? riot_theme { get; set; }
 
         /// LEAGUE CLIENT CONFIG
 

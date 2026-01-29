@@ -112,6 +112,9 @@ namespace Pengu.Loader.RiotClient
                         window.__pengu = {
                             webPort: {{_webPort}},
                         };
+                        document.addEventListener('DOMContentLoaded', () => {
+                            document.documentElement.dataset.theme = '{{Config.I.riot_theme ?? ""}}';
+                        });
                         """, false);
 
                 if (_vite)
@@ -141,7 +144,8 @@ namespace Pengu.Loader.RiotClient
                         *:not(.campaign-button-wrapper), *::before, *::after {
                           transition: none !important;
                           transition-property: none !important;
-                          animation: none !important;
+                          animation-delay: 0s !important;
+                          animation-duration: 0s !important;
                         }
                         """);
                     Log.Info("Riot Client Potato Mode enabled!");
