@@ -1,5 +1,6 @@
 #include "browser.h"
 #include <unordered_set>
+#include <cstdlib>
 #include "include/capi/cef_parser_capi.h"
 #include "include/capi/cef_scheme_capi.h"
 #include "include/capi/cef_stream_capi.h"
@@ -18,7 +19,7 @@ static constexpr uint32_t fnv32_1a(const T *in, size_t len)
     return hash;
 }
 
-static constexpr uint32_t operator""_hash(const char *in, size_t len)
+static constexpr uint32_t operator""_h(const char *in, size_t len)
 {
     return fnv32_1a(in, len);
 }
@@ -26,20 +27,34 @@ static constexpr uint32_t operator""_hash(const char *in, size_t len)
 static const std::unordered_set<uint32> KNOWN_ASSETS_SET
 {
     // images
-    "bmp"_hash, "png"_hash,
-    "jpg"_hash, "jpeg"_hash, "jfif"_hash,
-    "pjpeg"_hash, "pjp"_hash, "gif"_hash,
-    "svg"_hash, "ico"_hash, "webp"_hash,
-    "avif"_hash,
+    "bmp"_h,
+    "png"_h,
+    "jpg"_h,
+    "jpeg"_h,
+    "jfif"_h,
+    "pjpeg"_h,
+    "pjp"_h,
+    "gif"_h,
+    "svg"_h,
+    "ico"_h,
+    "webp"_h,
+    "avif"_h,
 
     // media
-    "mp4"_hash, "webm"_hash,
-    "ogg"_hash, "mp3"_hash, "wav"_hash,
-    "flac"_hash, "aac"_hash,
+    "mp4"_h,
+    "webm"_h,
+    "ogg"_h,
+    "mp3"_h,
+    "wav"_h,
+    "flac"_h,
+    "aac"_h,
 
     // fonts
-    "woff"_hash, "woff2"_hash,
-    "eot"_hash, "ttf"_hash, "otf"_hash,
+    "woff"_h,
+    "woff2"_h,
+    "eot"_h,
+    "ttf"_h,
+    "otf"_h,
 };
 
 static const auto SCRIPT_IMPORT_CSS = R"(
@@ -82,6 +97,9 @@ public:
         , stream_(nullptr)
         , offset_(0)
         , length_(0)
+        , range_start_(0)
+        , range_end_(-1)
+        , has_range_(false)
         , no_cache_(false)
     {
         cef_bind_method(AssetsResourceHandler, open);
@@ -100,14 +118,24 @@ private:
     cef_stream_reader_t *stream_;
     int64 offset_;
     int64 length_;
+    int64 range_start_;
+    int64 range_end_;
+    bool has_range_;
     std::string range_header_;
     std::u16string mime_;
     bool no_cache_;
 
-    int _open(cef_request_t* request, int* handle_request, cef_callback_t* callback)
+    int _open(cef_request_t *request, int *handle_request, cef_callback_t *callback)
     {
         size_t pos;
         bool js_mime = false;
+
+        range_header_.clear();
+        has_range_ = false;
+        range_start_ = 0;
+        range_end_ = -1;
+        offset_ = 0;
+        length_ = 0;
 
         CefScopedStr url = request->get_url(request);
         std::u16string path, query_part;
@@ -217,7 +245,7 @@ private:
         return 1;
     }
 
-    void _get_response_headers(struct _cef_response_t* response, int64* response_length, cef_string_t* redirectUrl)
+    void _get_response_headers(struct _cef_response_t *response, int64 *response_length, cef_string_t *redirectUrl)
     {
         response->set_header_by_name(response, &u"Access-Control-Allow-Origin"_s, &u"*"_s, 1);
 
@@ -267,6 +295,11 @@ private:
                     *response_length = -1;
                     response->set_status(response, 416);
                     response->set_status_text(response, &u"Requested Range Not Satisfiable"_s);
+                    if (length_ > 0)
+                    {
+                        std::string invalidRange = "bytes */" + std::to_string(length_);
+                        response->set_header_by_name(response, &u"Content-Range"_s, &CefStr(invalidRange), 1);
+                    }
                 }
             }
             else
@@ -291,11 +324,24 @@ private:
         }
         else
         {
-            int oldPosition = static_cast<int>(stream_->tell(stream_));
-            int result = stream_->seek(stream_, bytes_to_skip, SEEK_CUR);
-            int position = static_cast<int>(stream_->tell(stream_));
+            int64 oldPosition = static_cast<int64>(stream_->tell(stream_));
+            int64 max_skip = bytes_to_skip;
+            if (has_range_)
+            {
+                int64 remaining = range_end_ - oldPosition + 1;
+                if (remaining <= 0)
+                {
+                    *bytes_skipped = 0;
+                    return false;
+                }
+                if (max_skip > remaining)
+                    max_skip = remaining;
+            }
+
+            int result = stream_->seek(stream_, max_skip, SEEK_CUR);
+            (void)result;
+            int64 position = static_cast<int64>(stream_->tell(stream_));
             *bytes_skipped = position - oldPosition;
-            *bytes_skipped = bytes_to_skip;
 
             // skip
             offset_ = position;
@@ -304,14 +350,24 @@ private:
         return *bytes_skipped > 0;
     }
 
-    int _read(void* data_out, int bytes_to_read, int* bytes_read, struct _cef_resource_read_callback_t* callback)
+    int _read(void *data_out, int bytes_to_read, int *bytes_read, struct _cef_resource_read_callback_t *callback)
     {
         *bytes_read = 0;
 
-        if (stream_ == nullptr)
+        if (stream_ == nullptr || bytes_to_read <= 0)
             return false;
 
-        int read = static_cast<int>(stream_->read(stream_, data_out, 1, bytes_to_read));
+        int64 max_read = bytes_to_read;
+        if (has_range_)
+        {
+            int64 remaining = range_end_ - offset_ + 1;
+            if (remaining <= 0)
+                return false;
+            if (max_read > remaining)
+                max_read = remaining;
+        }
+
+        int read = static_cast<int>(stream_->read(stream_, data_out, 1, static_cast<size_t>(max_read)));
         *bytes_read = read;
         offset_ += read;
 
@@ -322,29 +378,77 @@ private:
     {
         contentRange.clear();
         contentLength = 0;
-        
-        // skip 'bytes='
+        has_range_ = false;
+
+        if (range_header_.compare(0, 6, "bytes=") != 0)
+            return false;
+
         auto range = range_header_.substr(6);
+        if (range.empty() || range.find(',') != std::string::npos)
+            return false;
 
-        // 'start-end'
-        int rangeStart = std::atoi(range.c_str());
-        int rangeEnd = 0;
+        size_t dash = range.find('-');
+        if (dash == std::string::npos)
+            return false;
 
-        size_t pos = range.rfind('-');
-        if (pos != std::string::npos)
+        std::string start_part = range.substr(0, dash);
+        std::string end_part = range.substr(dash + 1);
+
+        int64 totalBytes = static_cast<int64>(length_);
+        if (totalBytes <= 0)
+            return false;
+
+        int64 rangeStart = 0;
+        int64 rangeEnd = 0;
+
+        if (start_part.empty())
         {
-            rangeEnd = std::atoi(range.substr(pos + 1).c_str());
+            if (end_part.empty())
+                return false;
+
+            char *endptr = nullptr;
+            long long suffix = std::strtoll(end_part.c_str(), &endptr, 10);
+            if (endptr == end_part.c_str() || *endptr != '\0' || suffix <= 0)
+                return false;
+
+            if (suffix > totalBytes)
+                suffix = totalBytes;
+
+            rangeStart = totalBytes - suffix;
+            rangeEnd = totalBytes - 1;
+        }
+        else
+        {
+            char *endptr = nullptr;
+            long long start = std::strtoll(start_part.c_str(), &endptr, 10);
+            if (endptr == start_part.c_str() || *endptr != '\0' || start < 0)
+                return false;
+
+            rangeStart = start;
+            if (rangeStart >= totalBytes)
+                return false;
+
+            if (end_part.empty())
+            {
+                rangeEnd = totalBytes - 1;
+            }
+            else
+            {
+                long long end = std::strtoll(end_part.c_str(), &endptr, 10);
+                if (endptr == end_part.c_str() || *endptr != '\0' || end < 0)
+                    return false;
+
+                rangeEnd = end;
+                if (rangeEnd >= totalBytes)
+                    rangeEnd = totalBytes - 1;
+                if (rangeEnd < rangeStart)
+                    return false;
+            }
         }
 
-        int totalBytes = static_cast<int>(length_);
-        if (totalBytes == 0)
-            return false;
-
-        if (rangeEnd == 0)
-            rangeEnd = totalBytes - 1;
-
-        if (rangeStart > rangeEnd)
-            return false;
+        has_range_ = true;
+        range_start_ = rangeStart;
+        range_end_ = rangeEnd;
 
         if (rangeStart != offset_)
         {
@@ -353,10 +457,13 @@ private:
         }
 
         char buf[64];
-        size_t len = snprintf(buf, sizeof(buf) - 1, "bytes %d-%d/%d", rangeStart, rangeEnd, totalBytes);
+        size_t len = std::snprintf(buf, sizeof(buf) - 1, "bytes %lld-%lld/%lld",
+            static_cast<long long>(rangeStart),
+            static_cast<long long>(rangeEnd),
+            static_cast<long long>(totalBytes));
 
         contentRange.assign(buf, len);
-        contentLength = totalBytes - rangeStart;
+        contentLength = static_cast<int>(rangeEnd - rangeStart + 1);
 
         return true;
     }
@@ -367,7 +474,7 @@ private:
         uint32_t hash = fnv32_1a(url.str, url.length);
 
         char etag[64];
-        size_t etag_length = snprintf(etag, sizeof(etag) - 1, "\"%08x\"", hash);
+        size_t etag_length = std::snprintf(etag, sizeof(etag) - 1, "\"%08x\"", hash);
 
         auto name = u"ETag"_s;
         CefStr value{ etag, etag_length };
@@ -393,12 +500,12 @@ struct AssetsSchemeHandlerFactory : CefRefCount<cef_scheme_handler_factory_t>
         cef_scheme_handler_factory_t::create = create;
     }
 
-    static cef_resource_handler_t* CEF_CALLBACK create(
-        struct _cef_scheme_handler_factory_t* self,
-        struct _cef_browser_t* browser,
-        struct _cef_frame_t* frame,
-        const cef_string_t* scheme_name,
-        struct _cef_request_t* request)
+    static cef_resource_handler_t *CEF_CALLBACK create(
+        struct _cef_scheme_handler_factory_t *self,
+        struct _cef_browser_t *browser,
+        struct _cef_frame_t *frame,
+        const cef_string_t *scheme_name,
+        struct _cef_request_t *request)
     {
         return new AssetsResourceHandler();
     }
