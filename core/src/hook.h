@@ -32,10 +32,9 @@ namespace hook
             opcodes[0] = 0x48;
             opcodes[1] = 0xB8;
             memcpy(&opcodes[2], &addr, sizeof(intptr_t));
-            // push rax
-            opcodes[10] = 0x50;
-            // ret
-            opcodes[11] = 0xC3;
+            // jmp rax
+            opcodes[10] = 0xFF;
+            opcodes[11] = 0xE0;
 #elif OS_MAC
             // jmp qword ptr [rip + offset] ; pad 2
             opcodes[0] = 0xFF;

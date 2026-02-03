@@ -214,14 +214,14 @@ namespace config::options
         return get_config_value_bool(__func__, false);
     }
 
-    bool isecure_mode()
+    bool insecure_mode()
     {
         return get_config_value_bool(__func__, false);
     }
 
     bool use_devtools()
     {
-        return get_config_value_bool(__func__, false);
+        return get_config_value_bool(__func__, true);
     }
 
     bool use_riotclient()

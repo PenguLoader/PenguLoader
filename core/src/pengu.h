@@ -1,10 +1,12 @@
 #ifndef _PENGU_H_
 #define _PENGU_H_
+
 #include "platform.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <cstddef>
 
 #ifdef OS_WIN
 #include <windows.h>
@@ -125,7 +127,7 @@ static inline void self_bind(M from, To &to) noexcept
     to = traits::invoke;
 }
 
-/// Use __COUNTER__ to make unique static variables on the same funtion sig.
+/// Use __COUNTER__ to make unique static variables on the same function sig.
 /// `static_assert` to check method type when updating headers.
 #define cef_bind_method(klass, m)                                                   \
     do {                                                                            \
@@ -151,7 +153,7 @@ struct CefRefCount : public T
         self_delete_ = [](void *self) noexcept { delete static_cast<U *>(self); };
     }
 
-    CefRefCount(nullptr_t) noexcept : CefRefCount(static_cast<T *>(nullptr)) {}
+    CefRefCount(std::nullptr_t) noexcept : CefRefCount(static_cast<T *>(nullptr)) {}
 
 private:
     void(*self_delete_)(void *);
@@ -334,7 +336,7 @@ namespace config
     path plugins_dir();
 
     ///
-    /// Get the list of disabled plugins in hex-hashed path splitted by commas.
+    /// Get the list of disabled plugins in hex-hashed path split by commas.
     /// @returns A list in string.
     /// 
     std::string disabled_plugins();
@@ -343,9 +345,9 @@ namespace config
     {
         bool use_hotkeys();
         bool optimized_client();
-        bool silent_mode();
         bool super_potato();
-        bool isecure_mode();
+        bool silent_mode();
+        bool insecure_mode();
         bool use_devtools();
         bool use_riotclient();
         bool use_proxy();
@@ -418,11 +420,11 @@ namespace dialog
     bool confirm(const char *message, const char *caption);
 
 #if OS_WIN
-    static void alert(const char *message, const char *caption) {
+    inline void alert(const char *message, const char *caption) {
         MessageBoxA(NULL, message, caption,
             MB_ICONINFORMATION | MB_OK | MB_TOPMOST);
     }
-    static bool confirm(const char *message, const char *caption) {
+    inline bool confirm(const char *message, const char *caption) {
         return IDYES == MessageBoxA(NULL, message, caption,
             MB_ICONWARNING/* MB_ICONQUESTION */ | MB_YESNO | MB_TOPMOST);
     }

@@ -123,13 +123,17 @@ static void ExposeNativeFunctions(V8Object *window)
     auto native = V8Object::create();
     auto handler = new NativeV8Handler();
 
-    auto list = {
+    auto apis = {
         v8_DataStoreEntries,
         v8_HelperEntries,
     };
 
-    for (auto &entries : list) {
-        for (auto entry = entries; entry->name; entry++) {
+    for (const auto &entries : apis) 
+    {
+        for (auto entry = entries;
+            entry->name != nullptr;
+            entry++)
+        {
             handler->map_[entry->name] = entry->func;
             auto name = CefStr(entry->name);
             auto function = V8Value::function(&name, handler);
