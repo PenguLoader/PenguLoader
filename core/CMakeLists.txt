@@ -53,6 +53,9 @@ if(WIN32)
         SUFFIX ".dll"
     )
     
+    # Set include directories
+    target_include_directories(core PRIVATE ${CORE_INCLUDE_DIRS})
+    
 elseif(APPLE)
     # macOS: Build as dylib
     add_library(core SHARED 
@@ -101,16 +104,19 @@ elseif(APPLE)
     set_target_properties(core PROPERTIES
         LINK_FLAGS "-dynamiclib -current_version ${PROJECT_VERSION} -compatibility_version 1.0.0"
     )
-endif()
+    
+    # Set include directories
+    target_include_directories(core PRIVATE ${CORE_INCLUDE_DIRS})
 
-# Set include directories
-target_include_directories(core PRIVATE ${CORE_INCLUDE_DIRS})
-
-# Build insert_dylib tool for macOS
-if(APPLE)
+    # Build insert_dylib tool for macOS
     add_executable(insert_dylib ${CMAKE_CURRENT_SOURCE_DIR}/insert_dylib.c)
     set_target_properties(insert_dylib PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
     )
     target_compile_options(insert_dylib PRIVATE -O2)
+    
+else()
+    # For other platforms (Linux, etc.) - configuration only
+    message(STATUS "Core module is only built on Windows and macOS")
+    message(STATUS "Current platform: ${CMAKE_SYSTEM_NAME}")
 endif()
