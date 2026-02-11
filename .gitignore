@@ -459,3 +459,18 @@ bin/*
 packages/
 include/
 *.g.h
+
+### CMake ###
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+build/
+out/
+[Bb]uild/
+
+### Node.js at root ###
+node_modules/
+pnpm-lock.yaml

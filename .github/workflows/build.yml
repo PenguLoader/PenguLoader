@@ -38,7 +38,7 @@ jobs:
       - name: Prepare environment variables
         run: |
           echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
-          echo "APP_VERSION=`node -p "require('./loader/package.json').version"`" >> $GITHUB_ENV
+          echo "APP_VERSION=`node -p "require('./package.json').version"`" >> $GITHUB_ENV
 
       - name: Setup MSBuild
         if: runner.os == 'Windows'
@@ -63,13 +63,12 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 9
-          run_install: |
-            - recursive: true
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Build preload plugins
-        run: |
-          cd plugins
-          pnpm build
+        run: pnpm build:plugins
 
       - name: Build core (windows)
         if: runner.os == 'Windows'
@@ -82,7 +81,7 @@ jobs:
       - name: Build loader
         uses: tauri-apps/tauri-action@v0
         with:
-          projectPath: "loader"
+          projectPath: "./loader"
           args: ${{ matrix.tauri_args }}
 
       - name: Move loader output (windows)

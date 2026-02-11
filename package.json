@@ -1,0 +1,24 @@
+{
+  "name": "pengu-loader-root",
+  "version": "1.2.0",
+  "description": "Pengu Loader - The ultimate JavaScript plugin loader",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "loader",
+    "plugins"
+  ],
+  "scripts": {
+    "dev:loader": "pnpm --filter pengu-loader dev",
+    "dev:plugins": "pnpm --filter pengujs dev",
+    "build:loader": "pnpm --filter pengu-loader build",
+    "build:plugins": "pnpm --filter pengujs build",
+    "build": "pnpm build:plugins && pnpm build:loader",
+    "tauri": "pnpm --filter pengu-loader tauri"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5.2.2"
+  }
+}
