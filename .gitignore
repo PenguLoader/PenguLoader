@@ -464,9 +464,9 @@ include/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
-Makefile
-*.cmake
-!CMakeLists.txt
+install_manifest.txt
+*-config.cmake
+*-targets.cmake
 build/
 out/
 [Bb]uild/

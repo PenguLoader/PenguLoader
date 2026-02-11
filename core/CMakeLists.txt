@@ -87,7 +87,7 @@ elseif(APPLE)
     # Link against macOS frameworks
     target_link_libraries(core PRIVATE
         "-framework Cocoa"
-        "-Lcore/cef/lib/mac"
+        "-L${CMAKE_CURRENT_SOURCE_DIR}/cef/lib/mac"
         "-weak-lcef.d"
         "-flat_namespace"
     )

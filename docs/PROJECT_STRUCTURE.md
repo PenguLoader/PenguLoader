@@ -173,4 +173,3 @@ Potential enhancements to consider:
 2. **Testing**: Add test infrastructure at workspace level
 3. **Linting**: Unified linting configuration across workspaces
 4. **Documentation**: Auto-generated API docs from source
-5. **CMake Presets**: Add CMakePresets.json for common configurations
