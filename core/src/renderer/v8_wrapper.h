@@ -2,6 +2,11 @@
 #define _V8_WRAPPER_H_
 
 #include "include/capi/cef_v8_capi.h"
+#include "include/capi/cef_task_capi.h"
+#include <functional>
+#include <optional>
+#include <stdexcept>
+#include <thread>
 
 struct V8ValueBase
 {
@@ -27,6 +32,7 @@ struct V8Value : V8ValueBase
     inline bool isObject() { return _.is_object(&_); }
     inline bool isArray() { return _.is_array(&_); }
     inline bool isFunction() { return _.is_function(&_); }
+    inline bool isPromise() { return _.is_promise(&_); }
 
     inline bool asBool() { return _.get_bool_value(&_); }
     inline int asInt() { return _.get_int_value(&_); }
@@ -36,6 +42,7 @@ struct V8Value : V8ValueBase
 
     inline struct V8Array *asArray() { return reinterpret_cast<struct V8Array *>(&_); }
     inline struct V8Object *asObject() { return reinterpret_cast<struct V8Object *>(&_); }
+    inline struct V8Promise *asPromise() { return reinterpret_cast<struct V8Promise *>(&_); }
 
     static inline V8Value *undefined()
     {
@@ -116,6 +123,90 @@ struct V8Object : V8ValueBase
     static inline V8Object *create()
     {
         return (V8Object *)cef_v8value_create_object(nullptr, nullptr);
+    }
+};
+
+class V8PromiseTask : CefRefCount<cef_task_t>
+{
+private:
+    cef_v8context_t *context_;
+    cef_v8value_t *promise_;
+    std::optional<std::function<V8Value *()>> resolver_;
+
+    static void CALLBACK _execute(cef_task_t *self)
+    {
+        auto *task = reinterpret_cast<V8PromiseTask *>(self);
+        task->execute_in_renderer();
+    }
+
+    void execute_in_renderer()
+    {
+        context_->enter(context_);
+
+        if (resolver_.has_value())
+        {
+            try
+            {
+                auto value = resolver_.value()();
+                promise_->resolve_promise(promise_, value ? value->ptr() : nullptr);
+            }
+            catch (const std::exception &ex)
+            {
+                CefStr message(ex.what());
+                promise_->reject_promise(promise_, &message);
+            }
+        }
+        else
+        {
+            promise_->resolve_promise(promise_, nullptr);
+        }
+
+        promise_->base.release(&promise_->base);
+        context_->exit(context_);
+    }
+
+public:
+    V8PromiseTask() : CefRefCount(this), resolver_(std::nullopt)
+    {
+        cef_task_t::execute = _execute;
+
+        context_ = cef_v8context_get_current_context();
+        context_->base.add_ref(&context_->base);
+
+        context_->enter(context_);
+        promise_ = cef_v8value_create_promise();
+        promise_->base.add_ref(&promise_->base);
+        context_->exit(context_);
+    }
+
+    ~V8PromiseTask()
+    {
+        context_->base.release(&context_->base);
+    }
+
+    void resolve()
+    {
+        resolver_ = std::nullopt;
+        cef_post_task(TID_RENDERER, this);
+    }
+
+    void resolve(std::function<V8Value *()> &&resolver)
+    {
+        resolver_ = resolver;
+        cef_post_task(TID_RENDERER, this);
+    }
+
+    void reject(const std::string &error)
+    {
+        resolve([error]() -> V8Value * {
+            throw std::runtime_error(error);
+        });
+    }
+
+    V8Value *execute(std::function<void()> &&runner)
+    {
+        std::thread(runner).detach();
+        return reinterpret_cast<V8Value *>(promise_);
     }
 };
 
