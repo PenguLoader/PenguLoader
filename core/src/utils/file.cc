@@ -16,6 +16,10 @@ bool file::is_symlink(const path &path)
 
     return attr & FILE_ATTRIBUTE_REPARSE_POINT;
 #elif OS_MAC
+    struct stat buffer;
+    if (lstat(path.string().c_str(), &buffer) == 0) {
+        return S_ISLNK(buffer.st_mode);
+    }
     return false;
 #endif
 }

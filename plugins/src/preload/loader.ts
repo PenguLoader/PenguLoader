@@ -1,4 +1,5 @@
 import { rcp, socket } from './rcp';
+import { createPluginFS } from './api/PluginFS';
 
 const plugins = window.Pengu.plugins
 
@@ -41,18 +42,24 @@ async function loadPlugin(entry: string) {
   let stage = 'load';
   try {
     // Acquire plugin
-    const url = `https://plugins/${entry}`;
+    const normalizedEntry = entry.replace(/\\/g, '/');
+    const url = `https://plugins/${normalizedEntry}`;
     const plugin: Plugin = await import(url);
 
     // Init immediately
     if (typeof plugin.init === 'function') {
       stage = 'initialize';
-      const pluginName = entry.substring(0, entry.indexOf('/'));
+      const pluginRoot = normalizedEntry.endsWith('/index.js')
+        ? normalizedEntry.substring(0, normalizedEntry.length - '/index.js'.length)
+        : '';
       const initContext = { rcp, socket };
       // If it's not top-level JS
-      if (pluginName) {
-        const meta = { name: pluginName };
+      if (pluginRoot) {
+        const meta = { name: pluginRoot };
+        const fs = createPluginFS(pluginRoot);
         initContext['meta'] = meta;
+        if (fs)
+          initContext['fs'] = fs;
       }
       await plugin.init(initContext);
     }

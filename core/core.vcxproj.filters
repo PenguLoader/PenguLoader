@@ -55,6 +55,9 @@
     <ClCompile Include="src\renderer\v8_helper.cc">
       <Filter>src\renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\v8_pluginfs.cc">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
     <ClCompile Include="src\utils\cefstr.cc">
       <Filter>src\utils</Filter>
     </ClCompile>
