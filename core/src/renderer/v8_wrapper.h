@@ -3,10 +3,103 @@
 
 #include "include/capi/cef_v8_capi.h"
 #include "include/capi/cef_task_capi.h"
+#include <condition_variable>
+#include <deque>
 #include <functional>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <thread>
+#include <vector>
+
+namespace v8_async
+{
+    class TaskPool
+    {
+    private:
+        static constexpr size_t WORKER_COUNT = 4;
+
+        std::mutex mutex_;
+        std::condition_variable condition_;
+        std::deque<std::function<void()>> queue_;
+        std::vector<std::thread> workers_;
+        bool stopping_ = false;
+
+        TaskPool()
+        {
+            workers_.reserve(WORKER_COUNT);
+            for (size_t index = 0; index < WORKER_COUNT; ++index)
+            {
+                workers_.emplace_back([this] { run(); });
+            }
+        }
+
+        ~TaskPool()
+        {
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                stopping_ = true;
+            }
+
+            condition_.notify_all();
+
+            for (auto &worker : workers_)
+            {
+                if (worker.joinable())
+                    worker.join();
+            }
+        }
+
+        void run()
+        {
+            for (;;)
+            {
+                std::function<void()> task;
+
+                {
+                    std::unique_lock<std::mutex> lock(mutex_);
+                    condition_.wait(lock, [this] { return stopping_ || !queue_.empty(); });
+
+                    if (stopping_ && queue_.empty())
+                        return;
+
+                    task = std::move(queue_.front());
+                    queue_.pop_front();
+                }
+
+                task();
+            }
+        }
+
+    public:
+        TaskPool(const TaskPool &) = delete;
+        TaskPool &operator=(const TaskPool &) = delete;
+
+        static TaskPool &instance()
+        {
+            static TaskPool pool;
+            return pool;
+        }
+
+        void enqueue(std::function<void()> &&task)
+        {
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                if (stopping_)
+                    return;
+
+                queue_.push_back(std::move(task));
+            }
+
+            condition_.notify_one();
+        }
+    };
+
+    inline void enqueue(std::function<void()> &&task)
+    {
+        TaskPool::instance().enqueue(std::move(task));
+    }
+}
 
 struct V8ValueBase
 {
@@ -205,7 +298,7 @@ public:
 
     V8Value *execute(std::function<void()> &&runner)
     {
-        std::thread(runner).detach();
+        v8_async::enqueue(std::move(runner));
         return reinterpret_cast<V8Value *>(promise_);
     }
 };
