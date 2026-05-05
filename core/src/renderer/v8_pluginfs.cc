@@ -205,7 +205,7 @@ namespace
     {
         auto normalized = normalize_plugin_input(plugin_root_input);
         auto parts = split_relative_path(normalized, false);
-        if (!parts.has_value())
+        if (!parts.has_value() || parts->size() != 1)
             return std::nullopt;
 
         std::error_code ec;
