@@ -9,6 +9,7 @@ interface Plugin {
 interface PluginContext {
   rcp: any
   socket: any
+  bus: PluginBus
   meta?: {
     name: string
   }
@@ -112,4 +113,17 @@ interface PluginFS {
   stat: (path?: string) => Promise<FileStat | undefined>
   ls: (path?: string) => Promise<string[] | undefined>
   rm: (path: string, options?: { recursive?: boolean }) => Promise<number>
+}
+
+interface PluginBusEvent {
+  topic: string
+  source: string
+  timestamp: number
+}
+
+interface PluginBus {
+  on: (topic: string, handler: (payload: unknown, event: PluginBusEvent) => unknown) => () => void
+  once: (topic: string, handler: (payload: unknown, event: PluginBusEvent) => unknown) => () => void
+  off: (topic: string, handler: (payload: unknown, event: PluginBusEvent) => unknown) => void
+  emit: (topic: string, payload?: unknown) => number
 }
