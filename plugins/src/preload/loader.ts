@@ -1,7 +1,31 @@
 import { rcp, socket } from './rcp';
 import { createPluginFS } from './api/PluginFS';
+import { createPluginBus } from './api/PluginBus';
 
 const plugins = window.Pengu.plugins
+
+function normalizeEntry(entry: string) {
+  let normalized = entry.replace(/\\/g, '/');
+
+  while (normalized.startsWith('./'))
+    normalized = normalized.substring(2);
+
+  while (normalized.startsWith('/'))
+    normalized = normalized.substring(1);
+
+  return normalized;
+}
+
+function getDirectoryPluginRoot(entry: string) {
+  if (!entry.endsWith('/index.js'))
+    return '';
+
+  const pluginRoot = entry.substring(0, entry.length - '/index.js'.length);
+  if (!pluginRoot || pluginRoot.includes('/'))
+    return '';
+
+  return pluginRoot;
+}
 
 if ('disabledPlugins' in window.Pengu) {
   const blacklist = new Set<number>
@@ -42,18 +66,17 @@ async function loadPlugin(entry: string) {
   let stage = 'load';
   try {
     // Acquire plugin
-    const normalizedEntry = entry.replace(/\\/g, '/');
+    const normalizedEntry = normalizeEntry(entry);
     const url = `https://plugins/${normalizedEntry}`;
     const plugin: Plugin = await import(url);
 
     // Init immediately
     if (typeof plugin.init === 'function') {
       stage = 'initialize';
-      const pluginRoot = normalizedEntry.endsWith('/index.js')
-        ? normalizedEntry.substring(0, normalizedEntry.length - '/index.js'.length)
-        : '';
-      const initContext = { rcp, socket };
-      // If it's not top-level JS
+      const pluginRoot = getDirectoryPluginRoot(normalizedEntry);
+      const pluginName = pluginRoot || normalizedEntry;
+      const initContext: PluginContext = { rcp, socket, bus: createPluginBus(pluginName) };
+
       if (pluginRoot) {
         const meta = { name: pluginRoot };
         const fs = createPluginFS(pluginRoot);
