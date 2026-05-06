@@ -3,6 +3,7 @@
 
 #include "include/capi/cef_v8_capi.h"
 #include "include/capi/cef_task_capi.h"
+#include "platform.h"
 #include <condition_variable>
 #include <deque>
 #include <functional>
@@ -226,6 +227,28 @@ private:
     cef_v8value_t *promise_;
     std::optional<std::function<V8Value *()>> resolver_;
 
+    cef_v8value_t *create_promise()
+    {
+#if OS_MAC
+        CefStr code("new Promise(() => {})");
+        CefStr script_url("pengu://native-promise");
+        cef_v8value_t *value = nullptr;
+        cef_v8exception_t *exception = nullptr;
+
+        if (!context_->eval(context_, &code, &script_url, 1, &value, &exception) || value == nullptr)
+        {
+            if (exception != nullptr)
+                exception->base.release(&exception->base);
+
+            return cef_v8value_create_undefined();
+        }
+
+        return value;
+#else
+        return cef_v8value_create_promise();
+#endif
+    }
+
     static void CALLBACK _execute(cef_task_t *self)
     {
         auto *task = reinterpret_cast<V8PromiseTask *>(self);
@@ -267,7 +290,7 @@ public:
         context_->base.add_ref(&context_->base);
 
         context_->enter(context_);
-        promise_ = cef_v8value_create_promise();
+        promise_ = create_promise();
         promise_->base.add_ref(&promise_->base);
         context_->exit(context_);
     }
