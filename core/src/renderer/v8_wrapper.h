@@ -298,7 +298,20 @@ public:
 
     V8Value *execute(std::function<void()> &&runner)
     {
-        v8_async::enqueue(std::move(runner));
+        v8_async::enqueue([this, runner = std::move(runner)]() mutable {
+            try
+            {
+                runner();
+            }
+            catch (const std::exception &ex)
+            {
+                reject(ex.what());
+            }
+            catch (...)
+            {
+                reject("Async task failed");
+            }
+        });
         return reinterpret_cast<V8Value *>(promise_);
     }
 };
