@@ -21,10 +21,17 @@ function getDirectoryPluginRoot(entry: string) {
     return '';
 
   const pluginRoot = entry.substring(0, entry.length - '/index.js'.length);
-  if (!pluginRoot || pluginRoot.includes('/'))
+  if (!pluginRoot)
     return '';
 
-  return pluginRoot;
+  const parts = pluginRoot.split('/');
+  if (parts.length === 1)
+    return pluginRoot;
+
+  if (parts.length === 2 && parts[0].startsWith('@') && parts[1])
+    return pluginRoot;
+
+  return '';
 }
 
 if ('disabledPlugins' in window.Pengu) {

@@ -205,7 +205,13 @@ namespace
     {
         auto normalized = normalize_plugin_input(plugin_root_input);
         auto parts = split_relative_path(normalized, false);
-        if (!parts.has_value() || parts->size() != 1)
+        if (!parts.has_value())
+            return std::nullopt;
+
+        if (parts->size() != 1 && parts->size() != 2)
+            return std::nullopt;
+
+        if (parts->size() == 2 && !parts->front().string().starts_with("@"))
             return std::nullopt;
 
         std::error_code ec;
@@ -356,7 +362,7 @@ namespace
         auto temp = target.value();
         temp += ".pengu-tmp";
 
-    std::ofstream stream(temp, std::ios::binary | std::ios::trunc);
+        std::ofstream stream(temp, std::ios::binary | std::ios::trunc);
         if (!stream.good())
             return false;
 
