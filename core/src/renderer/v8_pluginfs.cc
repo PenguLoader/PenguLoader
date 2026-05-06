@@ -25,7 +25,7 @@ namespace
 
     struct FileStatResult
     {
-        path file_name;
+        std::string file_name;
         uintmax_t size;
         bool is_dir;
         bool is_file;
@@ -158,6 +158,18 @@ namespace
             normalized.erase(0, 2);
 
         return normalized;
+    }
+
+    static std::string path_to_utf8(const path &value)
+    {
+        auto utf8 = value.u8string();
+        std::string output;
+        output.reserve(utf8.size());
+
+        for (auto ch : utf8)
+            output.push_back(static_cast<char>(ch));
+
+        return output;
     }
 
     static std::string make_token()
@@ -447,10 +459,10 @@ namespace
                 size = 0;
         }
 
-        return FileStatResult{ target->filename(), size, is_dir, is_file };
+        return FileStatResult{ path_to_utf8(target->filename()), size, is_dir, is_file };
     }
 
-    static std::optional<std::vector<path>> list_dir(const std::string &token, const std::string &relative_path)
+    static std::optional<std::vector<std::string>> list_dir(const std::string &token, const std::string &relative_path)
     {
         auto capability = get_capability(token);
         if (!capability.has_value())
@@ -461,10 +473,11 @@ namespace
             return std::nullopt;
 
         auto entries = file::read_dir(target.value());
-        std::vector<path> names;
+        std::vector<std::string> names;
         for (const auto &entry : entries)
         {
-            auto name = entry.string();
+            auto file_name = entry.filename();
+            auto name = path_to_utf8(file_name);
             if (name == "." || name == "..")
                 continue;
 
@@ -473,7 +486,7 @@ namespace
                 continue;
 
             if (file::is_file(full) || file::is_dir(full))
-                names.push_back(entry.filename());
+                names.push_back(name);
         }
 
         return names;
@@ -610,7 +623,7 @@ static V8Value *v8_pluginfs_stat(V8Value *const args[], int argc)
                 return V8Value::undefined();
 
             auto object = V8Object::create();
-            auto name = CefStr::from_path(result->file_name);
+            auto name = CefStr(result->file_name);
             object->set(&u"fileName"_s, V8Value::string(&name), V8_PROPERTY_ATTRIBUTE_READONLY);
             object->set(&u"length"_s, V8Value::number(static_cast<double>(result->size)), V8_PROPERTY_ATTRIBUTE_READONLY);
             object->set(&u"isDir"_s, V8Value::boolean(result->is_dir), V8_PROPERTY_ATTRIBUTE_READONLY);
@@ -638,7 +651,7 @@ static V8Value *v8_pluginfs_ls(V8Value *const args[], int argc)
             auto array = V8Array::create(static_cast<int>(entries->size()));
             for (int index = 0; index < static_cast<int>(entries->size()); ++index)
             {
-                auto value = CefStr::from_path(entries.value()[index]);
+                auto value = CefStr(entries.value()[index]);
                 array->set(index, V8Value::string(&value));
             }
 
