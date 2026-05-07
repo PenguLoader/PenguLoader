@@ -32,8 +32,10 @@ namespace
     };
 
     std::mutex g_capabilities_mutex;
+    std::mutex g_write_mutex;
     std::unordered_map<std::string, Capability> g_capabilities;
     std::atomic<uint64_t> g_token_counter{ 1 };
+    std::atomic<uint64_t> g_temp_counter{ 1 };
 
     static std::string to_utf8(V8Value *value)
     {
@@ -362,6 +364,8 @@ namespace
         if (!target.has_value())
             return false;
 
+        std::lock_guard<std::mutex> write_lock(g_write_mutex);
+
         if (append)
         {
             std::ofstream stream(target.value(), std::ios::binary | std::ios::app);
@@ -372,7 +376,8 @@ namespace
         }
 
         auto temp = target.value();
-        temp += ".pengu-tmp";
+        temp += ".pengu-tmp.";
+        temp += std::to_string(g_temp_counter.fetch_add(1));
 
         std::ofstream stream(temp, std::ios::binary | std::ios::trunc);
         if (!stream.good())
