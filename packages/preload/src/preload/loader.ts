@@ -123,11 +123,22 @@ async function loadPlugin(entry: string) {
 const PLUGIN_LOAD_TIMEOUT_MS = 15_000;
 
 const allLoaded = Promise.all(plugins.map(loadPlugin));
-const timedOut = new Promise<void>(resolve => setTimeout(() => {
-  console.warn('%c Pengu ', 'background: #183461; color: #fff',
-    `plugin load exceeded ${PLUGIN_LOAD_TIMEOUT_MS}ms — releasing rcp-fe-common-libs gate. Slow plugins continue loading in the background.`);
-  resolve();
-}, PLUGIN_LOAD_TIMEOUT_MS));
+let timeoutId: ReturnType<typeof setTimeout> | undefined;
+const timedOut = new Promise<void>(resolve => {
+  timeoutId = setTimeout(() => {
+    timeoutId = undefined;
+    console.warn('%c Pengu ', 'background: #183461; color: #fff',
+      `plugin load exceeded ${PLUGIN_LOAD_TIMEOUT_MS}ms — releasing rcp-fe-common-libs gate. Slow plugins continue loading in the background.`);
+    resolve();
+  }, PLUGIN_LOAD_TIMEOUT_MS);
+});
+
+allLoaded.finally(() => {
+  if (timeoutId !== undefined) {
+    clearTimeout(timeoutId);
+    timeoutId = undefined;
+  }
+});
 
 const waitable = Promise.race([allLoaded, timedOut]);
 
