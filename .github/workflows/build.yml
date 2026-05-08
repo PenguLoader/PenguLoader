@@ -85,7 +85,7 @@ jobs:
           cp app-publish/Pengu.exe            "out/"
           cp app-publish/app.dat              "out/"
           cp app-publish/WebView2Loader.dll   "out/"
-          cp bin/core.dll                     "out/"
+          cp core/bin/core.dll                "out/"
 
       - name: Upload portable artifact
         uses: actions/upload-artifact@v4
