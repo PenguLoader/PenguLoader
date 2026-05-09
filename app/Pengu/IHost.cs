@@ -19,8 +19,17 @@ public interface IHost
     string DataRoot { get; }
 
     /// <summary>Path to the directory containing the running executable. Used
-    /// for finding <c>core.dll</c> / <c>core.dylib</c> and <c>app.dat</c>.</summary>
+    /// for finding <c>app.dat</c>; the core module path is exposed separately
+    /// via <see cref="CoreModulePath"/> because macOS bundles place it in
+    /// <c>Contents/Resources/</c>, not next to the inner exec.</summary>
     string ExeDirectory { get; }
+
+    /// <summary>Absolute path to the platform-specific core shared library
+    /// (<c>core.dll</c> on Windows next to the host exe;
+    /// <c>core.dylib</c> on macOS inside <c>Pengu.app/Contents/Resources/</c>).
+    /// Used both for activation existence checks and as the
+    /// <c>DYLD_INSERT_LIBRARIES</c> target on macOS Universal mode.</summary>
+    string CoreModulePath { get; }
 
     /// <summary>Whether WebView2 (Win) / WKWebView (Mac) is available. If false,
     /// <see cref="ShowMissingRuntimeDialogAsync"/> must be callable to surface

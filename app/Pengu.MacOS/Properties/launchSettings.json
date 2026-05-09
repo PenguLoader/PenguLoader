@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Pengu.MacOS": {
+      "commandName": "Project",
+      "commandLineArgs": "--dev=http://localhost:1420 --verbose"
+    }
+  }
+}

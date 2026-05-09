@@ -22,7 +22,10 @@ const config: Config = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: 'rgb(var(--primary))',
+          // <alpha-value> placeholder lets Tailwind plug in opacity from
+          // modifiers like `bg-primary/5` / `border-primary/40`. Without it,
+          // alpha modifiers silently no-op against this color.
+          DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
           foreground: 'hsl(var(--primary-foreground))'
         },
         secondary: {

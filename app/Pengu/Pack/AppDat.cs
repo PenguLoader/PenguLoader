@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Reflection;
 using Pengu.Logging;
 
 namespace Pengu.Pack;
@@ -42,24 +43,61 @@ public sealed class AppDat : IDisposable
         var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         try
         {
-            var archive = new ZipArchive(fs, ZipArchiveMode.Read, leaveOpen: false);
-            var index = new Dictionary<string, ZipArchiveEntry>(StringComparer.OrdinalIgnoreCase);
-            foreach (var entry in archive.Entries)
-            {
-                if (string.IsNullOrEmpty(entry.FullName) || entry.FullName.EndsWith('/'))
-                    continue; // skip directory entries
-                // Normalise forward-slashes in case the producer used '\' on Windows.
-                var key = entry.FullName.Replace('\\', '/');
-                index[key] = entry;
-            }
-            Log.Info("AppDat opened {0} ({1} entries)", path, index.Count);
-            return new AppDat(archive, index, path);
+            return BuildFromStream(fs, path);
         }
         catch
         {
             fs.Dispose();
             throw;
         }
+    }
+
+    /// <summary>
+    /// Open <c>app.dat</c> from a managed assembly resource. Used by both
+    /// heads since <c>app.dat</c> is embedded into the head's assembly at
+    /// build time (via <c>EmbeddedResource</c>); this avoids shipping a
+    /// separate file alongside the exe / inside the .app bundle.
+    /// Returns null if the resource isn't present (Debug builds skip the
+    /// hub bundle and rely on <c>--dev=URL</c> instead).
+    /// </summary>
+    public static AppDat? OpenEmbedded(Assembly assembly, string resourceName = "app.dat")
+    {
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream is null)
+        {
+            Log.Debug("AppDat embedded resource '{0}' not present in {1}", resourceName, assembly.GetName().Name);
+            return null;
+        }
+        // Copy into MemoryStream because ZipArchive needs a seekable stream
+        // and we want to release the resource handle promptly.
+        var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        ms.Position = 0;
+        try
+        {
+            return BuildFromStream(ms, $"<embedded:{resourceName}>");
+        }
+        catch
+        {
+            ms.Dispose();
+            throw;
+        }
+    }
+
+    private static AppDat BuildFromStream(Stream src, string identifier)
+    {
+        var archive = new ZipArchive(src, ZipArchiveMode.Read, leaveOpen: false);
+        var index = new Dictionary<string, ZipArchiveEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in archive.Entries)
+        {
+            if (string.IsNullOrEmpty(entry.FullName) || entry.FullName.EndsWith('/'))
+                continue; // skip directory entries
+            // Normalise forward-slashes in case the producer used '\' on Windows.
+            var key = entry.FullName.Replace('\\', '/');
+            index[key] = entry;
+        }
+        Log.Info("AppDat opened {0} ({1} entries)", identifier, index.Count);
+        return new AppDat(archive, index, identifier);
     }
 
     /// <summary>Try to read <paramref name="path"/> from the pack. Returns

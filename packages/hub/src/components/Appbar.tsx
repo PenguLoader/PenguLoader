@@ -1,15 +1,16 @@
 import { Component, createSignal, JSX, onMount, Show, splitProps } from 'solid-js'
 import { twMerge } from 'tailwind-merge'
-import { SettingsIcon, StoreIcon } from './Icons'
+import { ArrowBackUpIcon, SettingsIcon, StoreIcon } from './Icons'
 import { useRoot } from '../lib/root'
 import { useTippy } from '../lib/utils'
 import { pengu } from '../lib/pengu'
+import { Activator } from './Activator'
 import icon from '../assets/icon-sm.png'
 
-const Command: Component<JSX.HTMLAttributes<HTMLSpanElement>> = (props) => {
+const Command: Component<JSX.HTMLAttributes<HTMLButtonElement>> = (props) => {
   const [local, rest] = splitProps(props, ['class'])
   return (
-    <span
+    <button
       class={twMerge("flex justify-center items-center w-12 h-full hover:bg-foreground/15", local.class)}
       {...rest}
     />
@@ -20,7 +21,7 @@ export const Appbar: Component<{
   isHome: boolean
 }> = (props) => {
 
-  const { settings, setStore } = useRoot()
+  const { settings, isStore, setStore } = useRoot()
   // Focus state via standard DOM events. WebView2 fills the entire window
   // client area, so window focus and DOM focus are equivalent — no host
   // bridge call needed.
@@ -33,9 +34,9 @@ export const Appbar: Component<{
 
   onMount(() => {
     const onFocus = () => setFocus(true)
-    const onBlur  = () => setFocus(false)
+    const onBlur = () => setFocus(false)
     window.addEventListener('focus', onFocus)
-    window.addEventListener('blur',  onBlur)
+    window.addEventListener('blur', onBlur)
   })
 
   return (
@@ -52,9 +53,19 @@ export const Appbar: Component<{
 
       <div class="flex justify-center h-full text-foreground/80">
         <Show when={props.isHome}>
-          <Command onClick={() => setStore(true)} ref={useTippy('Plugin Store')}>
-            <StoreIcon size={16} />
-          </Command>
+          {/* Activator lives in the appbar across both gallery and store views.
+              Activation state is independent of which page the user is on. */}
+          <Activator />
+          <Show when={!isStore()}>
+            <Command onClick={() => setStore(true)} ref={useTippy('Plugin Store')}>
+              <StoreIcon size={16} />
+            </Command>
+          </Show>
+          <Show when={isStore()}>
+            <Command onClick={() => setStore(false)} ref={useTippy('Back to Gallery')}>
+              <ArrowBackUpIcon size={16} />
+            </Command>
+          </Show>
           <Command onClick={settings.show} ref={useTippy('Settings')}>
             <SettingsIcon size={16} />
           </Command>

@@ -75,7 +75,7 @@ On Windows the browser process additionally hooks `CreateProcessW` to detect ren
 
 This is needed because IFEO only fires on the parent process — children don't inherit it. The renderer DLL has to be injected explicitly.
 
-On macOS the dylib injection happens once into `libEGL.dylib` inside the CEF framework (see [§2.3](#23-activation-paths) below); CEF then loads the same dylib into both browser and renderer processes naturally, so no `CreateProcessW`-equivalent is needed.
+On macOS the daemon catches `LeagueClientUx` at spawn and re-spawns it with `DYLD_INSERT_LIBRARIES=core.dylib` (see [§2.3](#23-activation-paths) below). LCUX is `flags=0x0(none)` so dyld honors the env var; the renderer Helpers are also `flags=0x0` and inherit the env var natively when LCUX `posix_spawn`s them, so no `CreateProcessW`-equivalent is needed on macOS — dyld inheritance does the work that the Windows hook does explicitly.
 
 ### 2.2 CEF binding style — no libcef_wrapper
 
@@ -126,17 +126,30 @@ Because `LoadLibrary("version.dll")` will resolve to our DLL instead of `C:\Wind
 
 Symlink mode requires admin or Windows Developer Mode for the initial install, but uninstall does not.
 
-#### macOS — insert_dylib (OnDemand, only model)
+#### macOS — kill-and-respawn with `DYLD_INSERT_LIBRARIES` (Universal, default)
 
-There is no IFEO on macOS, and no equivalent of in-process DLL hijacking that survives Riot Client launching LCUX. The chosen approach: when the user opens LoL, the loader (running in the tray) injects the dylib by patching a CEF framework binary in place.
+For full design and rejected alternatives see [`macos-port.md`](./macos-port.md). Empirically validated on 2026-05-08 against macOS Sequoia + Apple Silicon + Rosetta-translated LCUX.
 
-[`packages/hub/src-tauri/src/macos/socket.rs`](../packages/hub/src-tauri/src/macos/socket.rs) runs a daemon thread that subscribes to Riot Client Services' WAMP WebSocket on `/product-session/v1/sessions/...`. When a session for `productId == "league_of_legends"` is created, the daemon calls [`core::install_module`](../packages/hub/src-tauri/src/macos/core.rs):
+The lever: `LeagueClientUx`, every Helper bundle, and `LeagueClient` (the launcher between RCS and LCUX) all sign with `flags=0x0(none)` — no hardened runtime — so dyld honors `DYLD_INSERT_LIBRARIES` and library validation is off. `RiotClientServices` *is* hardened (so dyld strips DYLD env vars from its environ before it spawns children, which kills any "set the env upstream and let it propagate" scheme), but we don't need to inject into RCS.
 
-1. Backs up `League of Legends.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libEGL.dylib` to `libEGL.dylib.bak`.
-2. Uses `insert_dylib` (either the bundled `core/insert_dylib.c` Rust port, or an external binary if present in `bin/`) to add a `LC_LOAD_DYLIB` load command pointing at `core.dylib`.
-3. CEF loads `libEGL.dylib` into both the LCUX process and its renderer Helper, dragging `core.dylib` along with it.
+When the user enables Pengu, the loader (running in the tray) starts an `LcuxWatcher` that polls `proc_listpids` every 5 ms. On a new pid matching `LeagueClientUx`:
 
-When LCUX closes (`Delete` event on the same WAMP topic), the daemon restores the backup. This is the model the loader UI calls **OnDemand**.
+1. `kill(pid, SIGSTOP)` immediately — pre-`cef_initialize`.
+2. Re-check `proc_pidpath` to skip fork-window false positives (a transient child briefly inheriting LCUX's exec path before its own `execve`).
+3. `sysctl(KERN_PROCARGS2)` reads the original's argv + envp (same-UID, no entitlement).
+4. Parse `--install-directory=` from argv → working directory.
+5. `posix_spawn` a replacement `LeagueClientUx` with the same argv + envp + an added `DYLD_INSERT_LIBRARIES=/abs/path/core.dylib` and the captured cwd.
+6. **Do not `SIGKILL` the original.** A stopped pid passes `kill(pid, 0)` liveness, so `LeagueClient`'s `SIGCHLD`-based child watch never fires and its Foundation/LCDS server stays up; killing it would trigger Foundation teardown and our re-spawn would get `ERR_CONNECTION_REFUSED` on `bootstrap.html`. Original LCUX stays frozen in early dyld init (we caught it within 5 ms), no ports bound, ~1 MB resident, persists until logout.
+
+dyld in the new LCUX honors `DYLD_INSERT_LIBRARIES`, loads `core.dylib`, runs its constructor → `HookBrowserProcess()`. When LCUX `posix_spawn`s its Helpers, they inherit the env var, dyld loads `core.dylib` into them too, the host-name dispatch in [`dllmain.cc`](../core/src/dllmain.cc) routes to `HookRendererProcess()` for renderers / no-ops for GPU and utility helpers.
+
+No sudo, no SIP relaxation, no `cs.debugger` entitlement, no Riot file modified.
+
+Notable rejected alternatives, kept here so they don't get re-derived: mach-port runtime attach (`task_for_pid` works under sudo but `thread_set_state x86_THREAD_STATE64` on a fresh kernel-created Rosetta thread fails `KERN_INVALID_ARGUMENT`); `launchctl setenv DYLD_INSERT_LIBRARIES` (macOS silently filters `DYLD_*` from launchctl); spawn-Riot-Client-with-DYLD-inline or LaunchAgent `EnvironmentVariables` (RCS hardened-runtime strips at the chain entry); shelling out to lldb (works, but Xcode CLI Tools dependency + 1–3 s attach + DevToolsSecurity prompt). See [`macos-port.md`](./macos-port.md) §8 for the full audit.
+
+#### macOS — insert_dylib (OnDemand, fallback)
+
+Retained as a fallback for users who hit Universal-mode failure. Same flow as the legacy v1.2.0 model: subscribe to RCS WAMP, on `league_of_legends` session create, back up `libEGL.dylib` and patch it in place with an `LC_LOAD_DYLIB` for `core.dylib`; restore on session delete. Triggers Riot's per-launch repair prompt — known UX cost; the only viable path if a future LCUX build enables hardened runtime and breaks Universal.
 
 OnDemand is a defined enum value on Windows too but is not wired up — IFEO is strictly more reliable there.
 

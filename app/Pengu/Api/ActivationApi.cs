@@ -23,14 +23,14 @@ public partial class ActivationApi
     private readonly ConfigStore _config;
     private readonly ActivationActionRegistry _registry;
     private readonly EventBus _bus;
-    private readonly string _exeDir;
+    private readonly string _corePath;
 
-    public ActivationApi(ConfigStore config, ActivationActionRegistry registry, EventBus bus, string exeDir)
+    public ActivationApi(ConfigStore config, ActivationActionRegistry registry, EventBus bus, string corePath)
     {
         _config = config;
         _registry = registry;
         _bus = bus;
-        _exeDir = exeDir;
+        _corePath = corePath;
     }
 
     /// <summary>
@@ -123,13 +123,7 @@ public partial class ActivationApi
     }
 
     [JsInvokable]
-    public Task<bool> CoreExists()
-    {
-        var corePath = OperatingSystem.IsMacOS()
-            ? System.IO.Path.Combine(_exeDir, "core.dylib")
-            : System.IO.Path.Combine(_exeDir, "core.dll");
-        return Task.FromResult(File.Exists(corePath));
-    }
+    public Task<bool> CoreExists() => Task.FromResult(File.Exists(_corePath));
 
     private IActivationAction? ResolveAction()
     {

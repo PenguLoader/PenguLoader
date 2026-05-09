@@ -10,7 +10,22 @@
     <ProductName>Pengu</ProductName>
     <Company>PenguLoader</Company>
     <Copyright>Copyright (c) PenguLoader contributors</Copyright>
-    <Version>1.2.0</Version>
+  </PropertyGroup>
+
+  <!-- Single-source versioning: the root package.json is canonical. The
+       SDK auto-generates AssemblyVersion / AssemblyFileVersion /
+       AssemblyInformationalVersion from $(Version), so AppEnv.AppVersion
+       (which reads AssemblyInformationalVersionAttribute at runtime)
+       reflects whatever's in package.json. Change in one place, every
+       artifact updates: assembly metadata, csproj output, hub bundle
+       hash, CI artifact name. packages/hub/package.json is left at a
+       placeholder to avoid drift. -->
+  <PropertyGroup>
+    <_RootPackageJsonPath>$(MSBuildThisFileDirectory)..\package.json</_RootPackageJsonPath>
+    <Version>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(_RootPackageJsonPath)')), '"version"\s*:\s*"([^"]+?)"').Groups[1].Value)</Version>
+    <!-- Defensive default in case the regex misses (e.g. someone deletes
+         package.json). 0.0.0 is the .NET SDK's own fallback. -->
+    <Version Condition="'$(Version)' == ''">0.0.0</Version>
   </PropertyGroup>
 
   <!-- AOT defaults; opt out per-project where it doesn't apply (e.g. source generator). -->

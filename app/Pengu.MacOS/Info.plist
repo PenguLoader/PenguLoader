@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- App icon. Filename without extension; macOS picks up app-icon.icns
+         from Contents/Resources/. The other CFBundle* keys (Identifier,
+         Name, Version, etc.) are auto-populated by the SDK from csproj
+         properties (ApplicationId, AssemblyName, Version). -->
+    <key>CFBundleIconFile</key>
+    <string>app-icon</string>
+</dict>
+</plist>

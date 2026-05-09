@@ -1,5 +1,4 @@
-import { Component, Match, Show, Switch } from 'solid-js'
-import { Activator } from '../components/Activator'
+import { Component, Match, Switch } from 'solid-js'
 import { Settings } from '../components/settings'
 import { PluginGallery } from '../components/PluginGallery'
 import { PluginStore } from '../components/PluginStore'
@@ -17,7 +16,6 @@ export const MainPage: Component = () => {
           <Match when={!isStore()} children={PluginGallery} />
         </Switch>
       </div>
-      <Show when={!isStore()} children={Activator} />
       <Settings />
     </div>
   )

@@ -372,8 +372,8 @@ Subscribed via `window.addEventListener('activation:stateChanged', e => ...)`. R
 
 | Mode | Windows | macOS |
 | --- | --- | --- |
-| Universal | IFEO write to `HKLM\...\Image File Execution Options\LeagueClientUx.exe\Debugger` | (not applicable) |
-| OnDemand | (not implemented — see below) | Daemon `insert_dylib` patches `libEGL.dylib` to load `core.dylib`; restores backup on session delete |
+| Universal | IFEO write to `HKLM\...\Image File Execution Options\LeagueClientUx.exe\Debugger` | Daemon polls `proc_listpids` for new `LeagueClientUx`, SIGSTOPs it, captures argv+envp via `sysctl(KERN_PROCARGS2)`, `posix_spawn`s a replacement with `DYLD_INSERT_LIBRARIES=core.dylib`. Original LCUX is **left SIGSTOP'd** (not killed) so LeagueClient's `SIGCHLD`-based child-watch keeps Foundation server alive. Helpers inherit the env var via dyld natively. See [`macos-port.md`](./macos-port.md). |
+| OnDemand | (not implemented — see below) | Fallback. Daemon `insert_dylib` patches `libEGL.dylib` to load `core.dylib`; restores backup on session delete. Triggers Riot's per-launch repair prompt — known UX cost. |
 
 **Targeted (symlink) is dropped.** Universal already covers the "set and forget" case better (registry, no Developer Mode dance, no `version.dll` proxy). The `Targeted = 1` enum value is reserved in the wire format but never selectable.
 
@@ -402,8 +402,9 @@ public interface IActivationAction
 `Pengu.Activation.RcsDaemon` (in core) subscribes to RCS WAMP and dispatches to whichever `IActivationAction` is registered for the current mode. The action is platform-specific:
 
 - `Pengu.Windows.Activation.IfeoAction` — Universal mode (no daemon involvement; `SetActiveAsync` writes/deletes the IFEO key).
-- `Pengu.Windows.Activation.CopyDllAction` — OnDemand on Windows.
-- `Pengu.MacOS.Activation.InsertDylibAction` — OnDemand on macOS.
+- `Pengu.Windows.Activation.CopyDllAction` — OnDemand on Windows (dropped, see §9.4).
+- `Pengu.MacOS.Activation.RespawnAction` — Universal mode on macOS (default). Drives `LcuxWatcher` instead of consuming the WAMP daemon.
+- `Pengu.MacOS.Activation.InsertDylibAction` — OnDemand on macOS (fallback).
 
 ### 9.3 IFEO write
 
@@ -425,9 +426,30 @@ Reads use `Microsoft.Win32.RegistryKey.OpenSubKey(KEY_READ)` — read APIs don't
 
 Originally specified here as a CopyDllAction + RcsDaemon pair, mirroring macOS. Decision reversed (2026-05-08): Windows ships only Universal mode. See §9.1 above for the reasoning. The `OnDemand = 2` enum value remains defined and `pengu.activation.listModes()` reports `available: false` for it on Windows automatically (registry has no action registered → registry-driven availability check returns false). If a future build wants to revisit Windows OnDemand, the `IActivationAction` interface and `ActivationActionRegistry` are both already in place — register a `CopyDllAction` and the bridge surface picks it up without further changes.
 
-### 9.5 OnDemand on macOS — `insert_dylib` ported to C#
+### 9.5 Universal on macOS — kill-and-respawn with `DYLD_INSERT_LIBRARIES`
 
-The Rust port at [`packages/hub/src-tauri/src/macos/dylib.rs`](../packages/hub/src-tauri/src/macos/dylib.rs) (and the older C binary at `bin/insert_dylib`) **are dropped**; we port the Mach-O parser to C# in `Pengu.MacOS.Activation.InsertDylib`. ~250 LOC C#:
+This is the macOS default. Full design and rationale in [`macos-port.md`](./macos-port.md); summary here for activation-context completeness.
+
+`Pengu.MacOS.Activation.RespawnAction` runs a `LcuxWatcher` polling `proc_listpids` every 5 ms. On a new pid matching `LeagueClientUx`:
+
+1. `kill(pid, SIGSTOP)` — pre-`cef_initialize`.
+2. Re-check `proc_pidpath` (fork-window race guard); if it's now a Helper or another binary, `SIGCONT` and skip.
+3. `sysctl(KERN_PROCARGS2)` → original argv + envp.
+4. Parse `--install-directory=` from argv → working directory (LCUX uses relative `Plugins/` paths and segfaults if cwd is wrong).
+5. `Process.Start` with same argv + envp + added `DYLD_INSERT_LIBRARIES=/abs/path/core.dylib` and the captured working directory.
+6. **Do not SIGKILL the original.** A stopped pid passes `kill(pid, 0)` liveness so LeagueClient never sees `SIGCHLD` and keeps its Foundation server up; killing breaks the LeagueClient↔LCUX coordination and our re-spawn gets `ERR_CONNECTION_REFUSED`.
+
+Helpers don't need explicit handling — they're spawned by the new LCUX and inherit `DYLD_INSERT_LIBRARIES` via dyld natively (every Helper bundle is `flags=0x0`). This means `core.dylib` does **not** need a `posix_spawn` interpose on macOS, unlike the Windows side that has a `CreateProcessW` hook for renderer children.
+
+No sudo, no SIP relaxation, no Apple-grant entitlements (e.g. `cs.debugger`), no Riot file modified.
+
+**Side effect:** one stopped LCUX pid persists per launch session. The `ZombieReaper` in [`app-mac-impl.md`](./app-mac-impl.md) §K cleans these up on Pengu shutdown.
+
+The `RcsDaemon` from §9.7 is **not used** in Universal mode — `LcuxWatcher` is its replacement. `RcsDaemon` is still wired for OnDemand fallback (§9.6).
+
+### 9.6 OnDemand on macOS — `insert_dylib` ported to C# (fallback)
+
+Retained as a fallback for users who hit a `RespawnAction` failure (e.g. if Riot ever enables hardened runtime on `LeagueClientUx`, breaking the env-var inheritance). The Rust port at [`packages/hub/src-tauri/src/macos/dylib.rs`](../packages/hub/src-tauri/src/macos/dylib.rs) (and the older C binary at `bin/insert_dylib`) **are dropped**; we port the Mach-O parser to C# in `Pengu.MacOS.Activation.InsertDylib`. ~250 LOC C#:
 
 - Recognize FAT binaries (`FAT_MAGIC` / `FAT_CIGAM`); iterate each `fat_arch`.
 - For each Mach-O slice (`MH_MAGIC[_64]` / `MH_CIGAM[_64]`):
@@ -444,7 +466,7 @@ Action sequence for OnDemand on macOS:
 3. Emit `activation:stateChanged { active: true }`.
 4. On WAMP `Delete`: restore the backup.
 
-### 9.6 Activation result encoding
+### 9.7 Activation result encoding
 
 The Tauri `(stage << 8) | error_kind` exit-code packing scheme is dropped. `ActivationResult` is just:
 
@@ -454,9 +476,9 @@ public record ActivationResult(bool Ok, string? Error = null, string? Stage = nu
 
 For elevated subprocess flows (the IFEO write needs UAC), we communicate via stdout JSON: the elevated child writes a single `ActivationResult` JSON line to stdout; the parent reads it. AOT-clean (`JsonSerializerContext`), no bit-packing, no opaque exit codes.
 
-### 9.7 RCS WAMP daemon
+### 9.8 RCS WAMP daemon
 
-Shared C# in `Pengu.Activation.RcsDaemon`. Subscribes to `wss://riot:<token>@<addr>/` with `OnJsonApiEvent_product-session_v1_sessions`. Credentials come from the running RiotClient process command line (`--app-port=<n> --remoting-auth-token=<s>`):
+Used by **OnDemand mode only** on macOS. Universal mode uses `LcuxWatcher` (proc_listpids polling) instead. Shared C# in `Pengu.Activation.RcsDaemon`. Subscribes to `wss://riot:<token>@<addr>/` with `OnJsonApiEvent_product-session_v1_sessions`. Credentials come from the running RiotClient process command line (`--app-port=<n> --remoting-auth-token=<s>`):
 
 - **Windows**: WMI `SELECT CommandLine FROM Win32_Process WHERE Name = 'RiotClientServices.exe'`. Slow but reliable; cache the result for the process lifetime.
 - **macOS**: `sysctl KERN_PROC_PID` + `proc_pidinfo PROC_PIDARG_PROCNAMETOPID` + parse args from `/proc/<pid>/cmdline` (fallback: shell out to `ps -ax`).
@@ -469,7 +491,7 @@ The WebSocket connection uses `System.Net.WebSockets.ClientWebSocket` with a cus
 
 **Windows: tray dropped (2026-05-08)** alongside the OnDemand decision (§9.1). Universal mode doesn't need a long-running process — the hub opens, the user toggles, the hub closes. There's no daemon to keep alive, no OnDemand-armed state to surface, so the tray's primary job (keep the process resident with a way to bring it back) is moot. We could ship a "minimize to tray" convenience but the Win32 surface (~400 LOC of `Shell_NotifyIcon` + popup menu + dark-mode glue) isn't worth it for that alone.
 
-**macOS: tray required.** OnDemand is the only mode and the daemon must keep running for the activation to fire when LCUX launches. The tray is how users keep that process alive after closing the hub window.
+**macOS: tray required.** Both Universal (LcuxWatcher polling) and OnDemand (RcsDaemon WAMP listener) require a long-running daemon to fire activation when LCUX launches. The tray is how users keep that process alive after closing the hub window.
 
 | Platform | Tray | Close-button behavior |
 | --- | --- | --- |

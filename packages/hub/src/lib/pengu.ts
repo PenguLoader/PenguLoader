@@ -60,15 +60,29 @@ export interface PluginInfo {
   enabled: boolean
 }
 
+/**
+ * One plugin from the upstream registry at
+ * `https://raw.githack.com/PenguLoader/plugin-store/main/registry/plugins.yml`.
+ * Parsed client-side from the YAML returned by `pengu.plugins.fetchStoreRegistry()`.
+ */
 export interface StorePlugin {
   name: string
   slug: string
   description: string
-  images: string[]
+  /** SVG data URL or external image URL — render directly in <img>. */
+  image: string
+  /** GitHub repo URL. */
   repo: string
+  /** Optional Discord channel link. */
+  discord?: string
+  author: {
+    name: string
+    /** GitHub handle; combined with `https://github.com/<github>.png` for the avatar. */
+    github: string
+  }
+  auto_update?: boolean
+  theme?: boolean
   tags: string[]
-  theme: boolean
-  auto_update: boolean
 }
 
 export interface HostInfo {
@@ -113,7 +127,8 @@ export interface PenguBridge {
     toggleEnabled(path: string): Promise<boolean>
     openFolder(): Promise<void>
     revealInFolder(path: string): Promise<void>
-    fetchStoreRegistry(): Promise<StorePlugin[]>
+    /** Raw YAML body from the upstream registry; parsed by the hub. */
+    fetchStoreRegistry(): Promise<string>
   }
 
   league: {

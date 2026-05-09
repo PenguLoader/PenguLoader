@@ -20,14 +20,20 @@ namespace Pengu.Plugins;
 /// v0.6 <c>@default/*</c> namespace is also skipped (the renderer drops it
 /// in <c>preload/loader.ts</c>).</para>
 ///
-/// <para>Legacy <c>index.js_</c> entries (v1.1.6's rename-to-disable
-/// mechanism) are recognised so old installs surface their plugins; the
-/// canonical path stored on <see cref="PluginInfo"/> has the trailing
-/// <c>_</c> stripped, so the FNV-1a hash matches what v1.2.0's renderer
-/// computes from the URL.</para>
+/// <para>Legacy <c>.js_</c> / <c>index.js_</c> entries (v1.1.6's
+/// rename-to-disable mechanism) are recognised so old installs surface
+/// their plugins. The canonical path stored on <see cref="PluginInfo"/>
+/// has the trailing <c>_</c> stripped, so the FNV-1a hash matches what
+/// v1.2.0's renderer computes from the URL. The <see cref="PluginInfo.Enabled"/>
+/// flag treats a legacy entry as disabled regardless of the hash csv —
+/// when the user toggles such a plugin on,
+/// <see cref="Pengu.Api.PluginsApi.ToggleEnabled"/> renames the file back
+/// to <c>.js</c> / <c>index.js</c>, after which it follows the steady-state
+/// hash-csv convention.</para>
 /// </summary>
 public sealed class PluginDiscovery
 {
+    private static readonly Regex NameTag        = MakeTag("name");
     private static readonly Regex DescriptionTag = MakeTag("description");
     private static readonly Regex AuthorTag      = MakeTag("author");
     private static readonly Regex LinkTag        = MakeTag("link");
@@ -77,6 +83,15 @@ public sealed class PluginDiscovery
             }
             else if (IsTopLevelJs(entry))
             {
+                // Skip legacy .js_ when its live .js peer exists, so we don't
+                // surface two cards for the same canonical plugin. Mirrors
+                // TryGetIndex's "live wins over legacy" priority for the
+                // folder case.
+                if (entry.EndsWith('_'))
+                {
+                    var live = entry[..^1];
+                    if (File.Exists(live)) continue;
+                }
                 var displayName = Path.GetFileNameWithoutExtension(name);
                 results.Add(Build(displayName, entry, normalisedRoot, disabledHashes));
             }
@@ -122,22 +137,34 @@ public sealed class PluginDiscovery
         var rel = entryPath.Replace('\\', '/');
         if (rel.StartsWith(normalisedRoot, StringComparison.OrdinalIgnoreCase))
             rel = rel[normalisedRoot.Length..].TrimStart('/');
-        if (rel.EndsWith('_')) rel = rel[..^1];
+
+        // v1.1.6 legacy: trailing `_` on the file (the rename-to-disable
+        // convention). Treated as disabled here so existing installs see
+        // their plugins as off; PluginsApi.ToggleEnabled renames back to
+        // the live form on the user's first toggle, after which the
+        // hash-csv convention is the only signal.
+        bool isLegacyDisabled = rel.EndsWith('_');
+        if (isLegacyDisabled) rel = rel[..^1];
 
         var hash = Fnv1a.Hash(rel.ToLowerInvariant());
-        var (description, author, link) = ReadJsDoc(entryPath);
+        var (jsdocName, description, author, link) = ReadJsDoc(entryPath);
+
+        // @name in the entry's JSDoc wins over the filename / folder name when
+        // present. Lets plugin authors choose a display title independent of
+        // their on-disk slug. Whitespace-only @name is ignored.
+        var finalName = !string.IsNullOrWhiteSpace(jsdocName) ? jsdocName! : displayName;
 
         return new PluginInfo(
-            Name: displayName,
+            Name: finalName,
             Path: rel,
             Hash: hash,
             Author: author,
             Description: description,
             Link: link,
-            Enabled: !disabledHashes.Contains(hash));
+            Enabled: !isLegacyDisabled && !disabledHashes.Contains(hash));
     }
 
-    private static (string? description, string? author, string? link) ReadJsDoc(string path)
+    private static (string? name, string? description, string? author, string? link) ReadJsDoc(string path)
     {
         try
         {
@@ -158,6 +185,7 @@ public sealed class PluginDiscovery
                 return m.Success ? m.Groups[1].Value.Trim() : null;
             }
 
+            var name        = Find(NameTag);
             var description = Find(DescriptionTag);
             var author      = Find(AuthorTag);
             var link        = Find(LinkTag);
@@ -173,11 +201,11 @@ public sealed class PluginDiscovery
             if (link is { Length: > 0 } && !link.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                 link = null;
 
-            return (description, author, link);
+            return (name, description, author, link);
         }
         catch
         {
-            return (null, null, null);
+            return (null, null, null, null);
         }
     }
 }

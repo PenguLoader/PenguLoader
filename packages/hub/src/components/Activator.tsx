@@ -1,49 +1,73 @@
-import { Component, createSignal, onMount } from 'solid-js'
+import { Component, createSignal, onMount, Show } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { CoreModule } from '../lib/core-module'
 import { BoltIcon, PowerIcon } from './Icons'
+import { useTippy } from '../lib/utils'
+
+/**
+ * Activation toggle that lives in the appbar. Two visual states:
+ *   - idle:  a `w-12 h-full` rect mirroring the Store / Settings command
+ *            buttons so the appbar reads as a uniform strip.
+ *   - hover: an emerald-bordered pill with the icon + "Activate" / "READY"
+ *            label.
+ *
+ * The expand/collapse is driven by a JS `expanded` signal (mouseenter /
+ * mouseleave), not the CSS `:hover` pseudo-class. The reason: `alert()`
+ * freezes the event loop the instant it's called, so a pure-CSS hover
+ * implementation leaves the pill stuck mid-expansion behind the modal —
+ * visibly overlapping the adjacent Store icon. By owning the state in JS
+ * we can force-collapse and await the transition before any blocking
+ * dialog fires (see {@link Activator.collapseAndWait}).
+ *
+ * Source of truth for activation state:
+ *   - initial state: `pengu.activation.isActive()` at mount.
+ *   - daemon updates: `window` 'activation:stateChanged' events emitted from
+ *     C# (RCS WAMP detect on macOS, post-toggle confirm on Windows).
+ */
+const TRANSITION_MS = 200
 
 export const Activator: Component = () => {
-
   const [loading, setLoading] = createSignal(true)
   const [active, setActive] = createSignal(false)
+  const [expanded, setExpanded] = createSignal(false)
+
+  /**
+   * Collapse the pill and wait the transition out before returning. Call
+   * before any blocking dialog (`alert`, `confirm`) so the pill doesn't
+   * freeze in the expanded state and overlap adjacent appbar buttons.
+   */
+  const collapseAndWait = async () => {
+    setExpanded(false)
+    await new Promise<void>(r => setTimeout(r, TRANSITION_MS + 20))
+  }
 
   const activate = async () => {
-    if (!loading()) {
-      setLoading(true)
-
-      try {
-        if (!await CoreModule.exists()) {
-          // TODO(overlay): replace browser alert with the in-app message overlay
-          // once the component lands. Native dialogs are out of scope for app/.
-          alert('Failed to perform activation, the core module is not found.')
-          return
-        }
-
-        const nextActive = !active()
-        const { activated, error } = await CoreModule.doActivate(nextActive)
-
-        if (error) {
-          alert(`Failed to perform activation, got error:\n${error}`)
-        } else if (activated === nextActive) {
-          setActive(activated)
-        }
+    if (loading()) return
+    setLoading(true)
+    try {
+      if (!await CoreModule.exists()) {
+        await collapseAndWait()
+        // TODO(overlay): replace browser alert with the in-app message overlay
+        // once the component lands. Native dialogs are out of scope for app/.
+        alert('Failed to perform activation, the core module is not found.')
+        return
       }
-      finally {
-        setLoading(false)
+      const nextActive = !active()
+      const { activated, error } = await CoreModule.doActivate(nextActive)
+      if (error) {
+        await collapseAndWait()
+        alert(`Failed to perform activation, got error:\n${error}`)
+      } else if (activated === nextActive) {
+        setActive(activated)
       }
+    } finally {
+      setLoading(false)
     }
   }
 
   onMount(async () => {
     setActive(await CoreModule.isActivated())
     setLoading(false)
-
-    // Daemon-driven state changes (RCS WAMP detect / tray toggle). Replaces
-    // Tauri's `event.listen('active-status', ...)`. The host emits
-    // `activation:stateChanged { active: boolean }` from C# (see
-    // docs/app-hub.md §8.8) once activation lands; this listener is a no-op
-    // until then.
     window.addEventListener('activation:stateChanged', (e) => {
       const detail = (e as CustomEvent<{ active: boolean }>).detail
       if (detail && typeof detail.active === 'boolean') {
@@ -53,30 +77,59 @@ export const Activator: Component = () => {
   })
 
   return (
-    <div
-      class="fixed bottom-6 right-0 z-10 translate-x-28 hover:translate-x-0 transition-transform"
+    <button
+      type="button"
+      onClick={activate}
+      onMouseEnter={() => setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+      aria-busy={loading()}
+      aria-checked={active()}
+      data-expanded={expanded()}
+      class="
+        relative group flex items-center justify-center h-full
+        w-12 data-[expanded=true]:w-auto data-[expanded=true]:px-2
+        transition-all duration-200 ease-out
+        aria-busy:opacity-60
+      "
     >
-      <div
-        class="flex items-center justify-between pl-3 shadow-lg w-44 h-14 rounded-l-full border border-neutral-700/30 border-r-0
-        cursor-pointer aria-disabled::cursor-not-allowed group bg-card aria-checked:bg-primary
-        hover:shadow-xl transition-colors ease-out duration-300"
-        aria-disabled={loading()}
-        aria-checked={active()}
-        onClick={activate}
-      >
-        <div
-          class="flex items-center justify-center size-8 text-primary rounded-full group-hover:bg-primary
-          aria-checked:bg-muted group-hover:text-accent group-hover:aria-checked:bg-muted group-hover:aria-checked:text-primary"
-          aria-checked={active()}>
-          <span class="group-hover:animate-pulse">
-            <Dynamic component={active() ? BoltIcon : PowerIcon} thickness={2.5} />
-          </span>
-        </div>
-        <div
-          class="flex-1 px-6 text-lg text-center font-semibold text-primary aria-checked:text-muted"
-          aria-checked={active()}
-        >{active() ? 'READY' : 'Activate'}</div>
-      </div>
-    </div>
+      {/* Tooltip targets. useTippy captures content at mount, so we keep
+          two static spans and toggle which one is in the DOM via Show.
+          Each is an absolute overlay on the button — clicks bubble to the
+          parent's onClick; tippy uses the span for its mouseenter listener.
+          When active() flips, the unmounted branch's tippy instance is
+          destroyed by useTippy's onCleanup. */}
+      <Show when={!active()}>
+        <span class="absolute inset-0" ref={useTippy('Click to activate Pengu')} />
+      </Show>
+      <Show when={active()}>
+        <span class="absolute inset-0" ref={useTippy('Click to deactivate Pengu')} />
+      </Show>
+      <span class="
+        flex items-center gap-1 h-7 px-2
+        border border-transparent rounded-full
+        bg-transparent
+        transition-all duration-200 ease-out
+        group-data-[expanded=true]:px-3
+        group-data-[expanded=true]:border-foreground/25
+        group-data-[expanded=true]:bg-foreground/5
+        group-aria-checked:group-data-[expanded=true]:border-primary
+        group-aria-checked:group-data-[expanded=true]:bg-primary/5
+      ">
+        {/* Icon stays primary-tinted in every state. Power (inactive) and Bolt
+            (active) both read as a "go" affordance, so the green belongs to
+            the icon itself rather than the surrounding pill chrome. Keeps the
+            inactive expanded pill readable as gray without dulling the icon. */}
+        <span class="text-primary">
+          <Dynamic component={active() ? BoltIcon : PowerIcon} size={16} thickness={2.5} />
+        </span>
+        <span class="
+          overflow-hidden whitespace-nowrap text-sm font-semibold
+          max-w-0 ml-0 group-data-[expanded=true]:max-w-20 group-data-[expanded=true]:ml-1
+          text-foreground/80
+          group-aria-checked:text-primary
+          transition-all duration-200 ease-out
+        ">{active() ? 'READY' : 'Activate'}</span>
+      </span>
+    </button>
   )
 }

@@ -1,17 +1,16 @@
 {
   "name": "pengu-loader",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "The ultimate JavaScript plugin loader",
   "license": "MIT",
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/hub",
-    "packages/preload",
-    "packages/types"
+    "packages/*"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:hub": "pnpm --filter @pengujs/hub build",
+    "build:preload": "pnpm --filter @pengujs/preload build"
   },
   "repository": {
     "type": "git",

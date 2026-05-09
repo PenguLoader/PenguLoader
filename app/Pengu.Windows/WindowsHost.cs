@@ -24,6 +24,11 @@ internal sealed class WindowsHost : IHost
     public string DataRoot { get; }
     public string ExeDirectory { get; }
 
+    /// <summary><see cref="IHost.CoreModulePath"/> — <c>core.dll</c> alongside
+    /// the host exe. macOS counterpart is
+    /// <c>Pengu.app/Contents/Resources/core.dylib</c>.</summary>
+    public string CoreModulePath => Path.Combine(ExeDirectory, "core.dll");
+
     /// <summary>Per-user state root: <c>%LOCALAPPDATA%\.pengu\</c>. Holds
     /// per-user concerns that don't belong in the machine-wide
     /// <see cref="DataRoot"/> — WebView2 cache, window placement, anything
@@ -131,23 +136,22 @@ internal sealed class WindowsHost : IHost
         // and goes straight to the Vite server.
         if (AppEnv.DevUrl is null)
         {
-            var datPath = Path.Combine(ExeDirectory, "app.dat");
-            if (File.Exists(datPath))
+            try
             {
-                try
+                _appDat = AppDat.OpenEmbedded(typeof(WindowsHost).Assembly);
+                if (_appDat is not null)
                 {
-                    _appDat = AppDat.Open(datPath);
                     AppSchemeHandler.Attach(window.Browser, _appDat, WebView2Environment.Instance.Native);
-                    Log.Info("app:// scheme handler attached ({0})", datPath);
+                    Log.Info("app:// scheme handler attached (embedded resource)");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Log.Error(ex, "Failed to open app.dat at {0}; navigation to app:// will 404", datPath);
+                    Log.Warn("app.dat not embedded in assembly; running without hub bundle");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Log.Warn("app.dat not found at {0}; running in packed mode without bundle", datPath);
+                Log.Error(ex, "Failed to open embedded app.dat; navigation to app:// will 404");
             }
         }
 

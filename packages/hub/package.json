@@ -1,6 +1,6 @@
 {
   "name": "@pengujs/hub",
-  "version": "1.2.0",
+  "version": "0.0.1",
   "description": "Pengu Loader app hub",
   "license": "MIT",
   "type": "module",
@@ -13,7 +13,8 @@
     "class-variance-authority": "^0.7.0",
     "solid-js": "^1.7.8",
     "tailwind-merge": "^2.4.0",
-    "tippy.js": "^6.3.7"
+    "tippy.js": "^6.3.7",
+    "yaml": "^2.8.4"
   },
   "devDependencies": {
     "@types/node": "^22.12.0",

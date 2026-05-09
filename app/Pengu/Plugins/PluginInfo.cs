@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Pengu.Plugins;
 
 /// <summary>
@@ -24,16 +22,3 @@ public sealed record PluginInfo(
     string? Link,
     bool Enabled);
 
-/// <summary>One entry in the upstream plugin store registry. Mirrors the
-/// shape of <c>registry/plugins.yml</c> in the
-/// <see href="https://github.com/PenguLoader/plugin-store">plugin-store</see>
-/// repo.</summary>
-public sealed record StorePlugin(
-    string Name,
-    string Slug,
-    string Description,
-    string[] Images,
-    string Repo,
-    string[] Tags,
-    [property: JsonPropertyName("theme")] bool Theme,
-    [property: JsonPropertyName("auto_update")] bool AutoUpdate);

@@ -3,21 +3,20 @@ import { resolve } from 'node:path'
 import solid from 'vite-plugin-solid'
 import autoprefixer from 'autoprefixer'
 import tailwindcss from 'tailwindcss'
-
-import pkg from './package.json'
+import rootPkg from '../../package.json' with { type: 'json' }
 
 // https://vitejs.dev/config/
 export default defineConfig({
   css: {
     postcss: {
       plugins: [
-        autoprefixer,
-        tailwindcss
+        autoprefixer as any,
+        tailwindcss as any,
       ]
     }
   },
   define: {
-    '__VERSION__': JSON.stringify(pkg.version),
+    '__VERSION__': JSON.stringify(rootPkg.version),
     '__PLATFORM__': JSON.stringify(process.platform),
   },
   publicDir: false,

@@ -81,7 +81,7 @@ public static class AppHost
             new Api.I18nApi(),
             new Api.FsApi(),
             new Api.PathApi(),
-            new Api.ActivationApi(configStore, registry, bus, host.ExeDirectory),
+            new Api.ActivationApi(configStore, registry, bus, host.CoreModulePath),
         };
 
         try

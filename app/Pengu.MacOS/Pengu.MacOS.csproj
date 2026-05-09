@@ -1,0 +1,105 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-macos</TargetFramework>
+    <!-- macOS 12 (Monterey) floor for broad reach. Anything that requires
+         a newer OS uses OperatingSystem.IsMacOSVersionAtLeast(...) at the
+         call site. -->
+    <SupportedOSPlatformVersion>12.0</SupportedOSPlatformVersion>
+    <UseMaui>false</UseMaui>
+    <RootNamespace>Pengu.MacOS</RootNamespace>
+    <AssemblyName>Pengu</AssemblyName>
+    <!-- Head is an exe, not a NuGet package. -->
+    <IsPackable>false</IsPackable>
+    <PackageId>Pengu.MacOSHead</PackageId>
+
+    <!-- Bundle identifier (CFBundleIdentifier). Reverse-DNS form; matches the
+         CFNotificationCenter name "com.pengu.lol.show" used by single-instance
+         and the LaunchAgent label "com.pengu.lol" used by auto-startup. -->
+    <ApplicationId>com.pengu.lol</ApplicationId>
+
+    <!-- AOT inherits from Directory.Build.props (PublishAot=true,
+         InvariantGlobalization=true, TrimMode=full, IlcOptimizationPreference=Size).
+         Per-RID native binaries are produced and lipo'd by the macOS workload
+         into a single universal binary inside Pengu.app/Contents/MacOS/Pengu. -->
+
+    <!-- Universal: build osx-arm64 + osx-x64 and combine via lipo. The macOS
+         SDK runs publish for each RID and stitches the resulting native
+         binaries into a single fat Mach-O inside the bundle.
+         RuntimeIdentifiers (plural) is the Xamarin.macOS-specific opt-in;
+         RuntimeIdentifier (singular) would lock to one arch. -->
+    <RuntimeIdentifiers>osx-arm64;osx-x64</RuntimeIdentifiers>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    <!-- The macOS workload also produces a .pkg installer alongside the .app
+         bundle on Release publish. We ship both: the .pkg for "click to
+         install" UX, and the per-RID .app bundles (under bin/Release/.../{osx-arm64,osx-x64}/)
+         for "drag to /Applications" or sysadmin distribution. -->
+    <CreatePackage>true</CreatePackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pengu\Pengu.csproj" />
+    <ProjectReference Include="..\Pengu.Gen\Pengu.Gen.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- App icon (.icns) gets copied into Contents/Resources/ at build time
+         via the macOS workload's BundleResource handling. CFBundleIconFile
+         in Info.plist points at "app-icon" (without extension). -->
+    <BundleResource Include="app-icon.icns" />
+
+    <!-- Tray status-bar icon (Phase H). 32×32 PNG; loaded as NSImage at
+         startup. Embedded as a managed resource so we don't need to deal
+         with cross-RID path resolution against Contents/Resources/. -->
+    <EmbeddedResource Include="tray-icon.png">
+      <LogicalName>tray-icon.png</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Ship core.dylib inside the .app bundle's Contents/Resources/ so
+       MacOSHost.CoreModulePath resolves to the dylib RespawnAction injects
+       via DYLD_INSERT_LIBRARIES. Conditional on file existence so dotnet
+       build works in dev when core hasn't been built yet (the user can
+       drop it manually for testing). The CI workflow runs `make -C core
+       release` before publish, so this is satisfied at release time. -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)../../core/bin/core.dylib')">
+    <BundleResource Include="$(MSBuildThisFileDirectory)../../core/bin/core.dylib">
+      <Link>core.dylib</Link>
+    </BundleResource>
+  </ItemGroup>
+
+  <!-- Hub bundle: Release-only. Builds packages/hub/dist/ → app.dat → embeds
+       it as a managed resource so the published .app contains the hub UI
+       in-binary. AppDat.OpenEmbedded reads it back at runtime. No file
+       ships alongside the exe / inside the bundle's Resources.
+
+       The split — static EmbeddedResource ItemGroup + BuildHubBundle target
+       at BeforeTargets="BeforeBuild" — is required because the SDK's
+       CreateManifestResourceNames runs as a CoreCompile *dependency*,
+       BEFORE any BeforeTargets="CoreCompile" target fires. Adding to
+       @(EmbeddedResource) from inside a target at that point is silently
+       dropped. Static declaration + early-build file generation: csc reads
+       the file during CoreCompile, by which time it exists. -->
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <EmbeddedResource Include="$(IntermediateOutputPath)app.dat"
+                      LogicalName="app.dat"
+                      Visible="false" />
+  </ItemGroup>
+
+  <Target Name="BuildHubBundle"
+          BeforeTargets="BeforeBuild"
+          Condition="'$(Configuration)' == 'Release'">
+    <Message Importance="high" Text="Pengu: building hub bundle (pnpm)" />
+    <Exec Command="pnpm --filter @pengujs/hub build"
+          WorkingDirectory="$(MSBuildThisFileDirectory)../.." />
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <ZipDirectory SourceDirectory="$(MSBuildThisFileDirectory)../../packages/hub/dist"
+                  DestinationFile="$(IntermediateOutputPath)app.dat"
+                  Overwrite="true" />
+  </Target>
+
+</Project>

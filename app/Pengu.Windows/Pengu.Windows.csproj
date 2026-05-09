@@ -36,43 +36,41 @@
     <PackageReference Include="Vanara.PInvoke.DwmApi" Version="5.0.0" />
   </ItemGroup>
 
-  <!-- Release-only: build the SolidJS hub bundle and zip it into app.dat
-       beside the published exe. Debug skips the zip and the host runs against
-       the Vite dev server (set the dev URL via CLI). -->
+  <!-- Hub bundle: Release-only. Build packages/hub/dist/ → app.dat → embed
+       it as a managed resource so the AOT-published Pengu.exe contains the
+       hub UI in-binary. AppDat.OpenEmbedded reads it back at runtime. No
+       app.dat ships alongside the exe.
+
+       Two pieces, intentionally split:
+
+       1. Static <EmbeddedResource> ItemGroup: declared at project-eval time
+          so the SDK's CreateManifestResourceNames target sees it (that
+          target runs as a dependency of CoreCompile, BEFORE any
+          BeforeTargets="CoreCompile" target fires). The file path may not
+          exist at project-load — csc only reads the file later, during
+          CoreCompile itself. As long as BuildHubBundle has produced it by
+          then, the bytes get embedded.
+
+       2. BuildHubBundle target: BeforeTargets="BeforeBuild" so it runs at
+          the very start of the build phase, before CoreCompile (and before
+          CreateManifestResourceNames). Generates the file via pnpm + zip.
+          MakeDir handles the case where IntermediateOutputPath doesn't
+          exist on a clean build. -->
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <EmbeddedResource Include="$(IntermediateOutputPath)app.dat"
+                      LogicalName="app.dat"
+                      Visible="false" />
+  </ItemGroup>
+
   <Target Name="BuildHubBundle" BeforeTargets="BeforeBuild"
           Condition="'$(Configuration)' == 'Release'">
     <Message Importance="high" Text="Pengu: building hub bundle (pnpm)" />
     <Exec Command="pnpm --filter @pengujs/hub build"
           WorkingDirectory="$(MSBuildThisFileDirectory)..\.." />
-    <!-- BeforeBuild fires before the SDK creates $(IntermediateOutputPath),
-         so the destination directory might not exist yet on a clean build. -->
     <MakeDir Directories="$(IntermediateOutputPath)" />
     <ZipDirectory SourceDirectory="$(MSBuildThisFileDirectory)..\..\packages\hub\dist"
                   DestinationFile="$(IntermediateOutputPath)app.dat"
                   Overwrite="true" />
-  </Target>
-
-  <!-- Copy the generated app.dat into bin/. Can't use <None Include> at
-       static evaluation because the file doesn't exist yet; do it via a
-       target that runs after the SDK's output-copy step. -->
-  <Target Name="CopyAppDatToOutput"
-          AfterTargets="CopyFilesToOutputDirectory"
-          Condition="'$(Configuration)' == 'Release' AND Exists('$(IntermediateOutputPath)app.dat')">
-    <Copy SourceFiles="$(IntermediateOutputPath)app.dat"
-          DestinationFolder="$(OutDir)"
-          SkipUnchangedFiles="true" />
-  </Target>
-
-  <!-- For dotnet publish: add app.dat to ResolvedFileToPublish so it lands
-       beside Pengu.exe in the publish output. -->
-  <Target Name="PublishAppDat" AfterTargets="ComputeFilesToPublish"
-          Condition="'$(Configuration)' == 'Release' AND Exists('$(IntermediateOutputPath)app.dat')">
-    <ItemGroup>
-      <ResolvedFileToPublish Include="$(IntermediateOutputPath)app.dat">
-        <RelativePath>app.dat</RelativePath>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </ResolvedFileToPublish>
-    </ItemGroup>
   </Target>
 
 </Project>

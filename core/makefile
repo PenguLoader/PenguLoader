@@ -1,4 +1,6 @@
-VERSION := 1.2.0
+# Get version from package.json
+MAKEFILE_DIR := $(dir $(firstword $(MAKEFILE_LIST)))
+VERSION := $(shell node -p "require('$(MAKEFILE_DIR)../package.json').version" 2>/dev/null || echo 0.0.0)
 
 # Directories
 SRC_DIR := ./src

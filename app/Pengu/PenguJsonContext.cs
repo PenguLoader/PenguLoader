@@ -39,8 +39,6 @@ namespace Pengu;
 [JsonSerializable(typeof(ConfigClient))]
 [JsonSerializable(typeof(PluginInfo))]
 [JsonSerializable(typeof(PluginInfo[]))]
-[JsonSerializable(typeof(StorePlugin))]
-[JsonSerializable(typeof(StorePlugin[]))]
 [JsonSerializable(typeof(HostInfo))]
 [JsonSerializable(typeof(DirEntry))]
 [JsonSerializable(typeof(DirEntry[]))]

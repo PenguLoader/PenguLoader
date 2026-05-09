@@ -7,5 +7,6 @@
     <Project Path="app/Pengu/Pengu.csproj" />
     <Project Path="app/Pengu.Gen/Pengu.Gen.csproj" />
     <Project Path="app/Pengu.Windows/Pengu.Windows.csproj" />
+    <Project Path="app/Pengu.MacOS/Pengu.MacOS.csproj" />
   </Folder>
 </Solution>

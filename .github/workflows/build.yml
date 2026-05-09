@@ -11,12 +11,21 @@ on:
 
 jobs:
   build:
-    name: build-windows
-    runs-on: windows-2022
+    name: build-${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
 
     defaults:
       run:
         shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-2022
+          - platform: macos
+            os: macos-26
 
     steps:
       - name: Checkout repository
@@ -28,16 +37,10 @@ jobs:
       - name: Prepare environment variables
         run: |
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
-          echo "APP_VERSION=$(node -p "require('./packages/hub/package.json').version")" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
 
-      # Native C++ core build needs MSBuild + the VS 2022 C++ workload.
-      # The windows-2022 runner ships the workload by default; setup-msbuild
-      # just puts msbuild.exe on PATH.
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      # .NET 10 SDK for the AOT-published Pengu.exe (Pengu.Windows.csproj).
-      # PublishAot uses the C++ toolchain shipped with the VS workload above.
+      # ─── Toolchains (shared) ────────────────────────────────────────────
+      # .NET 10 SDK for both Pengu.Windows (AOT) and Pengu.MacOS (workload).
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
@@ -55,13 +58,37 @@ jobs:
           run_install: |
             - recursive: true
 
+      # ─── Toolchains (Windows) ───────────────────────────────────────────
+      # MSBuild + the VS 2022 C++ workload (preinstalled on windows-2022).
+      # PublishAot relies on the C++ toolchain shipped with the workload.
+      - name: Setup MSBuild
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v2
+
+      # ─── Toolchains (macOS) ─────────────────────────────────────────────
+      # Microsoft.macOS.Sdk.net10.0_26.4 requires Xcode 26.x. Select the
+      # latest stable Xcode on the runner; the workload install fails loudly
+      # if 26+ isn't available.
+      - name: Select latest Xcode
+        if: runner.os == 'macOS'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install .NET macOS workload
+        if: runner.os == 'macOS'
+        run: sudo dotnet workload install macos
+
+      # ─── Build (shared) ─────────────────────────────────────────────────
       # Preload bundle is #include'd into core (renderer.cc embeds preload.g.h).
       # Build it before core so the header exists.
       - name: Build preload
         run: pnpm --filter @pengujs/preload build
 
-      # C++ core -> bin/core.dll. The vcxproj writes there directly.
-      - name: Build core
+      # ─── Build (Windows) ────────────────────────────────────────────────
+      # C++ core -> core/bin/core.dll (the vcxproj writes there directly).
+      - name: Build core (windows)
+        if: runner.os == 'Windows'
         run: msbuild.exe core/core.vcxproj -p:Configuration=Release -p:Platform=x64 -nologo -m
 
       # AOT-publish the .NET 10 host. The csproj's BuildHubBundle target runs
@@ -70,29 +97,66 @@ jobs:
       # to ResolvedFileToPublish — so a single dotnet publish produces
       # Pengu.exe + app.dat in the output dir.
       - name: Publish app/Pengu.Windows (AOT)
+        if: runner.os == 'Windows'
         run: |
           dotnet publish app/Pengu.Windows \
             -c Release \
             -r win-x64 \
             --output app-publish
 
-      # Stage the runtime payload as a clean portable folder. upload-artifact
-      # zips this into a single archive with `Pengu/` as the inner wrapper —
-      # extract anywhere, run Pengu.exe.
-      - name: Stage portable payload
+      # Clean portable payload: extract the artifact archive anywhere, run Pengu.exe.
+      # app.dat is embedded inside Pengu.exe via <EmbeddedResource> — no
+      # separate file ships alongside the exe.
+      - name: Stage portable payload (windows)
+        if: runner.os == 'Windows'
         run: |
-          mkdir -p "out/"
-          cp app-publish/Pengu.exe            "out/"
-          cp app-publish/app.dat              "out/"
-          cp app-publish/WebView2Loader.dll   "out/"
-          cp core/bin/core.dll                "out/"
+          mkdir -p out/
+          cp app-publish/Pengu.exe          out/
+          cp app-publish/WebView2Loader.dll out/
+          cp core/bin/core.dll              out/
 
+      # ─── Build (macOS) ──────────────────────────────────────────────────
+      # C++ core -> core/bin/core.dylib (the makefile's LIB_OUT_PATH).
+      - name: Build core (macos)
+        if: runner.os == 'macOS'
+        run: make -C core release
+
+      # Publish the .NET 10 macOS host as AOT + universal (arm64 + x86_64).
+      # The csproj's <RuntimeIdentifiers> drives multi-arch — no -r flag.
+      # The macOS workload publishes each RID, lipo's the resulting native
+      # binaries, and stages the universal Pengu binary plus app.dat inside
+      # Pengu.app/Contents/{MacOS,Resources}/. Expect 30–60 minutes due to
+      # AOT compilation + per-RID lipo on a CI runner.
+      - name: Publish app/Pengu.MacOS (AOT, universal)
+        if: runner.os == 'macOS'
+        run: |
+          dotnet publish app/Pengu.MacOS \
+            -c Release \
+            --output app-publish
+
+      # Stage three deliverables for the macOS artifact:
+      #  - Pengu-<ver>.pkg      — installer with the universal AOT app inside
+      #  - arm64/Pengu.app      — Apple Silicon-only AOT build (~14 MB)
+      #  - x86_64/Pengu.app     — Intel-only AOT build (~14 MB)
+      #
+      # Per-arch .apps are produced as side-effects of the multi-RID publish
+      # at bin/Release/net10.0-macos/{osx-arm64,osx-x64}/Pengu.app — no extra
+      # publish runs needed. core.dylib is bundled into each .app at build
+      # time via <BundleResource> in the csproj, and app.dat is embedded
+      # in the Pengu binary; nothing extra to stage.
+      - name: Stage macOS deliverables
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p out/arm64/ out/x86_64/
+          cp app-publish/*.pkg                                                     out/
+          cp -R app/Pengu.MacOS/bin/Release/net10.0-macos/osx-arm64/Pengu.app       out/arm64/Pengu.app
+          cp -R app/Pengu.MacOS/bin/Release/net10.0-macos/osx-x64/Pengu.app         out/x86_64/Pengu.app
+
+      # ─── Artifact upload (shared) ───────────────────────────────────────
       - name: Upload portable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Pengu-v${{ env.APP_VERSION }}-${{ env.SHORT_SHA }}-windows-x64
-          # path: out (not out/Pengu) so the resulting zip contains a
-          # Pengu/ folder at its root rather than the loose files.
+          name: pengu-v${{ env.APP_VERSION }}-${{ env.SHORT_SHA }}-${{ matrix.platform }}
           path: out/
           if-no-files-found: error
           compression-level: 9

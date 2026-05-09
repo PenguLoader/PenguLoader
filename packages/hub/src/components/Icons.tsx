@@ -44,8 +44,18 @@ export const PluginIcon: Component<IconProps> = (props) => (
 export const StoreIcon: Component<IconProps> = (props) => (
   <Svg {...props}>
     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-    <path d="M4 4m0 4a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4z" />
-    <path d="M9 8a3 3 0 0 0 6 0" />
+    <path d="M4 4h6v6h-6v-6" />
+    <path d="M14 4h6v6h-6v-6" />
+    <path d="M4 14h6v6h-6v-6" />
+    <path d="M14 17h6m-3 -3v6" />
+  </Svg>
+)
+
+export const ArrowBackUpIcon: Component<IconProps> = (props) => (
+  <Svg {...props}>
+    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+    <path d="M9 14l-4 -4l4 -4" />
+    <path d="M5 10h11a4 4 0 1 1 0 8h-1" />
   </Svg>
 )
 
