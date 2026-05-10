@@ -9,9 +9,7 @@ import { useTippy } from '../lib/utils'
  *   - idle:  a `w-12 h-full` rect mirroring the Store / Settings command
  *            buttons so the appbar reads as a uniform strip.
  *   - hover: an emerald-bordered pill with the icon + "Activate" / "READY"
- *            label. The button hitbox stays fixed-width; the visual pill
- *            expands leftward so adjacent appbar commands never move under
- *            the pointer.
+ *            label.
  *
  * The expand/collapse is driven by a JS `expanded` signal (mouseenter /
  * mouseleave), not the CSS `:hover` pseudo-class. The reason: `alert()`
@@ -88,7 +86,9 @@ export const Activator: Component = () => {
       aria-checked={active()}
       data-expanded={expanded()}
       class="
-        relative group flex items-center justify-center h-full w-12
+        relative group flex items-center justify-center h-full
+        w-12 data-[expanded=true]:w-auto data-[expanded=true]:px-2
+        transition-all duration-200 ease-out
         aria-busy:opacity-60
       "
     >
@@ -105,14 +105,11 @@ export const Activator: Component = () => {
         <span class="absolute inset-0" ref={useTippy('Click to deactivate Pengu')} />
       </Show>
       <span class="
-        absolute right-1 top-1/2 -translate-y-1/2
         flex items-center gap-1 h-7 px-2
         border border-transparent rounded-full
         bg-transparent
-        transition-[background-color,border-color,padding,max-width] duration-200 ease-out
-        max-w-9 overflow-hidden
+        transition-all duration-200 ease-out
         group-data-[expanded=true]:px-3
-        group-data-[expanded=true]:max-w-32
         group-data-[expanded=true]:border-foreground/25
         group-data-[expanded=true]:bg-foreground/5
         group-aria-checked:group-data-[expanded=true]:border-primary
