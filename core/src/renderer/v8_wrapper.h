@@ -2,6 +2,105 @@
 #define _V8_WRAPPER_H_
 
 #include "include/capi/cef_v8_capi.h"
+#include "include/capi/cef_task_capi.h"
+#include "platform.h"
+#include <condition_variable>
+#include <deque>
+#include <functional>
+#include <mutex>
+#include <optional>
+#include <stdexcept>
+#include <thread>
+#include <vector>
+
+namespace v8_async
+{
+    class TaskPool
+    {
+    private:
+        static constexpr size_t WORKER_COUNT = 4;
+
+        std::mutex mutex_;
+        std::condition_variable condition_;
+        std::deque<std::function<void()>> queue_;
+        std::vector<std::thread> workers_;
+        bool stopping_ = false;
+
+        TaskPool()
+        {
+            workers_.reserve(WORKER_COUNT);
+            for (size_t index = 0; index < WORKER_COUNT; ++index)
+            {
+                workers_.emplace_back([this] { run(); });
+            }
+        }
+
+        ~TaskPool()
+        {
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                stopping_ = true;
+            }
+
+            condition_.notify_all();
+
+            for (auto &worker : workers_)
+            {
+                if (worker.joinable())
+                    worker.join();
+            }
+        }
+
+        void run()
+        {
+            for (;;)
+            {
+                std::function<void()> task;
+
+                {
+                    std::unique_lock<std::mutex> lock(mutex_);
+                    condition_.wait(lock, [this] { return stopping_ || !queue_.empty(); });
+
+                    if (stopping_ && queue_.empty())
+                        return;
+
+                    task = std::move(queue_.front());
+                    queue_.pop_front();
+                }
+
+                task();
+            }
+        }
+
+    public:
+        TaskPool(const TaskPool &) = delete;
+        TaskPool &operator=(const TaskPool &) = delete;
+
+        static TaskPool &instance()
+        {
+            static TaskPool pool;
+            return pool;
+        }
+
+        void enqueue(std::function<void()> &&task)
+        {
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                if (stopping_)
+                    return;
+
+                queue_.push_back(std::move(task));
+            }
+
+            condition_.notify_one();
+        }
+    };
+
+    inline void enqueue(std::function<void()> &&task)
+    {
+        TaskPool::instance().enqueue(std::move(task));
+    }
+}
 
 struct V8ValueBase
 {
@@ -27,6 +126,7 @@ struct V8Value : V8ValueBase
     inline bool isObject() { return _.is_object(&_); }
     inline bool isArray() { return _.is_array(&_); }
     inline bool isFunction() { return _.is_function(&_); }
+    inline bool isPromise() { return _.is_promise(&_); }
 
     inline bool asBool() { return _.get_bool_value(&_); }
     inline int asInt() { return _.get_int_value(&_); }
@@ -36,6 +136,7 @@ struct V8Value : V8ValueBase
 
     inline struct V8Array *asArray() { return reinterpret_cast<struct V8Array *>(&_); }
     inline struct V8Object *asObject() { return reinterpret_cast<struct V8Object *>(&_); }
+    inline struct V8Promise *asPromise() { return reinterpret_cast<struct V8Promise *>(&_); }
 
     static inline V8Value *undefined()
     {
@@ -116,6 +217,125 @@ struct V8Object : V8ValueBase
     static inline V8Object *create()
     {
         return (V8Object *)cef_v8value_create_object(nullptr, nullptr);
+    }
+};
+
+class V8PromiseTask : CefRefCount<cef_task_t>
+{
+private:
+    cef_v8context_t *context_;
+    cef_v8value_t *promise_;
+    std::optional<std::function<V8Value *()>> resolver_;
+
+    cef_v8value_t *create_promise()
+    {
+#if OS_MAC
+        CefStr code("new Promise(() => {})");
+        CefStr script_url("pengu://native-promise");
+        cef_v8value_t *value = nullptr;
+        cef_v8exception_t *exception = nullptr;
+
+        if (!context_->eval(context_, &code, &script_url, 1, &value, &exception) || value == nullptr)
+        {
+            if (exception != nullptr)
+                exception->base.release(&exception->base);
+
+            return cef_v8value_create_undefined();
+        }
+
+        return value;
+#else
+        return cef_v8value_create_promise();
+#endif
+    }
+
+    static void CALLBACK _execute(cef_task_t *self)
+    {
+        auto *task = reinterpret_cast<V8PromiseTask *>(self);
+        task->execute_in_renderer();
+    }
+
+    void execute_in_renderer()
+    {
+        context_->enter(context_);
+
+        if (resolver_.has_value())
+        {
+            try
+            {
+                auto value = resolver_.value()();
+                promise_->resolve_promise(promise_, value ? value->ptr() : nullptr);
+            }
+            catch (const std::exception &ex)
+            {
+                CefStr message(ex.what());
+                promise_->reject_promise(promise_, &message);
+            }
+        }
+        else
+        {
+            promise_->resolve_promise(promise_, nullptr);
+        }
+
+        promise_->base.release(&promise_->base);
+        context_->exit(context_);
+    }
+
+public:
+    V8PromiseTask() : CefRefCount(this), resolver_(std::nullopt)
+    {
+        cef_task_t::execute = _execute;
+
+        context_ = cef_v8context_get_current_context();
+        context_->base.add_ref(&context_->base);
+
+        context_->enter(context_);
+        promise_ = create_promise();
+        promise_->base.add_ref(&promise_->base);
+        context_->exit(context_);
+    }
+
+    ~V8PromiseTask()
+    {
+        context_->base.release(&context_->base);
+    }
+
+    void resolve()
+    {
+        resolver_ = std::nullopt;
+        cef_post_task(TID_RENDERER, this);
+    }
+
+    void resolve(std::function<V8Value *()> &&resolver)
+    {
+        resolver_ = resolver;
+        cef_post_task(TID_RENDERER, this);
+    }
+
+    void reject(const std::string &error)
+    {
+        resolve([error]() -> V8Value * {
+            throw std::runtime_error(error);
+        });
+    }
+
+    V8Value *execute(std::function<void()> &&runner)
+    {
+        v8_async::enqueue([this, runner = std::move(runner)]() mutable {
+            try
+            {
+                runner();
+            }
+            catch (const std::exception &ex)
+            {
+                reject(ex.what());
+            }
+            catch (...)
+            {
+                reject("Async task failed");
+            }
+        });
+        return reinterpret_cast<V8Value *>(promise_);
     }
 };
 

@@ -61,6 +61,36 @@ export interface PluginInfo {
   enabled: boolean
 }
 
+export interface StoreInstallCheckRequest {
+  listingName: string
+  repo?: string
+}
+
+export interface ManifestInstallRequest {
+  repo: string
+  replace: boolean
+}
+
+export interface StoreInstallRequest {
+  listingId: string
+  listingName: string
+  kind: 'plugins' | 'themes' | string
+  repo?: string
+  assetName: string
+  downloadUrl: string
+  contentType?: string
+  replace: boolean
+}
+
+export interface StoreInstallResult {
+  ok: boolean
+  installedPath?: string
+  folderName?: string
+  alreadyInstalled: boolean
+  conflict?: boolean
+  error?: string
+}
+
 /**
  * One plugin from the upstream registry at
  * `https://raw.githack.com/PenguLoader/plugin-store/main/registry/plugins.yml`.
@@ -143,6 +173,9 @@ export interface PenguBridge {
     revealInFolder(path: string): Promise<void>
     /** Raw YAML body from the upstream registry; parsed by the hub. */
     fetchStoreRegistry(): Promise<string>
+    checkStoreInstall(request: StoreInstallCheckRequest): Promise<StoreInstallResult>
+    installStoreAsset(request: StoreInstallRequest): Promise<StoreInstallResult>
+    installManifest(request: ManifestInstallRequest): Promise<StoreInstallResult>
   }
 
   league: {

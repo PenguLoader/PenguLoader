@@ -253,8 +253,8 @@ public sealed class BorderlessWindow : Win32Window
 
     private static (int x, int y, int w, int h) ResolveInitialPlacement(WindowState? state)
     {
-        const int defaultW = 940;
-        const int defaultH = 560;
+        const int defaultW = 1180;
+        const int defaultH = 720;
 
         if (state is null || state.Width <= 0 || state.Height <= 0)
         {

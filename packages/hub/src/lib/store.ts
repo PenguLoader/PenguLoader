@@ -1,38 +1,113 @@
-import { parse as parseYaml } from 'yaml'
-import { pengu, type StorePlugin } from './pengu'
+export type StoreKind = 'plugins' | 'themes'
 
-export type { StorePlugin }
+export interface StoreListing {
+  id: string
+  kind: StoreKind
+  name: string
+  description: string
+  details?: string
+  repo?: string
+  releaseUrl?: string
+  releaseTag?: string
+  releaseName?: string
+  image?: string
+  author: {
+    name: string
+    avatar?: string
+    github?: string
+  }
+  tags: string[]
+  discordUrl: string
+  upvotes?: number
+  updatedAt?: string
+  assets: StoreAsset[]
+  enriched: boolean
+}
 
-/**
- * Plugin store registry browser. The host fetches the YAML body from
- * `https://raw.githack.com/PenguLoader/plugin-store/main/registry/plugins.yml`
- * and forwards it to us as a string; we parse client-side so the AOT host
- * doesn't need a YAML library. Output is browse-only — there is no install
- * automation, per docs/app-hub.md §1.
- */
+export interface StoreAsset {
+  name: string
+  size: number
+  downloadUrl: string
+  contentType?: string
+}
+
+interface StoreRegistry {
+  listings?: StoreListing[]
+}
+
 export const StoreManager = {
-  async fetchPlugins(): Promise<StorePlugin[]> {
-    const yaml = await pengu.plugins.fetchStoreRegistry()
-    const doc = parseYaml(yaml) as { plugins?: unknown } | null
-    if (!doc || !Array.isArray(doc.plugins)) return []
-    return doc.plugins.filter(isStorePlugin)
+  async fetchListingsProgressive(
+    onListing: (listing: StoreListing) => void,
+  ): Promise<void> {
+    const registry = await fetchStaticRegistry()
+
+    for (const listing of sortListings(registry.listings ?? [])) {
+      if (!isStoreListing(listing)) continue
+      onListing({ ...listing, enriched: true })
+    }
+  },
+
+  async fetchListings(): Promise<Record<StoreKind, StoreListing[]>> {
+    const result: Record<StoreKind, StoreListing[]> = {
+      plugins: [],
+      themes: [],
+    }
+
+    const registry = await fetchStaticRegistry()
+    for (const listing of sortListings(registry.listings ?? [])) {
+      if (!isStoreListing(listing)) continue
+      result[listing.kind].push({ ...listing, enriched: true })
+    }
+
+    return result
   },
 }
 
-/**
- * Defensive shape check. The registry is upstream-of-us so a malformed entry
- * shouldn't crash the gallery — drop it and render the rest.
- */
-function isStorePlugin(value: unknown): value is StorePlugin {
-  if (typeof value !== 'object' || value === null) return false
-  const v = value as Record<string, unknown>
-  return typeof v.name === 'string'
-    && typeof v.slug === 'string'
-    && typeof v.description === 'string'
-    && typeof v.image === 'string'
-    && typeof v.repo === 'string'
-    && typeof v.author === 'object' && v.author !== null
-    && typeof (v.author as Record<string, unknown>).name === 'string'
-    && typeof (v.author as Record<string, unknown>).github === 'string'
-    && Array.isArray(v.tags)
+async function fetchStaticRegistry(): Promise<StoreRegistry> {
+  const urls = [
+    'https://ku-tadao.github.io/plugin-hub/registry/store.json',
+  ]
+
+  let lastError: unknown = null
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { cache: 'no-store' })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      return await response.json() as StoreRegistry
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw new Error(`Failed to fetch store registry: ${lastError instanceof Error ? lastError.message : String(lastError)}`)
+}
+
+function sortListings(listings: StoreListing[]): StoreListing[] {
+  return [...listings].sort((a, b) => {
+    const voteDelta = (b.upvotes ?? 0) - (a.upvotes ?? 0)
+    if (voteDelta !== 0) return voteDelta
+
+    const updatedDelta = toTime(b.updatedAt) - toTime(a.updatedAt)
+    if (updatedDelta !== 0) return updatedDelta
+
+    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+  })
+}
+
+function toTime(value?: string): number {
+  return value ? Date.parse(value) || 0 : 0
+}
+
+function isStoreListing(value: StoreListing | undefined): value is StoreListing {
+  return Boolean(value)
+    && typeof value!.id === 'string'
+    && (value!.kind === 'plugins' || value!.kind === 'themes')
+    && typeof value!.name === 'string'
+    && typeof value!.description === 'string'
+    && typeof value!.discordUrl === 'string'
+    && (value!.upvotes === undefined || typeof value!.upvotes === 'number')
+    && typeof value!.author?.name === 'string'
+    && Array.isArray(value!.tags)
+    && Array.isArray(value!.assets)
 }
