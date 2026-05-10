@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Pengu.Logging;
 
 namespace Pengu.Plugins;
@@ -147,12 +149,21 @@ public sealed class PluginDiscovery
         if (isLegacyDisabled) rel = rel[..^1];
 
         var hash = Fnv1a.Hash(rel.ToLowerInvariant());
-        var (jsdocName, description, author, link) = ReadJsDoc(entryPath);
+        var (jsdocName, jsdocDescription, jsdocAuthor, jsdocLink) = ReadJsDoc(entryPath);
+        var manifest = ReadManifestMetadata(entryPath);
 
         // @name in the entry's JSDoc wins over the filename / folder name when
         // present. Lets plugin authors choose a display title independent of
         // their on-disk slug. Whitespace-only @name is ignored.
-        var finalName = !string.IsNullOrWhiteSpace(jsdocName) ? jsdocName! : displayName;
+        var finalName = FirstNonBlank(jsdocName, manifest?.Name, displayName)!;
+        var description = FirstNonBlank(jsdocDescription, manifest?.Description);
+        var author = FirstNonBlank(jsdocAuthor, manifest?.Author?.Name);
+        var link = FirstNonBlank(jsdocLink, manifest?.Repo);
+
+        if (author is { Length: > 0 } && !author.Contains('#') && !author.StartsWith('@'))
+            author = "@" + author;
+        if (link is { Length: > 0 } && !link.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            link = null;
 
         return new PluginInfo(
             Name: finalName,
@@ -190,17 +201,6 @@ public sealed class PluginDiscovery
             var author      = Find(AuthorTag);
             var link        = Find(LinkTag);
 
-            // v1.1.6 convention: bare authors get an `@` prefix; tagged
-            // authors (containing `#`) keep their full handle.
-            if (author is { Length: > 0 } && !author.Contains('#') && !author.StartsWith('@'))
-                author = "@" + author;
-
-            // Hub renders the link via Shell.OpenLink which already requires
-            // https://, but mirroring the original validation here keeps
-            // malformed YAML / typos from polluting the UI.
-            if (link is { Length: > 0 } && !link.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                link = null;
-
             return (name, description, author, link);
         }
         catch
@@ -208,4 +208,45 @@ public sealed class PluginDiscovery
             return (null, null, null, null);
         }
     }
+
+    private static PluginManifestMetadata? ReadManifestMetadata(string entryPath)
+    {
+        try
+        {
+            var path = Path.Combine(Path.GetDirectoryName(entryPath) ?? string.Empty, "pengu.plugin.json");
+            if (!File.Exists(path))
+                return null;
+
+            var json = File.ReadAllText(path);
+            return JsonSerializer.Deserialize(json, PluginDiscoveryJsonContext.Default.PluginManifestMetadata);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? FirstNonBlank(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value.Trim();
+        }
+        return null;
+    }
 }
+
+public sealed record PluginManifestMetadata(
+    string? Id,
+    string? Name,
+    string? Description,
+    string? Repo,
+    PluginManifestAuthor? Author);
+
+public sealed record PluginManifestAuthor(string? Name, string? Github);
+
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(PluginManifestMetadata))]
+[JsonSerializable(typeof(PluginManifestAuthor))]
+public partial class PluginDiscoveryJsonContext : JsonSerializerContext;

@@ -389,7 +389,7 @@ public partial class PluginsApi
         if (Regex.IsMatch(input, @"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"))
         {
             var parts = input.Split('/');
-            return new GithubRepo(parts[0], parts[1].Replace(".git", "", StringComparison.OrdinalIgnoreCase), null);
+            return new GithubRepo(parts[0], parts[1].Replace(".git", "", StringComparison.OrdinalIgnoreCase), null, null);
         }
 
         if (!Uri.TryCreate(input, UriKind.Absolute, out var uri))
@@ -402,33 +402,51 @@ public partial class PluginsApi
             return null;
 
         string? branch = null;
+        string? manifestUrl = null;
         if (segments.Length >= 4 && segments[2].Equals("tree", StringComparison.OrdinalIgnoreCase))
             branch = string.Join('/', segments.Skip(3));
+        else if (segments.Length >= 5 && segments[2].Equals("blob", StringComparison.OrdinalIgnoreCase))
+        {
+            branch = segments[3];
+            var path = string.Join('/', segments.Skip(4));
+            if (path.Equals("pengu.yml", StringComparison.OrdinalIgnoreCase))
+                manifestUrl = $"https://raw.githubusercontent.com/{segments[0]}/{segments[1].Replace(".git", "", StringComparison.OrdinalIgnoreCase)}/{branch}/pengu.yml";
+        }
 
-        return new GithubRepo(segments[0], segments[1].Replace(".git", "", StringComparison.OrdinalIgnoreCase), branch);
+        return new GithubRepo(segments[0], segments[1].Replace(".git", "", StringComparison.OrdinalIgnoreCase), branch, manifestUrl);
     }
 
     private static async Task<ManifestFetch?> FetchPenguManifest(GithubRepo repo)
     {
+        var urls = new List<string>();
+        if (!string.IsNullOrWhiteSpace(repo.ManifestUrl))
+            urls.Add(repo.ManifestUrl);
+
         var branches = string.IsNullOrWhiteSpace(repo.Branch)
             ? new[] { "main", "master" }
             : new[] { repo.Branch };
 
         foreach (var branch in branches)
+            urls.Add($"https://raw.githubusercontent.com/{repo.Owner}/{repo.Name}/{branch}/pengu.yml");
+
+        foreach (var url in urls.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            var url = $"https://raw.githubusercontent.com/{repo.Owner}/{repo.Name}/{branch}/pengu.yml";
             try
             {
                 StoreInstallHttp.DefaultRequestHeaders.UserAgent.Clear();
                 StoreInstallHttp.DefaultRequestHeaders.UserAgent.ParseAdd($"Pengu/{AppEnv.AppVersion}");
                 var response = await StoreInstallHttp.GetAsync(url).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
+                {
+                    Log.Debug("Manifest fetch skipped {0}: HTTP {1}", url, (int)response.StatusCode);
                     continue;
+                }
 
                 return new ManifestFetch(url, await response.Content.ReadAsStringAsync().ConfigureAwait(false));
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Debug("Manifest fetch failed {0}: {1}", url, ex.Message);
                 continue;
             }
         }
@@ -493,6 +511,8 @@ public partial class PluginsApi
         if (indexLine < 0)
             return null;
 
+        var indexIndent = lines[indexLine].Length - lines[indexLine].TrimStart().Length;
+        var blockIndent = indexIndent + 2;
         var block = new List<string>();
         for (var i = indexLine + 1; i < lines.Length; i++)
         {
@@ -504,9 +524,9 @@ public partial class PluginsApi
             }
 
             var leading = line.Length - line.TrimStart().Length;
-            if (leading <= 4)
+            if (leading <= indexIndent)
                 break;
-            block.Add(line.Length >= 4 ? line[4..] : "");
+            block.Add(line.Length >= blockIndent ? line[blockIndent..] : line.TrimStart());
         }
 
         return string.Join('\n', block).TrimEnd();
@@ -530,6 +550,7 @@ public partial class PluginsApi
           "source": "github-manifest",
           "id": {{JsonSerializer.Serialize(manifest.Id, PenguJsonContext.Default.String)}},
           "name": {{JsonSerializer.Serialize(manifest.Name, PenguJsonContext.Default.String)}},
+          "description": {{JsonSerializer.Serialize(manifest.Description, PenguJsonContext.Default.String)}},
           "repo": {{JsonSerializer.Serialize(manifest.Repo, PenguJsonContext.Default.String)}},
           "discord": {{JsonSerializer.Serialize(manifest.Discord, PenguJsonContext.Default.String)}},
           "author": {
@@ -631,7 +652,7 @@ public partial class PluginsApi
         Zip,
     }
 
-    private readonly record struct GithubRepo(string Owner, string Name, string? Branch);
+    private readonly record struct GithubRepo(string Owner, string Name, string? Branch, string? ManifestUrl);
 
     private readonly record struct ManifestFetch(string Url, string Content);
 
