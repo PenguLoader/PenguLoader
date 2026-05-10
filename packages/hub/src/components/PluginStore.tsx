@@ -17,6 +17,7 @@ export const PluginStore: Component = () => {
   const [error, setError] = createSignal<string | null>(null)
   const [activeTab, setActiveTab] = createSignal<StoreKind>('plugins')
   const [selected, setSelected] = createSignal<StoreListing | null>(null)
+  const [manifestStatus, setManifestStatus] = createSignal<string | null>(null)
   const [listings, setListings] = createSignal<Record<StoreKind, StoreListing[]>>({
     plugins: [],
     themes: [],
@@ -61,29 +62,38 @@ export const PluginStore: Component = () => {
             onClick={() => setSelected(null)}
           >
             <div class="flex items-center justify-between gap-4">
-              <div class="flex rounded-md border border-neutral-700 bg-neutral-950/30 p-1">
-                <TabButton
-                  active={activeTab() === 'plugins'}
-                  count={listings().plugins.length}
-                  label="Plugins"
-                  onClick={() => {
-                    setActiveTab('plugins')
-                    setSelected(null)
-                  }}
-                />
-                <TabButton
-                  active={activeTab() === 'themes'}
-                  count={listings().themes.length}
-                  label="Themes"
-                  onClick={() => {
-                    setActiveTab('themes')
-                    setSelected(null)
-                  }}
-                />
+              <div class="flex items-center gap-2">
+                <div class="flex rounded-md border border-neutral-700 bg-neutral-950/30 p-1">
+                  <TabButton
+                    active={activeTab() === 'plugins'}
+                    count={listings().plugins.length}
+                    label="Plugins"
+                    onClick={() => {
+                      setActiveTab('plugins')
+                      setSelected(null)
+                    }}
+                  />
+                  <TabButton
+                    active={activeTab() === 'themes'}
+                    count={listings().themes.length}
+                    label="Themes"
+                    onClick={() => {
+                      setActiveTab('themes')
+                      setSelected(null)
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="h-9 rounded-md border border-neutral-700 bg-neutral-900 px-3 text-sm text-foreground hover:bg-neutral-800"
+                  onClick={() => installManifestFromPrompt(setManifestStatus)}
+                >
+                  Install from GitHub
+                </button>
               </div>
               <Show
                 when={loading()}
-                fallback={<p class="text-xs text-muted-foreground">Discord forum listings enriched with GitHub releases</p>}
+                fallback={<p class="text-xs text-muted-foreground">{manifestStatus() ?? 'Discord forum listings enriched with GitHub releases'}</p>}
               >
                 <div class="flex items-center gap-2 text-xs text-muted-foreground">
                   <LoaderIcon class="animate-spin" size={13} />
@@ -487,6 +497,35 @@ async function syncInstallState(
     }))
   } catch {
     // Store install state is local convenience; registry rendering should not fail if it is unavailable.
+  }
+}
+
+async function installManifestFromPrompt(setStatus: (value: string | null) => void) {
+  const repo = prompt('GitHub repo URL or owner/repo')
+  if (!repo?.trim()) return
+
+  const runInstall = (replace: boolean) => pengu.plugins.installManifest({
+    repo: repo.trim(),
+    replace,
+  })
+
+  try {
+    setStatus('Installing manifest...')
+    let result = await runInstall(false)
+    if (result.conflict) {
+      if (!confirm(`A folder named ${result.folderName ?? repo} already exists. Replace it?`)) {
+        setStatus('Manifest install cancelled.')
+        return
+      }
+      setStatus('Replacing manifest install...')
+      result = await runInstall(true)
+    }
+
+    setStatus(result.ok
+      ? `Installed ${result.folderName ?? 'plugin'} from manifest.`
+      : `Manifest install failed: ${result.error ?? 'Unknown error.'}`)
+  } catch (e) {
+    setStatus(`Manifest install failed: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 

@@ -65,6 +65,11 @@ export interface StoreInstallCheckRequest {
   repo?: string
 }
 
+export interface ManifestInstallRequest {
+  repo: string
+  replace: boolean
+}
+
 export interface StoreInstallRequest {
   listingId: string
   listingName: string
@@ -156,6 +161,7 @@ export interface PenguBridge {
     fetchStoreRegistry(): Promise<string>
     checkStoreInstall(request: StoreInstallCheckRequest): Promise<StoreInstallResult>
     installStoreAsset(request: StoreInstallRequest): Promise<StoreInstallResult>
+    installManifest(request: ManifestInstallRequest): Promise<StoreInstallResult>
   }
 
   league: {

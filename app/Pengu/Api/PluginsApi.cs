@@ -4,6 +4,9 @@ using Pengu.Logging;
 using Pengu.Native;
 using Pengu.Plugins;
 using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Pengu.Api;
@@ -289,6 +292,70 @@ public partial class PluginsApi
         }
     }
 
+    [JsInvokable]
+    public async Task<StoreInstallResult> InstallManifest(ManifestInstallRequest request)
+    {
+        var repo = ParseGithubRepo(request.Repo);
+        if (repo is null)
+            return StoreInstallResult.Fail("Enter a GitHub repo URL or owner/repo.");
+
+        var manifestFetch = await FetchPenguManifest(repo.Value).ConfigureAwait(false);
+        if (manifestFetch is null)
+            return StoreInstallResult.Fail("Could not find pengu.yml in that GitHub repo.");
+
+        var manifest = ParsePenguManifest(manifestFetch.Value.Content, manifestFetch.Value.Url);
+        if (manifest is null)
+            return StoreInstallResult.Fail("pengu.yml is missing required id or install.index fields.");
+
+        var folderName = ResolveStoreFolderName(null, manifest.Id);
+        if (folderName is null)
+            return StoreInstallResult.Fail("Manifest id is not a safe plugin folder name.");
+
+        var snapshot = _config.Read();
+        var pluginsDir = ResolvePluginsDir(snapshot.App.PluginsDir);
+        var targetDir = System.IO.Path.Combine(pluginsDir, folderName);
+        var installedIndex = System.IO.Path.Combine(targetDir, "index.js");
+        var alreadyInstalled = File.Exists(installedIndex);
+
+        if ((Directory.Exists(targetDir) || File.Exists(targetDir)) && !request.Replace)
+        {
+            return new StoreInstallResult(
+                false,
+                alreadyInstalled ? installedIndex : null,
+                folderName,
+                alreadyInstalled,
+                true,
+                $"Plugin folder '{folderName}' already exists.");
+        }
+
+        try
+        {
+            Directory.CreateDirectory(pluginsDir);
+            if (File.Exists(targetDir))
+                File.Delete(targetDir);
+            if (Directory.Exists(targetDir))
+                Directory.Delete(targetDir, recursive: true);
+
+            Directory.CreateDirectory(targetDir);
+            await File.WriteAllTextAsync(installedIndex, EnsureTrailingNewline(manifest.Index), Encoding.UTF8).ConfigureAwait(false);
+            await File.WriteAllTextAsync(
+                System.IO.Path.Combine(targetDir, "pengu.plugin.json"),
+                BuildManifestMetadataJson(manifest, manifestFetch.Value.Content),
+                Encoding.UTF8).ConfigureAwait(false);
+
+            return new StoreInstallResult(
+                true,
+                installedIndex,
+                folderName,
+                true);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Manifest install failed for {0}: {1}", request.Repo, ex.Message);
+            return StoreInstallResult.Fail(ex.Message, folderName);
+        }
+    }
+
     /// <summary>
     /// Resolve the on-disk plugins directory. Empty / dot-prefixed values in
     /// config mean "default": <c>&lt;DataRoot&gt;/plugins</c>.
@@ -314,6 +381,166 @@ public partial class PluginsApi
             "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
         };
         return reserved.Contains(sanitized) ? null : sanitized;
+    }
+
+    private static GithubRepo? ParseGithubRepo(string input)
+    {
+        input = input.Trim();
+        if (Regex.IsMatch(input, @"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"))
+        {
+            var parts = input.Split('/');
+            return new GithubRepo(parts[0], parts[1].Replace(".git", "", StringComparison.OrdinalIgnoreCase), null);
+        }
+
+        if (!Uri.TryCreate(input, UriKind.Absolute, out var uri))
+            return null;
+        if (!uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) && !uri.Host.Equals("www.github.com", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 2)
+            return null;
+
+        string? branch = null;
+        if (segments.Length >= 4 && segments[2].Equals("tree", StringComparison.OrdinalIgnoreCase))
+            branch = string.Join('/', segments.Skip(3));
+
+        return new GithubRepo(segments[0], segments[1].Replace(".git", "", StringComparison.OrdinalIgnoreCase), branch);
+    }
+
+    private static async Task<ManifestFetch?> FetchPenguManifest(GithubRepo repo)
+    {
+        var branches = string.IsNullOrWhiteSpace(repo.Branch)
+            ? new[] { "main", "master" }
+            : new[] { repo.Branch };
+
+        foreach (var branch in branches)
+        {
+            var url = $"https://raw.githubusercontent.com/{repo.Owner}/{repo.Name}/{branch}/pengu.yml";
+            try
+            {
+                StoreInstallHttp.DefaultRequestHeaders.UserAgent.Clear();
+                StoreInstallHttp.DefaultRequestHeaders.UserAgent.ParseAdd($"Pengu/{AppEnv.AppVersion}");
+                var response = await StoreInstallHttp.GetAsync(url).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                    continue;
+
+                return new ManifestFetch(url, await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+            }
+            catch
+            {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    private static PenguManifest? ParsePenguManifest(string yaml, string manifestUrl)
+    {
+        var id = ReadScalar(yaml, "id");
+        var name = ReadScalar(yaml, "name");
+        var description = ReadScalar(yaml, "description");
+        var repo = ReadScalar(yaml, "repo");
+        var discord = ReadScalar(yaml, "discord");
+        var autoUpdate = ReadScalar(yaml, "auto_update")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+        var authorName = ReadNestedScalar(yaml, "author", "name");
+        var authorGithub = ReadNestedScalar(yaml, "author", "github");
+        var index = ReadInstallIndex(yaml);
+
+        if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(index))
+            return null;
+
+        return new PenguManifest(
+            id.Trim(),
+            string.IsNullOrWhiteSpace(name) ? id.Trim() : name.Trim(),
+            description?.Trim(),
+            repo?.Trim(),
+            discord?.Trim(),
+            autoUpdate,
+            authorName?.Trim(),
+            authorGithub?.Trim(),
+            manifestUrl,
+            index.TrimEnd());
+    }
+
+    private static string? ReadScalar(string yaml, string key)
+    {
+        var match = Regex.Match(yaml, $"(?m)^{Regex.Escape(key)}:\\s*(.+?)\\s*$");
+        if (!match.Success)
+            return null;
+        return Unquote(match.Groups[1].Value.Trim());
+    }
+
+    private static string? ReadNestedScalar(string yaml, string parent, string key)
+    {
+        var match = Regex.Match(yaml, $"(?ms)^{Regex.Escape(parent)}:\\s*\\r?\\n(?<body>(?:\\s+[^\\r\\n]+\\r?\\n?)*)");
+        if (!match.Success)
+            return null;
+
+        var nested = Regex.Match(match.Groups["body"].Value, $"(?m)^\\s+{Regex.Escape(key)}:\\s*(.+?)\\s*$");
+        return nested.Success ? Unquote(nested.Groups[1].Value.Trim()) : null;
+    }
+
+    private static string? ReadInstallIndex(string yaml)
+    {
+        var match = Regex.Match(yaml, "(?ms)^install:\\s*\\r?\\n(?<body>(?:\\s+[^\\r\\n]*\\r?\\n?)*)");
+        if (!match.Success)
+            return null;
+
+        var lines = match.Groups["body"].Value.Replace("\r\n", "\n").Split('\n');
+        var indexLine = Array.FindIndex(lines, line => Regex.IsMatch(line, "^\\s+index:\\s*\\|\\s*$"));
+        if (indexLine < 0)
+            return null;
+
+        var block = new List<string>();
+        for (var i = indexLine + 1; i < lines.Length; i++)
+        {
+            var line = lines[i];
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                block.Add("");
+                continue;
+            }
+
+            var leading = line.Length - line.TrimStart().Length;
+            if (leading <= 4)
+                break;
+            block.Add(line.Length >= 4 ? line[4..] : "");
+        }
+
+        return string.Join('\n', block).TrimEnd();
+    }
+
+    private static string Unquote(string value)
+    {
+        if ((value.StartsWith('"') && value.EndsWith('"')) || (value.StartsWith('\'') && value.EndsWith('\'')))
+            return value[1..^1];
+        return value;
+    }
+
+    private static string EnsureTrailingNewline(string value)
+        => value.EndsWith('\n') ? value : value + "\n";
+
+    private static string BuildManifestMetadataJson(PenguManifest manifest, string manifestContent)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(manifestContent))).ToLowerInvariant();
+        return $$"""
+        {
+          "source": "github-manifest",
+          "id": {{JsonSerializer.Serialize(manifest.Id, PenguJsonContext.Default.String)}},
+          "name": {{JsonSerializer.Serialize(manifest.Name, PenguJsonContext.Default.String)}},
+          "repo": {{JsonSerializer.Serialize(manifest.Repo, PenguJsonContext.Default.String)}},
+          "discord": {{JsonSerializer.Serialize(manifest.Discord, PenguJsonContext.Default.String)}},
+          "author": {
+            "name": {{JsonSerializer.Serialize(manifest.AuthorName, PenguJsonContext.Default.String)}},
+            "github": {{JsonSerializer.Serialize(manifest.AuthorGithub, PenguJsonContext.Default.String)}}
+          },
+          "autoUpdate": {{manifest.AutoUpdate.ToString().ToLowerInvariant()}},
+          "manifestUrl": {{JsonSerializer.Serialize(manifest.ManifestUrl, PenguJsonContext.Default.String)}},
+          "manifestHash": {{JsonSerializer.Serialize(hash, PenguJsonContext.Default.String)}}
+        }
+        """;
     }
 
     private static string? TryGetRepoName(string? repo)
@@ -403,9 +630,27 @@ public partial class PluginsApi
         Js,
         Zip,
     }
+
+    private readonly record struct GithubRepo(string Owner, string Name, string? Branch);
+
+    private readonly record struct ManifestFetch(string Url, string Content);
+
+    private sealed record PenguManifest(
+        string Id,
+        string Name,
+        string? Description,
+        string? Repo,
+        string? Discord,
+        bool AutoUpdate,
+        string? AuthorName,
+        string? AuthorGithub,
+        string ManifestUrl,
+        string Index);
 }
 
 public sealed record StoreInstallCheckRequest(string ListingName, string? Repo);
+
+public sealed record ManifestInstallRequest(string Repo, bool Replace);
 
 public sealed record StoreInstallRequest(
     string ListingId,

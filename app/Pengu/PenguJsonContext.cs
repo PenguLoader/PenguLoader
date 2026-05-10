@@ -40,6 +40,7 @@ namespace Pengu;
 [JsonSerializable(typeof(PluginInfo))]
 [JsonSerializable(typeof(PluginInfo[]))]
 [JsonSerializable(typeof(StoreInstallCheckRequest))]
+[JsonSerializable(typeof(ManifestInstallRequest))]
 [JsonSerializable(typeof(StoreInstallRequest))]
 [JsonSerializable(typeof(StoreInstallResult))]
 [JsonSerializable(typeof(HostInfo))]
