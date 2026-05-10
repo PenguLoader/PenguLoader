@@ -64,10 +64,7 @@ export const StoreManager = {
 
 async function fetchStaticRegistry(): Promise<StoreRegistry> {
   const urls = [
-    'https://penguloader.github.io/plugin-store/registry/store.json',
     'https://ku-tadao.github.io/plugin-hub/registry/store.json',
-    'https://raw.githubusercontent.com/Ku-Tadao/plugin-hub/feature/discord-forum-registry/registry/store.json',
-    'https://raw.githubusercontent.com/PenguLoader/plugin-store/main/registry/store.json',
   ]
 
   let lastError: unknown = null
