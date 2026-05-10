@@ -257,6 +257,11 @@ const StoreCard: Component<{
               </span>
             )}
           </For>
+          <Show when={(props.listing.upvotes ?? 0) > 0}>
+            <span class="rounded bg-neutral-800 px-2 py-0.5 text-[11px] text-muted-foreground">
+              {props.listing.upvotes} upvotes
+            </span>
+          </Show>
         </div>
 
         <div class="mt-auto flex items-center justify-between gap-3 pt-2 border-t border-foreground/5">
@@ -349,6 +354,11 @@ const StoreDetails: Component<{
           <For each={props.listing.tags}>
             {tag => <span class="rounded bg-neutral-800 px-2 py-0.5 text-[11px] text-muted-foreground">{tag}</span>}
           </For>
+          <Show when={(props.listing.upvotes ?? 0) > 0}>
+            <span class="rounded bg-neutral-800 px-2 py-0.5 text-[11px] text-muted-foreground">
+              {props.listing.upvotes} upvotes
+            </span>
+          </Show>
         </div>
 
         <div class="grid grid-cols-2 gap-2">

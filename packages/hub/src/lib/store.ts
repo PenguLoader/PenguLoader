@@ -18,6 +18,7 @@ export interface StoreListing {
   }
   tags: string[]
   discordUrl: string
+  upvotes?: number
   updatedAt?: string
   assets: StoreAsset[]
   enriched: boolean
@@ -89,6 +90,7 @@ function isStoreListing(value: StoreListing | undefined): value is StoreListing 
     && typeof value!.name === 'string'
     && typeof value!.description === 'string'
     && typeof value!.discordUrl === 'string'
+    && (value!.upvotes === undefined || typeof value!.upvotes === 'number')
     && typeof value!.author?.name === 'string'
     && Array.isArray(value!.tags)
     && Array.isArray(value!.assets)
