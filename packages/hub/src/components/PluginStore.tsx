@@ -196,10 +196,11 @@ const StoreCard: Component<{
           props.onSelect()
         }
       }}
-      class={`text-left flex flex-col overflow-hidden shadow-md rounded-md border-solid bg-card border-[1px] hover:border-neutral-400 min-h-[360px] ${
+      class={`relative text-left flex flex-col overflow-hidden shadow-md rounded-md border-solid bg-card border-[1px] hover:border-neutral-400 min-h-[360px] ${
         props.active ? 'border-neutral-300' : 'border-neutral-600'
       }`}
     >
+      <VoteBadge count={props.listing.upvotes ?? 0} />
       <div class="aspect-[16/10] bg-neutral-950 border-b border-neutral-700 overflow-hidden">
         <Show
           when={props.listing.image && !imageFailed()}
@@ -257,11 +258,6 @@ const StoreCard: Component<{
               </span>
             )}
           </For>
-          <Show when={(props.listing.upvotes ?? 0) > 0}>
-            <span class="rounded bg-neutral-800 px-2 py-0.5 text-[11px] text-muted-foreground">
-              {props.listing.upvotes} upvotes
-            </span>
-          </Show>
         </div>
 
         <div class="mt-auto flex items-center justify-between gap-3 pt-2 border-t border-foreground/5">
@@ -346,7 +342,10 @@ const StoreDetails: Component<{
 
       <div class="p-4 space-y-4">
         <div>
-          <h2 class="text-lg font-semibold leading-6">{props.listing.name}</h2>
+          <div class="flex items-start justify-between gap-3">
+            <h2 class="text-lg font-semibold leading-6">{props.listing.name}</h2>
+            <VotePill count={props.listing.upvotes ?? 0} />
+          </div>
           <p class="mt-1 text-sm text-muted-foreground">{props.listing.description}</p>
         </div>
 
@@ -354,11 +353,6 @@ const StoreDetails: Component<{
           <For each={props.listing.tags}>
             {tag => <span class="rounded bg-neutral-800 px-2 py-0.5 text-[11px] text-muted-foreground">{tag}</span>}
           </For>
-          <Show when={(props.listing.upvotes ?? 0) > 0}>
-            <span class="rounded bg-neutral-800 px-2 py-0.5 text-[11px] text-muted-foreground">
-              {props.listing.upvotes} upvotes
-            </span>
-          </Show>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -406,6 +400,31 @@ const StoreDetails: Component<{
     </aside>
   )
 }
+
+const VoteBadge: Component<{ count: number }> = (props) => (
+  <Show when={props.count > 0}>
+    <div
+      class="absolute right-2 top-2 z-10 grid size-12 place-items-center rounded-full border border-neutral-500/70 bg-neutral-950/90 text-center shadow-lg"
+      title={`${props.count} upvotes`}
+    >
+      <div class="leading-none">
+        <div class="text-sm font-semibold text-foreground tabular-nums">{props.count}</div>
+        <div class="mt-0.5 text-[9px] uppercase tracking-normal text-muted-foreground">votes</div>
+      </div>
+    </div>
+  </Show>
+)
+
+const VotePill: Component<{ count: number }> = (props) => (
+  <Show when={props.count > 0}>
+    <div
+      class="shrink-0 rounded-full border border-neutral-600 bg-neutral-900 px-2.5 py-1 text-xs text-muted-foreground"
+      title={`${props.count} upvotes`}
+    >
+      <span class="font-semibold text-foreground tabular-nums">{props.count}</span> votes
+    </div>
+  </Show>
+)
 
 const InstallButton: Component<{
   assetName: string

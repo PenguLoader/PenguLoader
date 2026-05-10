@@ -41,7 +41,7 @@ export const StoreManager = {
   ): Promise<void> {
     const registry = await fetchStaticRegistry()
 
-    for (const listing of registry.listings ?? []) {
+    for (const listing of sortListings(registry.listings ?? [])) {
       if (!isStoreListing(listing)) continue
       onListing({ ...listing, enriched: true })
     }
@@ -54,7 +54,7 @@ export const StoreManager = {
     }
 
     const registry = await fetchStaticRegistry()
-    for (const listing of registry.listings ?? []) {
+    for (const listing of sortListings(registry.listings ?? [])) {
       if (!isStoreListing(listing)) continue
       result[listing.kind].push({ ...listing, enriched: true })
     }
@@ -81,6 +81,22 @@ async function fetchStaticRegistry(): Promise<StoreRegistry> {
   }
 
   throw new Error(`Failed to fetch store registry: ${lastError instanceof Error ? lastError.message : String(lastError)}`)
+}
+
+function sortListings(listings: StoreListing[]): StoreListing[] {
+  return [...listings].sort((a, b) => {
+    const voteDelta = (b.upvotes ?? 0) - (a.upvotes ?? 0)
+    if (voteDelta !== 0) return voteDelta
+
+    const updatedDelta = toTime(b.updatedAt) - toTime(a.updatedAt)
+    if (updatedDelta !== 0) return updatedDelta
+
+    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+  })
+}
+
+function toTime(value?: string): number {
+  return value ? Date.parse(value) || 0 : 0
 }
 
 function isStoreListing(value: StoreListing | undefined): value is StoreListing {
