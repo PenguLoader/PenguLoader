@@ -1,7 +1,16 @@
 import { Component, createMemo, createSignal, For, Match, onMount, Show, Switch } from 'solid-js'
 import { StoreKind, StoreListing, StoreManager } from '~/lib/store'
+import { pengu, StoreInstallResult } from '~/lib/pengu'
 import { Shell } from '~/lib/shell'
 import { LinkIcon, LoaderIcon } from './Icons'
+
+type InstallState = {
+  installed: boolean
+  busy?: boolean
+  folderName?: string
+  message?: string
+  error?: string
+}
 
 export const PluginStore: Component = () => {
   const [loading, setLoading] = createSignal(true)
@@ -12,6 +21,7 @@ export const PluginStore: Component = () => {
     plugins: [],
     themes: [],
   })
+  const [installStates, setInstallStates] = createSignal<Record<string, InstallState>>({})
 
   const activeListings = createMemo(() => listings()[activeTab()])
   const selectedListing = createMemo(() => {
@@ -27,6 +37,7 @@ export const PluginStore: Component = () => {
           ...current,
           [listing.kind]: upsertListing(current[listing.kind], listing),
         }))
+        void syncInstallState(listing, setInstallStates)
       })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -92,7 +103,9 @@ export const PluginStore: Component = () => {
                     {item => (
                       <StoreCard
                         active={selectedListing()?.id === item.id}
+                        installState={installStates()[item.id]}
                         listing={item}
+                        onInstall={() => installListing(item, installStates()[item.id], setInstallStates)}
                         onSelect={() => setSelected(item)}
                       />
                     )}
@@ -115,7 +128,13 @@ export const PluginStore: Component = () => {
               </div>
 
               <Show when={selectedListing()}>
-                {item => <StoreDetails listing={item()} />}
+                {item => (
+                  <StoreDetails
+                    installState={installStates()[item().id]}
+                    listing={item()}
+                    onInstall={() => installListing(item(), installStates()[item().id], setInstallStates)}
+                  />
+                )}
               </Show>
             </div>
           </div>
@@ -146,7 +165,9 @@ const TabButton: Component<{
 
 const StoreCard: Component<{
   active: boolean
+  installState?: InstallState
   listing: StoreListing
+  onInstall: () => void
   onSelect: () => void
 }> = (props) => {
   const [imageFailed, setImageFailed] = createSignal(false)
@@ -159,6 +180,7 @@ const StoreCard: Component<{
   }
 
   const primaryAsset = createMemo(() => props.listing.assets[0])
+  const supported = createMemo(() => isSupportedAsset(primaryAsset()?.name))
 
   return (
     <div
@@ -263,18 +285,18 @@ const StoreCard: Component<{
             </Show>
             <Show when={primaryAsset()}>
               {asset => (
-                <button
-                  type="button"
-                  onClick={open(asset().downloadUrl)}
-                  class="h-7 rounded bg-neutral-800 px-2 text-xs text-foreground hover:bg-neutral-700"
-                  title={asset().name}
-                >
-                  Download
-                </button>
+                <InstallButton
+                  assetName={asset().name}
+                  compact
+                  installState={props.installState}
+                  onInstall={props.onInstall}
+                  supported={supported()}
+                />
               )}
             </Show>
           </div>
         </div>
+        <InstallStatus state={props.installState} />
       </div>
     </div>
   )
@@ -294,8 +316,13 @@ const StoreSkeleton: Component = () => (
   </div>
 )
 
-const StoreDetails: Component<{ listing: StoreListing }> = (props) => {
+const StoreDetails: Component<{
+  installState?: InstallState
+  listing: StoreListing
+  onInstall: () => void
+}> = (props) => {
   const primaryAsset = createMemo(() => props.listing.assets[0])
+  const supported = createMemo(() => isSupportedAsset(primaryAsset()?.name))
 
   const open = (url?: string) => () => {
     if (url) Shell.openLink(url)
@@ -340,12 +367,16 @@ const StoreDetails: Component<{ listing: StoreListing }> = (props) => {
           </Show>
           <Show when={primaryAsset()}>
             {asset => (
-              <button type="button" onClick={open(asset().downloadUrl)} class="h-8 rounded bg-neutral-200 text-sm text-neutral-950 hover:bg-neutral-300">
-                Download
-              </button>
+              <InstallButton
+                assetName={asset().name}
+                installState={props.installState}
+                onInstall={props.onInstall}
+                supported={supported()}
+              />
             )}
           </Show>
         </div>
+        <InstallStatus state={props.installState} />
 
         <Show when={props.listing.releaseTag}>
           <div class="text-xs text-muted-foreground">
@@ -364,6 +395,168 @@ const StoreDetails: Component<{ listing: StoreListing }> = (props) => {
       </div>
     </aside>
   )
+}
+
+const InstallButton: Component<{
+  assetName: string
+  compact?: boolean
+  installState?: InstallState
+  onInstall: () => void
+  supported: boolean
+}> = (props) => {
+  const label = createMemo(() => {
+    if (!props.supported) return 'Unsupported'
+    if (props.installState?.busy) return 'Installing'
+    if (props.installState?.installed) return 'Installed'
+    return 'Install'
+  })
+
+  return (
+    <button
+      type="button"
+      disabled={!props.supported || props.installState?.busy}
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        props.onInstall()
+      }}
+      class={`${props.compact ? 'h-7 px-2 text-xs' : 'h-8 text-sm'} rounded ${
+        props.supported
+          ? props.installState?.installed
+            ? 'bg-emerald-900/50 text-emerald-100 hover:bg-emerald-800/60'
+            : 'bg-neutral-200 text-neutral-950 hover:bg-neutral-300'
+          : 'cursor-not-allowed bg-neutral-800 text-muted-foreground'
+      } disabled:opacity-70`}
+      title={props.supported ? props.assetName : 'Only .js and .zip assets can be installed'}
+    >
+      {props.installState?.busy && <LoaderIcon class="mr-1 inline animate-spin align-[-2px]" size={12} />}
+      {label()}
+    </button>
+  )
+}
+
+const InstallStatus: Component<{ state?: InstallState }> = (props) => (
+  <Show when={props.state?.message || props.state?.error}>
+    <p class={`text-xs ${props.state?.error ? 'text-destructive' : 'text-muted-foreground'}`}>
+      {props.state?.error ?? props.state?.message}
+    </p>
+  </Show>
+)
+
+async function syncInstallState(
+  listing: StoreListing,
+  setInstallStates: (fn: (current: Record<string, InstallState>) => Record<string, InstallState>) => void,
+) {
+  try {
+    const result = await pengu.plugins.checkStoreInstall({
+      listingName: listing.name,
+      repo: listing.repo,
+    })
+    setInstallStates(current => ({
+      ...current,
+      [listing.id]: stateFromResult(result, current[listing.id]?.message),
+    }))
+  } catch {
+    // Store install state is local convenience; registry rendering should not fail if it is unavailable.
+  }
+}
+
+async function installListing(
+  listing: StoreListing,
+  state: InstallState | undefined,
+  setInstallStates: (fn: (current: Record<string, InstallState>) => Record<string, InstallState>) => void,
+) {
+  const asset = listing.assets[0]
+  if (!asset || !isSupportedAsset(asset.name)) {
+    setInstallStates(current => ({
+      ...current,
+      [listing.id]: {
+        ...current[listing.id],
+        installed: Boolean(current[listing.id]?.installed),
+        error: 'Only .js and .zip release assets can be installed.',
+      },
+    }))
+    return
+  }
+
+  const replace = Boolean(state?.installed)
+  if (replace && !confirm(`Replace the installed copy of ${listing.name}?`))
+    return
+
+  const runInstall = async (allowReplace: boolean) => {
+    setInstallStates(current => ({
+      ...current,
+      [listing.id]: {
+        ...current[listing.id],
+        busy: true,
+        installed: Boolean(current[listing.id]?.installed),
+        message: 'Downloading and installing...',
+        error: undefined,
+      },
+    }))
+
+    return pengu.plugins.installStoreAsset({
+      listingId: listing.id,
+      listingName: listing.name,
+      kind: listing.kind,
+      repo: listing.repo,
+      assetName: asset.name,
+      downloadUrl: asset.downloadUrl,
+      contentType: asset.contentType,
+      replace: allowReplace,
+    })
+  }
+
+  try {
+    let result = await runInstall(replace)
+    if (result.conflict) {
+      setInstallStates(current => ({
+        ...current,
+        [listing.id]: {
+          ...stateFromResult(result),
+          message: undefined,
+          error: result.error ?? 'A plugin folder with that name already exists.',
+        },
+      }))
+      if (!confirm(`A folder named ${result.folderName ?? listing.name} already exists. Replace it?`))
+        return
+      result = await runInstall(true)
+    }
+
+    setInstallStates(current => ({
+      ...current,
+      [listing.id]: result.ok
+        ? stateFromResult(result, 'Installed successfully.')
+        : {
+          ...stateFromResult(result),
+          error: result.error ?? 'Install failed.',
+        },
+    }))
+  } catch (e) {
+    setInstallStates(current => ({
+      ...current,
+      [listing.id]: {
+        ...current[listing.id],
+        busy: false,
+        installed: Boolean(current[listing.id]?.installed),
+        error: e instanceof Error ? e.message : String(e),
+      },
+    }))
+  }
+}
+
+function stateFromResult(result: StoreInstallResult, message?: string): InstallState {
+  return {
+    installed: result.alreadyInstalled,
+    busy: false,
+    folderName: result.folderName,
+    message,
+    error: result.ok ? undefined : result.error,
+  }
+}
+
+function isSupportedAsset(assetName?: string): boolean {
+  return Boolean(assetName && /\.(js|zip)$/i.test(assetName))
 }
 
 function truncate(value: string, max: number): string {
