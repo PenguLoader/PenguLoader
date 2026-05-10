@@ -12,6 +12,20 @@ type InstallState = {
   error?: string
 }
 
+type MarkdownBlock =
+  | { type: 'paragraph'; text: string }
+  | { type: 'heading'; level: number; text: string }
+  | { type: 'list'; ordered: boolean; items: string[] }
+  | { type: 'quote'; text: string }
+  | { type: 'code'; lang?: string; code: string }
+
+type InlineNode =
+  | { type: 'text'; text: string }
+  | { type: 'link'; text: string; href: string }
+  | { type: 'code'; text: string }
+  | { type: 'strong'; text: string }
+  | { type: 'em'; text: string }
+
 export const PluginStore: Component = () => {
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
@@ -57,10 +71,7 @@ export const PluginStore: Component = () => {
           </div>
         </Match>
         <Match when={!error()}>
-          <div
-            class="h-full overflow-auto p-4"
-            onClick={() => setSelected(null)}
-          >
+          <div class="h-full overflow-auto p-4">
             <div class="flex items-center justify-between gap-4">
               <div class="flex items-center gap-2">
                 <div class="flex rounded-md border border-neutral-700 bg-neutral-950/30 p-1">
@@ -103,51 +114,50 @@ export const PluginStore: Component = () => {
             </div>
 
             <div
-              class={selectedListing()
-                ? 'grid grid-cols-[minmax(0,1fr)_minmax(300px,360px)] gap-4 items-start'
-                : 'grid grid-cols-1'}
+              class="grid gap-x-4 my-4 gap-y-6"
+              style="grid-template-columns: repeat(auto-fill, minmax(max(270px, calc((100% - 48px) / 4)), 1fr))"
             >
-              <div>
-                <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-x-4 my-4 gap-y-6">
-                  <For each={activeListings()}>
-                    {item => (
-                      <StoreCard
-                        active={selectedListing()?.id === item.id}
-                        installState={installStates()[item.id]}
-                        listing={item}
-                        onInstall={() => installListing(item, installStates()[item.id], setInstallStates)}
-                        onSelect={() => setSelected(item)}
-                      />
-                    )}
-                  </For>
-                </div>
-
-                <Show when={activeListings().length === 0 && loading()}>
-                  <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-x-4 my-4 gap-y-6">
-                    <For each={[0, 1, 2]}>
-                      {() => <StoreSkeleton />}
-                    </For>
-                  </div>
-                </Show>
-
-                <Show when={activeListings().length === 0 && !loading()}>
-                  <div class="h-48 flex items-center justify-center text-sm text-muted-foreground">
-                    No listings found.
-                  </div>
-                </Show>
-              </div>
-
-              <Show when={selectedListing()}>
+              <For each={activeListings()}>
                 {item => (
-                  <StoreDetails
-                    installState={installStates()[item().id]}
-                    listing={item()}
-                    onInstall={() => installListing(item(), installStates()[item().id], setInstallStates)}
+                  <StoreCard
+                    active={selectedListing()?.id === item.id}
+                    installState={installStates()[item.id]}
+                    listing={item}
+                    onInstall={() => installListing(item, installStates()[item.id], setInstallStates)}
+                    onSelect={() => setSelected(item)}
                   />
                 )}
-              </Show>
+              </For>
             </div>
+
+            <Show when={activeListings().length === 0 && loading()}>
+              <div
+                class="grid gap-x-4 my-4 gap-y-6"
+                style="grid-template-columns: repeat(auto-fill, minmax(max(270px, calc((100% - 48px) / 4)), 1fr))"
+              >
+                <For each={[0, 1, 2]}>
+                  {() => <StoreSkeleton />}
+                </For>
+              </div>
+            </Show>
+
+            <Show when={activeListings().length === 0 && !loading()}>
+              <div class="h-48 flex items-center justify-center text-sm text-muted-foreground">
+                No listings found.
+              </div>
+            </Show>
           </div>
+
+          <Show when={selectedListing()}>
+            {item => (
+              <StoreDetails
+                installState={installStates()[item().id]}
+                listing={item()}
+                onClose={() => setSelected(null)}
+                onInstall={() => installListing(item(), installStates()[item().id], setInstallStates)}
+              />
+            )}
+          </Show>
         </Match>
       </Switch>
     </div>
@@ -210,7 +220,7 @@ const StoreCard: Component<{
         props.active ? 'border-neutral-300' : 'border-neutral-600'
       }`}
     >
-      <VoteBadge count={props.listing.upvotes ?? 0} />
+
       <div class="aspect-[16/10] bg-neutral-950 border-b border-neutral-700 overflow-hidden">
         <Show
           when={props.listing.image && !imageFailed()}
@@ -284,6 +294,17 @@ const StoreCard: Component<{
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
+            <Show when={(props.listing.upvotes ?? 0) > 0}>
+              <span
+                class="flex items-center gap-0.5 text-xs text-muted-foreground"
+                title={`${props.listing.upvotes} upvotes`}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+                <span class="tabular-nums font-medium">{props.listing.upvotes}</span>
+              </span>
+            </Show>
             <Show when={props.listing.releaseTag}>
               <button
                 type="button"
@@ -330,6 +351,7 @@ const StoreSkeleton: Component = () => (
 const StoreDetails: Component<{
   installState?: InstallState
   listing: StoreListing
+  onClose: () => void
   onInstall: () => void
 }> = (props) => {
   const primaryAsset = createMemo(() => props.listing.assets[0])
@@ -340,8 +362,14 @@ const StoreDetails: Component<{
   }
 
   return (
-    <aside
-      class="sticky top-4 mt-4 max-h-[calc(100vh-96px)] overflow-auto rounded-md border border-neutral-700 bg-card animate-[store-panel-in_160ms_ease-out]"
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-8 animate-[store-backdrop-in_200ms_ease-out]"
+      style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px)"
+      onClick={() => props.onClose()}
+      onKeyDown={(e) => { if (e.key === 'Escape') props.onClose() }}
+    >
+      <aside
+        class="w-full max-w-3xl max-h-[calc(100vh-96px)] overflow-auto rounded-lg border border-neutral-700 bg-card shadow-2xl animate-[store-panel-in_250ms_ease-out]"
       onClick={(event) => event.stopPropagation()}
     >
       <Show when={props.listing.image}>
@@ -401,29 +429,16 @@ const StoreDetails: Component<{
         <Show when={props.listing.details}>
           <div class="border-t border-neutral-700 pt-3">
             <h3 class="mb-2 text-sm font-medium">Details</h3>
-            <p class="whitespace-pre-wrap text-sm leading-5 text-muted-foreground">
-              {truncate(props.listing.details!, 1800)}
-            </p>
+            <MarkdownDetails value={props.listing.details!} />
           </div>
         </Show>
       </div>
     </aside>
+    </div>
   )
 }
 
-const VoteBadge: Component<{ count: number }> = (props) => (
-  <Show when={props.count > 0}>
-    <div
-      class="absolute right-2 top-2 z-10 grid size-12 place-items-center rounded-full border border-neutral-500/70 bg-neutral-950/90 text-center shadow-lg"
-      title={`${props.count} upvotes`}
-    >
-      <div class="leading-none">
-        <div class="text-sm font-semibold text-foreground tabular-nums">{props.count}</div>
-        <div class="mt-0.5 text-[9px] uppercase tracking-normal text-muted-foreground">votes</div>
-      </div>
-    </div>
-  </Show>
-)
+
 
 const VotePill: Component<{ count: number }> = (props) => (
   <Show when={props.count > 0}>
@@ -435,6 +450,127 @@ const VotePill: Component<{ count: number }> = (props) => (
     </div>
   </Show>
 )
+
+const MarkdownDetails: Component<{ value: string }> = (props) => {
+  const blocks = createMemo(() => parseMarkdownBlocks(props.value))
+
+  return (
+    <div class="space-y-3 text-sm leading-5 text-muted-foreground">
+      <For each={blocks()}>
+        {block => (
+          <Switch>
+            <Match when={block.type === 'code'}>
+              <div class="overflow-hidden rounded-md border border-neutral-700 bg-neutral-950">
+                <Show when={(block as Extract<MarkdownBlock, { type: 'code' }>).lang}>
+                  {lang => (
+                    <div class="border-b border-neutral-800 px-3 py-1 text-[11px] uppercase tracking-normal text-muted-foreground">
+                      {lang()}
+                    </div>
+                  )}
+                </Show>
+                <pre class="max-h-80 overflow-auto p-3 text-xs leading-5 text-neutral-200">
+                  <code>{(block as Extract<MarkdownBlock, { type: 'code' }>).code}</code>
+                </pre>
+              </div>
+            </Match>
+            <Match when={block.type === 'paragraph'}>
+              <p class="whitespace-pre-wrap">
+                <MarkdownInline value={(block as Extract<MarkdownBlock, { type: 'paragraph' }>).text} />
+              </p>
+            </Match>
+            <Match when={block.type === 'heading'}>
+              {(() => {
+                const heading = block as Extract<MarkdownBlock, { type: 'heading' }>
+                const className = heading.level === 1
+                  ? 'text-lg font-semibold leading-6 text-foreground'
+                  : heading.level === 2
+                    ? 'text-base font-semibold leading-6 text-foreground'
+                    : 'text-sm font-semibold leading-5 text-foreground'
+                return (
+                  <div class={className}>
+                    <MarkdownInline value={heading.text} />
+                  </div>
+                )
+              })()}
+            </Match>
+            <Match when={block.type === 'list'}>
+              {(() => {
+                const list = block as Extract<MarkdownBlock, { type: 'list' }>
+                const items = (
+                  <For each={list.items}>
+                    {item => (
+                      <li>
+                        <MarkdownInline value={item} />
+                      </li>
+                    )}
+                  </For>
+                )
+                return list.ordered
+                  ? <ol class="list-decimal space-y-1 pl-5">{items}</ol>
+                  : <ul class="list-disc space-y-1 pl-5">{items}</ul>
+              })()}
+            </Match>
+            <Match when={block.type === 'quote'}>
+              <blockquote class="border-l border-neutral-600 pl-3 text-neutral-300">
+                <MarkdownInline value={(block as Extract<MarkdownBlock, { type: 'quote' }>).text} />
+              </blockquote>
+            </Match>
+          </Switch>
+        )}
+      </For>
+    </div>
+  )
+}
+
+const MarkdownInline: Component<{ value: string }> = (props) => {
+  const nodes = createMemo(() => parseInlineMarkdown(props.value))
+
+  return (
+    <>
+      <For each={nodes()}>
+        {node => (
+          <Switch>
+            <Match when={node.type === 'link'}>
+              {(() => {
+                const link = node as Extract<InlineNode, { type: 'link' }>
+                return (
+                  <button
+                    type="button"
+                    class="text-neutral-200 underline decoration-neutral-500 underline-offset-2 hover:text-foreground"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      Shell.openLink(link.href)
+                    }}
+                  >
+                    {link.text}
+                  </button>
+                )
+              })()}
+            </Match>
+            <Match when={node.type === 'code'}>
+              <code class="rounded bg-neutral-900 px-1 py-0.5 text-[0.9em] text-neutral-200">
+                {(node as Extract<InlineNode, { type: 'code' }>).text}
+              </code>
+            </Match>
+            <Match when={node.type === 'strong'}>
+              <strong class="font-semibold text-neutral-200">
+                {(node as Extract<InlineNode, { type: 'strong' }>).text}
+              </strong>
+            </Match>
+            <Match when={node.type === 'em'}>
+              <em class="text-neutral-200">
+                {(node as Extract<InlineNode, { type: 'em' }>).text}
+              </em>
+            </Match>
+            <Match when={node.type === 'text'}>
+              {(node as Extract<InlineNode, { type: 'text' }>).text}
+            </Match>
+          </Switch>
+        )}
+      </For>
+    </>
+  )
+}
 
 const InstallButton: Component<{
   assetName: string
@@ -627,9 +763,114 @@ function isSupportedAsset(assetName?: string): boolean {
   return Boolean(assetName && /\.(js|zip)$/i.test(assetName))
 }
 
-function truncate(value: string, max: number): string {
-  if (value.length <= max) return value
-  return `${value.slice(0, max).trim()}...`
+function parseMarkdownBlocks(value: string): MarkdownBlock[] {
+  const blocks: MarkdownBlock[] = []
+  const lines = value.replace(/\r\n/g, '\n').split('\n')
+  let paragraph: string[] = []
+  let listItems: string[] = []
+  let listOrdered = false
+  let code: string[] | null = null
+  let codeLang: string | undefined
+
+  const flushParagraph = () => {
+    const text = paragraph.join('\n').trim()
+    if (text) blocks.push({ type: 'paragraph', text })
+    paragraph = []
+  }
+
+  const flushList = () => {
+    if (listItems.length) blocks.push({ type: 'list', ordered: listOrdered, items: listItems })
+    listItems = []
+    listOrdered = false
+  }
+
+  const flushCode = () => {
+    blocks.push({ type: 'code', lang: codeLang, code: (code ?? []).join('\n').trimEnd() })
+    code = null
+    codeLang = undefined
+  }
+
+  for (const line of lines) {
+    const fence = line.match(/^```(\S+)?(?:\s+(.*))?$/)
+    if (fence) {
+      if (code) {
+        flushCode()
+      } else {
+        flushParagraph()
+        flushList()
+        codeLang = fence[1]
+        code = []
+        if (fence[2]) code.push(fence[2])
+      }
+      continue
+    }
+
+    if (code) {
+      code.push(line)
+      continue
+    }
+
+    const heading = line.match(/^(#{1,6})\s+(.+)$/)
+    if (heading) {
+      flushParagraph()
+      flushList()
+      blocks.push({ type: 'heading', level: heading[1].length, text: heading[2].trim() })
+      continue
+    }
+
+    const quote = line.match(/^>\s?(.*)$/)
+    if (quote) {
+      flushParagraph()
+      flushList()
+      blocks.push({ type: 'quote', text: quote[1].trim() })
+      continue
+    }
+
+    const unordered = line.match(/^\s*[-*]\s+(.+)$/)
+    const ordered = line.match(/^\s*\d+[.)]\s+(.+)$/)
+    if (unordered || ordered) {
+      flushParagraph()
+      const nextOrdered = Boolean(ordered)
+      if (listItems.length && listOrdered !== nextOrdered) flushList()
+      listOrdered = nextOrdered
+      listItems.push((ordered?.[1] ?? unordered?.[1] ?? '').trim())
+      continue
+    }
+
+    if (line.trim()) {
+      flushList()
+      paragraph.push(line)
+    } else {
+      flushParagraph()
+      flushList()
+    }
+  }
+
+  if (code) flushCode()
+  flushParagraph()
+  flushList()
+  return blocks
+}
+
+function parseInlineMarkdown(value: string): InlineNode[] {
+  const nodes: InlineNode[] = []
+  const pattern = /(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*)/g
+  let last = 0
+  let match: RegExpExecArray | null
+
+  while ((match = pattern.exec(value)) !== null) {
+    if (match.index > last) nodes.push({ type: 'text', text: value.slice(last, match.index) })
+
+    if (match[2] && match[3]) nodes.push({ type: 'link', text: match[2], href: match[3] })
+    else if (match[4]) nodes.push({ type: 'code', text: match[4] })
+    else if (match[5]) nodes.push({ type: 'strong', text: match[5] })
+    else if (match[6]) nodes.push({ type: 'em', text: match[6] })
+
+    last = pattern.lastIndex
+  }
+
+  if (last < value.length) nodes.push({ type: 'text', text: value.slice(last) })
+  return nodes
 }
 
 function upsertListing(items: StoreListing[], listing: StoreListing): StoreListing[] {
