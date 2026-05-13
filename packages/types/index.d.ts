@@ -16,14 +16,105 @@
 // Plugin module shape
 // =============================================================================
 
+// =============================================================================
+// RCP (Riot Client Plugin) hooks
+// =============================================================================
+
+export interface PluginGraph {
+  /** Plugin "affinities" — niche, usually empty. */
+  affinities: Record<string, any>;
+  /** Map of plugin name → list of its direct dependencies. */
+  dependencies: Record<string, string[]>;
+  /** Virtual-package resolution: e.g. `rcp-be-lol-rso-auth → rcp-be-rga-rso-auth`. */
+  implementations: Record<string, string>;
+  /** Plugins loaded lazily / on demand. */
+  lazy: Record<string, any>;
+  /** Total ordered load sequence chosen by the runtime. */
+  sequence: string[];
+  /** Backward-compat shims. */
+  shims: Record<string, any>;
+}
+
+export interface RcpApi {
+  /**
+   * Register a callback that fires BEFORE the named plugin's registrar.
+   * Returns `true` if accepted (plugin is unknown or still in `preInit`),
+   * `false` if already past that phase.
+   */
+  preInit(name: string, callback: (provider: any) => any): boolean;
+
+  /**
+   * Register a callback that fires AFTER the named plugin's API is ready.
+   * Pass `blocking = true` to delay the plugin's transition to `fulfilled`
+   * until the callback resolves.
+   * Returns `false` if the plugin is already fulfilled.
+   */
+  postInit(name: string, callback: (api: any) => any, blocking?: boolean): boolean;
+
+  /**
+   * Promise-based alternative to postInit. Resolves with the plugin's API
+   * when it reaches `fulfilled`. If already fulfilled, resolves immediately.
+   */
+  whenReady(name: string): Promise<any>;
+  whenReady(names: string[]): Promise<any[]>;
+
+  /**
+   * Synchronous lookup of an already-fulfilled plugin's API.
+   * Returns `undefined` if the plugin hasn't completed initialization.
+   */
+  get(name: string): any;
+
+  /** Fetch the plugin dependency graph from `/graph.json` (cached). */
+  graph(): Promise<PluginGraph>;
+
+  /** Direct dependencies of `name`. Returns `[]` if unknown or no deps. */
+  dependencies(name: string): Promise<string[]>;
+
+  /** Plugins that depend on `name`. O(N) scan; cache if calling frequently. */
+  dependents(name: string): Promise<string[]>;
+
+  /** All RCP plugin names in load order. */
+  names(): Promise<string[]>;
+}
+
+// =============================================================================
+// Socket (LCDS event subscription)
+// =============================================================================
+
+export interface SocketEventData {
+  data: any;
+  uri: string;
+  eventType: 'Create' | 'Update' | 'Delete';
+}
+
+export interface SocketApi {
+  /**
+   * Subscribe to LCDS events. Pass `'all'` to listen to every event.
+   * Returns `{ disconnect }` on success, or `false` on invalid arguments.
+   */
+  observe(
+    api: string,
+    listener: (message: SocketEventData) => void,
+  ): { disconnect: () => void } | false;
+
+  /**
+   * Remove a previously-registered listener. Returns `true` if found and
+   * removed, `false` if no matching listener was registered for this api.
+   */
+  disconnect(
+    api: string,
+    listener: (message: SocketEventData) => void,
+  ): boolean;
+}
+
 /**
  * Context passed to a plugin's `init` function.
  * - `rcp` / `socket` mirror the globals exposed on `window` by the preload.
  * - `meta.name` is the plugin's folder name. Omitted for top-level `name.js` plugins.
  */
 export interface PluginInitContext {
-  rcp: any;
-  socket: any;
+  rcp: RcpApi;
+  socket: SocketApi;
   meta?: { name: string };
 }
 
@@ -302,6 +393,7 @@ export interface OsGlobal {
 
 declare global {
   interface Window {
+    rcp: RcpApi;
     Pengu: PenguGlobal;
     os: OsGlobal;
 

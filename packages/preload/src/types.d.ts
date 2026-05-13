@@ -6,16 +6,20 @@
 import type * as Pengu from '@pengujs/types'
 
 declare global {
-  type Action       = Pengu.Action
-  type Toast        = Pengu.Toast
-  type ToastOptions = Pengu.ToastOptions
+  type RcpApi        = Pengu.RcpApi
+  type PluginGraph   = Pengu.PluginGraph
+  type SocketApi     = Pengu.SocketApi
+  type SocketEventData = Pengu.SocketEventData
+  type Action        = Pengu.Action
+  type Toast         = Pengu.Toast
+  type ToastOptions  = Pengu.ToastOptions
   type ToastPosition = Pengu.ToastPosition
-  type ToastType    = Pengu.ToastType
-  type DataStore    = Pengu.DataStore
-  type Effect       = Pengu.Effect
-  type Settings     = Pengu.Settings
-  type Schema       = Pengu.Schema
-  type Field        = Pengu.Field
+  type ToastType     = Pengu.ToastType
+  type DataStore     = Pengu.DataStore
+  type Effect        = Pengu.Effect
+  type Settings      = Pengu.Settings
+  type Schema        = Pengu.Schema
+  type Field         = Pengu.Field
 
   interface RcpAnnouceEvent extends CustomEvent {
     errorHandler: () => any
