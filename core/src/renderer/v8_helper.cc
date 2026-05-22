@@ -35,19 +35,18 @@ static V8Value *v8_open_plugins_folder(V8Value *const *args, int argc)
             path rel = candidate.lexically_relative(plugins_dir.lexically_normal());
             // rel is empty when the paths share no common root (different drives),
             // and starts with ".." when the candidate escapes plugins_dir.
+            // Otherwise rel contains the relative path from plugins_dir to candidate,
+            // confirming safe containment.
             if (!rel.empty() && rel.begin()->string() != "..")
             {
-                dir = candidate;
+                // Only navigate to the candidate if it is actually a directory.
+                // If a file path (e.g. "plugin/evil.bat") slips through, opening it
+                // with ShellExecuteW would execute it; fall back to plugins_dir.
+                if (file::is_dir(candidate))
+                    dir = candidate;
+                else
+                    found = false;
             }
-        }
-
-        // Only open the candidate if it is actually a directory.
-        // If a file path (e.g. "plugin/evil.bat") slips through, opening it with
-        // ShellExecuteW would execute it; fall back to plugins_dir in that case.
-        if (!file::is_dir(dir))
-        {
-            found = false;
-            dir = plugins_dir;
         }
     }
 
