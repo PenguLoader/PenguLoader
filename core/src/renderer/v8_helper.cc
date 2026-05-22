@@ -41,8 +41,14 @@ static V8Value *v8_open_plugins_folder(V8Value *const *args, int argc)
             }
         }
 
+        // Only open the candidate if it is actually a directory.
+        // If a file path (e.g. "plugin/evil.bat") slips through, opening it with
+        // ShellExecuteW would execute it; fall back to plugins_dir in that case.
         if (!file::is_dir(dir))
+        {
             found = false;
+            dir = plugins_dir;
+        }
     }
 
     shell::open_folder(dir);

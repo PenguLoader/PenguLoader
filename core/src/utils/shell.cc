@@ -28,7 +28,7 @@ void shell::open_folder(const path &path)
     }
 
     if (pShellExecuteW)
-        pShellExecuteW(NULL, L"open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        pShellExecuteW(NULL, L"explore", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
 #elif OS_MAC
