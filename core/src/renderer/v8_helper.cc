@@ -16,12 +16,30 @@ static V8Value *v8_open_devtools(V8Value *const *args, int argc)
 static V8Value *v8_open_plugins_folder(V8Value *const *args, int argc)
 {   
     bool found = true;
-    path dir = config::plugins_dir();
+    path plugins_dir = config::plugins_dir();
+    path dir = plugins_dir;
 
     if (argc > 0)
     {
-        CefScopedStr path = args[0]->asString();
-        dir /= path.to_path();
+        CefScopedStr subpath_str = args[0]->asString();
+        path subpath = subpath_str.to_path();
+
+        // Only accept relative subpaths that stay within plugins_dir.
+        // Absolute paths (e.g. "C:\Windows\calc.exe") are rejected outright via
+        // is_absolute(); root-relative paths (e.g. "\Windows") and traversal
+        // sequences (e.g. "..\..\Windows") are caught by the lexically_relative
+        // check below.
+        if (!subpath.is_absolute())
+        {
+            path candidate = (plugins_dir / subpath).lexically_normal();
+            path rel = candidate.lexically_relative(plugins_dir.lexically_normal());
+            // rel is empty when the paths share no common root (different drives),
+            // and starts with ".." when the candidate escapes plugins_dir.
+            if (!rel.empty() && rel.begin()->string() != "..")
+            {
+                dir = candidate;
+            }
+        }
 
         if (!file::is_dir(dir))
             found = false;
