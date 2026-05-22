@@ -10,7 +10,7 @@ window.openDevTools = function () {
 window.openPluginsFolder = function (path?: string) {
   if (typeof path === 'string' && path) {
     // Reject Windows absolute paths (drive letter + colon, e.g. "C:\...").
-    if (!path.startsWith('..') && !/[\\\/]\.\.[\\\/]/.test(path) && !/[a-zA-Z]:/.test(path)) {
+    if (!path.startsWith('..') && !/[\\\/]\.\.[\\\/]/.test(path) && !/^[a-zA-Z]:/.test(path)) {
       if (/^[\\/]/.test(path))
         path = path.substring(1);
       return native.OpenPluginsFolder(path);
