@@ -57,7 +57,7 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 9
-          run_install:
+          run_install: |
             - recursive: true
 
       - name: Build preload plugins
@@ -157,7 +157,7 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 9
-          run_install:
+          run_install: |
             - recursive: true
 
       - name: Build preload plugins
