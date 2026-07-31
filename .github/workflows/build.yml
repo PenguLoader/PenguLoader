@@ -77,8 +77,8 @@ jobs:
       - name: Test update-channel logic
         shell: pwsh
         run: |
-          & ".\bin\Pengu Loader.exe" --self-test-updater
-          if ($LASTEXITCODE -ne 0) { throw "Updater self-test failed." }
+          $test = Start-Process ".\bin\Pengu Loader.exe" -ArgumentList "--self-test-updater" -Wait -PassThru
+          if ($test.ExitCode -ne 0) { throw "Updater self-test failed." }
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
