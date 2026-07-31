@@ -151,7 +151,7 @@ jobs:
       - name: Prepare environment variables
         run: |
           echo "COMMIT_HASH=$(git rev-parse --short=8 HEAD)" >> "$GITHUB_ENV"
-          echo "APP_VERSION=$(node -p \"require('./plugins/package.json').version\")" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(node -p 'require("./plugins/package.json").version')" >> "$GITHUB_ENV"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
