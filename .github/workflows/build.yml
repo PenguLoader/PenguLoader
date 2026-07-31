@@ -1,40 +1,47 @@
+name: Build
+
 on:
+  push:
+    branches:
+      - main
+      - dev
+      - "release/**"
+  pull_request:
+    branches:
+      - main
+      - dev
   workflow_dispatch:
     inputs:
       release:
-        description: Build for release
-        type: boolean
-        default: false
-      release-signing:
-        description: Use release code signing
+        description: Build and sign a Windows release
         type: boolean
         default: false
 
 jobs:
-  build:
-    runs-on: windows-latest
+  windows:
+    runs-on: windows-2022
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
           fetch-depth: 0
           submodules: true
 
-      - name: Prepare envars
+      - name: Prepare environment variables
+        shell: pwsh
         run: |
-          $commit_hash = "${{ github.sha }}".SubString(0, 8)
-          $app_version = (Select-String -Path "loader\Program.cs" -Pattern 'VERSION = "(.+)"' -AllMatches).Matches.Groups[1].Value
-          echo "COMMIT_HASH=$commit_hash" >> $env:GITHUB_ENV
-          echo "APP_VERSION=$app_version" >> $env:GITHUB_ENV
-          echo "ARTIFACT_NAME=pengu-v$app_version-$commit_hash" >> $env:GITHUB_ENV
+          $commitHash = "${{ github.sha }}".Substring(0, 8)
+          $appVersion = (Select-String -Path "loader\Program.cs" -Pattern 'VERSION = "(.+)"' -AllMatches).Matches.Groups[1].Value
+          "COMMIT_HASH=$commitHash" >> $env:GITHUB_ENV
+          "APP_VERSION=$appVersion" >> $env:GITHUB_ENV
+          "ARTIFACT_NAME=pengu-v$appVersion-$commitHash-windows" >> $env:GITHUB_ENV
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
         with:
           msbuild-architecture: x64
 
-      - name: Install .NET 472 SDK
+      - name: Install .NET 4.7.2 SDK
         shell: cmd
         run: |
           mkdir downloads && cd downloads
@@ -50,24 +57,23 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 9
-          run_install: |
+          run_install:
             - recursive: true
 
       - name: Build preload plugins
-        run: |
-          cd plugins
-          pnpm install
-          pnpm build
+        working-directory: plugins
+        run: pnpm build
 
       - name: Build solution
+        shell: pwsh
         run: |
-          mkdir bin
-          echo "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}" >> bin/version
+          New-Item -ItemType Directory -Force bin
+          "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}" >> bin/version
           msbuild pengu.sln /t:Restore,Build /m /p:Configuration=Release /p:Platform=x64
 
-      - name: Upload build output
+      - name: Upload Windows build
         uses: actions/upload-artifact@v4
-        id: artifact-upload-step
+        id: windows-artifact
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: |
@@ -75,61 +81,99 @@ jobs:
             bin/*.dll
             bin/version
 
-      - name: Delete build output
-        if: ${{ inputs.release }}
-        run: |
-          Remove-Item bin/* -Recurse -Force
+      - name: Remove unsigned output
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+        shell: pwsh
+        run: Remove-Item bin/* -Recurse -Force
 
       - name: Sign the build
-        if: ${{ inputs.release }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: PenguLoader
-          signing-policy-slug: ${{ inputs.release && 'release' || 'test' }}-signing
+          signing-policy-slug: release-signing
           artifact-configuration-slug: zipped-app
-          github-artifact-id: "${{ steps.artifact-upload-step.outputs.artifact-id }}"
+          github-artifact-id: ${{ steps.windows-artifact.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: bin
 
-      - name: Make installer & zip app
-        if: ${{ inputs.release }}
+      - name: Make installer and portable archive
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+        shell: pwsh
         run: |
-          mkdir bin-signed
+          New-Item -ItemType Directory -Force bin-signed
           Compress-Archive -Path bin/* -DestinationPath bin-signed/pengu-v${{ env.APP_VERSION }}-portable.zip -Force
           & "$env:ProgramFiles (x86)\Inno Setup 6\iscc.exe" /O"bin" /F"pengu-v${{ env.APP_VERSION }}-setup" scripts\setup.iss
 
-      - name: Upload installer output
-        if: ${{ inputs.release }}
+      - name: Upload installer for signing
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
         uses: actions/upload-artifact@v4
-        id: artifact-upload-installer-step
+        id: installer-artifact
         with:
           name: ${{ env.ARTIFACT_NAME }}-installer
           path: bin/pengu-*-setup.exe
 
       - name: Sign the installer
-        if: ${{ inputs.release }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: PenguLoader
-          signing-policy-slug: ${{ inputs.release && 'release' || 'test' }}-signing
+          signing-policy-slug: release-signing
           artifact-configuration-slug: zipped-installer
-          github-artifact-id: "${{ steps.artifact-upload-installer-step.outputs.artifact-id }}"
+          github-artifact-id: ${{ steps.installer-artifact.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: bin-signed
 
-      - name: Delete unwanted artifacts
-        if: ${{ inputs.release }}
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: "*"
-
-      - name: Upload signed output
-        if: ${{ inputs.release }}
+      - name: Upload signed release
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_NAME }}
+          name: ${{ env.ARTIFACT_NAME }}-signed
           path: bin-signed/
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Prepare environment variables
+        run: |
+          echo "COMMIT_HASH=$(git rev-parse --short=8 HEAD)" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(node -p \"require('./plugins/package.json').version\")" >> "$GITHUB_ENV"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install:
+            - recursive: true
+
+      - name: Build preload plugins
+        working-directory: plugins
+        run: pnpm build
+
+      - name: Build macOS core
+        run: |
+          make release
+          echo "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}" > bin/version
+
+      - name: Upload macOS core
+        uses: actions/upload-artifact@v4
+        with:
+          name: pengu-v${{ env.APP_VERSION }}-${{ env.COMMIT_HASH }}-macos-core
+          path: |
+            bin/core.dylib
+            bin/insert_dylib
+            bin/version
