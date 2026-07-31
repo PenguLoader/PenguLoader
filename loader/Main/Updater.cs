@@ -277,11 +277,18 @@ namespace PenguLoader.Main
                 Commit = "abcdef12",
                 Channel = "stable"
             };
+            var dev = new BuildInfo
+            {
+                Version = new Version(1, 3, 0),
+                Commit = "12345678",
+                Channel = "dev"
+            };
 
             return ParseVersion("v1.2.3-dev.42") == new Version(1, 2, 3)
                 && !ShouldUpdate(stable, new Version(1, 2, 3), "abcdef1234567890", "stable")
                 && ShouldUpdate(stable, new Version(1, 2, 3), "1234567890abcdef", "stable")
-                && ShouldUpdate(stable, new Version(1, 1, 0), "1234567890abcdef", "dev");
+                && ShouldUpdate(stable, new Version(1, 1, 0), "1234567890abcdef", "dev")
+                && ShouldUpdate(dev, new Version(1, 2, 3), "release/v1.2.3", "stable");
         }
 
         static async Task<string> DownloadString(string url)
