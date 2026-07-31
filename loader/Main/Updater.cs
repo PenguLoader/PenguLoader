@@ -22,6 +22,7 @@ namespace PenguLoader.Main
         const string USER_AGENT = "PenguLoader-Updater/1.0";
 
         static bool _checking;
+        internal static string BuildChannel => ReadBuildInfo().Channel;
 
         class Update
         {
@@ -167,7 +168,9 @@ namespace PenguLoader.Main
                 if (channel == "dev")
                 {
                     var releases = serializer.Deserialize<GitHubRelease[]>(await DownloadString(ReleasesApiUrl));
-                    release = releases.FirstOrDefault(item => item.prerelease && !item.draft);
+                    release = releases.FirstOrDefault(item => item.prerelease && !item.draft
+                        && item.assets != null
+                        && item.assets.Any(candidate => candidate.name.EndsWith("-dev-windows.zip", StringComparison.OrdinalIgnoreCase)));
                 }
                 else
                 {
@@ -228,6 +231,11 @@ namespace PenguLoader.Main
             if (File.Exists(path))
                 value = File.ReadAllText(path).Trim();
 
+            return ParseBuildInfo(value);
+        }
+
+        static BuildInfo ParseBuildInfo(string value)
+        {
             var parts = value.Split('+');
             Version version;
 
@@ -277,14 +285,13 @@ namespace PenguLoader.Main
                 Commit = "abcdef12",
                 Channel = "stable"
             };
-            var dev = new BuildInfo
-            {
-                Version = new Version(1, 3, 0),
-                Commit = "12345678",
-                Channel = "dev"
-            };
+            var dev = ParseBuildInfo("1.3.0+12345678+dev");
 
             return ParseVersion("v1.2.3-dev.42") == new Version(1, 2, 3)
+                && dev.Version == new Version(1, 3, 0)
+                && dev.Channel == "dev"
+                && Config.ResolveUpdateChannel("", dev.Channel) == "dev"
+                && Config.ResolveUpdateChannel("stable", dev.Channel) == "stable"
                 && !ShouldUpdate(stable, new Version(1, 2, 3), "abcdef1234567890", "stable")
                 && ShouldUpdate(stable, new Version(1, 2, 3), "1234567890abcdef", "stable")
                 && ShouldUpdate(stable, new Version(1, 1, 0), "1234567890abcdef", "dev")

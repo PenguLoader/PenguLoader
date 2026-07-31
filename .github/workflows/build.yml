@@ -120,6 +120,7 @@ jobs:
           artifact-configuration-slug: zipped-app
           github-artifact-id: ${{ steps.windows-artifact.outputs.artifact-id }}
           wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
           output-artifact-directory: bin
 
       - name: Make stable installer and portable archive
@@ -150,6 +151,7 @@ jobs:
           artifact-configuration-slug: zipped-installer
           github-artifact-id: ${{ steps.installer-artifact.outputs.artifact-id }}
           wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
           output-artifact-directory: bin-signed
 
       - name: Upload stable release files

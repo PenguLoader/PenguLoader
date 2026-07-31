@@ -88,12 +88,16 @@ namespace PenguLoader.Main
 
         public static string UpdateChannel
         {
-            get => string.Equals(Get("UpdateChannel"), "dev", StringComparison.OrdinalIgnoreCase)
-                ? "dev"
-                : "stable";
+            get => ResolveUpdateChannel(Get("UpdateChannel"), Updater.BuildChannel);
             set => Set("UpdateChannel", string.Equals(value, "dev", StringComparison.OrdinalIgnoreCase)
                 ? "dev"
                 : "stable");
+        }
+
+        internal static string ResolveUpdateChannel(string configured, string buildChannel)
+        {
+            var channel = string.IsNullOrEmpty(configured) ? buildChannel : configured;
+            return string.Equals(channel, "dev", StringComparison.OrdinalIgnoreCase) ? "dev" : "stable";
         }
 
         static string GetPath(string subpath)
