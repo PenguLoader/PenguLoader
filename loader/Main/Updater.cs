@@ -1,11 +1,13 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 using System.Windows;
 using Ookii.Dialogs.Wpf;
 
@@ -13,17 +15,42 @@ namespace PenguLoader.Main
 {
     static class Updater
     {
-        static string ApiUrl => $"https://api.github.com/repos/{Program.GithubRepo}/releases/latest";
-        static string DownloadUrl => $"https://github.com/{Program.GithubRepo}/releases/latest";
+        static string StableApiUrl => $"https://api.github.com/repos/{Program.GithubRepo}/releases/latest";
+        static string ReleasesApiUrl => $"https://api.github.com/repos/{Program.GithubRepo}/releases?per_page=20";
+        static string ReleasesUrl => $"https://github.com/{Program.GithubRepo}/releases";
 
-        const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" +
-            " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36";
+        const string USER_AGENT = "PenguLoader-Updater/1.0";
+
+        static bool _checking;
 
         class Update
         {
             public string Version;
-            public string Changes;
             public string DownloadUrl;
+            public string ReleaseUrl;
+        }
+
+        class BuildInfo
+        {
+            public Version Version;
+            public string Commit;
+            public string Channel;
+        }
+
+        public class GitHubAsset
+        {
+            public string name { get; set; }
+            public string browser_download_url { get; set; }
+        }
+
+        public class GitHubRelease
+        {
+            public string tag_name { get; set; }
+            public string target_commitish { get; set; }
+            public string html_url { get; set; }
+            public bool draft { get; set; }
+            public bool prerelease { get; set; }
+            public GitHubAsset[] assets { get; set; }
         }
 
         static Updater()
@@ -33,8 +60,25 @@ namespace PenguLoader.Main
 
         public static async void CheckUpdate()
         {
+            if (_checking)
+                return;
+
+            _checking = true;
+            try
+            {
+                await CheckUpdateCore();
+            }
+            finally
+            {
+                _checking = false;
+            }
+        }
+
+        static async Task CheckUpdateCore()
+        {
             var update = await FetchUpdate();
-            if (update == null) return;
+            if (update == null)
+                return;
 
             var dialog = new ProgressDialog()
             {
@@ -104,7 +148,7 @@ namespace PenguLoader.Main
                     "Failed to download update. Please try downloading the update on GitHub releases page.",
                     Program.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
 
-                Utils.OpenLink(DownloadUrl);
+                Utils.OpenLink(update.ReleaseUrl ?? ReleasesUrl);
             }
             finally
             {
@@ -116,40 +160,48 @@ namespace PenguLoader.Main
         {
             try
             {
-                var json = await DownloadString(ApiUrl);
-                var match = new Regex("\"tag_name\":\\s+\"(.*)\"").Match(json);
+                var channel = Config.UpdateChannel;
+                var serializer = new JavaScriptSerializer();
+                GitHubRelease release;
 
-                if (match.Success && match.Groups.Count > 1)
+                if (channel == "dev")
                 {
-                    var vtag = match.Groups[1].Value.ToLower();
-                    if (vtag.StartsWith("v"))
-                        vtag = vtag.Substring(1);
-
-                    var remote = new Version(vtag);
-                    var local = new Version(Program.VERSION);
-
-                    if (remote.CompareTo(local) > 0)
-                    {
-                        string changes = "";
-                        match = new Regex("\"body\":\\s+\"(.*)\"").Match(json);
-                        if (match.Success && match.Groups.Count > 1)
-                            changes = Regex.Unescape(match.Groups[1].Value);
-
-                        string downloadUrl = "";
-                        match = new Regex("\"browser_download_url\":\\s+\"(.*(\\d+\\.?)(?:-stable)?\\.zip)\"").Match(json);
-                        if (match.Success && match.Groups.Count > 1)
-                            downloadUrl = Regex.Unescape(match.Groups[1].Value);
-
-                        return new Update
-                        {
-                            Version = vtag,
-                            Changes = changes,
-                            DownloadUrl = downloadUrl
-                        };
-                    }
+                    var releases = serializer.Deserialize<GitHubRelease[]>(await DownloadString(ReleasesApiUrl));
+                    release = releases.FirstOrDefault(item => item.prerelease && !item.draft);
+                }
+                else
+                {
+                    release = serializer.Deserialize<GitHubRelease>(await DownloadString(StableApiUrl));
                 }
 
-                return null;
+                if (release == null || release.assets == null)
+                    return null;
+
+                var remoteVersion = ParseVersion(release.tag_name);
+                var local = ReadBuildInfo();
+                if (!ShouldUpdate(local, remoteVersion, release.target_commitish, channel))
+                    return null;
+
+                var suffix = "-" + channel + "-windows.zip";
+                var asset = release.assets.FirstOrDefault(item =>
+                    item.name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+
+                if (asset == null)
+                {
+                    asset = release.assets.FirstOrDefault(item =>
+                        item.name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+                        && item.name.IndexOf("macos", StringComparison.OrdinalIgnoreCase) < 0);
+                }
+
+                if (asset == null)
+                    throw new InvalidOperationException("The selected release has no Windows ZIP asset.");
+
+                return new Update
+                {
+                    Version = remoteVersion + " (" + (channel == "dev" ? "Dev" : "Stable") + ")",
+                    DownloadUrl = asset.browser_download_url,
+                    ReleaseUrl = release.html_url
+                };
             }
             catch (Exception ex)
             {
@@ -160,15 +212,89 @@ namespace PenguLoader.Main
             }
         }
 
+        static Version ParseVersion(string tag)
+        {
+            var match = Regex.Match(tag ?? "", @"\d+(?:\.\d+){1,3}");
+            Version version;
+            return match.Success && Version.TryParse(match.Value, out version)
+                ? version
+                : new Version(0, 0);
+        }
+
+        static BuildInfo ReadBuildInfo()
+        {
+            var value = Program.VERSION;
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "version");
+            if (File.Exists(path))
+                value = File.ReadAllText(path).Trim();
+
+            var parts = value.Split('+');
+            Version version;
+
+            return new BuildInfo
+            {
+                Version = Version.TryParse(parts[0], out version) ? version : new Version(0, 0),
+                Commit = parts.Length > 1 ? parts[1] : "",
+                Channel = parts.Length > 2 && parts[2] == "dev" ? "dev" : "stable"
+            };
+        }
+
+        static bool ShouldUpdate(BuildInfo local, Version remoteVersion, string remoteCommit, string channel)
+        {
+            if (local.Channel != channel)
+                return true;
+
+            if (IsCommit(remoteCommit))
+            {
+                if (SameCommit(local.Commit, remoteCommit))
+                    return false;
+
+                return remoteVersion.CompareTo(local.Version) >= 0;
+            }
+
+            return remoteVersion.CompareTo(local.Version) > 0;
+        }
+
+        static bool IsCommit(string value)
+        {
+            return Regex.IsMatch(value ?? "", "^[0-9a-fA-F]{7,40}$");
+        }
+
+        static bool SameCommit(string left, string right)
+        {
+            if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right))
+                return false;
+
+            return left.StartsWith(right, StringComparison.OrdinalIgnoreCase)
+                || right.StartsWith(left, StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool SelfTest()
+        {
+            var stable = new BuildInfo
+            {
+                Version = new Version(1, 2, 3),
+                Commit = "abcdef12",
+                Channel = "stable"
+            };
+
+            return ParseVersion("v1.2.3-dev.42") == new Version(1, 2, 3)
+                && !ShouldUpdate(stable, new Version(1, 2, 3), "abcdef1234567890", "stable")
+                && ShouldUpdate(stable, new Version(1, 2, 3), "1234567890abcdef", "stable")
+                && ShouldUpdate(stable, new Version(1, 1, 0), "1234567890abcdef", "dev");
+        }
+
         static async Task<string> DownloadString(string url)
         {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            var request = (HttpWebRequest)WebRequest.Create(url);
             request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             request.UserAgent = USER_AGENT;
+            request.Accept = "application/vnd.github+json";
+            request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
 
-            using (HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync())
-            using (Stream stream = response.GetResponseStream())
-            using (StreamReader reader = new StreamReader(stream))
+            using (var response = (HttpWebResponse)await request.GetResponseAsync())
+            using (var stream = response.GetResponseStream())
+            using (var reader = new StreamReader(stream))
             {
                 return await reader.ReadToEndAsync();
             }
@@ -176,7 +302,7 @@ namespace PenguLoader.Main
 
         static async Task DownloadFile(string url, string path, Action<long, long, int> onProgress)
         {
-            using (WebClient client = new WebClient())
+            using (var client = new WebClient())
             {
                 client.Headers.Add("User-Agent", USER_AGENT);
                 client.DownloadProgressChanged += (s, e) =>

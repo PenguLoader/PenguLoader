@@ -16,6 +16,23 @@ namespace PenguLoader.Views
 
         Window Owner => Window.GetWindow(this);
 
+        public string[] UpdateChannels { get; } = { "Stable (main)", "Development (dev)" };
+
+        public string UpdateChannel
+        {
+            get => Config.UpdateChannel == "dev" ? UpdateChannels[1] : UpdateChannels[0];
+            set
+            {
+                var channel = value == UpdateChannels[1] ? "dev" : "stable";
+                if (channel == Config.UpdateChannel)
+                    return;
+
+                Config.UpdateChannel = channel;
+                TriggerPropertyChanged(nameof(UpdateChannel));
+                Updater.CheckUpdate();
+            }
+        }
+
         public bool OptimizeClient
         {
             get => Config.OptimizeClient;

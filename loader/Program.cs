@@ -27,6 +27,9 @@ namespace PenguLoader
                 return 0;
             }
 
+            if (arg == "--self-test-updater")
+                return Updater.SelfTest() ? 0 : 1;
+
             using (var mutex = new Mutex(true, "989d2110-46da-4c8d-84c1-c4a42e43c424", out var createdNew))
             {
                 if (arg != null)

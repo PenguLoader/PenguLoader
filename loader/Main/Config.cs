@@ -86,6 +86,16 @@ namespace PenguLoader.Main
             set => SetBool("SuperLowSpecMode", value);
         }
 
+        public static string UpdateChannel
+        {
+            get => string.Equals(Get("UpdateChannel"), "dev", StringComparison.OrdinalIgnoreCase)
+                ? "dev"
+                : "stable";
+            set => Set("UpdateChannel", string.Equals(value, "dev", StringComparison.OrdinalIgnoreCase)
+                ? "dev"
+                : "stable");
+        }
+
         static string GetPath(string subpath)
         {
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, subpath);
