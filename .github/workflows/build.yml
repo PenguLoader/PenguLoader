@@ -255,6 +255,9 @@ jobs:
             channel_flags=(--latest)
           else
             previous=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq 'map(select(.draft == false and .prerelease == true))[0].tag_name // empty')
+            if [ -z "$previous" ]; then
+              previous=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
+            fi
             title="Pengu Loader v${version} Development"
             channel_flags=(--prerelease --latest=false)
           fi
