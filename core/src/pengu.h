@@ -1,5 +1,4 @@
-#ifndef _PENGU_H_
-#define _PENGU_H_
+#pragma once
 #include "platform.h"
 
 #include <stdint.h>
@@ -527,5 +526,3 @@ namespace dylib
     ///
     void *find_memory(const void *rladdr, const char *pattern);
 }
-
-#endif

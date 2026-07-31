@@ -1,58 +1,45 @@
 on:
-  push:
-    branches:
-      - main
-      - dev
-      - release/*
   workflow_dispatch:
+    inputs:
+      release:
+        description: Build for release
+        type: boolean
+        default: false
+      release-signing:
+        description: Use release code signing
+        type: boolean
+        default: false
 
 jobs:
   build:
-    name: build-${{ matrix.platform }}
-    runs-on: ${{ matrix.os }}
-
-    defaults:
-      run:
-        shell: ${{ matrix.shell }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: windows
-            os: windows-2022
-            shell: bash
-            tauri_args: ""
-          - platform: macos
-            os: macos-latest
-            shell: sh
-            tauri_args: --target universal-apple-darwin
-
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
+          fetch-depth: 0
           submodules: true
 
-      - name: Prepare environment variables
+      - name: Prepare envars
         run: |
-          echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
-          echo "APP_VERSION=`node -p "require('./loader/package.json').version"`" >> $GITHUB_ENV
+          $commit_hash = "${{ github.sha }}".SubString(0, 8)
+          $app_version = (Select-String -Path "loader\Program.cs" -Pattern 'VERSION = "(.+)"' -AllMatches).Matches.Groups[1].Value
+          echo "COMMIT_HASH=$commit_hash" >> $env:GITHUB_ENV
+          echo "APP_VERSION=$app_version" >> $env:GITHUB_ENV
+          echo "ARTIFACT_NAME=pengu-v$app_version-$commit_hash" >> $env:GITHUB_ENV
 
       - name: Setup MSBuild
-        if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v2
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          msbuild-architecture: x64
 
-      - name: Setup Rust build cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "loader/src-tauri -> target"
+      - name: Install .NET 472 SDK
+        shell: cmd
+        run: |
+          mkdir downloads && cd downloads
+          curl -LJO https://download.microsoft.com/download/7/1/7/71795fde-1cca-41b0-b495-00b1ab656994/NDP472-DevPack-ENU.exe
+          start /wait "" "NDP472-DevPack-ENU.exe" /q
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -69,37 +56,80 @@ jobs:
       - name: Build preload plugins
         run: |
           cd plugins
+          pnpm install
           pnpm build
 
-      - name: Build core (windows)
-        if: runner.os == 'Windows'
-        run: msbuild.exe pengu.sln -t:build -p:Configuration=Release -p:Platform=x64
-
-      - name: Build core (macos)
-        if: runner.os == 'macOS'
-        run: make release
-
-      - name: Build loader
-        uses: tauri-apps/tauri-action@v0
-        with:
-          projectPath: "loader"
-          args: ${{ matrix.tauri_args }}
-
-      - name: Move loader output (windows)
-        if: runner.os == 'Windows'
+      - name: Build solution
         run: |
-          cp "loader/src-tauri/target/release/Pengu Loader.exe" bin/
-
-      - name: Move loader output (macos)
-        if: runner.os == 'macOS'
-        run: |
-          cp -r "loader/src-tauri/target/universal-apple-darwin/release/bundle/macos/Pengu Loader.app" bin/
-          cp "loader/src-tauri/target/universal-apple-darwin/release/bundle/dmg/"*.dmg bin/
+          mkdir bin
+          echo "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}" >> bin/version
+          msbuild pengu.sln /t:Restore,Build /m /p:Configuration=Release /p:Platform=x64
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
+        id: artifact-upload-step
         with:
-          name: pengu-v${{ env.APP_VERSION }}-dev-${{ env.SHORT_SHA }}-${{ matrix.platform }}
+          name: ${{ env.ARTIFACT_NAME }}
           path: |
-            bin/
-            !bin/obj/
+            bin/*.exe
+            bin/*.dll
+            bin/version
+
+      - name: Delete build output
+        if: ${{ inputs.release }}
+        run: |
+          Remove-Item bin/* -Recurse -Force
+
+      - name: Sign the build
+        if: ${{ inputs.release }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: PenguLoader
+          signing-policy-slug: ${{ inputs.release && 'release' || 'test' }}-signing
+          artifact-configuration-slug: zipped-app
+          github-artifact-id: "${{ steps.artifact-upload-step.outputs.artifact-id }}"
+          wait-for-completion: true
+          output-artifact-directory: bin
+
+      - name: Make installer & zip app
+        if: ${{ inputs.release }}
+        run: |
+          mkdir bin-signed
+          Compress-Archive -Path bin/* -DestinationPath bin-signed/pengu-v${{ env.APP_VERSION }}-portable.zip -Force
+          & "$env:ProgramFiles (x86)\Inno Setup 6\iscc.exe" /O"bin" /F"pengu-v${{ env.APP_VERSION }}-setup" scripts\setup.iss
+
+      - name: Upload installer output
+        if: ${{ inputs.release }}
+        uses: actions/upload-artifact@v4
+        id: artifact-upload-installer-step
+        with:
+          name: ${{ env.ARTIFACT_NAME }}-installer
+          path: bin/pengu-*-setup.exe
+
+      - name: Sign the installer
+        if: ${{ inputs.release }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: PenguLoader
+          signing-policy-slug: ${{ inputs.release && 'release' || 'test' }}-signing
+          artifact-configuration-slug: zipped-installer
+          github-artifact-id: "${{ steps.artifact-upload-installer-step.outputs.artifact-id }}"
+          wait-for-completion: true
+          output-artifact-directory: bin-signed
+
+      - name: Delete unwanted artifacts
+        if: ${{ inputs.release }}
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: "*"
+
+      - name: Upload signed output
+        if: ${{ inputs.release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: bin-signed/
