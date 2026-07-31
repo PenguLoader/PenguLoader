@@ -6,6 +6,9 @@ on:
       - release/*
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: build-${{ matrix.platform }}
@@ -90,6 +93,24 @@ jobs:
         run: |
           cp "loader/src-tauri/target/release/Pengu Loader.exe" bin/
 
+      - name: Test channel switch target (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $test = Start-Process ".\bin\Pengu Loader.exe" -ArgumentList "--self-test-update-channel" -Wait -PassThru
+          if ($test.ExitCode -ne 0) {
+            Get-Content "$env:TEMP\PenguLoader-channel-self-test.log" -ErrorAction SilentlyContinue
+            exit $test.ExitCode
+          }
+
+      - name: Package Windows dev release
+        if: runner.os == 'Windows' && github.event_name == 'push' && github.ref_name == 'dev'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist
+          Set-Content bin/version "${{ env.APP_VERSION }}+${{ env.SHORT_SHA }}+dev" -NoNewline
+          Compress-Archive -Path "bin/Pengu Loader.exe",bin/core.dll,bin/version -DestinationPath "dist/pengu-v${{ env.APP_VERSION }}-dev-windows.zip" -Force
+
       - name: Create DMG distro (macos)
         if: runner.os == 'macOS'
         run: |
@@ -104,6 +125,19 @@ jobs:
             "bin/pengu-v${{ env.APP_VERSION }}-universal.dmg" \
             "loader/src-tauri/target/universal-apple-darwin/release/bundle/macos/Pengu Loader.app"
 
+      - name: Package macOS dev release
+        if: runner.os == 'macOS' && github.event_name == 'push' && github.ref_name == 'dev'
+        run: |
+          mkdir -p dist
+          cp "bin/pengu-v${{ env.APP_VERSION }}-universal.dmg" "dist/pengu-v${{ env.APP_VERSION }}-dev-macos.dmg"
+
+      - name: Upload release files
+        if: github.event_name == 'push' && github.ref_name == 'dev'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: dist/*
+
       - name: Upload build output
         uses: actions/upload-artifact@v4
         with:
@@ -111,3 +145,40 @@ jobs:
           path: |
             bin/
             !bin/obj/
+
+  release:
+    if: github.event_name == 'push' && github.ref_name == 'dev'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download release files
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish Dev release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./loader/package.json').version")
+          tag="v${version}-dev.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          previous=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq 'map(select(.draft == false and .prerelease == true and (.tag_name | contains("-dev."))))[0].tag_name // empty')
+          notes_flags=(--generate-notes)
+          if [ -n "$previous" ]; then
+            notes_flags+=(--notes-start-tag "$previous")
+          fi
+
+          gh release create "$tag" dist/* \
+            --target "$GITHUB_SHA" \
+            --title "Pengu Loader v${version} Tauri Dev" \
+            --prerelease \
+            --latest=false \
+            "${notes_flags[@]}"

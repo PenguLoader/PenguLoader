@@ -1,5 +1,5 @@
 import { Component, createSignal, onMount, Show } from 'solid-js'
-import { dialog } from '@tauri-apps/api'
+import { dialog, invoke } from '@tauri-apps/api'
 import { Config, useConfig } from '~/lib/config'
 import { LeagueClient } from '~/lib/league-client'
 import { CheckOption, OptionSet, RadioOption } from './templates'
@@ -34,6 +34,25 @@ const LaunchSettings: Component = () => {
 export const TabPengu: Component = () => {
 
   const { app } = useConfig()
+  const [switchingChannel, setSwitchingChannel] = createSignal(false)
+
+  const switchToMain = async () => {
+    if (switchingChannel()) return
+
+    const confirmed = await dialog.ask(
+      'Switch to the temporary Main-ready WPF build? Close League and Riot Client before continuing.',
+      { title: 'Switch release channel', type: 'info' }
+    )
+    if (!confirmed) return
+
+    setSwitchingChannel(true)
+    try {
+      await invoke('plugin:update_channel|switch_to_main')
+    } catch (error) {
+      setSwitchingChannel(false)
+      await dialog.message(`Failed to switch release channel.\n${error}`, { type: 'error' })
+    }
+  }
 
   const changePluginsDir = async () => {
     const dir = await dialog.open({
@@ -70,6 +89,22 @@ export const TabPengu: Component = () => {
 
   return (
     <div class="space-y-4">
+
+      <Show when={!window.isMac}>
+        <OptionSet name="Release Channel" disabled={switchingChannel()}>
+          <RadioOption
+            caption="Main"
+            message="Temporary WPF Main-ready build."
+            checked={false}
+            onClick={switchToMain}
+          />
+          <RadioOption
+            caption="Dev"
+            message="Tauri development build."
+            checked
+          />
+        </OptionSet>
+      </Show>
 
       <OptionSet name="Plugins Folder">
         <span

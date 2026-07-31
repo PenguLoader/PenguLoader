@@ -6,6 +6,7 @@ use std::env;
 
 mod config;
 mod shell;
+mod update_channel;
 
 #[cfg(windows)]
 mod windows;
@@ -48,6 +49,19 @@ pub fn build_window<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Window<R> 
 }
 
 fn main() -> Result<(), Error> {
+    if env::args().any(|arg| arg == "--self-test-update-channel") {
+        match update_channel::self_test() {
+            Ok(()) => std::process::exit(0),
+            Err(error) => {
+                let _ = std::fs::write(
+                    std::env::temp_dir().join("PenguLoader-channel-self-test.log"),
+                    error,
+                );
+                std::process::exit(1)
+            }
+        }
+    }
+
     #[cfg(windows)]
     windows::do_entry();
 
@@ -58,6 +72,7 @@ fn main() -> Result<(), Error> {
         .setup_platform()
         .plugin(config::init())
         .plugin(shell::init())
+        .plugin(update_channel::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 
