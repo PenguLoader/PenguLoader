@@ -1,4 +1,4 @@
-name: Build
+name: Build and release
 
 on:
   push:
@@ -11,11 +11,9 @@ on:
       - main
       - dev
   workflow_dispatch:
-    inputs:
-      release:
-        description: Build and sign a Windows release
-        type: boolean
-        default: false
+
+permissions:
+  contents: read
 
 jobs:
   windows:
@@ -32,9 +30,14 @@ jobs:
         run: |
           $commitHash = "${{ github.sha }}".Substring(0, 8)
           $appVersion = (Select-String -Path "loader\Program.cs" -Pattern 'VERSION = "(.+)"' -AllMatches).Matches.Groups[1].Value
+          $channel = switch ("${{ github.ref_name }}") {
+            "main" { "stable" }
+            "dev" { "dev" }
+            default { "ci" }
+          }
           "COMMIT_HASH=$commitHash" >> $env:GITHUB_ENV
           "APP_VERSION=$appVersion" >> $env:GITHUB_ENV
-          "ARTIFACT_NAME=pengu-v$appVersion-$commitHash-windows" >> $env:GITHUB_ENV
+          "BUILD_CHANNEL=$channel" >> $env:GITHUB_ENV
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -68,26 +71,46 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force bin
-          "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}" >> bin/version
+          Set-Content bin/version "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}+${{ env.BUILD_CHANNEL }}" -NoNewline
           msbuild pengu.sln /t:Restore,Build /m /p:Configuration=Release /p:Platform=x64
+
+      - name: Test update-channel logic
+        shell: pwsh
+        run: |
+          & ".\bin\Pengu Loader.exe" --self-test-updater
+          if ($LASTEXITCODE -ne 0) { throw "Updater self-test failed." }
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         id: windows-artifact
         with:
-          name: ${{ env.ARTIFACT_NAME }}
+          name: pengu-v${{ env.APP_VERSION }}-${{ env.COMMIT_HASH }}-${{ env.BUILD_CHANNEL }}-windows
           path: |
             bin/*.exe
             bin/*.dll
             bin/version
 
+      - name: Package dev release
+        if: ${{ github.event_name == 'push' && github.ref_name == 'dev' }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist
+          Compress-Archive -Path bin/*.exe,bin/*.dll,bin/version -DestinationPath dist/pengu-v${{ env.APP_VERSION }}-dev-windows.zip -Force
+
+      - name: Upload dev release files
+        if: ${{ github.event_name == 'push' && github.ref_name == 'dev' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/*
+
       - name: Remove unsigned output
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         shell: pwsh
         run: Remove-Item bin/* -Recurse -Force
 
-      - name: Sign the build
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+      - name: Sign stable build
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -99,24 +122,25 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: bin
 
-      - name: Make installer and portable archive
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+      - name: Make stable installer and portable archive
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force bin-signed
-          Compress-Archive -Path bin/* -DestinationPath bin-signed/pengu-v${{ env.APP_VERSION }}-portable.zip -Force
-          & "$env:ProgramFiles (x86)\Inno Setup 6\iscc.exe" /O"bin" /F"pengu-v${{ env.APP_VERSION }}-setup" scripts\setup.iss
+          Set-Content bin/version "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}+stable" -NoNewline
+          Compress-Archive -Path bin/* -DestinationPath bin-signed/pengu-v${{ env.APP_VERSION }}-stable-windows.zip -Force
+          & "$env:ProgramFiles (x86)\Inno Setup 6\iscc.exe" /O"bin" /F"pengu-v${{ env.APP_VERSION }}-stable-setup" scripts\setup.iss
 
-      - name: Upload installer for signing
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+      - name: Upload stable installer for signing
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         uses: actions/upload-artifact@v4
         id: installer-artifact
         with:
-          name: ${{ env.ARTIFACT_NAME }}-installer
+          name: stable-installer
           path: bin/pengu-*-setup.exe
 
-      - name: Sign the installer
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+      - name: Sign stable installer
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -128,12 +152,12 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: bin-signed
 
-      - name: Upload signed release
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+      - name: Upload stable release files
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_NAME }}-signed
-          path: bin-signed/
+          name: release-windows
+          path: bin-signed/*
 
   macos:
     runs-on: macos-latest
@@ -150,8 +174,14 @@ jobs:
 
       - name: Prepare environment variables
         run: |
+          case "$GITHUB_REF_NAME" in
+            main) channel=stable ;;
+            dev) channel=dev ;;
+            *) channel=ci ;;
+          esac
           echo "COMMIT_HASH=$(git rev-parse --short=8 HEAD)" >> "$GITHUB_ENV"
-          echo "APP_VERSION=$(node -p 'require("./plugins/package.json").version')" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(sed -n 's/.*VERSION = "\([^" ]*\)".*/\1/p' loader/Program.cs)" >> "$GITHUB_ENV"
+          echo "BUILD_CHANNEL=$channel" >> "$GITHUB_ENV"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -167,13 +197,75 @@ jobs:
       - name: Build macOS core
         run: |
           make release
-          echo "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}" > bin/version
+          echo "${{ env.APP_VERSION }}+${{ env.COMMIT_HASH }}+${{ env.BUILD_CHANNEL }}" > bin/version
 
       - name: Upload macOS core
         uses: actions/upload-artifact@v4
         with:
-          name: pengu-v${{ env.APP_VERSION }}-${{ env.COMMIT_HASH }}-macos-core
+          name: pengu-v${{ env.APP_VERSION }}-${{ env.COMMIT_HASH }}-${{ env.BUILD_CHANNEL }}-macos-core
           path: |
             bin/core.dylib
             bin/insert_dylib
             bin/version
+
+      - name: Package macOS release
+        if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
+        run: |
+          mkdir dist
+          zip -j "dist/pengu-v${{ env.APP_VERSION }}-${{ env.BUILD_CHANNEL }}-macos-core.zip" bin/core.dylib bin/insert_dylib bin/version
+
+      - name: Upload macOS release files
+        if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: dist/*
+
+  release:
+    if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
+    needs:
+      - windows
+      - macos
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download release files
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's/.*VERSION = "\([^" ]*\)".*/\1/p' loader/Program.cs)
+          channel=$([ "$GITHUB_REF_NAME" = main ] && echo stable || echo dev)
+          tag="v${version}-${channel}.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+
+          if [ "$channel" = stable ]; then
+            previous=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq 'map(select(.draft == false and .prerelease == false))[0].tag_name // empty')
+            title="Pengu Loader v${version} Stable"
+            channel_flags=(--latest)
+          else
+            previous=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq 'map(select(.draft == false and .prerelease == true))[0].tag_name // empty')
+            title="Pengu Loader v${version} Development"
+            channel_flags=(--prerelease --latest=false)
+          fi
+
+          notes_flags=(--generate-notes)
+          if [ -n "$previous" ]; then
+            notes_flags+=(--notes-start-tag "$previous")
+          fi
+
+          gh release create "$tag" dist/* \
+            --target "$GITHUB_SHA" \
+            --title "$title" \
+            "${notes_flags[@]}" \
+            "${channel_flags[@]}"
