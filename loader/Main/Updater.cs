@@ -15,8 +15,7 @@ namespace PenguLoader.Main
 {
     static class Updater
     {
-        static string StableApiUrl => $"https://api.github.com/repos/{Program.GithubRepo}/releases/latest";
-        static string ReleasesApiUrl => $"https://api.github.com/repos/{Program.GithubRepo}/releases?per_page=20";
+        static string ReleasesApiUrl => $"https://api.github.com/repos/{Program.GithubRepo}/releases?per_page=100";
         static string ReleasesUrl => $"https://github.com/{Program.GithubRepo}/releases";
 
         const string USER_AGENT = "PenguLoader-Updater/1.0";
@@ -163,19 +162,8 @@ namespace PenguLoader.Main
             {
                 var channel = Config.UpdateChannel;
                 var serializer = new JavaScriptSerializer();
-                GitHubRelease release;
-
-                if (channel == "dev")
-                {
-                    var releases = serializer.Deserialize<GitHubRelease[]>(await DownloadString(ReleasesApiUrl));
-                    release = releases.FirstOrDefault(item => item.prerelease && !item.draft
-                        && item.assets != null
-                        && item.assets.Any(candidate => candidate.name.EndsWith("-dev-windows.zip", StringComparison.OrdinalIgnoreCase)));
-                }
-                else
-                {
-                    release = serializer.Deserialize<GitHubRelease>(await DownloadString(StableApiUrl));
-                }
+                var releases = serializer.Deserialize<GitHubRelease[]>(await DownloadString(ReleasesApiUrl));
+                var release = FindRelease(releases, channel);
 
                 if (release == null || release.assets == null)
                     return null;
@@ -185,23 +173,16 @@ namespace PenguLoader.Main
                 if (!ShouldUpdate(local, remoteVersion, release.target_commitish, channel))
                     return null;
 
-                var suffix = "-" + channel + "-windows.zip";
+                var suffix = GetAssetSuffix(channel);
                 var asset = release.assets.FirstOrDefault(item =>
                     item.name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
-
-                if (asset == null)
-                {
-                    asset = release.assets.FirstOrDefault(item =>
-                        item.name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
-                        && item.name.IndexOf("macos", StringComparison.OrdinalIgnoreCase) < 0);
-                }
 
                 if (asset == null)
                     throw new InvalidOperationException("The selected release has no Windows ZIP asset.");
 
                 return new Update
                 {
-                    Version = remoteVersion + " (" + (channel == "dev" ? "Dev" : "Stable") + ")",
+                    Version = remoteVersion + " (" + (channel == "dev" ? "Dev" : "Main") + ")",
                     DownloadUrl = asset.browser_download_url,
                     ReleaseUrl = release.html_url
                 };
@@ -232,6 +213,19 @@ namespace PenguLoader.Main
                 value = File.ReadAllText(path).Trim();
 
             return ParseBuildInfo(value);
+        }
+
+        static string GetAssetSuffix(string channel)
+        {
+            return channel == "dev" ? "-dev-windows.zip" : "-main-ready-windows.zip";
+        }
+
+        static GitHubRelease FindRelease(GitHubRelease[] releases, string channel)
+        {
+            var suffix = GetAssetSuffix(channel);
+            return releases?.FirstOrDefault(item => item.prerelease && !item.draft
+                && item.assets != null
+                && item.assets.Any(asset => asset.name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)));
         }
 
         static BuildInfo ParseBuildInfo(string value)
@@ -286,12 +280,25 @@ namespace PenguLoader.Main
                 Channel = "stable"
             };
             var dev = ParseBuildInfo("1.3.0+12345678+dev");
+            var mainRelease = new GitHubRelease
+            {
+                prerelease = true,
+                assets = new[] { new GitHubAsset { name = "pengu-v1.2.3-main-ready-windows.zip" } }
+            };
+            var devRelease = new GitHubRelease
+            {
+                prerelease = true,
+                assets = new[] { new GitHubAsset { name = "pengu-v1.2.3-dev-windows.zip" } }
+            };
+            var releases = new[] { devRelease, mainRelease };
 
             return ParseVersion("v1.2.3-dev.42") == new Version(1, 2, 3)
                 && dev.Version == new Version(1, 3, 0)
                 && dev.Channel == "dev"
                 && Config.ResolveUpdateChannel("", dev.Channel) == "dev"
                 && Config.ResolveUpdateChannel("stable", dev.Channel) == "stable"
+                && FindRelease(releases, "stable") == mainRelease
+                && FindRelease(releases, "dev") == devRelease
                 && !ShouldUpdate(stable, new Version(1, 2, 3), "abcdef1234567890", "stable")
                 && ShouldUpdate(stable, new Version(1, 2, 3), "1234567890abcdef", "stable")
                 && ShouldUpdate(stable, new Version(1, 1, 0), "1234567890abcdef", "dev")

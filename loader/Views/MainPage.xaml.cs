@@ -16,7 +16,7 @@ namespace PenguLoader.Views
 
         Window Owner => Window.GetWindow(this);
 
-        public string[] UpdateChannels { get; } = { "Stable (main)", "Development (dev)" };
+        public string[] UpdateChannels { get; } = { "Main", "Dev" };
 
         public string UpdateChannel
         {

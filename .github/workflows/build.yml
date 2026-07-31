@@ -31,13 +31,21 @@ jobs:
           $commitHash = "${{ github.sha }}".Substring(0, 8)
           $appVersion = (Select-String -Path "loader\Program.cs" -Pattern 'VERSION = "(.+)"' -AllMatches).Matches.Groups[1].Value
           $channel = switch ("${{ github.ref_name }}") {
-            "main" { "stable" }
             "dev" { "dev" }
+            "main" { "stable" }
+            "release/post-pr-147-main-ready" { "stable" }
+            default { "ci" }
+          }
+          $releaseChannel = switch ("${{ github.ref_name }}") {
+            "dev" { "dev" }
+            "main" { "stable" }
+            "release/post-pr-147-main-ready" { "main-ready" }
             default { "ci" }
           }
           "COMMIT_HASH=$commitHash" >> $env:GITHUB_ENV
           "APP_VERSION=$appVersion" >> $env:GITHUB_ENV
           "BUILD_CHANNEL=$channel" >> $env:GITHUB_ENV
+          "RELEASE_CHANNEL=$releaseChannel" >> $env:GITHUB_ENV
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -90,15 +98,15 @@ jobs:
             bin/*.dll
             bin/version
 
-      - name: Package dev release
-        if: ${{ github.event_name == 'push' && github.ref_name == 'dev' }}
+      - name: Package unsigned channel release
+        if: ${{ github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'release/post-pr-147-main-ready') }}
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist
-          Compress-Archive -Path bin/*.exe,bin/*.dll,bin/version -DestinationPath dist/pengu-v${{ env.APP_VERSION }}-dev-windows.zip -Force
+          Compress-Archive -Path bin/*.exe,bin/*.dll,bin/version -DestinationPath dist/pengu-v${{ env.APP_VERSION }}-${{ env.RELEASE_CHANNEL }}-windows.zip -Force
 
-      - name: Upload dev release files
-        if: ${{ github.event_name == 'push' && github.ref_name == 'dev' }}
+      - name: Upload unsigned channel release files
+        if: ${{ github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'release/post-pr-147-main-ready') }}
         uses: actions/upload-artifact@v4
         with:
           name: release-windows
@@ -179,11 +187,19 @@ jobs:
           case "$GITHUB_REF_NAME" in
             main) channel=stable ;;
             dev) channel=dev ;;
+            release/post-pr-147-main-ready) channel=stable ;;
             *) channel=ci ;;
+          esac
+          case "$GITHUB_REF_NAME" in
+            main) release_channel=stable ;;
+            dev) release_channel=dev ;;
+            release/post-pr-147-main-ready) release_channel=main-ready ;;
+            *) release_channel=ci ;;
           esac
           echo "COMMIT_HASH=$(git rev-parse --short=8 HEAD)" >> "$GITHUB_ENV"
           echo "APP_VERSION=$(sed -n 's/.*VERSION = "\([^" ]*\)".*/\1/p' loader/Program.cs)" >> "$GITHUB_ENV"
           echo "BUILD_CHANNEL=$channel" >> "$GITHUB_ENV"
+          echo "RELEASE_CHANNEL=$release_channel" >> "$GITHUB_ENV"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -211,20 +227,20 @@ jobs:
             bin/version
 
       - name: Package macOS release
-        if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
+        if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev' || github.ref_name == 'release/post-pr-147-main-ready') }}
         run: |
           mkdir dist
-          zip -j "dist/pengu-v${{ env.APP_VERSION }}-${{ env.BUILD_CHANNEL }}-macos-core.zip" bin/core.dylib bin/insert_dylib bin/version
+          zip -j "dist/pengu-v${{ env.APP_VERSION }}-${{ env.RELEASE_CHANNEL }}-macos-core.zip" bin/core.dylib bin/insert_dylib bin/version
 
       - name: Upload macOS release files
-        if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
+        if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev' || github.ref_name == 'release/post-pr-147-main-ready') }}
         uses: actions/upload-artifact@v4
         with:
           name: release-macos
           path: dist/*
 
   release:
-    if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
+    if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev' || github.ref_name == 'release/post-pr-147-main-ready') }}
     needs:
       - windows
       - macos
@@ -248,7 +264,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version=$(sed -n 's/.*VERSION = "\([^" ]*\)".*/\1/p' loader/Program.cs)
-          channel=$([ "$GITHUB_REF_NAME" = main ] && echo stable || echo dev)
+          case "$GITHUB_REF_NAME" in
+            main) channel=stable ;;
+            dev) channel=dev ;;
+            release/post-pr-147-main-ready) channel=main-ready ;;
+            *) exit 1 ;;
+          esac
           tag="v${version}-${channel}.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
 
           if [ "$channel" = stable ]; then
@@ -256,11 +277,15 @@ jobs:
             title="Pengu Loader v${version} Stable"
             channel_flags=(--latest)
           else
-            previous=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq 'map(select(.draft == false and .prerelease == true))[0].tag_name // empty')
+            previous=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq "map(select(.draft == false and .prerelease == true and (.tag_name | contains(\"-${channel}.\"))))[0].tag_name // empty")
             if [ -z "$previous" ]; then
               previous=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
             fi
-            title="Pengu Loader v${version} Development"
+            if [ "$channel" = dev ]; then
+              title="Pengu Loader v${version} Development"
+            else
+              title="Pengu Loader v${version} Main-ready"
+            fi
             channel_flags=(--prerelease --latest=false)
           fi
 
