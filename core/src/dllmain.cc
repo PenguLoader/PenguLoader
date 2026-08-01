@@ -8,8 +8,46 @@ void HookRendererProcess();
 
 #if OS_WIN
 
+#include <tlhelp32.h>
+
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 void InjectThisDll(HANDLE hProcess);
+
+static DWORD GetParentProcessId(DWORD processId)
+{
+    DWORD parentId = 0;
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE)
+        return 0;
+
+    PROCESSENTRY32W entry{};
+    entry.dwSize = sizeof(entry);
+
+    if (Process32FirstW(snapshot, &entry))
+    {
+        do
+        {
+            if (entry.th32ProcessID == processId)
+            {
+                parentId = entry.th32ParentProcessID;
+                break;
+            }
+        }
+        while (Process32NextW(snapshot, &entry));
+    }
+
+    CloseHandle(snapshot);
+    return parentId;
+}
+
+static HANDLE OpenInheritedParentProcess()
+{
+    DWORD parentId = GetParentProcessId(GetCurrentProcessId());
+    if (parentId == 0)
+        return NULL;
+
+    return OpenProcess(PROCESS_CREATE_PROCESS, FALSE, parentId);
+}
 
 static bool wcsfindi(const wchar_t *str, const wchar_t *sub)
 {
@@ -123,19 +161,68 @@ int APIENTRY _BootstrapEntry(HWND, HINSTANCE, LPWSTR commandLine, int)
     LONG (NTAPI *NtRemoveProcessDebug)(HANDLE, HANDLE);
     LONG (NTAPI *NtClose)(HANDLE Handle);
 
-    STARTUPINFOW si;
+    STARTUPINFOEXW si;
     PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
+    si.StartupInfo.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    HANDLE parentProcess = OpenInheritedParentProcess();
+    SIZE_T attributeListSize = 0;
+    DWORD creationFlags = CREATE_SUSPENDED | DEBUG_ONLY_THIS_PROCESS;
+    bool attributeListInitialized = false;
+
+    if (parentProcess)
+    {
+        InitializeProcThreadAttributeList(NULL, 1, 0, &attributeListSize);
+        si.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(HeapAlloc(GetProcessHeap(), 0, attributeListSize));
+
+        if (si.lpAttributeList)
+            attributeListInitialized = InitializeProcThreadAttributeList(si.lpAttributeList, 1, 0, &attributeListSize);
+
+        if (attributeListInitialized
+            && UpdateProcThreadAttribute(si.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
+                &parentProcess, sizeof(parentProcess), NULL, NULL))
+        {
+            creationFlags |= EXTENDED_STARTUPINFO_PRESENT;
+        }
+        else
+        {
+            if (si.lpAttributeList)
+            {
+                if (attributeListInitialized)
+                    DeleteProcThreadAttributeList(si.lpAttributeList);
+                HeapFree(GetProcessHeap(), 0, si.lpAttributeList);
+                si.lpAttributeList = NULL;
+            }
+            CloseHandle(parentProcess);
+            parentProcess = NULL;
+        }
+    }
 
     if (!CreateProcessW(NULL, commandLine, NULL, NULL, FALSE,
-        CREATE_SUSPENDED | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &si, &pi))
+        creationFlags, NULL, NULL, &si.StartupInfo, &pi))
     {
         char msg[128];
         sprintf_s(msg, "Failed to create LeagueClientUx process, last error: 0x%08X.", GetLastError());
         MessageBoxA(NULL, msg, "Pengu Loader bootstrapper", MB_ICONWARNING | MB_OK | MB_TOPMOST);
+        if (si.lpAttributeList)
+        {
+            DeleteProcThreadAttributeList(si.lpAttributeList);
+            HeapFree(GetProcessHeap(), 0, si.lpAttributeList);
+        }
+        if (parentProcess)
+            CloseHandle(parentProcess);
         return 1;
     }
+
+    if (si.lpAttributeList)
+    {
+        DeleteProcThreadAttributeList(si.lpAttributeList);
+        HeapFree(GetProcessHeap(), 0, si.lpAttributeList);
+    }
+    if (parentProcess)
+        CloseHandle(parentProcess);
 
     HMODULE ntdll = GetModuleHandleA("ntdll");
     (LPVOID &)NtQueryInformationProcess = GetProcAddress(ntdll, "NtQueryInformationProcess");
