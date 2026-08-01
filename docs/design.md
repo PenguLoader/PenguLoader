@@ -101,14 +101,20 @@ HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\
         Debugger = rundll32 "C:\path\to\core.dll", #6000
 ```
 
-When Windows launches `LeagueClientUx.exe`, the IFEO `Debugger` value redirects through `rundll32`, which loads `core.dll` and calls its ordinal-6000 export. That export ([`_BootstrapEntry` in `dllmain.cc`](../core/src/dllmain.cc#L120-L159)):
+When Windows launches `LeagueClientUx.exe`, the IFEO `Debugger` value redirects through `rundll32`, which loads `core.dll` and calls its ordinal-6000 export. That export ([`_BootstrapEntry` in `dllmain.cc`](../core/src/dllmain.cc#L228-L309)):
 
-1. Re-launches the original `LeagueClientUx.exe` with `CREATE_SUSPENDED | DEBUG_ONLY_THIS_PROCESS`.
+1. Re-launches the original `LeagueClientUx.exe` with `CREATE_SUSPENDED | DEBUG_ONLY_THIS_PROCESS`, reparented onto `rundll32`'s own parent (see below).
 2. Strips the debugger flag via `NtRemoveProcessDebug` (so the process doesn't actually run under a debugger — `DEBUG_ONLY_THIS_PROCESS` is just used to prevent IFEO from re-firing).
 3. Injects `core.dll` into the new process via `CreateRemoteThread → LoadLibraryW`.
 4. Resumes the suspended thread.
 
 This is loosely the same idea as the original Mecha injector (per the v0.6.0 doc) but uses `rundll32` rather than Detours and immediately removes the debugger to avoid CEF performance penalties.
+
+**Process tree.** Left alone, this bootstrap yields `LeagueClient.exe → rundll32.exe → LeagueClientUx.exe`. Discord keys its "League Client → in-game" stream handoff off that ancestry and won't switch to the game window with `rundll32` in the middle ([#106](https://github.com/PenguLoader/PenguLoader/issues/106)). Step 1 therefore passes `PROC_THREAD_ATTRIBUTE_PARENT_PROCESS` naming the bootstrapper's own parent, so LCUX comes back out under `LeagueClient.exe` and `rundll32` becomes a sibling rather than an intermediate.
+
+`rundll32` still has to stay alive for the whole session — `LeagueClient.exe` waits on the process it created to know when the client exits, so the bootstrapper cannot just exit after resuming LCUX. Reparenting is the lever; exiting early is not.
+
+Reparenting is best-effort at every step: if the parent can't be opened for `PROCESS_CREATE_PROCESS`, if it looks like a recycled PID, or if `CreateProcessW` rejects the attribute (a parent inside a restrictive job object, for instance), the bootstrapper falls back to normal parenting and launches anyway. Losing the Discord handoff is acceptable; failing to start the client is not.
 
 Vanguard does **not** scan or block this path: LCUX and `LeagueClientUxRender.exe` are explicitly scope-excluded from Vanguard's anti-cheat boundary, and `core.dll` itself lives outside the LoL install directory.
 
