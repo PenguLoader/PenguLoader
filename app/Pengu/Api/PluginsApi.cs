@@ -131,9 +131,21 @@ public partial class PluginsApi
     {
         var snapshot = _config.Read();
         var pluginsDir = ResolvePluginsDir(snapshot.App.PluginsDir);
-        // path is canonical (forward-slashed, no leading separator); resolve
-        // against pluginsDir and let Shell.RevealFile handle path normalisation.
-        var full = System.IO.Path.Combine(pluginsDir, path.Replace('/', System.IO.Path.DirectorySeparatorChar));
+        // path is *expected* to be canonical (forward-slashed, no leading
+        // separator) but it arrives over the bridge, so it is not trusted:
+        // Path.Combine silently discards pluginsDir when handed an absolute
+        // path, and "../.." would walk out of it. Resolve, then confirm the
+        // result is still inside pluginsDir before revealing anything.
+        var root = System.IO.Path.GetFullPath(pluginsDir);
+        var full = System.IO.Path.GetFullPath(
+            System.IO.Path.Combine(root, path.Replace('/', System.IO.Path.DirectorySeparatorChar)));
+
+        if (!IsContainedIn(full, root))
+        {
+            Log.Warn("PluginsApi.RevealInFolder rejected out-of-tree path {0}", path);
+            return Task.CompletedTask;
+        }
+
         Shell.RevealFile(full);
         return Task.CompletedTask;
     }
@@ -159,6 +171,24 @@ public partial class PluginsApi
         var resp = await http.GetAsync(url).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// True when <paramref name="full"/> sits inside <paramref name="root"/>.
+    /// Both must already be absolute and normalised. The trailing-separator
+    /// append stops "…/plugins-evil" from matching the root "…/plugins".
+    /// </summary>
+    private static bool IsContainedIn(string full, string root)
+    {
+        var prefix = root.EndsWith(System.IO.Path.DirectorySeparatorChar)
+            ? root
+            : root + System.IO.Path.DirectorySeparatorChar;
+
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+        return full.StartsWith(prefix, comparison);
     }
 
     /// <summary>

@@ -65,8 +65,8 @@ public partial class HostApi
     [JsInvokable]
     public Task OpenExternal(string url)
     {
-        // URL hardening lives at the JS facade (Shell.openLink rejects
-        // non-https), but defend in depth.
+        // Scheme enforcement lives in Shell.OpenExternal — the hub's
+        // Shell.openLink check is a convenience, not a boundary.
         if (!string.IsNullOrEmpty(url))
             Shell.OpenExternal(url);
         return Task.CompletedTask;
