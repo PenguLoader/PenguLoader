@@ -86,6 +86,13 @@ namespace assets
     // preload (api/json.ts) before any plugin imports JSON — see the same
     // late-listener tradeoff documented for SCRIPT_IMPORT_CSS.
     //
+    // NOTE: `$write` deliberately passes NO path. The native side derives the
+    // target from the calling script's own URL via the V8 stack, so this shim
+    // can only ever rewrite the .json module it was served for. Passing a URL
+    // would make `window.__pwj` an ambient write-anywhere-in-plugins
+    // capability for every script in the renderer, remote ones included.
+    // See v8_json_write.cc.
+    //
     // Primitives (e.g. JSON `true`, `42`, `"hi"`) can't have properties, so
     // `$write` is only attached to object/array roots. Plugin authors who
     // want $write should ship `{...}` or `[...]` JSON, which is overwhelmingly
@@ -101,7 +108,7 @@ const data = JSON.parse(content);
 
 if (data !== null && typeof data === 'object') {
     Object.defineProperty(data, '$write', {
-        value: (space) => window.__pwj(url, JSON.stringify(data, null, space)),
+        value: (space) => window.__pwj(JSON.stringify(data, null, space)),
         writable: false,
         configurable: false,
         enumerable: false,

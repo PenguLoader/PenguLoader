@@ -7,11 +7,20 @@
 #include <string>
 
 // =============================================================================
-// `__pengu_write_json(url, content)` — back-end of the writable-JSON module's
-// `data.$write()`. The shim in `assets_shims.h SCRIPT_IMPORT_JSON` captures
-// the module's `import.meta.url` and calls into here with the current
-// `JSON.stringify(data)`. We path-sandbox the URL against the plugins dir
-// and write atomically via temp-file + rename.
+// `__pengu_write_json(content)` — back-end of the writable-JSON module's
+// `data.$write()`. The shim in `assets_shims.h SCRIPT_IMPORT_JSON` calls in
+// with the current `JSON.stringify(data)`, and nothing else.
+//
+// The write target is NOT a parameter. It is derived from the calling
+// script's own URL, read off the V8 stack, which JS cannot forge. A JSON
+// module can therefore rewrite itself and nothing else.
+//
+// This matters because `window.__pwj` is a plain global reachable by every
+// script in the renderer — including remote code a plugin imported. Taking a
+// URL here would hand all of them a write-anywhere-inside-plugins primitive,
+// and since `file::write_file` truncates any file and renderer.cc loads every
+// `<plugin>/index.js` at launch, that is persistent code execution rather
+// than mere config tampering.
 // =============================================================================
 
 static constexpr size_t URL_PREFIX_LEN = 15;  // "https://plugins"
@@ -49,6 +58,67 @@ static bool atomic_write(const path &target, const std::string &body)
     return true;
 }
 
+/// Resolve the plugins-relative path of the script that called us, or return
+/// false if that script isn't a JSON module served off `https://plugins/`.
+///
+/// Frame 0 is the `$write` arrow function defined inside SCRIPT_IMPORT_JSON,
+/// so its script name is the .json module's own URL. A script calling
+/// `window.__pwj` directly lands its own URL here instead: a remote script
+/// fails the prefix test, and a plugin's `index.js` fails the extension test.
+static bool caller_json_path(std::u16string &out)
+{
+    auto trace = cef_v8stack_trace_get_current(1);
+    if (trace == nullptr)
+        return false;
+
+    bool ok = false;
+
+    if (auto frame = trace->get_frame(trace, 0))
+    {
+        // Reject eval'd frames: their script name is inherited from the
+        // surrounding script, so an `eval` reachable inside a JSON module's
+        // scope would otherwise borrow its write capability.
+        if (frame->is_valid(frame) && !frame->is_eval(frame))
+        {
+            CefScopedStr name = frame->get_script_name(frame);
+
+            if (name.length >= URL_PREFIX_LEN &&
+                std::memcmp(name.str, u"https://plugins",
+                            URL_PREFIX_LEN * sizeof(char16)) == 0)
+            {
+                std::u16string rel((char16_t *)name.str + URL_PREFIX_LEN,
+                                   name.length - URL_PREFIX_LEN);
+
+                // Strip query (matches the resource handler's behavior).
+                if (auto pos = rel.find(u'?'); pos != std::u16string::npos)
+                    rel = rel.substr(0, pos);
+
+                assets::decode_uri(rel);
+
+                // Must be a .json module. This is what stops a plugin's own
+                // `index.js` from calling in directly and writing itself.
+                if (rel.length() > 5)
+                {
+                    auto ext = rel.substr(rel.length() - 5);
+                    for (auto &ch : ext)
+                        if (ch >= u'A' && ch <= u'Z') ch = ch - u'A' + u'a';
+
+                    if (ext == u".json")
+                    {
+                        out = std::move(rel);
+                        ok = true;
+                    }
+                }
+            }
+        }
+
+        frame->base.release(&frame->base);
+    }
+
+    trace->base.release(&trace->base);
+    return ok;
+}
+
 static V8Value *v8_write_json(V8Value *const args[], int argc)
 {
     auto *task = new V8PromiseTask();
@@ -56,35 +126,20 @@ static V8Value *v8_write_json(V8Value *const args[], int argc)
 
     // Validate arity + types. Reject syncronously (the reject still hops to
     // TID_RENDERER, but we don't burn a worker slot).
-    if (argc < 2 || !args[0]->isString() || !args[1]->isString())
+    if (argc < 1 || !args[0]->isString())
     {
-        task->reject("WriteJson: expected (url: string, content: string)");
+        task->reject("WriteJson: expected (content: string)");
         return promise;
     }
 
-    CefScopedStr url = args[0]->asString();
-    CefScopedStr content = args[1]->asString();
+    CefScopedStr content = args[0]->asString();
 
-    // URL must start with "https://plugins". The shim's `import.meta.url`
-    // always satisfies this; a hand-built call from plugin code (going around
-    // the shim) is the path we're guarding here.
-    if (url.length < URL_PREFIX_LEN ||
-        std::memcmp(url.str, u"https://plugins",
-                    URL_PREFIX_LEN * sizeof(char16)) != 0)
+    std::u16string rel;
+    if (!caller_json_path(rel))
     {
-        task->reject("WriteJson: URL must be a https://plugins/ URL");
+        task->reject("WriteJson: caller is not a https://plugins/ JSON module");
         return promise;
     }
-
-    // Build candidate filesystem path.
-    std::u16string rel((char16_t *)url.str + URL_PREFIX_LEN,
-                       url.length - URL_PREFIX_LEN);
-
-    // Strip query string if any (matches the resource handler's behavior).
-    if (auto pos = rel.find('?'); pos != std::u16string::npos)
-        rel = rel.substr(0, pos);
-
-    assets::decode_uri(rel);
 
     auto full = config::plugins_dir().u16string() + rel;
     path target{ full };
