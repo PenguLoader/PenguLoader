@@ -118,6 +118,38 @@ if (data !== null && typeof data === 'object') {
 export default data;
 )";
 
+    // `import images from './images?dir'` yields a Directory handle.
+    //
+    // Every method body must live in THIS shim. The native side derives the
+    // target folder from the calling script's URL via the V8 stack, so a
+    // method defined anywhere else (preload, plugin code) would put the wrong
+    // URL in frame 0. The `?dir` query is what distinguishes this module from
+    // a plugin's own `index.js`, so it must survive into the script name —
+    // only the copy used for `url` is stripped.
+    //
+    // No path is ever passed across the boundary, which is what keeps
+    // `window.__pdir` from being an enumerate-anywhere capability for
+    // arbitrary scripts in the renderer. See v8_dir.cc.
+    inline constexpr const char *SCRIPT_IMPORT_DIR = R"(
+const url = import.meta.url.replace(/\?.*$/, '');
+
+class Directory {
+    get url() { return url; }
+
+    exists() { return window.__pdir.exists(); }
+    files()  { return window.__pdir.files(); }
+    reveal() { return window.__pdir.reveal(); }
+
+    urlFor(name) {
+        if (typeof name !== 'string' || name === '' || name === '.' || name === '..' || /[\\/]/.test(name))
+            throw new TypeError('Directory.urlFor: expected a plain file name');
+        return url + '/' + encodeURIComponent(name);
+    }
+}
+
+export default new Directory();
+)";
+
     inline constexpr const char *SCRIPT_IMPORT_RAW = R"(
 const url = import.meta.url.replace(/\?.*$/, '');
 const content = await fetch(url).then(r => r.text());

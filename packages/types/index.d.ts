@@ -187,6 +187,63 @@ export type WritableJson<T> = T & {
   readonly $write: (space?: number | string) => Promise<void>;
 };
 
+// =============================================================================
+// Directory modules
+// =============================================================================
+
+/**
+ * The value of a `?dir` import — a handle on a folder inside your plugin.
+ *
+ * ```ts
+ * import images from './images?dir';
+ *
+ * for (const name of await images.files()) {
+ *   const img = document.createElement('img');
+ *   img.src = images.urlFor(name);
+ *   document.body.appendChild(img);
+ * }
+ * ```
+ *
+ * Only obtainable from a *static, relative* `?dir` import inside a plugin.
+ * There is no constructor, and the folder need not exist yet — `reveal()`
+ * creates it.
+ */
+export interface Directory {
+  /** URL of the directory itself, with no trailing slash. */
+  readonly url: string;
+
+  /** Whether the directory is currently present on disk. Read live. */
+  exists(): Promise<boolean>;
+
+  /**
+   * File names directly inside the directory, sorted. Subfolders and their
+   * contents are excluded.
+   *
+   * Resolves `[]` when the directory doesn't exist — the normal state before
+   * the user has added anything. Rejects when it exists but can't be read, so
+   * a permissions failure doesn't look like an empty folder.
+   */
+  files(): Promise<string[]>;
+
+  /**
+   * URL of a file inside the directory, with the name percent-encoded.
+   * Throws on anything that isn't a plain file name.
+   *
+   * Use this rather than joining {@link url} yourself: `url` has no trailing
+   * slash, and raw names aren't URL-safe.
+   */
+  urlFor(name: string): string;
+
+  /**
+   * Open the directory in Explorer / Finder, creating it (and any missing
+   * parents) first. This is the "browse" affordance — the user clicks a
+   * button, the folder appears, and they drop files into it.
+   *
+   * To open only a folder that already exists, check {@link exists} first.
+   */
+  reveal(): Promise<void>;
+}
+
 /** Maps a Field to its persisted value type. `action` and `note` have no value. */
 export type FieldValue<F> =
     F extends { type: 'boolean'; default: infer D } ? D

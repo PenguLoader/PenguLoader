@@ -3,6 +3,7 @@ import { native } from './native';
 import './DataStore';
 import './Effect';
 import './json';   // installs window.__pwj before any plugin runs
+import './dir';    // installs window.__pdir before any plugin runs
 
 window.openDevTools = function () {
   native.OpenDevTools();

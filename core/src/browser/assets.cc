@@ -79,8 +79,21 @@ private:
         // Join with the plugins directory.
         fs_path = config::plugins_dir().u16string().append(fs_path);
 
+        // `?dir` imports resolve on path validity, not existence — the
+        // Directory handed back may legitimately point at a folder the user
+        // hasn't created yet, since reveal() creates it on demand. That means
+        // skipping both the leaf rewriting below (which would turn `images`
+        // into `images/index.js`) and the is_file() gate further down, which
+        // a directory can never satisfy.
+        const bool dir_import = query_part == u"dir"
+            && request->get_resource_type(request) == RT_SCRIPT;
+
         // Trailing slash → serve <dir>/index.js.
-        if (fs_path[fs_path.length() - 1] == '/' || fs_path[fs_path.length() - 1] == '\\')
+        if (dir_import)
+        {
+            // No path rewriting; fs_path is already the directory.
+        }
+        else if (fs_path[fs_path.length() - 1] == '/' || fs_path[fs_path.length() - 1] == '\\')
         {
             js_mime = true;
             fs_path.append(u"index.js");
@@ -111,7 +124,13 @@ private:
             return 1;
         }
 
-        if (file::is_file(fs_path))
+        if (dir_import)
+        {
+            js_mime = true;
+            stream_ = cef_stream_reader_create_for_data(
+                (void *)assets::SCRIPT_IMPORT_DIR, strlen(assets::SCRIPT_IMPORT_DIR));
+        }
+        else if (file::is_file(fs_path))
         {
             const char *module_code = nullptr;
             if (request->get_resource_type(request) == RT_SCRIPT)
