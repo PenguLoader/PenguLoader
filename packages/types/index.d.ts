@@ -20,11 +20,78 @@
  * Context passed to a plugin's `init` function.
  * - `rcp` / `socket` mirror the globals exposed on `window` by the preload.
  * - `meta.name` is the plugin's folder name. Omitted for top-level `name.js` plugins.
+ * - `fs` is the plugin's scoped filesystem. Omitted for top-level `name.js`
+ *   plugins, which have no folder of their own to scope it to.
  */
 export interface PluginInitContext {
   rcp: any;
   socket: any;
   meta?: { name: string };
+  fs?: PluginFS;
+}
+
+/** Result of {@link PluginFS.stat}. */
+export interface FileStat {
+  /** Name of the entry itself, without any directory part. */
+  fileName: string;
+  /** Size in bytes. Always 0 for directories. */
+  length: number;
+  isDir: boolean;
+  isFile: boolean;
+}
+
+/**
+ * A folder plugin's own directory, read-write.
+ *
+ * Only folder plugins receive one — `<plugin>/index.js` or
+ * `@<author>/<plugin>/index.js`. Every path is relative to the plugin's own
+ * folder; absolute paths, `..`, and symlinked components are refused, so
+ * nothing here can reach another plugin or escape the plugins directory.
+ *
+ * ```ts
+ * export function init({ fs }: PluginInitContext) {
+ *   if (!fs) return;                        // top-level plugin
+ *   await fs.mkdir('cache');
+ *   await fs.write('cache/state.json', JSON.stringify({ n: 1 }));
+ * }
+ * ```
+ *
+ * Unlike `$write` on a JSON import, this object is a bearer capability:
+ * whoever holds it can use it. Passing it to imported third-party code gives
+ * that code your plugin's folder.
+ */
+export interface PluginFS {
+  /** File contents as text, or `undefined` if missing, unreadable, or over 16 MB. */
+  read(path: string): Promise<string | undefined>;
+
+  /**
+   * Write text, replacing by default or appending with `{ append: true }`.
+   * Replacement is atomic — a temp file in the same directory, then a rename.
+   *
+   * Returns `false` for the plugin's own `index.js`, which is refused: it is
+   * the only auto-executed file in the folder, so allowing writes would turn
+   * any transient compromise into a permanent one.
+   */
+  write(path: string, content: string, options?: { append?: boolean }): Promise<boolean>;
+
+  /** Create a directory and any missing parents. Already existing counts as success. */
+  mkdir(path: string): Promise<boolean>;
+
+  /** Stat an entry, or the plugin root when `path` is omitted. */
+  stat(path?: string): Promise<FileStat | undefined>;
+
+  /**
+   * Entry names directly inside `path`, or inside the plugin root when
+   * omitted. Sorted, symlinks skipped. `undefined` if the path isn't a
+   * readable directory.
+   */
+  ls(path?: string): Promise<string[] | undefined>;
+
+  /**
+   * Delete a file, or a directory with `{ recursive: true }`. Returns the
+   * number of entries removed. Refuses the plugin root and its `index.js`.
+   */
+  rm(path: string, options?: { recursive?: boolean }): Promise<number>;
 }
 
 /** Shape of a plugin module. All exports are optional. */

@@ -16,6 +16,8 @@ declare global {
   type Settings     = Pengu.Settings
   type Schema       = Pengu.Schema
   type Field        = Pengu.Field
+  type FileStat     = Pengu.FileStat
+  type PluginFS     = Pengu.PluginFS
 
   interface RcpAnnouceEvent extends CustomEvent {
     errorHandler: () => any

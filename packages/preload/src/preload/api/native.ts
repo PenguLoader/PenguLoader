@@ -30,4 +30,16 @@ interface Native {
   DirExists: () => Promise<boolean>;
   DirFiles:  () => Promise<string[]>;
   DirReveal: () => Promise<void>;
+
+  // Scoped folder-plugin filesystem — see api/PluginFS.ts. Unlike the two
+  // above these are token-addressed: PluginFSGrant mints a capability for one
+  // plugin root and is deleted from this object immediately after the loader
+  // captures it, so nothing running later can mint another.
+  PluginFSGrant:  (pluginRoot: string) => string | undefined;
+  PluginFSRead:   (token: string, path: string) => Promise<string | undefined>;
+  PluginFSWrite:  (token: string, path: string, content: string, append: boolean) => Promise<boolean>;
+  PluginFSMkdir:  (token: string, path: string) => Promise<boolean>;
+  PluginFSStat:   (token: string, path: string) => Promise<FileStat | undefined>;
+  PluginFSLs:     (token: string, path: string) => Promise<string[] | undefined>;
+  PluginFSRemove: (token: string, path: string, recursive: boolean) => Promise<number>;
 }

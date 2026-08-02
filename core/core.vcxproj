@@ -25,6 +25,7 @@
     <ClCompile Include="src\renderer\v8_dir.cc" />
     <ClCompile Include="src\renderer\v8_helper.cc" />
     <ClCompile Include="src\renderer\v8_json_write.cc" />
+    <ClCompile Include="src\renderer\v8_pluginfs.cc" />
     <ClCompile Include="src\renderer\renderer.cc" />
     <ClCompile Include="src\utils\cefstr.cc" />
     <ClCompile Include="src\utils\dylib.cc" />

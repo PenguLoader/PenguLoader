@@ -1,8 +1,53 @@
 import { rcp, socket } from './rcp';
 import { initDataStore } from './api/DataStore';
+import { createPluginFS } from './api/PluginFS';
 import type { PluginModule } from '@pengujs/types';
 
 const plugins = window.Pengu.plugins
+
+/**
+ * Plugin entries come from `file::read_dir` joins in renderer.cc, so on
+ * Windows they arrive backslash-separated (`fstest\index.js`). Everything
+ * downstream — the URL, the root detection — wants forward slashes.
+ */
+function normalizeEntry(entry: string) {
+  let normalized = entry.replace(/\\/g, '/');
+
+  while (normalized.startsWith('./'))
+    normalized = normalized.substring(2);
+
+  while (normalized.startsWith('/'))
+    normalized = normalized.substring(1);
+
+  return normalized;
+}
+
+/**
+ * The plugin's own folder, or '' when the entry isn't a folder plugin.
+ *
+ * Recognises `<plugin>/index.js` and `@<author>/<plugin>/index.js`. Anything
+ * else — a top-level `name.js`, or a deeper path — yields '', which is what
+ * withholds `meta` and `fs`. The old `entry.substring(0, indexOf('/'))` got
+ * `@author/plugin/index.js` wrong, handing back just `@author` and scoping a
+ * capability to the whole author namespace.
+ */
+function getDirectoryPluginRoot(entry: string) {
+  if (!entry.endsWith('/index.js'))
+    return '';
+
+  const pluginRoot = entry.substring(0, entry.length - '/index.js'.length);
+  if (!pluginRoot)
+    return '';
+
+  const parts = pluginRoot.split('/');
+  if (parts.length === 1)
+    return pluginRoot;
+
+  if (parts.length === 2 && parts[0].startsWith('@') && parts[1])
+    return pluginRoot;
+
+  return '';
+}
 
 if ('disabledPlugins' in window.Pengu) {
   const blacklist = new Set<number>
@@ -43,18 +88,25 @@ async function loadPlugin(entry: string) {
   let stage = 'load';
   try {
     // Acquire plugin
-    const url = `https://plugins/${entry}`;
+    const normalizedEntry = normalizeEntry(entry);
+    const url = `https://plugins/${normalizedEntry}`;
     const plugin: PluginModule = await import(url);
 
     // Init immediately
     if (typeof plugin.init === 'function') {
       stage = 'initialize';
-      const pluginName = entry.substring(0, entry.indexOf('/'));
+      const pluginRoot = getDirectoryPluginRoot(normalizedEntry);
       const initContext = { rcp, socket };
-      // If it's not top-level JS
-      if (pluginName) {
-        const meta = { name: pluginName };
+      // Folder plugins only. A top-level `plugins/name.js` has no directory of
+      // its own to scope a filesystem to, so it gets neither meta nor fs —
+      // granting it one would have to point at the plugins root itself.
+      if (pluginRoot) {
+        const meta = { name: pluginRoot };
         initContext['meta'] = meta;
+
+        const fs = createPluginFS(pluginRoot);
+        if (fs)
+          initContext['fs'] = fs;
       }
       await plugin.init(initContext);
     }

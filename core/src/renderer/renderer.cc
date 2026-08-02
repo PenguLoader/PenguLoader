@@ -11,6 +11,7 @@ static bool is_main_ = false;
 
 extern V8HandlerFunctionEntry v8_DataStoreEntries[];
 extern V8HandlerFunctionEntry v8_DirEntries[];
+extern V8HandlerFunctionEntry v8_PluginFSEntries[];
 extern V8HandlerFunctionEntry v8_HelperEntries[];
 extern V8HandlerFunctionEntry v8_JsonWriteEntries[];
 
@@ -130,6 +131,7 @@ static void ExposeNativeFunctions(V8Object *window)
         v8_HelperEntries,
         v8_JsonWriteEntries,
         v8_DirEntries,
+        v8_PluginFSEntries,
     };
 
     for (auto &entries : list) {

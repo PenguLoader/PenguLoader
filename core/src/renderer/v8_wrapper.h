@@ -221,6 +221,32 @@ private:
         reinterpret_cast<V8PromiseTask *>(self)->run_on_renderer();
     }
 
+    /// `cef_v8value_create_promise` is not exported by the macOS CEF
+    /// framework, so build the promise by evaluating one instead and drive it
+    /// through the same resolve_promise/reject_promise slots. Caller must
+    /// already be inside the context.
+    cef_v8value_t *create_promise()
+    {
+#if OS_MAC
+        CefStr code("new Promise(() => {})");
+        CefStr script_url("pengu://native-promise");
+        cef_v8value_t *value = nullptr;
+        cef_v8exception_t *exception = nullptr;
+
+        if (!context_->eval(context_, &code, &script_url, 1, &value, &exception) || value == nullptr)
+        {
+            if (exception != nullptr)
+                exception->base.release(&exception->base);
+
+            return cef_v8value_create_undefined();
+        }
+
+        return value;
+#else
+        return cef_v8value_create_promise();
+#endif
+    }
+
     void run_on_renderer()
     {
         context_->enter(context_);
@@ -257,7 +283,7 @@ public:
         // the deferred TID_RENDERER hop, so honor that contract even on the
         // originating thread — skipping it crashed early renderer init.
         context_->enter(context_);
-        promise_ = cef_v8value_create_promise();
+        promise_ = create_promise();
         promise_->base.add_ref(&promise_->base);
         context_->exit(context_);
     }

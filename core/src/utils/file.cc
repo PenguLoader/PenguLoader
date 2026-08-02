@@ -16,6 +16,13 @@ bool file::is_symlink(const path &path)
 
     return attr & FILE_ATTRIBUTE_REPARSE_POINT;
 #elif OS_MAC
+    // lstat, not stat: stat follows the link and would report the target's
+    // type, so every symlink would answer false. PluginFS's sandbox relies on
+    // this being accurate at every path component.
+    struct stat buffer;
+    if (lstat(path.string().c_str(), &buffer) == 0)
+        return S_ISLNK(buffer.st_mode);
+
     return false;
 #endif
 }
