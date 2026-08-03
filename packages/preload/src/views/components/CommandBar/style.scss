@@ -1,6 +1,4 @@
-@use '../../styles/tokens' as *;
-
-/* CommandBar — prefixed `pengu-cmdbar-`. Light DOM. */
+/* Command bar UI. */
 
 .pengu-cmdbar {
   &-overlay {
@@ -12,6 +10,17 @@
     justify-content: center;
     width: 100vw;
     height: 100vh;
+    box-sizing: border-box;
+    color: #b8c7d3;
+    font-family: "Segoe UI", "Sora", Arial, sans-serif;
+    font-size: 12px;
+    -webkit-font-smoothing: antialiased;
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
   }
 
   &-backdrop {
@@ -19,15 +28,16 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    background-color: $backdrop-soft;
+    background: rgba(0, 0, 0, 0.55);
   }
 
   &-container {
     position: relative;
     display: flex;
     width: 100%;
-    max-width: 36rem;
+    max-width: 720px;
     min-height: 370px;
+    padding: 0 16px;
     justify-content: center;
     align-items: flex-start;
   }
@@ -38,41 +48,44 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: $cmdbar-bg;
-    border-radius: $radius-md;
-    box-shadow: $shadow-sm;
-    backdrop-filter: blur(4px);
+    background: #0a1428;
+    border: 1px solid #785a28;
+    border-radius: 2px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.85);
   }
 
   &-search {
     display: flex;
     align-items: center;
-    padding: 0 0.75rem;
-    border-bottom: 1px solid $border-strong;
-    background-color: $cmdbar-bg;
+    min-height: 54px;
+    padding: 0 18px;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.35);
+    border-bottom: 1px solid #785a28;
   }
 
   &-search-icon {
-    width: 1rem;
-    height: 1rem;
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
-    color: $fg-faint;
+    color: #c8aa6e;
+    stroke-width: 1.5;
   }
 
   &-search-input {
-    display: flex;
     width: 100%;
-    padding: 0.75rem 0.5rem;
-    height: 2.75rem;
-    font-size: 0.875rem;
-    background-color: transparent;
+    height: 54px;
+    padding: 0;
+    color: #f0e6d3;
+    caret-color: #c8aa6e;
+    background: transparent;
     border: none;
-    border-radius: $radius-md;
     outline: none;
+    font: inherit;
+    font-size: 13px;
+    letter-spacing: 0.025em;
 
-    &::placeholder {
-      color: $fg-faint;
-    }
+    &::placeholder { color: #4a6070; }
 
     &:disabled {
       cursor: not-allowed;
@@ -82,54 +95,74 @@
 
   &-results {
     max-height: 320px;
+    padding: 8px 10px 10px;
     overflow-y: auto;
     overflow-x: hidden;
     scroll-behavior: smooth;
-  }
+    background: #060e1a;
 
-  &-group {
-    padding-bottom: 0.25rem;
-
-    & + & {
-      margin-top: 0.25rem;
+    &::-webkit-scrollbar { width: 12px; }
+    &::-webkit-scrollbar-track {
+      background: rgba(6, 14, 26, 0.6);
+      border-left: 1px solid #1a2535;
     }
+    &::-webkit-scrollbar-thumb {
+      background-color: #3a5060;
+      background-clip: padding-box;
+      border: 3px solid transparent;
+      border-radius: 6px;
+    }
+    &::-webkit-scrollbar-thumb:hover { background-color: #785a28; }
+    &::-webkit-scrollbar-thumb:active { background-color: #c8aa6e; }
   }
+
+  &-group { padding-bottom: 4px; }
 
   &-category {
-    padding: 0 0.25rem;
+    padding: 0 4px;
     overflow: hidden;
-    color: $fg-meta;
   }
 
   &-category-label {
-    padding: 0.25rem 0.5rem;
-    margin: 0.25rem 0;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: $fg-muted;
-    text-transform: capitalize;
+    margin: 0;
+    padding: 9px 10px 5px;
+    color: #c8aa6e;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
-  &-item-wrap {
-    padding: 0 0.25rem;
-  }
+  &-item-wrap { padding: 0 2px; }
 
   &-item {
     position: relative;
     display: flex;
     align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 7px 10px;
+    color: #8a9aaa;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 0;
+    outline: none;
     cursor: pointer;
     user-select: none;
-    border-radius: $radius-sm;
-    padding: 0.375rem 0.5rem;
-    font-size: 0.875rem;
-    outline: none;
-    color: inherit;
-    background: transparent;
+    font-size: 12px;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      color: #785a28;
+    }
 
     &[data-active='true'] {
-      background-color: $cmdbar-active-bg;
-      color: $cmdbar-active-fg;
+      color: #f0e6d3;
+      background: #0d1e35;
+      border-color: #1e2d3d;
+      box-shadow: inset 2px 0 0 #c8aa6e;
     }
 
     &[data-disabled] {
@@ -140,12 +173,21 @@
 
   &-item-legend {
     margin-left: auto;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
+    padding: 2px 6px;
+    color: #4a6070;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #1a2535;
+    font-family: "Cascadia Mono", "Fira Code", Consolas, monospace;
+    font-size: 9px;
+    letter-spacing: 0.06em;
   }
 
   &-animator {
     width: 100%;
     height: 100%;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pengu-cmdbar-item { transition: none; }
 }
