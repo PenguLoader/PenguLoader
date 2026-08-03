@@ -12,18 +12,26 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 path config::known_data_dir()
 {
 #if OS_WIN
-    // Mirrors the host's WindowsHost.DataRoot: %PROGRAMDATA%\.pengu.
-    // Machine-wide so Universal mode (IFEO is HKLM, kernel-side image-load
-    // redirection) sees the same plugins / disabled list / config across
-    // every user on the box. Use GetEnvironmentVariable so we don't pull
-    // in shell32 (SHGetFolderPath / SHGetKnownFolderPath).
+    // Mirrors the host's WindowsHost.DataRoot: %LOCALAPPDATA%\.pengu.
+    //
+    // Per-user, and resolved from the environment of the process we're loaded
+    // into — which is LCUX, running as whoever launched the client. So each
+    // user's client reads that user's plugins, even though Universal mode's
+    // IFEO key is machine-wide.
+    //
+    // This was %PROGRAMDATA%\.pengu, shared across accounts. Plugins are code
+    // executed by the launching user, so a shared, everyone-writable plugins
+    // folder let any account run code in any other account's client.
+    //
+    // GetEnvironmentVariable rather than SHGetKnownFolderPath so we don't pull
+    // shell32 into the renderer.
     static std::wstring cached;
     if (cached.empty())
     {
         wchar_t buf[2048];
-        size_t length = GetEnvironmentVariableW(L"ProgramData", buf, _countof(buf));
+        size_t length = GetEnvironmentVariableW(L"LOCALAPPDATA", buf, _countof(buf));
         if (length == 0)
-            return {}; // no ProgramData -> caller falls back to module_dir
+            return {}; // no LOCALAPPDATA -> caller falls back to module_dir
         cached = buf;
         cached += L"\\.pengu";
     }

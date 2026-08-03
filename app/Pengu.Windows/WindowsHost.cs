@@ -5,6 +5,7 @@ using Pengu.Activation;
 using Pengu.Bridge;
 using Pengu.Config;
 using Pengu.Logging;
+using Pengu.Migration;
 using Pengu.Pack;
 using Pengu.State;
 using Pengu.Windows.Browser;
@@ -29,12 +30,6 @@ internal sealed class WindowsHost : IHost
     /// <c>Pengu.app/Contents/Resources/core.dylib</c>.</summary>
     public string CoreModulePath => Path.Combine(ExeDirectory, "core.dll");
 
-    /// <summary>Per-user state root: <c>%LOCALAPPDATA%\.pengu\</c>. Holds
-    /// per-user concerns that don't belong in the machine-wide
-    /// <see cref="DataRoot"/> — WebView2 cache, window placement, anything
-    /// else that should follow the user (not the machine).</summary>
-    public string UserDataRoot { get; }
-
     /// <summary>
     /// The borderless window currently hosting the hub UI, captured during
     /// <see cref="OpenMainWindowAsync"/>. <see cref="MinimizeMainWindow"/> /
@@ -54,27 +49,66 @@ internal sealed class WindowsHost : IHost
     {
         ExeDirectory = AppContext.BaseDirectory;
 
-        // %PROGRAMDATA%\.pengu\ — machine-wide so Universal mode (IFEO is
-        // HKLM-scoped) sees consistent state across users. See
-        // docs/app-hub.md §11.
+        // %LOCALAPPDATA%\.pengu\ — everything Pengu owns for this user:
+        // config, plugins, datastore, WebView2 cache, window placement.
+        //
+        // This used to be %PROGRAMDATA%\.pengu with an ACL granting
+        // Authenticated Users: Modify, so that Universal mode (IFEO is
+        // HKLM-scoped, therefore every account) saw one shared plugins
+        // folder. That made the plugins directory writable by every user on
+        // the machine — and plugins are executed by whoever launches the
+        // client, so any account could run code in any other account's LCUX.
+        // Per-user is both the safe layout and the one macOS already uses.
+        // See .claude/docs/windows-activation.md.
         DataRoot = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            ".pengu");
+        Directory.CreateDirectory(DataRoot);
+
+        // One-shot: pull state out of the old machine-wide root. Runs before
+        // AppHost's install-dir migration so the newer machine-wide state
+        // wins over anything still sitting next to the exe.
+        MigrateLegacyMachineRoot();
+    }
+
+    /// <summary>
+    /// Move config / datastore / plugins out of the legacy machine-wide
+    /// <c>%PROGRAMDATA%\.pengu\</c> into the per-user root, then drop the old
+    /// directory if nothing else is left in it.
+    ///
+    /// <para>Best-effort and idempotent: <see cref="InstallMigrator"/> skips
+    /// any item that already exists at the destination, so a user who has
+    /// already migrated no-ops, and a second account on the same machine
+    /// finds nothing left to take.</para>
+    /// </summary>
+    private void MigrateLegacyMachineRoot()
+    {
+        var legacy = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             ".pengu");
 
-        // Create + grant Authenticated Users: Modify with inheritance so
-        // any user on the machine can read/write Pengu's shared state.
-        // First-launch wins (creator owns the dir and can set ACLs without
-        // admin); subsequent launches verify and no-op.
-        ProgramDataAcl.EnsureWritableByEveryone(DataRoot);
+        if (string.Equals(legacy, DataRoot, StringComparison.OrdinalIgnoreCase))
+            return;
 
-        // Per-user state lives separately under %LOCALAPPDATA%\.pengu\:
-        // WebView2 cache (cookies / IndexedDB / GPU shader cache for THIS
-        // user) plus window placement. No ACL gymnastics — each user's
-        // LocalAppData is their own.
-        UserDataRoot = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            ".pengu");
-        Directory.CreateDirectory(UserDataRoot);
+        if (!Directory.Exists(legacy))
+            return;
+
+        InstallMigrator.Run(legacy, DataRoot);
+
+        try
+        {
+            // Only if we emptied it — never recurse. Anything the user put
+            // there themselves stays, and stays visible.
+            if (!Directory.EnumerateFileSystemEntries(legacy).Any())
+            {
+                Directory.Delete(legacy);
+                Log.Info("Removed empty legacy data root {0}", legacy);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Could not remove legacy data root {0}: {1}", legacy, ex.Message);
+        }
     }
 
     public bool IsWebViewRuntimeAvailable() => WebView2Loader.IsRuntimeAvailable();
@@ -96,12 +130,10 @@ internal sealed class WindowsHost : IHost
 
     public Task InitializeBrowserEnvironmentAsync()
     {
-        // WebView2 user-data folder is per-user (cookies, IndexedDB, GPU
-        // shader cache for THIS user's session). Lives under
-        // %LOCALAPPDATA%\.pengu\WebView2\ alongside other per-user state
-        // (window placement, etc.) — separate from the machine-wide
-        // DataRoot in %PROGRAMDATA%\.pengu\.
-        var userData = Path.Combine(UserDataRoot, "WebView2");
+        // WebView2 user-data folder (cookies, IndexedDB, GPU shader cache),
+        // under %LOCALAPPDATA%\.pengu\WebView2\ alongside the rest of this
+        // user's state.
+        var userData = Path.Combine(DataRoot, "WebView2");
         return WebView2Environment.InitializeAsync(userData);
     }
 
@@ -163,7 +195,7 @@ internal sealed class WindowsHost : IHost
         Log.Info("Main window shown ({0} handlers registered)", bridgeHandlers.Count);
     }
 
-    private string WindowStatePath => Path.Combine(UserDataRoot, "window.json");
+    private string WindowStatePath => Path.Combine(DataRoot, "window.json");
 
     // ---------- A.3 ----------
 
