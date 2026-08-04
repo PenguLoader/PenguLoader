@@ -10,6 +10,10 @@ name: release
 # you ask for rather than something a push does.
 
 on:
+  push:
+    branches:
+      - main
+      - release/*
   workflow_dispatch:
 
 jobs:
@@ -33,7 +37,7 @@ jobs:
       # No submodules: this job only needs build/sign-core.ps1, boot/trust_key.h
       # and build/setup.iss, none of which live in one.
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
 

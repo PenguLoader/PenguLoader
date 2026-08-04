@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <!-- boot.dll — the stable IFEO entry point, loaded by rundll32.
 
        Deliberately tiny: it links bootstrap.cc out of core/src and nothing
@@ -14,7 +13,6 @@
        behaviourally when the client triggers it, and code signing doesn't
        exempt it. rundll32 is Microsoft-signed and is what this project shipped
        for years. -->
-
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -25,23 +23,19 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-
   <ItemGroup>
-    <ClCompile Include="main.cc" />
-    <ClCompile Include="trust.cc" />
+    <ClCompile Include="src\main.cc" />
+    <ClCompile Include="src\trust.cc" />
     <ClCompile Include="..\core\src\bootstrap.cc" />
   </ItemGroup>
-
   <ItemGroup>
-    <ClInclude Include="trust.h" />
-    <ClInclude Include="trust_key.h" />
+    <ClInclude Include="src\trust.h" />
+    <ClInclude Include="src\trust_key.h" />
     <ClInclude Include="..\core\src\bootstrap.h" />
   </ItemGroup>
-
   <ItemGroup>
     <None Include="res\module.def" />
   </ItemGroup>
-
   <ItemGroup>
     <ResourceCompile Include="res\boot.rc">
       <!-- Same \" escaping requirement as core: unescaped quotes are stripped
@@ -49,14 +43,13 @@
       <PreprocessorDefinitions>PENGU_VERSION_COMMAS=$(PenguVersionCommas);PENGU_VERSION_STR=\"$(PenguVersion)\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemGroup>
-
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{3F1C7A82-9B24-4E6D-9C31-6A5E2D4B8F10}</ProjectGuid>
     <RootNamespace>penguboot</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ShowAllFiles>true</ShowAllFiles>
   </PropertyGroup>
-
   <!-- Version resource single-sourced from the root package.json, same as
        core.vcxproj. -->
   <PropertyGroup>
@@ -66,16 +59,13 @@
     <PenguVersionNumeric>$(PenguVersion.Split('-')[0])</PenguVersionNumeric>
     <PenguVersionCommas>$(PenguVersionNumeric.Replace('.', ',')),0</PenguVersionCommas>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -83,15 +73,12 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-
   <PropertyGroup>
-    <OutDir>$(SolutionDir)bin\</OutDir>
+    <OutDir>$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>boot</TargetName>
   </PropertyGroup>
-
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>..\core\src</AdditionalIncludeDirectories>
@@ -111,7 +98,6 @@
       <AdditionalDependencies>bcrypt.lib;wintrust.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>..\core\src</AdditionalIncludeDirectories>
@@ -133,6 +119,5 @@
       <AdditionalDependencies>bcrypt.lib;wintrust.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

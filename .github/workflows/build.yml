@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
           submodules: true
@@ -94,16 +94,20 @@ jobs:
         run: pnpm --filter @pengujs/preload build
 
       # ─── Build (Windows) ────────────────────────────────────────────────
-      # C++ core -> core/bin/core.dll (the vcxproj writes there directly).
+      # Both C++ projects write to <project>/bin/$(Platform)/$(Configuration).
+      #
+      # Built here with the full MSBuild rather than left to the ProjectReference
+      # in Pengu.Windows.csproj, because the .NET SDK's MSBuild has no C++
+      # targets — $(VCTargetsPath) is unset under `dotnet build`, so a vcxproj
+      # reference fails outright. That is what SkipNativeBuild exists for, and
+      # why the publish step below sets it.
       - name: Build core (windows)
         if: runner.os == 'Windows'
         run: msbuild.exe core/core.vcxproj -p:Configuration=Release -p:Platform=x64 -nologo -m
 
       # The IFEO boot, loaded by rundll32. Shares bootstrap.cc with core but
       # links nothing else from it, so it stays a few tens of KB with no CEF
-      # surface. Writes to boot/bin/ (OutDir is $(SolutionDir)bin\ and there is
-      # no .sln, so SolutionDir resolves to the project directory — same as
-      # core).
+      # surface.
       - name: Build boot (windows)
         if: runner.os == 'Windows'
         run: msbuild.exe boot/boot.vcxproj -p:Configuration=Release -p:Platform=x64 -nologo -m
@@ -113,25 +117,33 @@ jobs:
       # app.dat as part of the build, and the PublishAppDat target adds app.dat
       # to ResolvedFileToPublish — so a single dotnet publish produces
       # Pengu.exe + app.dat in the output dir.
+      #
+      # SkipNativeBuild drops the vcxproj ProjectReferences: the two steps above
+      # already produced those binaries with a toolchain the SDK's MSBuild does
+      # not have.
       - name: Publish app/Pengu.Windows (AOT)
         if: runner.os == 'Windows'
         run: |
           dotnet publish app/Pengu.Windows \
             -c Release \
             -r win-x64 \
+            -p:SkipNativeBuild=true \
             --output app-publish
 
       # Clean portable payload: extract the artifact archive anywhere, run Pengu.exe.
       # app.dat is embedded inside Pengu.exe via <EmbeddedResource> — no
       # separate file ships alongside the exe.
+      #
+      # The native pair comes from the C++ output directories rather than from
+      # app-publish, since SkipNativeBuild means the publish never staged them.
       - name: Stage portable payload (windows)
         if: runner.os == 'Windows'
         run: |
           mkdir -p out/
-          cp app-publish/Pengu.exe          out/
-          cp app-publish/WebView2Loader.dll out/
-          cp core/bin/core.dll              out/
-          cp boot/bin/boot.dll              out/
+          cp app-publish/Pengu.exe            out/
+          cp app-publish/WebView2Loader.dll   out/
+          cp core/bin/x64/Release/core.dll    out/
+          cp boot/bin/x64/Release/boot.dll    out/
 
       # ─── Build (macOS) ──────────────────────────────────────────────────
       # C++ core -> core/bin/core.dylib (the makefile's LIB_OUT_PATH).
