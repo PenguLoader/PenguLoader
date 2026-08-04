@@ -1,42 +1,40 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <!-- Debug builds produce a console-subsystem exe so logs are visible in a terminal.
+	<PropertyGroup>
+		<!-- Debug builds produce a console-subsystem exe so logs are visible in a terminal.
          Release ships as a windowed exe with no allocated console. -->
-    <OutputType Condition="'$(Configuration)' == 'Debug'">Exe</OutputType>
-    <OutputType Condition="'$(Configuration)' != 'Debug'">WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <RootNamespace>Pengu.Windows</RootNamespace>
-    <AssemblyName>Pengu</AssemblyName>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>app-icon.ico</ApplicationIcon>
-    <!-- The head is an exe, not a NuGet package. PackageId would otherwise
+		<OutputType Condition="'$(Configuration)' == 'Debug'">Exe</OutputType>
+		<OutputType Condition="'$(Configuration)' != 'Debug'">WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<RootNamespace>Pengu.Windows</RootNamespace>
+		<AssemblyName>Pengu</AssemblyName>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>app-icon.ico</ApplicationIcon>
+		<!-- The head is an exe, not a NuGet package. PackageId would otherwise
          default to AssemblyName ("Pengu") and collide with the core lib's
          package. -->
-    <IsPackable>false</IsPackable>
-    <PackageId>Pengu.WindowsHead</PackageId>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-  </PropertyGroup>
+		<IsPackable>false</IsPackable>
+		<PackageId>Pengu.WindowsHead</PackageId>
+		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Pengu\Pengu.csproj" />
-    <ProjectReference Include="..\Pengu.Gen\Pengu.Gen.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Pengu\Pengu.csproj" />
+		<ProjectReference Include="..\Pengu.Gen\Pengu.Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2592.51">
-      <ExcludeAssets>compile</ExcludeAssets>
-    </PackageReference>
-    <PackageReference Include="Diga.WebView2.Interop.AOT" Version="1.0.4-preview" />
-    <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.0" />
-    <PackageReference Include="Vanara.PInvoke.User32" Version="5.0.0" />
-    <PackageReference Include="Vanara.PInvoke.DwmApi" Version="5.0.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="WebView2.NativeAssets.Win32" Version="1.0.1518.46" />
+		<PackageReference Include="Diga.WebView2.Interop.AOT" Version="1.0.4-preview" />
+		<PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.0" />
+		<PackageReference Include="Vanara.PInvoke.User32" Version="5.0.0" />
+		<PackageReference Include="Vanara.PInvoke.DwmApi" Version="5.0.0" />
+	</ItemGroup>
 
-  <!-- Hub bundle: Release-only. Build packages/hub/dist/ → app.dat → embed
+	<!-- Hub bundle: Release-only. Build packages/hub/dist/ → app.dat → embed
        it as a managed resource so the AOT-published Pengu.exe contains the
        hub UI in-binary. AppDat.OpenEmbedded reads it back at runtime. No
        app.dat ships alongside the exe.
@@ -56,42 +54,54 @@
           CreateManifestResourceNames). Generates the file via pnpm + zip.
           MakeDir handles the case where IntermediateOutputPath doesn't
           exist on a clean build. -->
-  <ItemGroup Condition="'$(Configuration)' == 'Release'">
-    <EmbeddedResource Include="$(IntermediateOutputPath)app.dat"
-                      LogicalName="app.dat"
-                      Visible="false" />
-  </ItemGroup>
+	<ItemGroup Condition="'$(Configuration)' == 'Release'">
+		<EmbeddedResource Include="$(IntermediateOutputPath)app.dat" LogicalName="app.dat" Visible="false" />
+	</ItemGroup>
 
-  <!-- Stage the native payload next to Pengu.exe.
+	<!-- Stage the native payload next to Pengu.exe when the ProjectReferences
+       below are switched off.
 
        The host resolves core.dll from its own directory (IHost.CoreModulePath)
        and looks for boot.dll there when activation needs to install the boot,
-       but both are built by MSBuild C++ projects into the repo-root bin\.
-       Without this, a local build has nothing to activate with.
+       so a SkipNativeBuild build would otherwise have nothing to activate with
+       even though the binaries are sitting in the C++ output directories.
+
+       Platform is hardcoded to x64 rather than $(Platform): this project is
+       AnyCPU with a win-x64 RID, while the vcxproj OutDir keys off its own
+       $(Platform), and x64 is the only configuration either C++ project
+       defines.
 
        Conditioned on existence rather than declared as a dependency: a
        `dotnet build` with no C++ toolchain present should still produce a
        runnable host, just one that can't activate. -->
-  <Target Name="StageNativePayload" AfterTargets="Build">
-    <ItemGroup>
-      <_PenguNative Include="$(MSBuildThisFileDirectory)..\..\bin\core.dll" />
-      <_PenguNative Include="$(MSBuildThisFileDirectory)..\..\bin\boot.dll" />
-    </ItemGroup>
-    <Copy SourceFiles="@(_PenguNative)"
-          DestinationFolder="$(OutDir)"
-          Condition="Exists('%(_PenguNative.FullPath)')"
-          SkipUnchangedFiles="true" />
-  </Target>
+	<Target Name="StageNativePayload" AfterTargets="Build" Condition="'$(SkipNativeBuild)' == 'true'">
+		<ItemGroup>
+			<_PenguNative Include="$(MSBuildThisFileDirectory)..\..\core\bin\x64\$(Configuration)\core.dll" />
+			<_PenguNative Include="$(MSBuildThisFileDirectory)..\..\boot\bin\x64\$(Configuration)\boot.dll" />
+		</ItemGroup>
+		<Copy SourceFiles="@(_PenguNative)" DestinationFolder="$(OutDir)" Condition="Exists('%(_PenguNative.FullPath)')" SkipUnchangedFiles="true" />
+	</Target>
 
-  <Target Name="BuildHubBundle" BeforeTargets="BeforeBuild"
-          Condition="'$(Configuration)' == 'Release'">
-    <Message Importance="high" Text="Pengu: building hub bundle (pnpm)" />
-    <Exec Command="pnpm --filter @pengujs/hub build"
-          WorkingDirectory="$(MSBuildThisFileDirectory)..\.." />
-    <MakeDir Directories="$(IntermediateOutputPath)" />
-    <ZipDirectory SourceDirectory="$(MSBuildThisFileDirectory)..\..\packages\hub\dist"
-                  DestinationFile="$(IntermediateOutputPath)app.dat"
-                  Overwrite="true" />
-  </Target>
+	<Target Name="BuildHubBundle" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release'">
+		<Message Importance="high" Text="Pengu: building hub bundle (pnpm)" />
+		<Exec Command="pnpm --filter @pengujs/hub build" WorkingDirectory="$(MSBuildThisFileDirectory)..\.." />
+		<MakeDir Directories="$(IntermediateOutputPath)" />
+		<ZipDirectory SourceDirectory="$(MSBuildThisFileDirectory)..\..\packages\hub\dist" DestinationFile="$(IntermediateOutputPath)app.dat" Overwrite="true" />
+	</Target>
+
+	<ItemGroup Condition="'$(SkipNativeBuild)' != 'true'">
+		<ProjectReference Include="..\..\boot\boot.vcxproj">
+			<Private>true</Private>
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+			<OutputItemType>Content</OutputItemType>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</ProjectReference>
+		<ProjectReference Include="..\..\core\core.vcxproj">
+			<Private>true</Private>
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+			<OutputItemType>Content</OutputItemType>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</ProjectReference>
+	</ItemGroup>
 
 </Project>
