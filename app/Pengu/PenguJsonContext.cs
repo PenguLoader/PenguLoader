@@ -34,6 +34,7 @@ namespace Pengu;
 [JsonSerializable(typeof(ActivationResult))]
 [JsonSerializable(typeof(ActivationModeInfo))]
 [JsonSerializable(typeof(ActivationModeInfo[]))]
+[JsonSerializable(typeof(BootStubState))]
 [JsonSerializable(typeof(ConfigSnapshot))]
 [JsonSerializable(typeof(ConfigApp))]
 [JsonSerializable(typeof(ConfigClient))]

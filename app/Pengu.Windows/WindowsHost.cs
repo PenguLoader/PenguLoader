@@ -59,7 +59,6 @@ internal sealed class WindowsHost : IHost
         // the machine — and plugins are executed by whoever launches the
         // client, so any account could run code in any other account's LCUX.
         // Per-user is both the safe layout and the one macOS already uses.
-        // See .claude/docs/windows-activation.md.
         DataRoot = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             ".pengu");
@@ -265,7 +264,7 @@ internal sealed class WindowsHost : IHost
         // strictly more reliable here (kernel-side image-load redirect, no
         // daemon required, survives reboots). OnDemand stays a macOS-only
         // mode (see Pengu.MacOS in milestone E).
-        registry.Register(new Pengu.Windows.Activation.IfeoAction(ExeDirectory));
+        registry.Register(new Pengu.Windows.Activation.IfeoAction(ExeDirectory, DataRoot));
 
         _ = config; _ = bus;
     }

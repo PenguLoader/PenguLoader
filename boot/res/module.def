@@ -1,0 +1,3 @@
+LIBRARY boot
+EXPORTS
+	_BootstrapEntry			@6000 NONAME

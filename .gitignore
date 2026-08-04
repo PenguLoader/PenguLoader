@@ -454,4 +454,9 @@ Temporary Items
 ### Project defines ###
 
 bin/*
+# `bin/*` has a slash, so it only anchors at the repo root. The C++ projects
+# write to <project>/bin, which was left untracked-but-not-ignored and made it
+# easy to commit a core.dll or a stray .exp by accident.
+core/bin/
+boot/bin/
 *.g.h

@@ -1,4 +1,4 @@
-import { pengu, ActivationMode, type ActivationResult } from './pengu'
+import { pengu, ActivationMode, type ActivationResult, type BootStubState } from './pengu'
 
 export { ActivationMode }
 
@@ -32,5 +32,29 @@ export const CoreModule = {
       activated,
       error: result.ok ? '' : (result.error ?? 'Activation failed'),
     }
+  },
+
+  /**
+   * State of the machine-wide boot, or null where there isn't one.
+   *
+   * Worth keeping separate from {@link isActivated} in the UI: the boot is
+   * installed once and shared by every account on the machine, while
+   * activation is per-user. "Installed but off" is a normal state, not a
+   * broken one.
+   */
+  bootState(): Promise<BootStubState | null> {
+    return pengu.activation.getBootState()
+  },
+
+  /**
+   * Uninstall the machine-wide boot. Prompts for elevation.
+   *
+   * Not the same as deactivating — that's a per-user file write with no
+   * prompt. This removes the shared part, so every other account on the
+   * machine stops getting Pengu too.
+   */
+  async removeBoot(): Promise<{ ok: boolean; error: string }> {
+    const result = await pengu.activation.removeBoot()
+    return { ok: result.ok, error: result.ok ? '' : (result.error ?? 'Could not remove the boot') }
   },
 }

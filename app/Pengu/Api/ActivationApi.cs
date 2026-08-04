@@ -125,6 +125,55 @@ public partial class ActivationApi
     [JsInvokable]
     public Task<bool> CoreExists() => Task.FromResult(File.Exists(_corePath));
 
+    /// <summary>
+    /// State of the machine-wide boot, or null on platforms that don't have
+    /// one (macOS). Distinct from <see cref="IsActive"/>: the boot can be
+    /// installed while this user has Pengu switched off, which is the normal
+    /// state for a second account on a shared machine.
+    /// </summary>
+    [JsInvokable]
+    public async Task<BootStubState?> GetBootState()
+    {
+        if (ResolveAction() is not IBootStub stub) return null;
+        try
+        {
+            return await stub.GetBootStateAsync(default).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "GetBootStateAsync threw");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Remove the machine-wide boot. Requires elevation, and is deliberately
+    /// separate from deactivating — turning Pengu off should not cost a UAC
+    /// prompt, and should not disturb other accounts.
+    /// </summary>
+    [JsInvokable]
+    public async Task<ActivationResult> RemoveBoot()
+    {
+        if (ResolveAction() is not IBootStub stub)
+            return ActivationResult.Fail("No machine-wide boot on this platform", "ResolveAction");
+
+        ActivationResult result;
+        try
+        {
+            result = await stub.RemoveBootAsync(default).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "RemoveBootAsync threw");
+            return ActivationResult.Fail(ex.Message, "Unhandled");
+        }
+
+        if (result.Ok)
+            EmitStateChanged(false);
+
+        return result;
+    }
+
     private IActivationAction? ResolveAction()
     {
         var mode = _config.Read().App.ActivationMode;

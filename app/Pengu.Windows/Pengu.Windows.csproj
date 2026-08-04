@@ -62,6 +62,27 @@
                       Visible="false" />
   </ItemGroup>
 
+  <!-- Stage the native payload next to Pengu.exe.
+
+       The host resolves core.dll from its own directory (IHost.CoreModulePath)
+       and looks for boot.dll there when activation needs to install the boot,
+       but both are built by MSBuild C++ projects into the repo-root bin\.
+       Without this, a local build has nothing to activate with.
+
+       Conditioned on existence rather than declared as a dependency: a
+       `dotnet build` with no C++ toolchain present should still produce a
+       runnable host, just one that can't activate. -->
+  <Target Name="StageNativePayload" AfterTargets="Build">
+    <ItemGroup>
+      <_PenguNative Include="$(MSBuildThisFileDirectory)..\..\bin\core.dll" />
+      <_PenguNative Include="$(MSBuildThisFileDirectory)..\..\bin\boot.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PenguNative)"
+          DestinationFolder="$(OutDir)"
+          Condition="Exists('%(_PenguNative.FullPath)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
   <Target Name="BuildHubBundle" BeforeTargets="BeforeBuild"
           Condition="'$(Configuration)' == 'Release'">
     <Message Importance="high" Text="Pengu: building hub bundle (pnpm)" />

@@ -93,19 +93,25 @@ How does `core.dll/dylib` get loaded into LCUX in the first place? Three modes, 
 
 #### Windows — IFEO (Universal, default)
 
-[`packages/hub/src-tauri/src/windows/mod_ifeo.rs`](../packages/hub/src-tauri/src/windows/mod_ifeo.rs) writes a registry value:
+Activation writes a single registry value:
 
 ```
 HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\
     LeagueClientUx.exe\
-        Debugger = rundll32 "C:\path\to\core.dll", #6000
+        Debugger = rundll32 "C:\ProgramData\.pengu\boot.dll", #6000
 ```
 
-When Windows launches `LeagueClientUx.exe`, the IFEO `Debugger` value redirects through `rundll32`, which loads `core.dll` and calls its ordinal-6000 export. That export ([`_BootstrapEntry` in `dllmain.cc`](../core/src/dllmain.cc#L228-L309)):
+It names [`boot.dll`](../boot/), not the install's `core.dll`. That's a small module with no CEF surface, living in an administrator-owned directory it never moves out of, which resolves what to actually load from a per-user pointer file at `%LOCALAPPDATA%\.pengu\active`. The indirection is what makes activation per-user despite the registry key being machine-wide, stops a deleted portable folder from bricking the client, and confines the administrator prompt to the first activation.
+
+A DLL under `rundll32` and not an executable of our own: registering an unknown binary as an IFEO `Debugger` is a persistence technique in its own right, and Defender scores it behaviourally the moment the client triggers it — a SignPath-signed `pengu-boot.exe` was quarantined on first launch. `rundll32` is Microsoft-signed and is the shape this project shipped for years.
+
+Before injecting, the boot verifies what the pointer named: an ECDSA P-256 signature embedded in `core.dll`'s own `.pengu` section, made with a key whose public half is compiled into the boot, plus a publisher-agnostic Authenticode check. Neither gate blocks the client — a refusal launches League without the plugin runtime and records why in `%LOCALAPPDATA%\.pengu\boot.log`, which Settings surfaces. [`boot/trust.h`](../boot/trust.h) specifies the blob format and exactly which bytes the signature covers.
+
+When Windows launches `LeagueClientUx.exe`, the `Debugger` value redirects through `rundll32`, which loads `boot.dll` and calls its ordinal-6000 export. That export shares [`bootstrap::launch`](../core/src/bootstrap.cc) with core's own ordinal-6000 export, which is retained for installs whose registry value still points straight at a `core.dll`:
 
 1. Re-launches the original `LeagueClientUx.exe` with `CREATE_SUSPENDED | DEBUG_ONLY_THIS_PROCESS`, reparented onto `rundll32`'s own parent (see below).
 2. Strips the debugger flag via `NtRemoveProcessDebug` (so the process doesn't actually run under a debugger — `DEBUG_ONLY_THIS_PROCESS` is just used to prevent IFEO from re-firing).
-3. Injects `core.dll` into the new process via `CreateRemoteThread → LoadLibraryW`.
+3. Injects the verified `core.dll` into the new process via `CreateRemoteThread → LoadLibraryW`.
 4. Resumes the suspended thread.
 
 This is loosely the same idea as the original Mecha injector (per the v0.6.0 doc) but uses `rundll32` rather than Detours and immediately removes the debugger to avoid CEF performance penalties.

@@ -17,10 +17,12 @@
     <ClCompile Include="src\browser\keyboard.cc" />
     <ClCompile Include="src\browser\riotclient.cc" />
     <ClCompile Include="src\browser\window.cc" />
+    <ClCompile Include="src\bootstrap.cc" />
     <ClCompile Include="src\config.cc" />
     <ClCompile Include="src\libcef.cc" />
     <ClCompile Include="src\dllproxy.cc" />
     <ClCompile Include="src\dllmain.cc" />
+    <ClCompile Include="src\signature.cc" />
     <ClCompile Include="src\renderer\v8_datastore.cc" />
     <ClCompile Include="src\renderer\v8_dir.cc" />
     <ClCompile Include="src\renderer\v8_helper.cc" />
@@ -46,8 +48,25 @@
     <ClInclude Include="src\platform.h" />
     <ClInclude Include="src\renderer\v8_wrapper.h" />
   </ItemGroup>
+  <!-- Single-source the version resource from the root package.json, same as
+       app/Directory.Build.props does for the .NET side. Without this the .rc
+       drifts, which is how it ended up claiming to be D3D9 10.0.19041.2311. -->
+  <PropertyGroup>
+    <_RootPackageJsonPath>$(MSBuildThisFileDirectory)..\package.json</_RootPackageJsonPath>
+    <PenguVersion>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(_RootPackageJsonPath)')), '"version"\s*:\s*"([^"]+?)"').Groups[1].Value)</PenguVersion>
+    <PenguVersion Condition="'$(PenguVersion)' == ''">0.0.0</PenguVersion>
+    <!-- FILEVERSION needs comma-separated numerics; strip any prerelease tag. -->
+    <PenguVersionNumeric>$(PenguVersion.Split('-')[0])</PenguVersionNumeric>
+    <PenguVersionCommas>$(PenguVersionNumeric.Replace('.', ',')),0</PenguVersionCommas>
+  </PropertyGroup>
+
   <ItemGroup>
-    <ResourceCompile Include="res\resource.rc" />
+    <ResourceCompile Include="res\resource.rc">
+      <!-- The \" escaping is required: unescaped quotes are stripped before
+           rc.exe sees the define, which silently yields an empty
+           FileVersion / ProductVersion string. -->
+      <PreprocessorDefinitions>PENGU_VERSION_COMMAS=$(PenguVersionCommas);PENGU_VERSION_STR=\"$(PenguVersion)\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

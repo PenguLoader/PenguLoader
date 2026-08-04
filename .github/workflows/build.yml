@@ -8,6 +8,15 @@ on:
       - release/*
       - feat/app-hub
   workflow_dispatch:
+  # release.yml builds through this rather than duplicating ~150 lines of
+  # toolchain and compile steps. Everything here is unsigned by design: code
+  # signing and the installer live in release.yml, so a push build stays fast
+  # and needs no secrets at all.
+  #
+  # An unsigned payload is complete and runnable but cannot activate — the boot
+  # requires both the embedded signature and Authenticode, and a build that
+  # skipped signing has neither. That is intentional, not a gap.
+  workflow_call:
 
 jobs:
   build:
@@ -39,45 +48,44 @@ jobs:
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
           echo "APP_VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
 
-      # ─── Toolchains (shared) ────────────────────────────────────────────
-      # .NET 10 SDK for both Pengu.Windows (AOT) and Pengu.MacOS (workload).
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: |
-            - recursive: true
-
-      # ─── Toolchains (Windows) ───────────────────────────────────────────
-      # MSBuild + the VS 2022 C++ workload (preinstalled on windows-2022).
-      # PublishAot relies on the C++ toolchain shipped with the workload.
-      - name: Setup MSBuild
-        if: runner.os == 'Windows'
-        uses: microsoft/setup-msbuild@v2
-
-      # ─── Toolchains (macOS) ─────────────────────────────────────────────
-      # Microsoft.macOS.Sdk.net10.0_26.4 requires Xcode 26.x. Select the
-      # latest stable Xcode on the runner; the workload install fails loudly
-      # if 26+ isn't available.
+      # ─── Toolchains ─────────────────────────────────────────────────────
+      # Xcode first: Microsoft.macOS.Sdk.net10.0_26.4 requires Xcode 26.x, and
+      # selecting it before the SDK step keeps that ordering guarantee now that
+      # the workload is installed as part of setup-dotnet.
       - name: Select latest Xcode
         if: runner.os == 'macOS'
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
-      - name: Install .NET macOS workload
-        if: runner.os == 'macOS'
-        run: sudo dotnet workload install macos
+      # .NET 10 for both Pengu.Windows (AOT) and Pengu.MacOS. The macos
+      # workload comes from the `workloads` input rather than a separate
+      # `dotnet workload install` step — it needs v5, v4 has no such input, and
+      # it installs into the SDK setup-dotnet just laid down so there is no
+      # sudo involved.
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          workloads: ${{ runner.os == 'macOS' && 'macos' || '' }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9
+          run_install: |
+            - recursive: true
+
+      # MSBuild + the VS 2022 C++ workload (preinstalled on windows-2022).
+      # PublishAot relies on the C++ toolchain shipped with the workload.
+      - name: Setup MSBuild
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v3
 
       # ─── Build (shared) ─────────────────────────────────────────────────
       # Preload bundle is #include'd into core (renderer.cc embeds preload.g.h).
@@ -90,6 +98,15 @@ jobs:
       - name: Build core (windows)
         if: runner.os == 'Windows'
         run: msbuild.exe core/core.vcxproj -p:Configuration=Release -p:Platform=x64 -nologo -m
+
+      # The IFEO boot, loaded by rundll32. Shares bootstrap.cc with core but
+      # links nothing else from it, so it stays a few tens of KB with no CEF
+      # surface. Writes to boot/bin/ (OutDir is $(SolutionDir)bin\ and there is
+      # no .sln, so SolutionDir resolves to the project directory — same as
+      # core).
+      - name: Build boot (windows)
+        if: runner.os == 'Windows'
+        run: msbuild.exe boot/boot.vcxproj -p:Configuration=Release -p:Platform=x64 -nologo -m
 
       # AOT-publish the .NET 10 host. The csproj's BuildHubBundle target runs
       # `pnpm --filter @pengujs/hub build` and zips packages/hub/dist/ into
@@ -114,6 +131,7 @@ jobs:
           cp app-publish/Pengu.exe          out/
           cp app-publish/WebView2Loader.dll out/
           cp core/bin/core.dll              out/
+          cp boot/bin/boot.dll              out/
 
       # ─── Build (macOS) ──────────────────────────────────────────────────
       # C++ core -> core/bin/core.dylib (the makefile's LIB_OUT_PATH).
@@ -155,11 +173,12 @@ jobs:
           cp -R app/Pengu.MacOS/bin/Release/net10.0-macos/Pengu.app  out/Pengu.app
           codesign --verify --verbose=2 out/Pengu.app
 
-      # ─── Artifact upload (shared) ───────────────────────────────────────
+      # ─── Artifact ───────────────────────────────────────────────────────
+      # release.yml picks the Windows one up by the `pengu-*-windows` pattern,
+      # so the name shape here is load-bearing for that workflow.
       - name: Upload portable artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pengu-v${{ env.APP_VERSION }}-${{ env.SHORT_SHA }}-${{ matrix.platform }}
           path: out/
           if-no-files-found: error
-          compression-level: 9

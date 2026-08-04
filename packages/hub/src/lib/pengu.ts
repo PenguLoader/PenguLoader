@@ -31,6 +31,30 @@ export interface ActivationResult {
   stage?: string
 }
 
+/**
+ * State of the machine-wide boot (Windows only; null elsewhere).
+ *
+ * Distinct from `isActive()`: the boot can be installed while this user has
+ * Pengu switched off, which is the normal state for a second account on a
+ * shared machine.
+ */
+export interface BootStubState {
+  /** The boot exists at its administrator-owned path. */
+  installed: boolean
+  /** Windows is wired to launch it when the client starts. */
+  wired: boolean
+  installedVersion?: string
+  shippedVersion?: string
+  /** This build ships a newer boot than the one installed. */
+  updateAvailable: boolean
+  /**
+   * Why the boot last declined to load a runtime, if it did. The client still
+   * launched — it just ran without plugins, which otherwise looks exactly like
+   * Pengu quietly not working.
+   */
+  lastRefusal?: string
+}
+
 export interface ConfigSnapshot {
   app: {
     language: string
@@ -127,6 +151,10 @@ export interface PenguBridge {
     isActive(): Promise<boolean>
     setActive(active: boolean): Promise<ActivationResult>
     coreExists(): Promise<boolean>
+    /** Null on platforms without a machine-wide boot (macOS). */
+    getBootState(): Promise<BootStubState | null>
+    /** Needs elevation. Deliberately separate from deactivating. */
+    removeBoot(): Promise<ActivationResult>
   }
 
   config: {

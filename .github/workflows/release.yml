@@ -1,0 +1,198 @@
+name: release
+
+# Everything that needs a secret, in one place. build.yml stays a plain
+# compile that anyone can run on a fork without configuring anything; this
+# workflow adds the two signatures a shippable Windows build needs, and the
+# installer that carries them.
+#
+# Manual on purpose. Signing costs a SignPath submission and the trust key is
+# the one credential that can't be rotated cheaply, so releases are something
+# you ask for rather than something a push does.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # Reuse the real build rather than duplicating it. Same commit, same steps,
+  # same artifact names — release just picks up where it left off.
+  build:
+    uses: ./.github/workflows/build.yml
+
+  sign:
+    name: sign (windows)
+    needs: build
+    runs-on: windows-2022
+
+    # Replacing the unsigned Windows artifact with the signed one needs write
+    # access to the run's own artifacts.
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      # No submodules: this job only needs build/sign-core.ps1, boot/trust_key.h
+      # and build/setup.iss, none of which live in one.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Prepare environment variables
+        shell: bash
+        run: |
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+
+      # First, and before a SignPath submission is spent.
+      #
+      # PENGU_TRUST_KEY_IS_DEV is hand-edited, never flipped by CI — a release
+      # binary has to match the source it was built from, and a constant
+      # rewritten mid-build stops describing what shipped. So the source stays
+      # honest and this gate stops it reaching a release.
+      #
+      # Worth having because the flag is otherwise nearly inert: it writes one
+      # WARNING line to boot.log, ReadLastRefusal filters those out, and a
+      # successful launch deletes the file. Shipping the development key would
+      # look exactly like shipping the real one.
+      - name: Refuse to release on the development trust key
+        shell: bash
+        run: |
+          if grep -qE 'PENGU_TRUST_KEY_IS_DEV[[:space:]]*=[[:space:]]*true' boot/trust_key.h; then
+            echo "::error file=boot/trust_key.h::Still on the development trust key. Run build/new-trust-key.ps1 in the signing environment, replace PENGU_TRUST_PUBKEY, store the private half as PENGU_TRUST_KEY, and set PENGU_TRUST_KEY_IS_DEV to false."
+            exit 1
+          fi
+
+      # By pattern, so this workflow doesn't have to reconstruct the exact
+      # artifact name the build job chose.
+      - name: Download the unsigned Windows payload
+        uses: actions/download-artifact@v7
+        with:
+          pattern: pengu-*-windows
+          merge-multiple: true
+          path: payload
+
+      # ─── Pengu signature ────────────────────────────────────────────────
+      # Goes in FIRST, before Authenticode. It lives in core.dll's own .pengu
+      # section and the digest skips the three regions signtool rewrites, so
+      # code signing afterwards leaves it valid.
+      #
+      # The old pengu.manifest had to be generated *after* signing, because
+      # Authenticode rewrites the PE and a hash taken beforehand named bytes
+      # that no longer existed. Embedding inverts that, which is what let the
+      # whole signing chain move out of build.yml.
+      - name: Embed the Pengu signature
+        env:
+          PENGU_TRUST_KEY: ${{ secrets.PENGU_TRUST_KEY }}
+        shell: pwsh
+        run: |
+          if (-not $env:PENGU_TRUST_KEY) {
+            throw "PENGU_TRUST_KEY is not set. Without it the release ships fine and then never activates, which is worse than failing here."
+          }
+          ./build/sign-core.ps1 -Core payload/
+
+      # ─── Authenticode ───────────────────────────────────────────────────
+      - name: Upload payload for signing
+        uses: actions/upload-artifact@v7
+        id: unsigned-payload
+        with:
+          name: unsigned-payload-${{ env.SHORT_SHA }}
+          path: payload/
+          if-no-files-found: error
+
+      - name: Sign binaries
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: PenguLoader
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: zipped-app
+          github-artifact-id: ${{ steps.unsigned-payload.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      # The release gate, and the reason it runs after signing rather than
+      # beside the embedding step: it proves the signature survived signtool on
+      # the exact bytes about to be published. A core the shipped boot refuses
+      # produces a client that launches without plugins and no obvious cause,
+      # so fail the build rather than ship it.
+      #
+      # 64 bytes of key when only the primary slot is filled, 128 once a
+      # successor has been announced; sign-core.ps1 accepts either.
+      - name: Verify the signed core against the shipped boot
+        shell: pwsh
+        run: |
+          $pub = (Select-String -Path boot/trust_key.h -Pattern '0x[0-9A-F]{2}' -AllMatches |
+                  ForEach-Object { $_.Matches.Value }) -join ''
+          ./build/sign-core.ps1 -Core signed/ -Verify -PublicKey $pub
+
+      # ─── Installer ──────────────────────────────────────────────────────
+      - name: Build installer
+        shell: pwsh
+        run: |
+          # Version-agnostic: runner images and dev machines carry different
+          # Inno majors, and pinning one turns an image bump into a red build.
+          $iscc = Get-ChildItem "$env:ProgramFiles\Inno Setup *","${env:ProgramFiles(x86)}\Inno Setup *" `
+                    -Directory -ErrorAction SilentlyContinue |
+                  Sort-Object Name -Descending |
+                  ForEach-Object { Join-Path $_.FullName 'ISCC.exe' } |
+                  Where-Object { Test-Path $_ } |
+                  Select-Object -First 1
+          if (-not $iscc) { throw "ISCC.exe not found" }
+          Write-Host "using $iscc"
+          New-Item -ItemType Directory -Force -Path installer | Out-Null
+          # Built from `signed`, never `payload`: the installer embeds the
+          # binaries, so it has to carry the signed ones.
+          & $iscc "/DPayloadDir=$(Resolve-Path signed)" "/DOutputDirectory=$(Resolve-Path installer)" build\setup.iss
+
+      - name: Upload installer for signing
+        uses: actions/upload-artifact@v7
+        id: unsigned-installer
+        with:
+          name: unsigned-installer-${{ env.SHORT_SHA }}
+          path: installer/
+          if-no-files-found: error
+
+      - name: Sign installer
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: PenguLoader
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: zipped-installer
+          github-artifact-id: ${{ steps.unsigned-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: installer
+
+      # ─── Publish ────────────────────────────────────────────────────────
+      # Drop the intermediates, and the unsigned Windows payload the build job
+      # published, so the finished run offers exactly one Windows download and
+      # nobody ships the wrong one by accident. The macOS artifact is already
+      # signed by the workload's own codesign and is left alone.
+      - name: Delete unsigned artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          failOnError: false
+          name: |
+            unsigned-payload-${{ env.SHORT_SHA }}
+            unsigned-installer-${{ env.SHORT_SHA }}
+            pengu-v${{ env.APP_VERSION }}-${{ env.SHORT_SHA }}-windows
+
+      # `-signed` rather than reusing the name just deleted: artifact deletion
+      # isn't guaranteed to have settled by the time the upload runs, and a
+      # name collision would fail the run at the very last step. The suffix
+      # also makes it obvious which builds went through this workflow.
+      - name: Upload signed portable artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: pengu-v${{ env.APP_VERSION }}-${{ env.SHORT_SHA }}-windows-signed
+          path: signed/
+          if-no-files-found: error
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: pengu-v${{ env.APP_VERSION }}-${{ env.SHORT_SHA }}-installer
+          path: installer/
+          if-no-files-found: error

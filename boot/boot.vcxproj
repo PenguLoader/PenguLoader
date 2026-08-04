@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- boot.dll — the stable IFEO entry point, loaded by rundll32.
+
+       Deliberately tiny: it links bootstrap.cc out of core/src and nothing
+       else, so there's no CEF surface and no shared-CRT dependency. It runs on
+       every client launch and stays resident for the whole session, and
+       replacing it costs an admin prompt, so it should almost never need to
+       change. New capability belongs in core.dll.
+
+       A DLL and not an executable because Defender quarantines the executable:
+       registering an unknown binary as an IFEO Debugger is scored
+       behaviourally when the client triggers it, and code signing doesn't
+       exempt it. rundll32 is Microsoft-signed and is what this project shipped
+       for years. -->
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClCompile Include="main.cc" />
+    <ClCompile Include="trust.cc" />
+    <ClCompile Include="..\core\src\bootstrap.cc" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="trust.h" />
+    <ClInclude Include="trust_key.h" />
+    <ClInclude Include="..\core\src\bootstrap.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="res\module.def" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ResourceCompile Include="res\boot.rc">
+      <!-- Same \" escaping requirement as core: unescaped quotes are stripped
+           before rc.exe sees the define. -->
+      <PreprocessorDefinitions>PENGU_VERSION_COMMAS=$(PenguVersionCommas);PENGU_VERSION_STR=\"$(PenguVersion)\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{3F1C7A82-9B24-4E6D-9C31-6A5E2D4B8F10}</ProjectGuid>
+    <RootNamespace>penguboot</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <!-- Version resource single-sourced from the root package.json, same as
+       core.vcxproj. -->
+  <PropertyGroup>
+    <_RootPackageJsonPath>$(MSBuildThisFileDirectory)..\package.json</_RootPackageJsonPath>
+    <PenguVersion>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(_RootPackageJsonPath)')), '"version"\s*:\s*"([^"]+?)"').Groups[1].Value)</PenguVersion>
+    <PenguVersion Condition="'$(PenguVersion)' == ''">0.0.0</PenguVersion>
+    <PenguVersionNumeric>$(PenguVersion.Split('-')[0])</PenguVersionNumeric>
+    <PenguVersionCommas>$(PenguVersionNumeric.Replace('.', ',')),0</PenguVersionCommas>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <IntDir>$(ProjectDir)obj\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>boot</TargetName>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\core\src</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- Static CRT: the stub has to run on machines that may not have the
+           VC redistributable, and a missing redist would brick the client
+           exactly the way this design exists to prevent. -->
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
+      <AdditionalDependencies>bcrypt.lib;wintrust.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\core\src</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <Optimization>MinSpace</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ModuleDefinitionFile>res/module.def</ModuleDefinitionFile>
+      <AdditionalDependencies>bcrypt.lib;wintrust.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
