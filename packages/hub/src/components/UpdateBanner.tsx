@@ -8,10 +8,9 @@ import { Shell } from '~/lib/shell'
  * the manual button in Settings) lights it up without re-fetching.
  *
  * Layout:
- *   - `fixed bottom-0 left-0 right-0` — sticks across both the gallery
- *     and store views; layer above page content but below the Settings
- *     overlay (z-30 vs z-50) so opening settings hides it without extra
- *     wiring.
+ *   - Positioning belongs to {@link Banners}, which fixes the whole stack
+ *     to the bottom — this renders as a plain block so a second banner
+ *     stacks above it instead of covering it.
  *   - `bg-primary text-primary-foreground` — the theme's accent green
  *     against its dark-on-green foreground, matching Button "default".
  *
@@ -30,7 +29,7 @@ export const UpdateBanner: Component = () => {
 
   return (
     <Show when={Updater.available() && !dismissed()}>
-      <div class="fixed bottom-0 left-0 right-0 z-30 bg-primary text-primary-foreground shadow-lg animate-in slide-in-from-bottom duration-300">
+      <div class="bg-primary text-primary-foreground shadow-lg animate-in slide-in-from-bottom duration-300">
         <div class="flex items-center justify-between gap-3 px-4 py-2">
           <div class="text-sm">
             <span class="font-semibold">Pengu {Updater.available()!.tag}</span> is available.

@@ -26,6 +26,20 @@
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
+    /* Semantic warning: amber-400 on near-black amber, contrast-picked the
+       same way --primary-foreground is.
+
+       Deliberately NOT theme-driven — lib/theme.ts leaves it alone, because
+       "something is wrong" should read the same whichever accent the user
+       picked. Tinting it would make it vanish under the yellow theme, which
+       is exactly when it matters.
+
+       tailwind.config.ts already declared `warning` (alongside info, success
+       and error); this is the variable it resolves against. Without it,
+       `bg-warning` compiles to hsl() around an empty var and paints nothing.
+       The other three are still undeclared and behave that way today. */
+    --warning: 43 96% 56%;
+    --warning-foreground: 26 92% 14%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     /* Focus ring tracks the primary accent. */
