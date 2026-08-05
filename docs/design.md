@@ -490,7 +490,15 @@ The Vite config in [`packages/preload/vite.config.ts`](../packages/preload/vite.
 
 **Build (`vite build`):** Vite emits `dist/preload.js`, then a custom `pengu-build` plugin emits `dist/preload.g.h` containing `_preload_script[]` as a C `unsigned char` array. The renderer `#include`s that header in non-debug builds and runs the embedded bytes ([`renderer.cc:209-211`](../core/src/renderer/renderer.cc#L209-L211)).
 
-> **Known issue.** The recent `7635b4c` refactor moved `plugins/` → `packages/preload/`, but the C++ paths in `renderer.cc` still reference `../plugins/dist/preload.js` and `../../plugins/dist/preload.g.h`, which no longer resolve. Release builds will fail until either the C++ paths are updated or the build emits to `core/plugins/dist/`. To be fixed.
+**Debug builds read `preload.js` from disk instead**, so iterating on the preload only needs a `pnpm --filter @pengujs/preload build` — no core rebuild. The path is resolved from `__FILE__`, which bakes in the source tree the DLL was compiled from:
+
+```
+<repo>/core/src/renderer/renderer.cc  ->  <repo>/packages/preload/dist/preload.js
+```
+
+Resolving against `config::module_dir()` does not work here: a debug `core.dll` is deployed wherever `%LOCALAPPDATA%\.pengu\active` points — normally `app/Pengu.Windows/bin/Debug` — so a module-relative path lands next to the deployed copy and finds nothing, and the client comes up with no plugin runtime and no error. That module-relative guess survives as a fallback, and a miss now prints the attempted path to the debug console.
+
+Both build systems force an absolute `__FILE__` (CMake `/FC`, vcxproj `UseFullPaths`); MSBuild otherwise passes a source path relative to the project directory, which would resolve against the client's working directory at runtime. The build-machine path only exists in debug binaries — release embeds the bytes.
 
 ### 5.2 Plugin loader
 
@@ -687,7 +695,7 @@ A future iteration is planned to replace `DataStore` with per-plugin async stora
 
 Surfaced separately so they don't get lost in implementation prose:
 
-1. **Preload include path is broken on `main`.** Commit `7635b4c` moved `plugins/` to `packages/preload/`. The C++ references in [`renderer.cc:200,209`](../core/src/renderer/renderer.cc#L200) still point at the old path. Release builds will fail until either the C++ side is updated or the build emits to `core/plugins/dist/`.
+1. ~~**Preload include path is broken on `main`.**~~ Fixed. Both references point at `packages/preload/dist/` — release `#include`s `preload.g.h`, and debug resolves `preload.js` from `__FILE__` (see [§5.1](#51-build-pipeline)).
 2. **`is_main_` flicker.** Per-process global reassigned on every `OnBrowserCreated` ([`renderer.cc:265`](../core/src/renderer/renderer.cc#L265)). Currently saved by the `index.html` URL check downstream, but not robust if CEF's process model ever changes.
 3. **Hash-based disable is essentially untested.** v1.1.6 uses on-disk renames; v1.2.0 uses FNV-1a hashes. The new path has not been validated end-to-end. Tauri loader has partial backward-compat for `.js_`-renamed plugins ([`plugins.ts:131`](../packages/hub/src/lib/plugins.ts#L131)) but the entry path produced for those would not satisfy the C++ scheme handler.
 4. **RCS credential extraction is fragile.** The `OnBeforeCommandLineProcessing` window is the only known point to read `--riotclient-app-port` / `--riotclient-auth-token` before CEF strips them. There is no clean alternative.

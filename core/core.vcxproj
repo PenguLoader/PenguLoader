@@ -124,6 +124,9 @@
       </SDLCheck>
       <PreprocessorDefinitions>_DEBUG;CORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <!-- /FC — renderer.cc resolves the debug preload path against __FILE__,
+           which MSBuild otherwise passes relative to the project directory. -->
+      <UseFullPaths>true</UseFullPaths>
       <AdditionalIncludeDirectories>./cef;./src</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>

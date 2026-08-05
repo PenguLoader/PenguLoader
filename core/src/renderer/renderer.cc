@@ -228,7 +228,31 @@ static void ExecutePreloadScript(cef_v8context_t *context)
 
 #ifdef _DEBUG
     void *buffer; size_t length;
-    path preload_path = config::module_dir() / "../packages/preload/dist/preload.js";
+
+    // Resolve the preload against the *source* tree, not the loaded module.
+    // A debug core.dll is deployed wherever `active` points — usually
+    // app/Pengu.Windows/bin/Debug — so anything relative to module_dir()
+    // resolves next to the deployed copy and finds nothing.
+    //
+    // __FILE__ is this file's path baked in at compile time, which is exactly
+    // the repo it was built from. Debug-only, so a build-machine path in the
+    // binary costs nothing; release embeds the bytes instead. Both build
+    // systems force an absolute __FILE__ (CMake /FC, vcxproj UseFullPaths) —
+    // MSBuild otherwise passes a relative source path and this would resolve
+    // against the process CWD.
+    //
+    //   <repo>/core/src/renderer/renderer.cc -> <repo>
+    path preload_path = path{ __FILE__ }
+        .parent_path()      // core/src/renderer
+        .parent_path()      // core/src
+        .parent_path()      // core
+        .parent_path()      // <repo>
+        / "packages" / "preload" / "dist" / "preload.js";
+
+    // Fall back to the old module-relative guess so a core built elsewhere and
+    // dropped next to a checkout still finds something.
+    if (!file::is_file(preload_path))
+        preload_path = config::module_dir() / "../packages/preload/dist/preload.js";
 
     if (file::read_file(preload_path, &buffer, &length))
     {
@@ -236,6 +260,14 @@ static void ExecutePreloadScript(cef_v8context_t *context)
         context->eval(context, &script,
             &u"https://plugins/@/preload"_s, 1, &retval, &exception);
         free(buffer);
+    }
+    else
+    {
+        // The debug build allocates a console; say why the client is about to
+        // come up with no plugin runtime instead of failing silently.
+        fprintf(stderr, "[pengu] preload not found, plugins will not load: %s\n",
+            preload_path.string().c_str());
+        fprintf(stderr, "[pengu] run: pnpm --filter @pengujs/preload build\n");
     }
 #else
 #   include "../../packages/preload/dist/preload.g.h"

@@ -64,6 +64,13 @@ set(PENGU_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin/x64/$<CONFIG>")
 add_compile_options($<$<CONFIG:Release>:/Zi>)
 add_link_options($<$<CONFIG:Release>:/DEBUG>)
 
+# /FC makes __FILE__ an absolute path. renderer.cc's debug build resolves the
+# preload script against __FILE__ so it finds the source tree it was built
+# from, wherever the DLL is deployed to — a relative __FILE__ would resolve
+# against the client's working directory instead. Ninja already passes absolute
+# source paths, but this makes it independent of the generator.
+add_compile_options($<$<CONFIG:Debug>:/FC>)
+
 # CMake's stock Release flags are `/O2 /Ob2 /DNDEBUG`. Optimisation is set
 # per-target below — core favours speed, boot favours size — so strip the
 # defaults instead of appending and collecting D9025 override warnings.
