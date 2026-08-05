@@ -534,7 +534,21 @@ Assets stay aggressively cached because they're heavy (textures, fonts, audio) a
 
 ### 6.4 Range requests
 
-Audio/video plugins occasionally need range support (e.g. seeking a long mp4). The handler parses `Range: bytes=<start>-<end>` headers and returns `206 Partial Content` with `Accept-Ranges`, `Content-Range`, and `Content-Length` set. Malformed ranges return `416 Requested Range Not Satisfiable`.
+Audio/video plugins occasionally need range support (e.g. seeking a long mp4). `parse_byte_range` in [`assets.cc`](../core/src/browser/assets.cc) handles a single byte-range-spec per RFC 7233 and resolves to one of three outcomes:
+
+| Outcome | Response |
+| --- | --- |
+| **Satisfiable** — `bytes=0-99`, `bytes=500-`, `bytes=-500`, case-insensitive unit, OWS tolerated | `206 Partial Content` with `Content-Range` and a `Content-Length` of `end - start + 1` |
+| **Unsatisfiable** — start at/past EOF, `bytes=-0`, any range against an empty file | `416` with `Content-Range: bytes */<length>` as RFC 7233 §4.4 requires |
+| **Ignore** — unknown unit, no dash, non-digits, overflow-length numbers, `end < start`, or a multi-range set | `200` with the full entity, which RFC 7233 §3.1 explicitly permits |
+
+`Accept-Ranges: bytes` goes on **every** served response, not just 206s — a plain 200 is where a client discovers range support in the first place.
+
+The range end is carried in `body_end_` (last servable byte index, inclusive; `-1` means "nothing", which is what a 416 leaves behind). Both `_read` and `_skip` clamp against it, so a bounded request returns exactly the advertised byte count.
+
+Multi-range sets are deliberately unsupported: answering one requires a `multipart/byteranges` body and no LCUX consumer asks for it, so those fall back to the full entity rather than emitting a malformed reply.
+
+> **History.** This started as the `feat/http-range` branch (`d1a8aed` "implement basic partial content", `2d7a6f3` "add missing accept-ranges"). That version skipped `bytes=` without validating it — so a `Range` header under 6 characters threw `std::out_of_range` out of a CEF callback — never applied the range *end* to the body, treated `bytes=0-0` as open-ended, and produced negative seeks for suffix ranges.
 
 ### 6.5 CORS
 

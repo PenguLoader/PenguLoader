@@ -14,6 +14,141 @@
 // every request the handler sees begins with exactly these 15 characters.
 static constexpr size_t URL_PREFIX_LEN = 15;
 
+// Outcome of parsing a `Range` header, per RFC 7233.
+enum class RangeParse
+{
+    // Not a byte range we can act on - unknown unit, malformed, or a
+    // multi-range set. RFC 7233 3.1 lets the server ignore it and reply 200.
+    Ignore,
+    // Well-formed, but nothing in it overlaps the entity. Reply 416.
+    Unsatisfiable,
+    // Usable. `start` / `end` are inclusive and clamped to the entity.
+    Satisfiable,
+};
+
+// Parse a decimal run. Rejects empty input, non-digits, and anything long
+// enough to overflow - callers treat all three as "ignore the header" rather
+// than trusting a wrapped value.
+static bool parse_range_number(const std::string &text, int64 &out)
+{
+    if (text.empty() || text.size() > 18)
+        return false;
+
+    int64 value = 0;
+    for (char c : text)
+    {
+        if (c < '0' || c > '9')
+            return false;
+        value = value * 10 + (c - '0');
+    }
+
+    out = value;
+    return true;
+}
+
+// Strip optional whitespace (RFC 7230 OWS) from both ends.
+static void trim_ows(std::string &text)
+{
+    size_t begin = text.find_first_not_of(" \t");
+    if (begin == std::string::npos)
+    {
+        text.clear();
+        return;
+    }
+
+    size_t end = text.find_last_not_of(" \t");
+    text = text.substr(begin, end - begin + 1);
+}
+
+///
+/// Parse a single byte-range-spec out of a `Range` header value.
+///
+/// Only one range is supported: answering a multi-range set requires a
+/// multipart/byteranges body, and nothing in LCUX asks for one, so those are
+/// ignored in favour of the full entity.
+///
+static RangeParse parse_byte_range(const std::string &header,
+    int64 total, int64 &start, int64 &end)
+{
+    static constexpr char UNIT[] = "bytes=";
+    constexpr size_t UNIT_LEN = sizeof(UNIT) - 1;
+
+    // Range units are case-insensitive (RFC 7233 2). Note this also guards the
+    // substr below - a header shorter than the unit prefix would otherwise
+    // throw std::out_of_range straight out of a CEF callback.
+    if (header.size() <= UNIT_LEN)
+        return RangeParse::Ignore;
+
+    for (size_t i = 0; i < UNIT_LEN; i++)
+    {
+        char c = header[i];
+        if (c >= 'A' && c <= 'Z') c += 32;
+        if (c != UNIT[i])
+            return RangeParse::Ignore;
+    }
+
+    std::string spec = header.substr(UNIT_LEN);
+
+    // A comma means a multi-range set.
+    if (spec.find(',') != std::string::npos)
+        return RangeParse::Ignore;
+
+    size_t dash = spec.find('-');
+    if (dash == std::string::npos)
+        return RangeParse::Ignore;
+
+    std::string first = spec.substr(0, dash);
+    std::string last = spec.substr(dash + 1);
+    trim_ows(first);
+    trim_ows(last);
+
+    if (first.empty())
+    {
+        // Suffix form `bytes=-N` - the final N bytes of the entity.
+        int64 count;
+        if (!parse_range_number(last, count))
+            return RangeParse::Ignore;
+
+        // `bytes=-0` asks for the last zero bytes: valid syntax, nothing to
+        // send.
+        if (count == 0 || total == 0)
+            return RangeParse::Unsatisfiable;
+
+        start = count >= total ? 0 : total - count;
+        end = total - 1;
+        return RangeParse::Satisfiable;
+    }
+
+    if (!parse_range_number(first, start))
+        return RangeParse::Ignore;
+
+    if (last.empty())
+    {
+        // Open-ended `bytes=N-` runs to the end of the entity. This is the case
+        // the old sentinel (`rangeEnd == 0`) conflated with `bytes=0-0`.
+        end = total - 1;
+    }
+    else
+    {
+        if (!parse_range_number(last, end))
+            return RangeParse::Ignore;
+
+        // last-byte-pos below first-byte-pos makes the spec *invalid* rather
+        // than unsatisfiable (RFC 7233 2.1), so it gets ignored, not 416'd.
+        if (end < start)
+            return RangeParse::Ignore;
+
+        if (end > total - 1)
+            end = total - 1;
+    }
+
+    // A first-byte-pos at or past the end has nothing behind it.
+    if (total == 0 || start >= total)
+        return RangeParse::Unsatisfiable;
+
+    return RangeParse::Satisfiable;
+}
+
 // Custom resource handler for local assets.
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
 {
@@ -23,6 +158,7 @@ public:
         , stream_(nullptr)
         , offset_(0)
         , length_(0)
+        , body_end_(-1)
         , no_cache_(false)
     {
         cef_bind_method(AssetsResourceHandler, open);
@@ -41,6 +177,9 @@ private:
     cef_stream_reader_t *stream_;
     int64 offset_;
     int64 length_;
+    // Last byte index this response may return, inclusive. -1 means "nothing"
+    // and is what a 416 leaves behind; a plain 200 sets it to length_ - 1.
+    int64 body_end_;
     std::string range_header_;
     std::u16string mime_;
     bool no_cache_;
@@ -183,6 +322,14 @@ private:
             length_ = stream_->tell(stream_);
             stream_->seek(stream_, 0, SEEK_SET);
 
+            // Default the servable bound to the whole entity. CEF parses the
+            // Range header itself and calls skip() to seek to a non-zero
+            // first-byte-pos BEFORE get_response_headers runs, so the bound has
+            // to be sane this early or that skip clamps against a stale -1 and
+            // the request dies as ERR_REQUEST_RANGE_NOT_SATISFIABLE.
+            // get_response_headers narrows it once the range is known.
+            body_end_ = length_ - 1;
+
             if (js_mime)
             {
                 // Already known JavaScript module.
@@ -241,54 +388,94 @@ private:
                 set_etag(response);
             }
 
-            if (!range_header_.empty())
-            {
-                std::string contentRange;
-                int contentLength;
+            // Advertise range support on every served response, not only on
+            // 206s - a plain 200 is where a client learns ranges are available
+            // at all, and media elements decide whether to seek from it.
+            response->set_header_by_name(response, &u"Accept-Ranges"_s, &u"bytes"_s, 1);
 
-                // parse range header
-                if (try_get_range_header(contentRange, contentLength))
+            int64 start = 0, end = 0;
+            auto parsed = range_header_.empty()
+                ? RangeParse::Ignore
+                : parse_byte_range(range_header_, length_, start, end);
+
+            switch (parsed)
+            {
+                case RangeParse::Satisfiable:
                 {
-                    response->set_header_by_name(response, &u"Accept-Ranges"_s, &CefStr("bytes"), 1);
-                    response->set_header_by_name(response, &u"Content-Length"_s, &CefStr(std::to_string(contentLength)), 1);
-                    response->set_header_by_name(response, &u"Content-Range"_s, &CefStr(contentRange), 1);
+                    if (start != offset_)
+                    {
+                        stream_->seek(stream_, start, SEEK_SET);
+                        offset_ = start;
+                    }
+                    body_end_ = end;
+
+                    int64 contentLength = end - start + 1;
+                    std::string contentRange = "bytes " + std::to_string(start)
+                        + "-" + std::to_string(end) + "/" + std::to_string(length_);
+
+                    response->set_header_by_name(response, &u"Content-Length"_s,
+                        &CefStr(std::to_string(contentLength)), 1);
+                    response->set_header_by_name(response, &u"Content-Range"_s,
+                        &CefStr(contentRange), 1);
 
                     *response_length = contentLength;
                     response->set_status(response, 206);
                     response->set_status_text(response, &u"Partial Content"_s);
+                    break;
                 }
-                else
+
+                case RangeParse::Unsatisfiable:
                 {
-                    *response_length = -1;
+                    // RFC 7233 4.4 requires the unsatisfied-range form so the
+                    // client learns the real entity length.
+                    std::string contentRange = "bytes */" + std::to_string(length_);
+                    response->set_header_by_name(response, &u"Content-Range"_s,
+                        &CefStr(contentRange), 1);
+
+                    // body_end_ stays -1, so _read serves nothing.
+                    *response_length = 0;
                     response->set_status(response, 416);
                     response->set_status_text(response, &u"Requested Range Not Satisfiable"_s);
+                    break;
                 }
-            }
-            else
-            {
-                // normal content length
-                *response_length = length_;
+
+                case RangeParse::Ignore:
+                default:
+                    // No range, or one we decline to act on - serve the whole
+                    // entity, which RFC 7233 3.1 explicitly permits.
+                    body_end_ = length_ - 1;
+                    *response_length = length_;
+                    break;
             }
         }
     }
 
     int _skip(int64 bytes_to_skip, int64 *bytes_skipped, struct _cef_resource_skip_callback_t *callback)
     {
+        // Note: CEF may call this BEFORE get_response_headers, to seek to the
+        // first-byte-pos of a Range it parsed itself. body_end_ is primed in
+        // open() for exactly that reason.
         if (stream_ == nullptr || stream_->eof(stream_))
         {
             // eof
             *bytes_skipped = -2;
         }
-        else if (stream_->tell(stream_) == (length_ - 1))
+        else if (body_end_ - offset_ + 1 <= 0)
         {
-            // done
+            // done — nothing left inside the range being served
             *bytes_skipped = 0;
         }
         else
         {
-            int oldPosition = static_cast<int>(stream_->tell(stream_));
+            // Never skip past the end of the served range, or a bounded 206
+            // could hand back bytes the client never asked for.
+            int64 remaining = body_end_ - offset_ + 1;
+            if (bytes_to_skip > remaining)
+                bytes_to_skip = remaining;
+
+            int64 oldPosition = stream_->tell(stream_);
             stream_->seek(stream_, bytes_to_skip, SEEK_CUR);
-            int position = static_cast<int>(stream_->tell(stream_));
+            int64 position = stream_->tell(stream_);
 
             // Report the *actual* delta — clamped at EOF if the seek didn't
             // reach the requested target. Previously we overwrote this with
@@ -307,54 +494,21 @@ private:
         if (stream_ == nullptr)
             return false;
 
+        // Stop at the end of the range being served. Without this a bounded
+        // request like `bytes=0-99` streamed the whole remainder of the file,
+        // contradicting the Content-Range we just advertised.
+        int64 remaining = body_end_ - offset_ + 1;
+        if (remaining <= 0)
+            return false;
+
+        if (bytes_to_read > remaining)
+            bytes_to_read = static_cast<int>(remaining);
+
         int read = static_cast<int>(stream_->read(stream_, data_out, 1, bytes_to_read));
         *bytes_read = read;
         offset_ += read;
 
         return (*bytes_read > 0);
-    }
-
-    bool try_get_range_header(std::string &contentRange, int &contentLength)
-    {
-        contentRange.clear();
-        contentLength = 0;
-
-        // skip 'bytes='
-        auto range = range_header_.substr(6);
-
-        // 'start-end'
-        int rangeStart = std::atoi(range.c_str());
-        int rangeEnd = 0;
-
-        size_t pos = range.rfind('-');
-        if (pos != std::string::npos)
-        {
-            rangeEnd = std::atoi(range.substr(pos + 1).c_str());
-        }
-
-        int totalBytes = static_cast<int>(length_);
-        if (totalBytes == 0)
-            return false;
-
-        if (rangeEnd == 0)
-            rangeEnd = totalBytes - 1;
-
-        if (rangeStart > rangeEnd)
-            return false;
-
-        if (rangeStart != offset_)
-        {
-            stream_->seek(stream_, rangeStart, SEEK_SET);
-            offset_ = rangeStart;
-        }
-
-        char buf[64];
-        size_t len = snprintf(buf, sizeof(buf) - 1, "bytes %d-%d/%d", rangeStart, rangeEnd, totalBytes);
-
-        contentRange.assign(buf, len);
-        contentLength = totalBytes - rangeStart;
-
-        return true;
     }
 
     static void set_etag(cef_response_t *response)
