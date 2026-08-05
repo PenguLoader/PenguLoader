@@ -243,6 +243,24 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
             = CefStr::from_path(config::cache_dir()).forward();
     }
 
+    // DevTools splits its state across two stores. Console history is a local
+    // setting living in the frontend's localStorage, which already survives
+    // because a cache path is set - but the settings panel (theme, docking,
+    // panel layout) goes through InspectorFrontendHost.setPreference into the
+    // profile pref store, which stays in memory unless this is on.
+    //
+    // Must be set here rather than on the request context: CEF ignores the
+    // per-context flag when that context's cache_path matches this one, which
+    // is exactly what we do to share a single cache. Deliberately outside the
+    // block above - that branch no longer runs on clients where Riot supplies
+    // their own cache path, which is now the common case.
+    //
+    // Gated on use_devtools because the flag persists the whole profile pref
+    // store, not just DevTools' slice of it, and there is no reason to write
+    // that file for users who never open DevTools.
+    if (config::options::use_devtools())
+        const_cast<cef_settings_t *>(settings)->persist_user_preferences = 1;
+
     //static auto GetBrowserProcessHandler = app->get_browser_process_handler;
     //app->get_browser_process_handler = [](cef_app_t *self)
     //{

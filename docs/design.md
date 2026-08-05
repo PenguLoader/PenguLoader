@@ -225,6 +225,7 @@ The browser process is the CEF process that owns windows, IO, and the CEF browse
 
 - Wraps `app->on_before_command_line_processing` so we can shape the cmdline (next subsection).
 - Sets `cache_path` and `root_cache_path` (see [§2.6](#26-cache-path)).
+- Sets `persist_user_preferences` when `use_devtools` is on, so DevTools settings survive restarts (see [§3.5](#35-devtools-built-in-and-remote)).
 
 ### 3.2 Command-line shaping — `OnBeforeCommandLineProcessing`
 
@@ -281,6 +282,18 @@ DevTools is **off by default** in v1.2.0 (`use_devtools=false`). v1.1.6 had it o
 The `DevToolsClient` argument is the key trick. League sets a non-1.0 zoom on the main browser host (e.g. 0.8× or 1.6× depending on user UI scale settings); if `show_dev_tools` is called with `nullptr` for the client, the DevTools window inherits that zoom and becomes unusable. Passing a fresh client decouples them. The custom client also installs a `DevToolsKeyboardHandler` for Ctrl±/Ctrl0 zoom (and Cmd-C/V/X fixes on macOS), and uses `window::get_scaling(window) - 1.0` as the initial zoom so DevTools defaults to 1.0× per-DPI.
 
 `devtools_map_` dedupes by parent browser ID — a second `OpenDevTools()` call brings the existing window to the foreground rather than opening a duplicate.
+
+**DevTools state persistence.** DevTools splits its state across two stores, which is why console history used to survive restarts while the settings panel didn't:
+
+- *Console history* is a DevTools **local** setting, held in the frontend's `localStorage`. It persists purely as a side effect of [§2.6](#26-cache-path) — per `cef_types.h`, "HTML5 databases such as localStorage will only persist across sessions if a cache path is specified."
+- *Preferences* (theme, docking, panel layout, every settings toggle) go through `InspectorFrontendHost.setPreference` into the profile pref store, which is in-memory unless `persist_user_preferences` is set. It wasn't, so they reset on every launch.
+
+`Hooked_CefInitialize` now sets `cef_settings_t.persist_user_preferences` when `use_devtools` is on. Two constraints shaped the placement:
+
+- It has to be on `CefSettings`, **not** on the request context. `CefRequestContextSettings.persist_user_preferences` is ignored when that context's `cache_path` matches `CefSettings.cache_path` — which is exactly what Pengu does to share one cache, so the commented-out per-context line in `Hooked_CefRequestContext_CreateContext` would never have worked.
+- It sits *outside* the cache-path `if`. That branch only runs when Riot left the field empty, which is no longer the common case.
+
+The flag persists the whole profile pref store, not just DevTools' slice, hence the `use_devtools` gate — no reason to write a pref file into Riot's `Saved\webcache` for users who never open DevTools.
 
 **Remote DevTools** is enabled via the undocumented `debug_port` config option, which appends `--remote-debugging-port=<port>` to LCUX's command line. The user can then attach Chrome at `http://localhost:<port>/json`. It is undocumented because exposing remote control of the LCUX renderer over loopback is a real attack surface; advanced users can opt in by editing the config file directly.
 
