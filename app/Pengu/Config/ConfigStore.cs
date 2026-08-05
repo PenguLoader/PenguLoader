@@ -121,7 +121,8 @@ public sealed class ConfigStore
             UseRiotclient: IniReader.ParseBool(map.Get("client", "use_riotclient"), d.Client.UseRiotclient),
             UseProxy: IniReader.ParseBool(map.Get("client", "use_proxy"), d.Client.UseProxy),
             UseTransparency: IniReader.ParseBool(map.Get("client", "use_transparency"), d.Client.UseTransparency),
-            UseDecorations: IniReader.ParseBool(map.Get("client", "use_decorations"), d.Client.UseDecorations));
+            UseDecorations: IniReader.ParseBool(map.Get("client", "use_decorations"), d.Client.UseDecorations),
+            UseLogging: IniReader.ParseBool(map.Get("client", "use_logging"), d.Client.UseLogging));
 
         return new ConfigSnapshot(app, client);
     }
@@ -158,6 +159,7 @@ public sealed class ConfigStore
         map.Set("client", "use_proxy",        IniWriter.FormatBool(c.UseProxy));
         map.Set("client", "use_transparency", IniWriter.FormatBool(c.UseTransparency));
         map.Set("client", "use_decorations",  IniWriter.FormatBool(c.UseDecorations));
+        map.Set("client", "use_logging",      IniWriter.FormatBool(c.UseLogging));
     }
 
     // -------- atomic flush --------

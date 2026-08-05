@@ -290,6 +290,11 @@ namespace config::options
         return get_config_value_bool(__func__, true);
     }
 
+    bool use_logging()
+    {
+        return get_config_value_bool(__func__, true);
+    }
+
     int debug_port()
     {
         return get_config_value_int(__func__, 0);

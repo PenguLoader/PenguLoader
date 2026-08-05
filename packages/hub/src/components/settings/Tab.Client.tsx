@@ -103,6 +103,12 @@ export const TabClient: Component = () => {
           checked={client.use_proxy()}
           onChange={client.use_proxy}
         />
+        <CheckOption
+          caption="Client Logging"
+          message="Let the Client write debug.log next to LeagueClientUx.exe. It records Chromium diagnostics and anything the UX or a plugin sends to the console, so turn it off if you would rather nothing was kept on disk."
+          checked={client.use_logging()}
+          onChange={client.use_logging}
+        />
       </OptionSet>
 
     </div>

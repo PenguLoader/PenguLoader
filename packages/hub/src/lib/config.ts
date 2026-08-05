@@ -20,6 +20,7 @@ const defaultConfig: ConfigSnapshot = {
     use_proxy: false,
     use_transparency: true,
     use_decorations: true,
+    use_logging: true,
   },
 }
 

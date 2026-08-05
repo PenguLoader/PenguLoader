@@ -292,6 +292,11 @@ Riot bakes a number of switches into LCUX's command line. Pengu intercepts the c
 
    Three switches were dropped from this list. `no-sandbox` because LCUX already passes it, so ours was redundant — and a security boundary doesn't belong behind a toggle advertised as an optimization. `disable-gpu-watchdog` because it isn't an optimization at all: the watchdog kills a hung GPU process so Chromium can recover, and without it a real hang becomes a permanently frozen client. `disable-renderer-accessibility` because Chromium only builds the accessibility tree when an assistive technology is actually present — so it saved nothing on a typical machine while hard-blocking screen reader users.
 6. **Super-potato switches** if enabled: `disable-smooth-scrolling`, `wm-window-animations-disabled`, `animation-duration-scale=0`.
+7. **Append `--log-severity=disable`** when `use_logging` is off. That stops every write to `<LoL>\debug.log`, which CEF otherwise fills with Chromium diagnostics and — at default severity — renderer console output, the part that can carry whatever a plugin logged. `FATAL` still reaches stderr; CEF offers no switch for that and nothing reads it here.
+
+   Set on the command line rather than through `CefSettings.log_severity` so it applies after Riot's own settings without clobbering a field they may be using. An earlier attempt at the `CefSettings` route was reverted in `88f966a` with no reason recorded, which is why this went in behind a flag and was verified against a live client rather than assumed.
+
+   Scope is `debug.log` only — Riot's own logs, driven by `--log-dir` / `--app-log-file-path` / `--session-log-prefix` on the LCUX command line, are untouched.
 
 ### 3.3 `cef_browser_host_create_browser` — main browser handshake
 
@@ -672,6 +677,7 @@ The config file lives next to the loader binary as `config` (no extension). It's
 | `use_proxy` | bool | `false` | Strip `--no-proxy-server` so HTTP proxy env vars are honoured |
 | `use_transparency` | bool | `true` | Transparent window surface — the `GetBackgroundColor` patch, the window re-parent, and the `Effect` vibrancy API |
 | `use_decorations` | bool | `true` | Native drop shadow + Win11 rounded corners (`enable_shadow`). Windows-only; ignored on macOS |
+| `use_logging` | bool | `true` | Let CEF write `<LoL>\debug.log`. Off appends `--log-severity=disable` |
 | `debug_port` | int | `0` | Append `--remote-debugging-port=<port>` (undocumented) |
 | `league_dir` | path | `""` | Used by the loader (symlink mode) to locate the LoL install |
 

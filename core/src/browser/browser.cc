@@ -209,6 +209,21 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         //command_line->append_switch(command_line, &u"no-sandbox"_s);
     }
 
+    if (!config::options::use_logging())
+    {
+        // Stops every write to <LoL>\debug.log, where CEF otherwise records
+        // Chromium diagnostics and — at default severity — renderer console
+        // output, which is the part that can carry whatever a plugin logged.
+        // FATAL still goes to stderr; CEF has no switch for that and nothing
+        // reads it here anyway.
+        //
+        // The command line rather than CefSettings.log_severity: the switch is
+        // read after Riot's own settings are applied, so it wins without
+        // clobbering a field they may be using. An earlier attempt at the
+        // CefSettings route was reverted in 88f966a with no reason recorded.
+        command_line->append_switch_with_value(command_line, &u"log-severity"_s, &u"disable"_s);
+    }
+
     if (config::options::super_potato())
     {
         command_line->append_switch(command_line, &u"disable-smooth-scrolling"_s);

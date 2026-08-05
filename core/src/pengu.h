@@ -372,6 +372,7 @@ namespace config
         bool auto_update_check();
         bool use_transparency();
         bool use_decorations();
+        bool use_logging();
 
         // undocumented
         int debug_port();

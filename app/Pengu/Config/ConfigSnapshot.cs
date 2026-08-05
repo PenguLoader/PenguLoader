@@ -35,7 +35,8 @@ public sealed record ConfigClient(
     [property: JsonPropertyName("use_riotclient")]   bool UseRiotclient,
     [property: JsonPropertyName("use_proxy")]        bool UseProxy,
     [property: JsonPropertyName("use_transparency")] bool UseTransparency,
-    [property: JsonPropertyName("use_decorations")]  bool UseDecorations);
+    [property: JsonPropertyName("use_decorations")]  bool UseDecorations,
+    [property: JsonPropertyName("use_logging")]      bool UseLogging);
 
 public static class ConfigDefaults
 {
@@ -56,5 +57,6 @@ public static class ConfigDefaults
             UseRiotclient: false,
             UseProxy: false,
             UseTransparency: true,
-            UseDecorations: true));
+            UseDecorations: true,
+            UseLogging: true));
 }

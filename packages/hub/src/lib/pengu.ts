@@ -74,6 +74,7 @@ export interface ConfigSnapshot {
     use_proxy: boolean
     use_transparency: boolean
     use_decorations: boolean
+    use_logging: boolean
   }
 }
 
