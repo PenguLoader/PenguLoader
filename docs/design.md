@@ -200,16 +200,18 @@ The patterns are stable for the lifetime of a CEF major version (~2 years). Upda
 
 ### 2.6 Cache path
 
-[`browser.cc`](../core/src/browser/browser.cc) overrides `cef_settings_t.cache_path` and `root_cache_path` in the `cef_initialize` hook, and `cef_request_context_settings_t.cache_path` in the `CreateContext` hook, pointing them at:
+[`browser.cc`](../core/src/browser/browser.cc) fills in `cef_settings_t.cache_path` and `root_cache_path` in the `cef_initialize` hook, and `cef_request_context_settings_t.cache_path` in the `CreateContext` hook — **only when Riot left the field empty** — pointing them at:
 
 - Windows: `%LOCALAPPDATA%\Riot Games\League of Legends\Cache`
 - macOS: `/Users/Shared/Riot Games/League Client/Cache`
 
 **Why.** Up to and including 2024 / CEF 108, Riot didn't set any cache path on LCUX, so the client effectively ran in incognito mode — every session re-downloaded fonts, images, partner-iframe assets, etc. Pengu's override gives LCUX a real on-disk cache, making iframes and external resources noticeably faster.
 
-Riot eventually started providing their own cache path (under `<LoL>/Saved/webcache`). The v1.2.0 `main` branch always overrides; the `refactor-2` branch contains a deferral fix (only set if Riot left the field empty), which will be ported back. Vanguard does not interact with cache files.
+Riot now ships their own cache path at `<LoL>\Saved\webcache`, so the override defers to it. Clobbering a set field both leaked their `cef_string_t` and split the cache across two directories. Vanguard does not interact with cache files.
 
-The `root_cache_path` set is required by CEF 108+, which warns/errors if it's missing (commit `d6aef96`).
+`cache_path` and `root_cache_path` are set together or not at all: `root_cache_path` is required by CEF 108+ (commit `d6aef96`), which also requires `cache_path` to live under it, so pairing one of ours with one of Riot's would be invalid.
+
+Users upgrading from a build that always overrode will leave a stale cache behind at the path above. It's a cache — safe to delete, but nothing deletes it automatically.
 
 ---
 
@@ -232,7 +234,9 @@ Riot bakes a number of switches into LCUX's command line. Pengu intercepts the c
 2. **Strip `--no-proxy-server`** if `use_proxy` is set, by rebuilding the entire command line via `init_from_string`.
 3. **Append `--remote-debugging-port=<port>`** if `debug_port` is set in config (undocumented; see [§3.5](#35-devtools-built-in-and-remote)).
 4. **Append `--disable-web-security`** if `isecure_mode` is set.
-5. **Optimisation switches** (`optimized_client`, default on): `disable-background-timer-throttling`, `disable-backgrounding-occluded-windows`, `disable-renderer-backgrounding`, `disable-metrics`, `disable-component-update`, `disable-domain-reliability`, `disable-translate`, `disable-gpu-watchdog`, `disable-renderer-accessibility`, `no-sandbox`.
+5. **Optimisation switches** (`optimized_client`, default on): `disable-background-timer-throttling`, `disable-backgrounding-occluded-windows`, `disable-renderer-backgrounding`, `disable-metrics`, `disable-component-update`, `disable-domain-reliability`, `disable-translate`. The first three *raise* background CPU rather than lower it — they keep LCU's timers and sockets alive while minimized.
+
+   Three switches were dropped from this list. `no-sandbox` because LCUX already passes it, so ours was redundant — and a security boundary doesn't belong behind a toggle advertised as an optimization. `disable-gpu-watchdog` because it isn't an optimization at all: the watchdog kills a hung GPU process so Chromium can recover, and without it a real hang becomes a permanently frozen client. `disable-renderer-accessibility` because Chromium only builds the accessibility tree when an assistive technology is actually present — so it saved nothing on a typical machine while hard-blocking screen reader users.
 6. **Super-potato switches** if enabled: `disable-smooth-scrolling`, `wm-window-animations-disabled`, `animation-duration-scale=0`.
 
 ### 3.3 `cef_browser_host_create_browser` — main browser handshake
@@ -608,7 +612,7 @@ Surfaced separately so they don't get lost in implementation prose:
 3. **Hash-based disable is essentially untested.** v1.1.6 uses on-disk renames; v1.2.0 uses FNV-1a hashes. The new path has not been validated end-to-end. Tauri loader has partial backward-compat for `.js_`-renamed plugins ([`plugins.ts:131`](../packages/hub/src/lib/plugins.ts#L131)) but the entry path produced for those would not satisfy the C++ scheme handler.
 4. **RCS credential extraction is fragile.** The `OnBeforeCommandLineProcessing` window is the only known point to read `--riotclient-app-port` / `--riotclient-auth-token` before CEF strips them. There is no clean alternative.
 5. **`OnDemand` enum on Windows is dead.** Defined in the loader UI ([`core-module.ts:5-9`](../packages/hub/src/lib/core-module.ts#L5-L9)) but only `Universal` (IFEO) and `Targeted` (symlink) are wired to Rust. macOS implicitly is OnDemand and ignores the enum.
-6. **Cache path always overrides on `main`.** `refactor-2` contains a fix to defer to Riot's own `Saved/webcache` when set. Should be ported back.
+6. ~~**Cache path always overrides on `main`.**~~ Fixed — the override now defers to Riot's own `Saved/webcache` when set (see [§2.6](#26-cache-path)).
 
 ---
 

@@ -11,8 +11,13 @@ static cef_request_context_t *Hooked_CefRequestContext_CreateContext(
     const struct _cef_request_context_settings_t *settings,
     struct _cef_request_context_handler_t *handler)
 {
-    const_cast<cef_request_context_settings_t *>(settings)->cache_path
-        = CefStr::from_path(config::cache_dir()).forward();
+    // Only fill in a cache path when Riot left one empty - see the note in
+    // Hooked_CefInitialize below.
+    if (settings->cache_path.length == 0)
+    {
+        const_cast<cef_request_context_settings_t *>(settings)->cache_path
+            = CefStr::from_path(config::cache_dir()).forward();
+    }
 
     //const_cast<cef_request_context_settings_t *>(settings)->persist_session_cookies = 1;
     //const_cast<cef_request_context_settings_t *>(settings)->persist_user_preferences = 1;
@@ -179,6 +184,10 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         //command_line->append_switch(command_line, &u"disable-plugins"_s);
         //command_line->append_switch(command_line, &u"disable-extensions"_s);
         //command_line->append_switch(command_line, &u"disable-background-networking"_s);
+        
+        // These three keep the renderer running at full rate while the client is
+        // minimized or occluded - they cost background CPU rather than save it.
+        // They are here so LCU's timers and sockets stay live in the background.
         command_line->append_switch(command_line, &u"disable-background-timer-throttling"_s);
         command_line->append_switch(command_line, &u"disable-backgrounding-occluded-windows"_s);
         command_line->append_switch(command_line, &u"disable-renderer-backgrounding"_s);
@@ -186,13 +195,18 @@ static void CEF_CALLBACK Hooked_OnBeforeCommandLineProcessing(
         command_line->append_switch(command_line, &u"disable-component-update"_s);
         command_line->append_switch(command_line, &u"disable-domain-reliability"_s);
         command_line->append_switch(command_line, &u"disable-translate"_s);
-        command_line->append_switch(command_line, &u"disable-gpu-watchdog"_s);
-        command_line->append_switch(command_line, &u"disable-renderer-accessibility"_s);
+
+        //command_line->append_switch(command_line, &u"disable-gpu-watchdog"_s);
+        //command_line->append_switch(command_line, &u"disable-renderer-accessibility"_s);
         //command_line->append_switch(command_line, &u"enable-parallel-downloading"_s);
         //command_line->append_switch(command_line, &u"enable-new-download-backend"_s);
         //command_line->append_switch(command_line, &u"enable-quic"_s);
         //command_line->append_switch(command_line, &u"no-pings"_s);
-        command_line->append_switch(command_line, &u"no-sandbox"_s);
+
+        // `no-sandbox` used to be appended here. LCUX already passes it, so ours
+        // was redundant - and it does not belong behind a switch advertised as
+        // an optimization either way.
+        //command_line->append_switch(command_line, &u"no-sandbox"_s);
     }
 
     if (config::options::super_potato())
@@ -213,11 +227,21 @@ static int Hooked_CefInitialize(const struct _cef_main_args_t* args,
     OnBeforeCommandLineProcessing = app->on_before_command_line_processing;
     app->on_before_command_line_processing = Hooked_OnBeforeCommandLineProcessing;
 
-    const_cast<cef_settings_t *>(settings)->cache_path
-        = CefStr::from_path(config::cache_dir()).forward();
-    
-    const_cast<cef_settings_t *>(settings)->root_cache_path
-        = CefStr::from_path(config::cache_dir()).forward();
+    // This override exists because LCUX used to ship with no cache path at all,
+    // so it effectively ran incognito and re-downloaded every asset per session.
+    // Riot now sets their own (<LoL>\Saved\webcache), so defer to it: clobbering
+    // the field leaks their cef_string_t and splits the cache across two dirs.
+    // Both fields are set together or not at all - CEF 108+ requires
+    // root_cache_path (commit d6aef96) and requires cache_path to live under it,
+    // so mixing one of ours with one of theirs is invalid.
+    if (settings->cache_path.length == 0 && settings->root_cache_path.length == 0)
+    {
+        const_cast<cef_settings_t *>(settings)->cache_path
+            = CefStr::from_path(config::cache_dir()).forward();
+
+        const_cast<cef_settings_t *>(settings)->root_cache_path
+            = CefStr::from_path(config::cache_dir()).forward();
+    }
 
     //static auto GetBrowserProcessHandler = app->get_browser_process_handler;
     //app->get_browser_process_handler = [](cef_app_t *self)
