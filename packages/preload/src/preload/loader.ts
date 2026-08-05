@@ -143,8 +143,27 @@ const PLUGIN_LOAD_TIMEOUT_MS = 15_000;
 // rely on sync `DataStore.get` / `has` returning persisted values. Adds a
 // one-shot file-read latency (~ms) to the load chain; acceptable trade-off
 // for a clean sync API.
+/**
+ * Pull in the views chunk — Pengu's own UI, and with it `window.Toast` and
+ * `window.Settings`.
+ *
+ * Awaited *before* any plugin so those globals are installed by the time a
+ * plugin's `init` can reach for them. When views was bundled into the core
+ * that ordering was free; now it has to be stated. A failure here must not
+ * take the plugins down with it, so it's caught and logged.
+ */
+async function loadViews() {
+  try {
+    await import(/* @vite-ignore */ 'https://plugins/@pengu/views.js');
+  } catch (err) {
+    console.error('%c Pengu ', 'background: #183461; color: #fff',
+      'Failed to load Pengu UI — Toast and Settings will be unavailable.\n', err);
+  }
+}
+
 const allLoaded = (async () => {
   await initDataStore();
+  await loadViews();
   await Promise.all(plugins.map(loadPlugin));
 })();
 

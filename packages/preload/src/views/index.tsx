@@ -3,7 +3,7 @@ import { render } from 'solid-js/web';
 import App from './App';
 import './style.css';
 
-import { rcp } from '../preload/rcp';
+import { rcp } from './shared';
 import { loadTranslation } from './lib/i18n';
 
 // Light DOM. Our CSS uses `pengu-` prefixed classes (see styles/_tokens.scss
@@ -12,10 +12,12 @@ import { loadTranslation } from './lib/i18n';
 
 const rootId = 'pengu-root';
 
-// Push-style RCP requires subscription before announce. Pre-warm so
-// rcp-fe-lol-shared-components is tracked in the registry; mount() below
-// then awaits its fulfillment.
-rcp.preInit('rcp-fe-lol-shared-components', () => {});
+// The `rcp.preInit('rcp-fe-lol-shared-components')` pre-warm that used to live
+// here now runs in the core (`preload/index.ts`). Push-style RCP requires the
+// subscription to be in place before LCUX announces, and this chunk is loaded
+// asynchronously — by the time it evaluates, the announce may already have
+// happened. mount() still awaits fulfillment below, which is what actually
+// gates the render.
 
 async function mount() {
   // rcp-fe-lol-shared-components does `document.body.innerHTML += ...` during

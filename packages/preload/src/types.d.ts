@@ -23,6 +23,19 @@ declare global {
     errorHandler: () => any
     registrationHandler: (registrar: (e: any) => Promise<any>) => Promise<any> | void
   }
+
+  interface Window {
+    /**
+     * Transport for the core -> views chunk handoff. The two are separate
+     * bundles, so the stateful `rcp` registry has to be passed by reference
+     * rather than imported (which would duplicate it). Installed by
+     * `preload/shared.ts`, consumed and deleted by `views/shared.ts`.
+     */
+    __pshared?: {
+      rcp: typeof import('./preload/rcp').rcp
+      socket: typeof import('./preload/rcp').socket
+    }
+  }
 }
 
 // `PluginModule` (the loader's import type) lives in `@pengujs/types` —

@@ -2,6 +2,7 @@
 #include "assets_shims.h"
 #include "assets_path.h"
 #include "assets_range.h"
+#include "assets_builtin.h"
 
 #include "include/capi/cef_parser_capi.h"
 #include "include/capi/cef_scheme_capi.h"
@@ -80,6 +81,17 @@ private:
 
         // Decode URI (path separators stay escaped — see assets_path.h).
         assets::decode_uri(fs_path);
+
+        // Built-in assets under `/@pengu/` — Pengu's own UI, shipped inside
+        // core.dll. Checked before the plugins directory, so the prefix is
+        // reserved and a plugin cannot shadow it.
+        if (auto builtin = assets::builtin_stream(fs_path))
+        {
+            stream_ = builtin;
+            js_mime = true;
+        }
+        else
+        {
 
         // Join with the plugins directory.
         fs_path = config::plugins_dir().u16string().append(fs_path);
@@ -181,6 +193,8 @@ private:
                 stream_ = cef_stream_reader_create_for_file(&path_str);
             }
         }
+
+        } // end of the non-builtin branch
 
         if (stream_ != nullptr)
         {

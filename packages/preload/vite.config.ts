@@ -25,20 +25,39 @@ export default defineConfig(({ command, mode }) => {
     esbuild: {
       legalComments: 'none',
     },
+    // Two artifacts, deliberately built by two tools:
+    //
+    //   preload.js  core, self-contained IIFE, ~10 kB. Embedded and eval'd
+    //               synchronously in OnContextCreated, so it must have no
+    //               `import` statements at all — a chunk fetch would make it
+    //               async and lose the ordering guarantee the RCP wrap needs.
+    //               Built by esbuild in closeBundle below; pure .ts, no JSX.
+    //
+    //   views.js    Pengu's own UI, ~100 kB of SolidJS. An ES module, pulled
+    //               in by loader.ts via dynamic import before plugins load.
+    //               Built by vite here because it needs the Solid transform.
+    //
+    // Rollup can't emit both formats from one lib build, and a shared chunk
+    // between them would reintroduce the import into the core — hence the
+    // split toolchain and the `__pshared` handoff for the stateful rcp module.
     build: {
       assetsInlineLimit: 1024 * 64,
       minify: !dev,
       modulePreload: false,
       lib: {
-        name: 'preload',
-        entry: 'src/index.ts',
-        formats: ['iife']
+        entry: 'src/views/index.tsx',
+        formats: ['es']
       },
       rollupOptions: {
         output: {
-          format: 'iife',
+          format: 'es',
           sourcemap: dev ? 'inline' : false,
-          entryFileNames: 'preload.js'
+          entryFileNames: 'views.js',
+          // One file, no code-splitting. The built-in asset map serves whole
+          // files by name, so a hashed chunk would have nothing to resolve it.
+          // views has no dynamic imports today; this keeps a future one from
+          // silently emitting a second file that never loads.
+          codeSplitting: false,
         }
       }
     },
@@ -87,9 +106,29 @@ export default defineConfig(({ command, mode }) => {
         apply: 'build',
         enforce: 'post',
         async closeBundle() {
-          const code = await fs.readFile(root('dist/preload.js'), 'utf-8');
-          const header = generateHeader(code, 'preload_script');
-          await fs.writeFile(root('dist/preload.g.h'), header, 'utf-8');
+          // Vite has just written dist/views.js. Now build the core, which
+          // vite can't produce in the same pass (different format, and it must
+          // stay import-free).
+          await build({
+            entryPoints: [root('src/preload/index.ts')],
+            outfile: root('dist/preload.js'),
+            bundle: true,
+            format: 'iife',
+            minify: !dev,
+            legalComments: 'none',
+            define: {
+              '__VERSION__': JSON.stringify(rootPkg.version),
+              '__PLATFORM__': JSON.stringify(process.platform),
+            },
+          });
+
+          const preload = await fs.readFile(root('dist/preload.js'), 'utf-8');
+          const views = await fs.readFile(root('dist/views.js'), 'utf-8');
+
+          await fs.writeFile(root('dist/preload.g.h'),
+            generateHeader(preload, 'preload_script'), 'utf-8');
+          await fs.writeFile(root('dist/views.g.h'),
+            generateHeader(views, 'views_script'), 'utf-8');
         }
       }
     ]
