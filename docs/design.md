@@ -298,6 +298,8 @@ Riot bakes a number of switches into LCUX's command line. Pengu intercepts the c
 
    Scope is `debug.log` only — Riot's own logs, driven by `--log-dir` / `--app-log-file-path` / `--session-log-prefix` on the LCUX command line, are untouched.
 
+   The key is positive and default-on so the file never carries a double negative (`no_logging = false` needs two mental flips to read as "logs are on"), but the hub presents it inverted as a **Prevent Logging** checkbox, because what a user is looking for is the protection, not the feature. A ticked box there means `use_logging = false`. That matches Silent Mode and Super Potato, which are also ticked-to-suppress.
+
 ### 3.3 `cef_browser_host_create_browser` — main browser handshake
 
 LCUX creates many CEF browsers in its lifetime: the main UX shell, the auth popup, embedded eSports streams, partner iframes hosted as separate browsers, etc. Plugins should only load into the main shell.
@@ -677,7 +679,7 @@ The config file lives next to the loader binary as `config` (no extension). It's
 | `use_proxy` | bool | `false` | Strip `--no-proxy-server` so HTTP proxy env vars are honoured |
 | `use_transparency` | bool | `true` | Transparent window surface — the `GetBackgroundColor` patch, the window re-parent, and the `Effect` vibrancy API |
 | `use_decorations` | bool | `true` | Native drop shadow + Win11 rounded corners (`enable_shadow`). Windows-only; ignored on macOS |
-| `use_logging` | bool | `true` | Let CEF write `<LoL>\debug.log`. Off appends `--log-severity=disable` |
+| `use_logging` | bool | `true` | Let CEF write `<LoL>\debug.log`. Off appends `--log-severity=disable`. Surfaced in the hub **inverted**, as "Prevent Logging" |
 | `debug_port` | int | `0` | Append `--remote-debugging-port=<port>` (undocumented) |
 | `league_dir` | path | `""` | Used by the loader (symlink mode) to locate the LoL install |
 

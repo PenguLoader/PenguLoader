@@ -55,6 +55,17 @@ export const TabClient: Component = () => {
           checked={client.silent_mode()}
           onChange={client.silent_mode}
         />
+        {/* Presented inverted: the config key is `use_logging` (positive,
+            default true) so the file never carries a double negative, while
+            the checkbox reads as the protection the user is switching on —
+            the same shape as Silent Mode and Super Potato above, where a tick
+            suppresses something. Checked here means use_logging = false. */}
+        <CheckOption
+          caption="Prevent Logging"
+          message="Stop the Client writing debug.log beside LeagueClientUx.exe. It collects Chromium diagnostics along with anything the UX or a plugin prints to the console, which can include account details. Riot's own log files are not affected."
+          checked={!client.use_logging()}
+          onChange={(prevent) => client.use_logging(!prevent)}
+        />
       </OptionSet>
 
       <OptionSet name="Appearance">
@@ -102,12 +113,6 @@ export const TabClient: Component = () => {
           message="Allow the UX requests traffic through network proxy."
           checked={client.use_proxy()}
           onChange={client.use_proxy}
-        />
-        <CheckOption
-          caption="Client Logging"
-          message="Let the Client write debug.log next to LeagueClientUx.exe. It records Chromium diagnostics and anything the UX or a plugin sends to the console, so turn it off if you would rather nothing was kept on disk."
-          checked={client.use_logging()}
-          onChange={client.use_logging}
         />
       </OptionSet>
 
