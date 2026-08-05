@@ -101,11 +101,11 @@ HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\
         Debugger = rundll32 "C:\ProgramData\.pengu\boot.dll", #6000
 ```
 
-It names [`boot.dll`](../boot/), not the install's `core.dll`. That's a small module with no CEF surface, living in an administrator-owned directory it never moves out of, which resolves what to actually load from a per-user pointer file at `%LOCALAPPDATA%\.pengu\active`. The indirection is what makes activation per-user despite the registry key being machine-wide, stops a deleted portable folder from bricking the client, and confines the administrator prompt to the first activation.
+It names [`boot.dll`](../core/boot/), not the install's `core.dll`. That's a small module with no CEF surface, living in an administrator-owned directory it never moves out of, which resolves what to actually load from a per-user pointer file at `%LOCALAPPDATA%\.pengu\active`. The indirection is what makes activation per-user despite the registry key being machine-wide, stops a deleted portable folder from bricking the client, and confines the administrator prompt to the first activation.
 
 A DLL under `rundll32` and not an executable of our own: registering an unknown binary as an IFEO `Debugger` is a persistence technique in its own right, and Defender scores it behaviourally the moment the client triggers it — a SignPath-signed `pengu-boot.exe` was quarantined on first launch. `rundll32` is Microsoft-signed and is the shape this project shipped for years.
 
-Before injecting, the boot verifies what the pointer named: an ECDSA P-256 signature embedded in `core.dll`'s own `.pengu` section, made with a key whose public half is compiled into the boot, plus a publisher-agnostic Authenticode check. Neither gate blocks the client — a refusal launches League without the plugin runtime and records why in `%LOCALAPPDATA%\.pengu\boot.log`, which Settings surfaces. [`boot/trust.h`](../boot/trust.h) specifies the blob format and exactly which bytes the signature covers.
+Before injecting, the boot verifies what the pointer named: an ECDSA P-256 signature embedded in `core.dll`'s own `.pengu` section, made with a key whose public half is compiled into the boot, plus a publisher-agnostic Authenticode check. Neither gate blocks the client — a refusal launches League without the plugin runtime and records why in `%LOCALAPPDATA%\.pengu\boot.log`, which Settings surfaces. [`boot/trust.h`](../core/boot/trust.h) specifies the blob format and exactly which bytes the signature covers.
 
 When Windows launches `LeagueClientUx.exe`, the `Debugger` value redirects through `rundll32`, which loads `boot.dll` and calls its ordinal-6000 export. That export shares [`bootstrap::launch`](../core/src/bootstrap.cc) with core's own ordinal-6000 export, which is retained for installs whose registry value still points straight at a `core.dll`:
 
@@ -212,6 +212,28 @@ Riot now ships their own cache path at `<LoL>\Saved\webcache`, so the override d
 `cache_path` and `root_cache_path` are set together or not at all: `root_cache_path` is required by CEF 108+ (commit `d6aef96`), which also requires `cache_path` to live under it, so pairing one of ours with one of Riot's would be invalid.
 
 Users upgrading from a build that always overrode will leave a stale cache behind at the path above. It's a cache — safe to delete, but nothing deletes it automatically.
+
+### 2.7 Building the native targets
+
+Both Windows binaries live under [`core/`](../core/): `core.dll` from `core/src/`, and `boot.dll` from [`core/boot/`](../core/boot/). They share `src/bootstrap.cc` — boot links it and nothing else, which is why they sit together. They remain *peers*, not parent and child: boot embeds the public key that authorises core, and per [`windows-activation.md`](../.claude/docs/windows-activation.md) the boot is frozen while core evolves.
+
+Both land in `core/bin/x64/<Config>/`, so the app csproj, CI staging, and `%LOCALAPPDATA%\.pengu\active` all see one directory regardless of which build system produced them.
+
+**Windows — two build systems, deliberately:**
+
+```bash
+# CI and command line: one configure covers both targets, ~5s incremental
+cmake -S core -B core/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build core/build
+```
+
+Visual Studio opens [`pengu.slnx`](../pengu.slnx) and builds `core/core.vcxproj` + `core/boot/boot.vcxproj` instead. The vcxproj files exist purely for that IDE workflow — `dotnet build app/Pengu.Windows` also drives them via `ProjectReference`, which is why CI passes `-p:SkipNativeBuild=true` after building natively (the .NET SDK's MSBuild has no C++ targets, so `$(VCTargetsPath)` is unset and a vcxproj reference fails outright).
+
+> **Two source lists.** A file added to `core/CMakeLists.txt` must also be added to `core/core.vcxproj`, and vice versa. Both files carry a KEEP IN SYNC banner. This is the price of having both a fast CI build and a working IDE.
+
+One non-obvious flag: core compiles with **`/permissive`**, not the `/permissive-` that `/std:c++20` implies. The CEF C-API call sites take addresses of temporaries throughout (`&CefStr(...)`, `&u"..."_s`), which is an MSVC extension that conformance mode rejects with C2102. The vcxproj expresses this as `ConformanceMode=false`.
+
+**macOS** still builds through `make -C core release`, which produces `core.dylib` plus the `insert_dylib` helper. That link line (weak `-lcef`, `-flat_namespace`, the post-processing step) has not been ported to CMake — `core/CMakeLists.txt` hard-fails on non-Windows rather than pretending to cover it.
 
 ---
 

@@ -1,5 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- KEEP IN SYNC WITH core/CMakeLists.txt. This project exists so the
+       solution opens and builds in Visual Studio; CI builds through CMake +
+       Ninja. Two source lists is the price of both, so a file added here must
+       be added there as well. -->
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -38,6 +42,8 @@
   <ItemGroup>
     <None Include="res\module.def" />
     <None Include="src\utils\cocoa.mm" />
+    <None Include="CMakeLists.txt" />
+    <None Include="makefile" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\browser\assets_path.h" />

@@ -2,17 +2,22 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- boot.dll — the stable IFEO entry point, loaded by rundll32.
 
-       Deliberately tiny: it links bootstrap.cc out of core/src and nothing
-       else, so there's no CEF surface and no shared-CRT dependency. It runs on
-       every client launch and stays resident for the whole session, and
-       replacing it costs an admin prompt, so it should almost never need to
-       change. New capability belongs in core.dll.
+       Deliberately tiny: it links bootstrap.cc out of ..\src and nothing else,
+       so there's no CEF surface and no shared-CRT dependency. It runs on every
+       client launch and stays resident for the whole session, and replacing it
+       costs an admin prompt, so it should almost never need to change. New
+       capability belongs in core.dll.
 
        A DLL and not an executable because Defender quarantines the executable:
        registering an unknown binary as an IFEO Debugger is scored
        behaviourally when the client triggers it, and code signing doesn't
        exempt it. rundll32 is Microsoft-signed and is what this project shipped
-       for years. -->
+       for years.
+
+       KEEP IN SYNC WITH core/boot/CMakeLists.txt. This project exists so the
+       solution opens and builds in Visual Studio; CI builds through CMake +
+       Ninja. Two source lists is the price of both, so a file added here must
+       be added there as well. -->
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -24,17 +29,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cc" />
-    <ClCompile Include="src\trust.cc" />
-    <ClCompile Include="..\core\src\bootstrap.cc" />
+    <ClCompile Include="main.cc" />
+    <ClCompile Include="trust.cc" />
+    <ClCompile Include="..\src\bootstrap.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\trust.h" />
-    <ClInclude Include="src\trust_key.h" />
-    <ClInclude Include="..\core\src\bootstrap.h" />
+    <ClInclude Include="trust.h" />
+    <ClInclude Include="trust_key.h" />
+    <ClInclude Include="..\src\bootstrap.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\module.def" />
+    <None Include="CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\boot.rc">
@@ -51,9 +57,9 @@
     <ShowAllFiles>true</ShowAllFiles>
   </PropertyGroup>
   <!-- Version resource single-sourced from the root package.json, same as
-       core.vcxproj. -->
+       core.vcxproj. Two levels up now that boot lives under core/. -->
   <PropertyGroup>
-    <_RootPackageJsonPath>$(MSBuildThisFileDirectory)..\package.json</_RootPackageJsonPath>
+    <_RootPackageJsonPath>$(MSBuildThisFileDirectory)..\..\package.json</_RootPackageJsonPath>
     <PenguVersion>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(_RootPackageJsonPath)')), '"version"\s*:\s*"([^"]+?)"').Groups[1].Value)</PenguVersion>
     <PenguVersion Condition="'$(PenguVersion)' == ''">0.0.0</PenguVersion>
     <PenguVersionNumeric>$(PenguVersion.Split('-')[0])</PenguVersionNumeric>
@@ -74,14 +80,17 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <!-- Both DLLs land in core/bin/x64/<Config>/ so the app csproj, the CI
+       staging step and %LOCALAPPDATA%\.pengu\active all see one directory
+       regardless of whether MSBuild or CMake produced them. -->
   <PropertyGroup>
-    <OutDir>$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)obj\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(ProjectDir)..\bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)..\obj\boot\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>boot</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\core\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\src</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <!-- Static CRT: the stub has to run on machines that may not have the
            VC redistributable, and a missing redist would brick the client
@@ -100,7 +109,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\core\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\src</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>

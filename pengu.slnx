@@ -8,6 +8,8 @@
     <Project Path="app/Pengu.Windows/Pengu.Windows.csproj" />
     <Project Path="app/Pengu/Pengu.csproj" />
   </Folder>
-  <Project Path="boot/boot.vcxproj" Id="3f1c7a82-9b24-4e6d-9c31-6a5e2d4b8f10" />
-  <Project Path="core/core.vcxproj" Id="0c5bb758-5a09-4d96-bbbc-5f03d3512b58" />
+  <Folder Name="/core/">
+    <Project Path="core/core.vcxproj" Id="0c5bb758-5a09-4d96-bbbc-5f03d3512b58" />
+    <Project Path="core/boot/boot.vcxproj" Id="3f1c7a82-9b24-4e6d-9c31-6a5e2d4b8f10" />
+  </Folder>
 </Solution>

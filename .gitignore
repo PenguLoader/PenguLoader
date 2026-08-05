@@ -460,3 +460,6 @@ bin/*
 core/bin/
 boot/bin/
 *.g.h
+# CMake build trees for the native targets
+core/build/
+core/build-debug/

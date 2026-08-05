@@ -87,6 +87,19 @@ jobs:
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v3
 
+      # Puts cl.exe / link.exe / rc.exe on PATH for the rest of the job. Ninja
+      # invokes the compiler directly rather than going through MSBuild, so it
+      # needs the VC environment that a Developer Command Prompt would set.
+      - name: Setup MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Setup Ninja
+        if: runner.os == 'Windows'
+        uses: seanmiddleditch/gha-setup-ninja@v6
+
       # ─── Build (shared) ─────────────────────────────────────────────────
       # Preload bundle is #include'd into core (renderer.cc embeds preload.g.h).
       # Build it before core so the header exists.
@@ -94,23 +107,24 @@ jobs:
         run: pnpm --filter @pengujs/preload build
 
       # ─── Build (Windows) ────────────────────────────────────────────────
-      # Both C++ projects write to <project>/bin/$(Platform)/$(Configuration).
+      # core.dll and boot.dll, both landing in core/bin/x64/Release/.
       #
-      # Built here with the full MSBuild rather than left to the ProjectReference
-      # in Pengu.Windows.csproj, because the .NET SDK's MSBuild has no C++
-      # targets — $(VCTargetsPath) is unset under `dotnet build`, so a vcxproj
-      # reference fails outright. That is what SkipNativeBuild exists for, and
-      # why the publish step below sets it.
-      - name: Build core (windows)
+      # Built here rather than left to the ProjectReference in
+      # Pengu.Windows.csproj, because the .NET SDK's MSBuild has no C++ targets
+      # — $(VCTargetsPath) is unset under `dotnet build`, so a vcxproj reference
+      # fails outright. That is what SkipNativeBuild exists for, and why the
+      # publish step below sets it.
+      #
+      # CMake + Ninja rather than MSBuild: one configure covers both targets and
+      # the whole native build takes seconds. core/core.vcxproj and
+      # core/boot/boot.vcxproj still exist for Visual Studio via pengu.slnx and
+      # produce identical output to the same directory — if you add a source
+      # file, add it to both.
+      - name: Build native (windows)
         if: runner.os == 'Windows'
-        run: msbuild.exe core/core.vcxproj -p:Configuration=Release -p:Platform=x64 -nologo -m
-
-      # The IFEO boot, loaded by rundll32. Shares bootstrap.cc with core but
-      # links nothing else from it, so it stays a few tens of KB with no CEF
-      # surface.
-      - name: Build boot (windows)
-        if: runner.os == 'Windows'
-        run: msbuild.exe boot/boot.vcxproj -p:Configuration=Release -p:Platform=x64 -nologo -m
+        run: |
+          cmake -S core -B core/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build core/build
 
       # AOT-publish the .NET 10 host. The csproj's BuildHubBundle target runs
       # `pnpm --filter @pengujs/hub build` and zips packages/hub/dist/ into
@@ -134,7 +148,7 @@ jobs:
       # app.dat is embedded inside Pengu.exe via <EmbeddedResource> — no
       # separate file ships alongside the exe.
       #
-      # The native pair comes from the C++ output directories rather than from
+      # The native pair comes from the C++ output directory rather than from
       # app-publish, since SkipNativeBuild means the publish never staged them.
       - name: Stage portable payload (windows)
         if: runner.os == 'Windows'
@@ -143,7 +157,7 @@ jobs:
           cp app-publish/Pengu.exe            out/
           cp app-publish/WebView2Loader.dll   out/
           cp core/bin/x64/Release/core.dll    out/
-          cp boot/bin/x64/Release/boot.dll    out/
+          cp core/bin/x64/Release/boot.dll    out/
 
       # ─── Build (macOS) ──────────────────────────────────────────────────
       # C++ core -> core/bin/core.dylib (the makefile's LIB_OUT_PATH).

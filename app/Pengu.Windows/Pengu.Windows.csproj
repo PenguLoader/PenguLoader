@@ -77,7 +77,7 @@
 	<Target Name="StageNativePayload" AfterTargets="Build" Condition="'$(SkipNativeBuild)' == 'true'">
 		<ItemGroup>
 			<_PenguNative Include="$(MSBuildThisFileDirectory)..\..\core\bin\x64\$(Configuration)\core.dll" />
-			<_PenguNative Include="$(MSBuildThisFileDirectory)..\..\boot\bin\x64\$(Configuration)\boot.dll" />
+			<_PenguNative Include="$(MSBuildThisFileDirectory)..\..\core\bin\x64\$(Configuration)\boot.dll" />
 		</ItemGroup>
 		<Copy SourceFiles="@(_PenguNative)" DestinationFolder="$(OutDir)" Condition="Exists('%(_PenguNative.FullPath)')" SkipUnchangedFiles="true" />
 	</Target>
@@ -90,7 +90,7 @@
 	</Target>
 
 	<ItemGroup Condition="'$(SkipNativeBuild)' != 'true'">
-		<ProjectReference Include="..\..\boot\boot.vcxproj">
+		<ProjectReference Include="..\..\core\boot\boot.vcxproj">
 			<Private>true</Private>
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 			<OutputItemType>Content</OutputItemType>
