@@ -110,6 +110,14 @@ function applyWindowEffectWin(name: EffectName, options) {
 window.Effect = {
 
   apply(name, options) {
+    // Without `use_transparency` the window has no transparent surface, so the
+    // native call would be a silent no-op. Warn rather than leave a plugin
+    // wondering why its backdrop never showed up.
+    if (!window.Pengu.useTransparency) {
+      console.warn('Window effects are unavailable: transparency is disabled in Pengu settings.')
+      return
+    }
+
     options = options || {}
     if (window.Pengu.isMac) {
       applyWindowEffectMac(name, options)
@@ -118,6 +126,8 @@ window.Effect = {
     }
   },
 
+  // Not gated - with transparency off nothing was ever applied, so this is
+  // already a correct no-op and a warning here would just be noise.
   clear() {
     native.SetWindowVibrancy(null);
   },

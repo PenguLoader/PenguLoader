@@ -310,6 +310,20 @@ Combined with the [`GetBackgroundColor` hook](#25-transparency-hook-cefcontextge
 
 On macOS, no re-parenting is needed; `browser::window` is just the CEF host's `NSView*` and `NSVisualEffectView` does the heavy lifting natively.
 
+#### Transparency and decorations are separate switches
+
+Two config keys gate the cosmetics, both default-on:
+
+`use_transparency` covers the whole transparent-surface mechanism, which is three call sites and not separable: the `GetBackgroundColor` patch ([`libcef.cc`](../core/src/libcef.cc)), the re-parent above, and `@set-window-vibrancy` ([`browser.cc`](../core/src/browser/browser.cc)). Without the patch the surface is opaque; without the re-parent there is no top-level surface for a backdrop to show through. This is the escape hatch for machines where the transparent path renders black, blank or flickering. The renderer also warns from `Effect.apply` when it is off, since the native call would otherwise be a silent no-op.
+
+It applies on **both platforms**. Only the re-parent is Windows-specific — `fix_browser_background` has its own macOS signature pattern, and `@set-window-vibrancy` drives `NSVisualEffectView` there.
+
+`use_decorations` covers `window::enable_shadow` only, and is **Windows-only**. On the `WS_POPUP` `RCLIENT` window, setting `DWMWA_NCRENDERING_POLICY = DWMNCRP_ENABLED` is what makes DWM render a non-client frame at all — the drop shadow and Win11's default corner rounding both ride along, so they are one atomic state rather than two features. macOS has no equivalent: `enable_shadow` there is `[window invalidateShadow]`, which recomputes a shadow rather than enabling one (the shadow itself is `NSWindow.hasShadow`, which Pengu never touches). `setup_window` therefore calls `enable_shadow` unconditionally on macOS, so a hand-edited key can't silently drop that refresh, and the hub hides the checkbox there.
+
+`set_theme` is deliberately gated by neither. `DWMWA_USE_IMMERSIVE_DARK_MODE` tints the non-client frame *and* selects whether a Win11 backdrop material renders light or dark — so with decorations off but transparency on, `Effect.setTheme` is the only thing steering the Mica tint. On macOS it sets `NSAppearanceNameVibrantDark`/`VibrantLight`, which is what drives `NSVisualEffectView` rendering.
+
+One coupling to be aware of: `apply_vibrancy`'s Mica branch sets the frame margin to `-1` (sheet of glass), clobbering what `enable_shadow` left. `clear_vibrancy` therefore restores the margin conditionally on `use_decorations` — otherwise clearing an effect would hand back a shadow the user switched off.
+
 #### Silent mode
 
 If `silent_mode` is enabled, [`window.cc:96-110`](../core/src/browser/window.cc#L96-L110) hooks `ShowWindow`, `SetWindowPos`, and the window's `WndProc` to suppress LCU's own foreground/topmost calls. This is for users who don't want LCU flashing or popping itself topmost on matchmaking-found / postgame events. As a side-effect, the post-game lobby will not auto-show the client window.
@@ -322,7 +336,7 @@ The browser-side `on_process_message_received` handler ([`browser.cc:56-99`](../
 | --- | --- |
 | `@open-devtools` | Calls `browser::open_devtools` (gated on `use_devtools`) |
 | `@reload-client` | `browser->reload_ignore_cache` |
-| `@set-window-vibrancy` | Calls `window::apply_vibrancy` or `clear_vibrancy` on the host window |
+| `@set-window-vibrancy` | Calls `window::apply_vibrancy` or `clear_vibrancy` on the host window (gated on `use_transparency`) |
 | `@set-window-theme` | Calls `window::set_theme(dark)` |
 
 The renderer side sends these via `frame->send_process_message(PID_BROWSER, msg)` from the V8 helper functions in [`v8_helper.cc`](../core/src/renderer/v8_helper.cc).
@@ -564,6 +578,8 @@ The config file lives next to the loader binary as `config` (no extension). It's
 | `use_devtools` | bool | `false` | Allow `OpenDevTools()` and DevTools hotkeys |
 | `use_riotclient` | bool | `false` | Register `https://riotclient/` proxy scheme |
 | `use_proxy` | bool | `false` | Strip `--no-proxy-server` so HTTP proxy env vars are honoured |
+| `use_transparency` | bool | `true` | Transparent window surface — the `GetBackgroundColor` patch, the window re-parent, and the `Effect` vibrancy API |
+| `use_decorations` | bool | `true` | Native drop shadow + Win11 rounded corners (`enable_shadow`). Windows-only; ignored on macOS |
 | `debug_port` | int | `0` | Append `--remote-debugging-port=<port>` (undocumented) |
 | `league_dir` | path | `""` | Used by the loader (symlink mode) to locate the LoL install |
 

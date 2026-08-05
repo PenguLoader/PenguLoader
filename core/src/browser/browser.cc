@@ -77,6 +77,10 @@ static void HookMainBrowserClient(cef_client_t *client)
             }
             else if (name.equal("@set-window-vibrancy"))
             {
+                // The renderer already warns; this is the authoritative gate.
+                if (!config::options::use_transparency())
+                    return 1;
+
                 if (margs->get_type(margs, 0) == VTYPE_NULL)
                     window::clear_vibrancy(browser::window);
                 else

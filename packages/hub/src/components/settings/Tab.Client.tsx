@@ -1,4 +1,4 @@
-import { Component } from 'solid-js'
+import { Component, Show } from 'solid-js'
 import { useConfig } from '~/lib/config'
 import { CheckOption, OptionSet } from './templates'
 
@@ -55,6 +55,27 @@ export const TabClient: Component = () => {
           checked={client.silent_mode()}
           onChange={client.silent_mode}
         />
+      </OptionSet>
+
+      <OptionSet name="Appearance">
+        <CheckOption
+          caption="Window Transparency"
+          message={window.isMac
+            ? "Let the Client window render a transparent background, so plugins can apply vibrancy materials. Turn this off if the Client shows up black, flickering or blank."
+            : "Let the Client window render a transparent background, so plugins can apply Mica, acrylic and blur effects. Turn this off if the Client shows up black, flickering or blank."}
+          checked={client.use_transparency()}
+          onChange={client.use_transparency}
+        />
+        {/* Windows only — on macOS the window shadow belongs to AppKit and
+            Pengu has nothing to switch off, so the toggle would be dead. */}
+        <Show when={!window.isMac}>
+          <CheckOption
+            caption="Window Decorations"
+            message="Draw the native drop shadow around the Client window, and rounded corners on Windows 11."
+            checked={client.use_decorations()}
+            onChange={client.use_decorations}
+          />
+        </Show>
       </OptionSet>
 
       <OptionSet name="Developer">

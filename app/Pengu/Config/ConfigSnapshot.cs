@@ -33,7 +33,9 @@ public sealed record ConfigClient(
     [property: JsonPropertyName("insecure_mode")]    bool InsecureMode,
     [property: JsonPropertyName("use_devtools")]     bool UseDevtools,
     [property: JsonPropertyName("use_riotclient")]   bool UseRiotclient,
-    [property: JsonPropertyName("use_proxy")]        bool UseProxy);
+    [property: JsonPropertyName("use_proxy")]        bool UseProxy,
+    [property: JsonPropertyName("use_transparency")] bool UseTransparency,
+    [property: JsonPropertyName("use_decorations")]  bool UseDecorations);
 
 public static class ConfigDefaults
 {
@@ -52,5 +54,7 @@ public static class ConfigDefaults
             InsecureMode: false,
             UseDevtools: false,
             UseRiotclient: false,
-            UseProxy: false));
+            UseProxy: false,
+            UseTransparency: true,
+            UseDecorations: true));
 }

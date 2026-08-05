@@ -18,6 +18,8 @@ const defaultConfig: ConfigSnapshot = {
     use_devtools: false,
     use_riotclient: false,
     use_proxy: false,
+    use_transparency: true,
+    use_decorations: true,
   },
 }
 

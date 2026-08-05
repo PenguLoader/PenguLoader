@@ -408,6 +408,12 @@ export interface PenguGlobal {
   superPotato: boolean;
   /** True when the auto-update-check toggle is on. Mirrors the hub's setting. */
   autoUpdateCheck: boolean;
+  /**
+   * True when the client window has a transparent surface. When `false`,
+   * {@link Effect.apply} warns and does nothing — there is no backdrop for a
+   * material to show through. Feature-detect before styling around one.
+   */
+  useTransparency: boolean;
   /** Plugin entry paths discovered on disk (relative to the plugins folder). */
   plugins: string[];
   /** True on macOS, false on Windows. */

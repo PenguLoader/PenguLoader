@@ -60,10 +60,22 @@ static LRESULT Hooked_WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 /// To obtain transparency effect like Electron,
 /// just move the Chrome_WidgetWin_0 out of CefBrowserWindow
 /// and to be the top-level child of RCLIENT.
-/// 
+///
 /// On MacOS, just do nothing,
 /// then use NSVisualEffectView API to handle that.
-/// 
+///
+/// Two independent switches gate the cosmetics here:
+///   `use_transparency` - the re-parent above, the CefContext::GetBackgroundColor
+///     patch in libcef.cc, and the `Effect.apply` vibrancy API. All three are one
+///     mechanism: without the patch the surface is opaque, and without the
+///     re-parent there is no top-level surface for a backdrop to show through.
+///   `use_decorations` - `enable_shadow` only, and Windows-only. On the WS_POPUP
+///     RCLIENT this turns on DWM non-client rendering, which brings both the drop
+///     shadow and Win11's default corner rounding. macOS has no equivalent.
+///
+/// Of the transparency call sites, only the re-parent is Windows-specific -
+/// the libcef.cc patch and the vibrancy API both apply on macOS too.
+///
 
 void browser::setup_window(cef_browser_t *browser)
 {
@@ -76,29 +88,43 @@ void browser::setup_window(cef_browser_t *browser)
     // Retrieve top-level window (RCLIENT).
     HWND rclient = browser::window = GetAncestor(browserWin, GA_ROOT);
 
-    HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
-    //HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
+    if (config::options::use_transparency())
+    {
+        HWND widgetWin = FindWindowExA(browserWin, NULL, "Chrome_WidgetWin_0", NULL);
+        //HWND widgetHost = FindWindowExA(widgetWin, NULL, "Chrome_RenderWidgetHostHWND", NULL);
 
-    // Ensure transparency effect.
-    //   hide Chrome_RenderWidgetHostHWND
-    //ShowWindow(widgetHost, SW_HIDE);
-    //   hide CefBrowserWindow
-    ShowWindow(browserWin, SW_HIDE);
-    //   bring Chrome_WidgetWin_0 to top-level children
-    SetParent(widgetWin, rclient);
+        // Ensure transparency effect.
+        //   hide Chrome_RenderWidgetHostHWND
+        //ShowWindow(widgetHost, SW_HIDE);
+        //   hide CefBrowserWindow
+        ShowWindow(browserWin, SW_HIDE);
+        //   bring Chrome_WidgetWin_0 to top-level children
+        SetParent(widgetWin, rclient);
+    }
 #elif OS_MAC
     browser::window = host->get_window_handle(host);
 #endif
 
+    // Not gated - the dark frame attribute is an input to both features rather
+    // than part of either, and it is what tints a Win11 backdrop material.
     window::set_theme(browser::window, true);
+
+    // `use_decorations` is Windows-only. On macOS `enable_shadow` is just
+    // [window invalidateShadow] - a refresh, with nothing to switch off - so
+    // honouring the key there would only drop that refresh for no gain.
+#if OS_WIN
+    if (config::options::use_decorations())
+        window::enable_shadow(browser::window);
+#elif OS_MAC
     window::enable_shadow(browser::window);
+#endif
 
     if (config::options::silent_mode())
     {
 #if OS_WIN
         // LCUX calls ShowWindow to show itself
         Old_ShowWindow.hook(&ShowWindow, Hooked_ShowWindow);
-        // it calls ShowWindow to make annoying topmost
+        // it calls SetWindowPos to make annoying topmost
         Old_SetWindowPos.hook(&SetWindowPos, Hooked_SetWindowPos);
 
         // must hook the wndproc to prevent external topmost from LCU

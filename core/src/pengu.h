@@ -370,6 +370,8 @@ namespace config
         bool use_riotclient();
         bool use_proxy();
         bool auto_update_check();
+        bool use_transparency();
+        bool use_decorations();
 
         // undocumented
         int debug_port();

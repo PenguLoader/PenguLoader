@@ -72,6 +72,8 @@ export interface ConfigSnapshot {
     use_devtools: boolean
     use_riotclient: boolean
     use_proxy: boolean
+    use_transparency: boolean
+    use_decorations: boolean
   }
 }
 

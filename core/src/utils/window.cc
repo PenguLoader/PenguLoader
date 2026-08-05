@@ -313,7 +313,12 @@ void window::clear_vibrancy(void *handle)
         case BackdropType::Mica:
             if (IsWin11())
             {
-                extend_client_area(window, 1);
+                // Mica extended the frame to -1 (sheet of glass), clobbering
+                // whatever enable_shadow left here. Restore the decoration
+                // margin only if decorations are actually on - otherwise
+                // clearing an effect would hand back a shadow the user
+                // switched off.
+                extend_client_area(window, config::options::use_decorations() ? 1 : 0);
                 set_window_attribute(window,
                     IsWin11_22H2() ? DWMWA_SYSTEMBACKDROP_TYPE : DWMWA_MICA_EFFECT,
                     IsWin11_22H2() ? DWMSBT_DISABLE : 0);

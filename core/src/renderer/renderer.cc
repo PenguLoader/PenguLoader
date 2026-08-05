@@ -173,6 +173,11 @@ static void LoadPlugins(V8Object *window)
     auto autoUpdateCheck = V8Value::boolean(config::options::auto_update_check());
     pengu->set(&u"autoUpdateCheck"_s, autoUpdateCheck, V8_PROPERTY_ATTRIBUTE_READONLY);
 
+    // Pengu.useTransparency - read by window.Effect to warn instead of
+    // silently no-op'ing when the window has no transparent surface.
+    auto useTransparency = V8Value::boolean(config::options::use_transparency());
+    pengu->set(&u"useTransparency"_s, useTransparency, V8_PROPERTY_ATTRIBUTE_READONLY);
+
     pengu->set(&u"isMac"_s,
 #ifdef OS_MAC
         V8Value::boolean(true),

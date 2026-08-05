@@ -40,7 +40,10 @@ bool check_libcef_version(bool is_browser)
             return false;
         }
 
-        if (is_browser)
+        // Half of the transparency mechanism (the other half is the window
+        // re-parent in browser/window.cc) - skipping the patch leaves CEF's
+        // default opaque white, which is the whole point of the opt-out.
+        if (is_browser && config::options::use_transparency())
             fix_browser_background((const void *)get_version);
 
         return true;
