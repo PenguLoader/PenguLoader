@@ -1,4 +1,5 @@
 #include "pengu.h"
+#include "config_parse.h"
 #include <fstream>
 #include <unordered_map>
 
@@ -164,29 +165,6 @@ path config::league_dir()
 #endif
 }
 
-static void trim_string(std::string &str)
-{
-    // Trim spaces, tabs, CR, LF. CR matters because std::getline strips \n
-    // but leaves \r intact, so any line read from a CRLF-saved file (e.g.
-    // edited in Notepad) carries a trailing \r that would break value
-    // comparisons downstream ("true\r" != "true").
-    static constexpr const char *ws = " \t\r\n";
-    auto last = str.find_last_not_of(ws);
-    if (last == std::string::npos) { str.clear(); return; }
-    str.erase(last + 1);
-    str.erase(0, str.find_first_not_of(ws));
-}
-
-static bool iequals(const std::string &a, const char *b)
-{
-    size_t bl = 0; while (b[bl]) ++bl;
-    if (a.size() != bl) return false;
-    for (size_t i = 0; i < bl; i++)
-        if (std::tolower((unsigned char)a[i]) != std::tolower((unsigned char)b[i]))
-            return false;
-    return true;
-}
-
 static const std::unordered_map<std::string, std::string> &get_config_map()
 {
     // Returned by reference so each reader (we have many — one per option
@@ -201,28 +179,11 @@ static const std::unordered_map<std::string, std::string> &get_config_map()
 
         if (file.is_open())
         {
-            std::string line;
+            std::string line, key, value;
             while (std::getline(file, line))
             {
-                // Trim first so leading whitespace doesn't hide the comment
-                // marker / section bracket / key=value structure.
-                trim_string(line);
-                if (line.empty()) continue;
-                if (line[0] == ';' || line[0] == '#') continue;
-                if (line[0] == '[' && line.back() == ']') continue; // [section] header — keys are globally unique, ignore
-
-                size_t pos = line.find('=');
-                if (pos == std::string::npos) continue;
-
-                std::string key   = line.substr(0, pos);
-                std::string value = line.substr(pos + 1);
-
-                trim_string(key);
-                trim_string(value);
-
-                if (key.empty()) continue;
-
-                map[key] = std::move(value);
+                if (config::parse::ini_line(line, key, value))
+                    map[key] = value;
             }
             file.close();
         }
@@ -246,13 +207,7 @@ static bool get_config_value_bool(const char *key, bool fallback)
     auto it = map.find(key);
     if (it == map.end()) return fallback;
 
-    const auto &v = it->second;
-    // Match the host-side IniReader.ParseBool surface so values written by
-    // either side round-trip cleanly: 1/0, true/false, yes/no, all
-    // case-insensitive.
-    if (v == "1" || iequals(v, "true")  || iequals(v, "yes")) return true;
-    if (v == "0" || iequals(v, "false") || iequals(v, "no"))  return false;
-    return fallback;
+    return config::parse::as_bool(it->second, fallback);
 }
 
 static int get_config_value_int(const char *key, int fallback)
@@ -261,10 +216,7 @@ static int get_config_value_int(const char *key, int fallback)
     auto it = map.find(key);
     if (it == map.end()) return fallback;
 
-    // std::stoi throws on bad input; a malformed number must not bring the
-    // core down — fall back to the default instead.
-    try { return std::stoi(it->second); }
-    catch (...) { return fallback; }
+    return config::parse::as_int(it->second, fallback);
 }
 
 path config::plugins_dir()

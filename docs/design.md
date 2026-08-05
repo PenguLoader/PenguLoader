@@ -235,6 +235,37 @@ One non-obvious flag: core compiles with **`/permissive`**, not the `/permissive
 
 **macOS** still builds through `make -C core release`, which produces `core.dylib` plus the `insert_dylib` helper. That link line (weak `-lcef`, `-flat_namespace`, the post-processing step) has not been ported to CMake — `core/CMakeLists.txt` hard-fails on non-Windows rather than pretending to cover it.
 
+### 2.8 Tests
+
+Two tiers, and the split is deliberate.
+
+**Tier 1 — unit tests** in [`core/tests/`](../core/tests/), doctest (vendored, no package manager), built by default and run by CI:
+
+```bash
+ctest --test-dir core/build --output-on-failure
+./core/bin/x64/Release/pengu-tests --test-case="*range*"   # doctest filters
+```
+
+The rule is that these **link nothing from CEF**. If a test needs `cef_request_t` or a libcef export, it's the wrong test. That constraint is what keeps the suite buildable with no CEF checkout, on any platform, in about a second — and it's why the logic under test was pulled into CEF-free headers:
+
+| Header | Extracted from | Covers |
+| --- | --- | --- |
+| [`browser/assets_range.h`](../core/src/browser/assets_range.h) | `assets.cc` | RFC 7233 `Range` parsing ([§6.4](#64-range-requests)) |
+| [`browser/path_guard.h`](../core/src/browser/path_guard.h) | `assets_path.h` | `is_inside` — the sandbox boundary for the scheme handler, `?dir`, and `$write` |
+| [`config_parse.h`](../core/src/config_parse.h) | `config.cc` | ini line splitting, bool/int coercion |
+
+`assets_path.h` and `config.cc` include these rather than duplicating them, so production and tests exercise the same code.
+
+**Tier 2 — the live CDP harness** in [`packages/preload/scripts/`](../packages/preload/scripts/), run by hand against a real client with `use_devtools` on and `debug_port` set:
+
+```bash
+CDP_URL=http://localhost:8888 node packages/preload/scripts/cdp-range-test.mjs
+```
+
+> **Tier 1 cannot replace tier 2.** The bug that shipped in the range rewrite was CEF calling `skip()` *before* `get_response_headers()` — a protocol-ordering fault invisible to any unit test, caught only by A/B-ing a real client. Tier 1's job is to make the pure logic unbreakable so tier 2 only has to hunt integration bugs. Treat a green `ctest` accordingly.
+
+`cdp-range-test.mjs` reads response headers from the **CDP Network domain** rather than `fetch`, because `Content-Range` and `Accept-Ranges` are not CORS-safelisted and page-side `Headers.get` returns `null` for both.
+
 ---
 
 ## 3. Browser-process hooks

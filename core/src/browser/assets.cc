@@ -1,6 +1,7 @@
 #include "browser.h"
 #include "assets_shims.h"
 #include "assets_path.h"
+#include "assets_range.h"
 
 #include "include/capi/cef_parser_capi.h"
 #include "include/capi/cef_scheme_capi.h"
@@ -13,141 +14,6 @@
 // register_plugins_domain pins both the scheme and the synthetic host, so
 // every request the handler sees begins with exactly these 15 characters.
 static constexpr size_t URL_PREFIX_LEN = 15;
-
-// Outcome of parsing a `Range` header, per RFC 7233.
-enum class RangeParse
-{
-    // Not a byte range we can act on - unknown unit, malformed, or a
-    // multi-range set. RFC 7233 3.1 lets the server ignore it and reply 200.
-    Ignore,
-    // Well-formed, but nothing in it overlaps the entity. Reply 416.
-    Unsatisfiable,
-    // Usable. `start` / `end` are inclusive and clamped to the entity.
-    Satisfiable,
-};
-
-// Parse a decimal run. Rejects empty input, non-digits, and anything long
-// enough to overflow - callers treat all three as "ignore the header" rather
-// than trusting a wrapped value.
-static bool parse_range_number(const std::string &text, int64 &out)
-{
-    if (text.empty() || text.size() > 18)
-        return false;
-
-    int64 value = 0;
-    for (char c : text)
-    {
-        if (c < '0' || c > '9')
-            return false;
-        value = value * 10 + (c - '0');
-    }
-
-    out = value;
-    return true;
-}
-
-// Strip optional whitespace (RFC 7230 OWS) from both ends.
-static void trim_ows(std::string &text)
-{
-    size_t begin = text.find_first_not_of(" \t");
-    if (begin == std::string::npos)
-    {
-        text.clear();
-        return;
-    }
-
-    size_t end = text.find_last_not_of(" \t");
-    text = text.substr(begin, end - begin + 1);
-}
-
-///
-/// Parse a single byte-range-spec out of a `Range` header value.
-///
-/// Only one range is supported: answering a multi-range set requires a
-/// multipart/byteranges body, and nothing in LCUX asks for one, so those are
-/// ignored in favour of the full entity.
-///
-static RangeParse parse_byte_range(const std::string &header,
-    int64 total, int64 &start, int64 &end)
-{
-    static constexpr char UNIT[] = "bytes=";
-    constexpr size_t UNIT_LEN = sizeof(UNIT) - 1;
-
-    // Range units are case-insensitive (RFC 7233 2). Note this also guards the
-    // substr below - a header shorter than the unit prefix would otherwise
-    // throw std::out_of_range straight out of a CEF callback.
-    if (header.size() <= UNIT_LEN)
-        return RangeParse::Ignore;
-
-    for (size_t i = 0; i < UNIT_LEN; i++)
-    {
-        char c = header[i];
-        if (c >= 'A' && c <= 'Z') c += 32;
-        if (c != UNIT[i])
-            return RangeParse::Ignore;
-    }
-
-    std::string spec = header.substr(UNIT_LEN);
-
-    // A comma means a multi-range set.
-    if (spec.find(',') != std::string::npos)
-        return RangeParse::Ignore;
-
-    size_t dash = spec.find('-');
-    if (dash == std::string::npos)
-        return RangeParse::Ignore;
-
-    std::string first = spec.substr(0, dash);
-    std::string last = spec.substr(dash + 1);
-    trim_ows(first);
-    trim_ows(last);
-
-    if (first.empty())
-    {
-        // Suffix form `bytes=-N` - the final N bytes of the entity.
-        int64 count;
-        if (!parse_range_number(last, count))
-            return RangeParse::Ignore;
-
-        // `bytes=-0` asks for the last zero bytes: valid syntax, nothing to
-        // send.
-        if (count == 0 || total == 0)
-            return RangeParse::Unsatisfiable;
-
-        start = count >= total ? 0 : total - count;
-        end = total - 1;
-        return RangeParse::Satisfiable;
-    }
-
-    if (!parse_range_number(first, start))
-        return RangeParse::Ignore;
-
-    if (last.empty())
-    {
-        // Open-ended `bytes=N-` runs to the end of the entity. This is the case
-        // the old sentinel (`rangeEnd == 0`) conflated with `bytes=0-0`.
-        end = total - 1;
-    }
-    else
-    {
-        if (!parse_range_number(last, end))
-            return RangeParse::Ignore;
-
-        // last-byte-pos below first-byte-pos makes the spec *invalid* rather
-        // than unsatisfiable (RFC 7233 2.1), so it gets ignored, not 416'd.
-        if (end < start)
-            return RangeParse::Ignore;
-
-        if (end > total - 1)
-            end = total - 1;
-    }
-
-    // A first-byte-pos at or past the end has nothing behind it.
-    if (total == 0 || start >= total)
-        return RangeParse::Unsatisfiable;
-
-    return RangeParse::Satisfiable;
-}
 
 // Custom resource handler for local assets.
 class AssetsResourceHandler : public CefRefCount<cef_resource_handler_t>
@@ -395,12 +261,12 @@ private:
 
             int64 start = 0, end = 0;
             auto parsed = range_header_.empty()
-                ? RangeParse::Ignore
-                : parse_byte_range(range_header_, length_, start, end);
+                ? assets::RangeParse::Ignore
+                : assets::parse_byte_range(range_header_, length_, start, end);
 
             switch (parsed)
             {
-                case RangeParse::Satisfiable:
+                case assets::RangeParse::Satisfiable:
                 {
                     if (start != offset_)
                     {
@@ -424,7 +290,7 @@ private:
                     break;
                 }
 
-                case RangeParse::Unsatisfiable:
+                case assets::RangeParse::Unsatisfiable:
                 {
                     // RFC 7233 4.4 requires the unsatisfied-range form so the
                     // client learns the real entity length.
@@ -439,7 +305,7 @@ private:
                     break;
                 }
 
-                case RangeParse::Ignore:
+                case assets::RangeParse::Ignore:
                 default:
                     // No range, or one we decline to act on - serve the whole
                     // entity, which RFC 7233 3.1 explicitly permits.

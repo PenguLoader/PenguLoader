@@ -164,3 +164,11 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../packages/preload/dist/preload.g.h"
 endif()
 
 add_subdirectory(boot)
+
+# Unit tests for the CEF-free logic under src/. On by default because they
+# cost a couple of seconds; -DPENGU_BUILD_TESTS=OFF skips them.
+option(PENGU_BUILD_TESTS "Build the core unit tests" ON)
+if(PENGU_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

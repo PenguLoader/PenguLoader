@@ -126,6 +126,13 @@ jobs:
           cmake -S core -B core/build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build core/build
 
+      # Unit tests for the CEF-free logic under core/src — range parsing, the
+      # path sandbox, config parsing. Seconds to run, and they gate the
+      # artifact: a failure here should stop the build, not ship.
+      - name: Test native (windows)
+        if: runner.os == 'Windows'
+        run: ctest --test-dir core/build --output-on-failure
+
       # AOT-publish the .NET 10 host. The csproj's BuildHubBundle target runs
       # `pnpm --filter @pengujs/hub build` and zips packages/hub/dist/ into
       # app.dat as part of the build, and the PublishAppDat target adds app.dat
