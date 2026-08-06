@@ -6,7 +6,7 @@ on:
       - main
       - dev
       - release/*
-      - feat/app-hub
+      - feat/*
   workflow_dispatch:
   # release.yml builds through this rather than duplicating ~150 lines of
   # toolchain and compile steps. Everything here is unsigned by design: code
@@ -92,13 +92,9 @@ jobs:
       # needs the VC environment that a Developer Command Prompt would set.
       - name: Setup MSVC environment
         if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
           arch: x64
-
-      - name: Setup Ninja
-        if: runner.os == 'Windows'
-        uses: seanmiddleditch/gha-setup-ninja@v6
 
       # ─── Build (shared) ─────────────────────────────────────────────────
       # Preload bundle is #include'd into core (renderer.cc embeds preload.g.h).
