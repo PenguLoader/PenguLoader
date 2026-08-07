@@ -1,6 +1,8 @@
 #include "pengu.h"
 
-#if OS_MAC
+#if OS_WIN
+#include <io.h>
+#elif OS_MAC
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -101,6 +103,91 @@ bool file::write_file(const path &path, const void *buffer, size_t length)
     }
 
     return false;
+}
+
+/// Temp names must not collide, or two concurrent writers to the same target
+/// each clobber the other's partial content and the rename publishes whichever
+/// half-written file won. The counter covers threads within this process; the
+/// pid covers the several renderer processes LCUX spawns, which share the
+/// plugins folder and the data root.
+static path make_temp_path(const path &target)
+{
+    static std::atomic<uint64_t> counter{ 1 };
+    auto nth = counter.fetch_add(1);
+
+    path temp(target);
+#if OS_WIN
+    temp += L".pengu-tmp." + std::to_wstring(GetCurrentProcessId())
+          + L"." + std::to_wstring(nth);
+#else
+    temp += ".pengu-tmp." + std::to_string(getpid())
+          + "." + std::to_string(nth);
+#endif
+    return temp;
+}
+
+bool file::atomic_write(const path &target, const void *buffer, size_t length)
+{
+    path temp = make_temp_path(target);
+
+#if OS_WIN
+    FILE *fp = _wfopen(temp.c_str(), L"wb");
+#else
+    FILE *fp = fopen(temp.c_str(), "wb");
+#endif
+
+    if (fp == nullptr)
+        return false;
+
+    // fwrite's return is the whole point -- a short write (disk full, quota)
+    // otherwise renames a truncated file over a good one.
+    bool ok = length == 0 || fwrite(buffer, 1, length, fp) == length;
+
+    // Push the bytes past our own buffering and the OS cache *before* the
+    // rename. Without this the rename can reach disk first, replacing a good
+    // file with a zero-length one -- losing the original, which is the exact
+    // failure this function exists to prevent.
+    //
+    // Deliberately not F_FULLFSYNC on macOS: that is a full drive-cache
+    // barrier costing tens of ms to seconds, and the threat model here is a
+    // process crash, not power loss.
+    if (ok)
+        ok = fflush(fp) == 0;
+
+    if (ok)
+    {
+#if OS_WIN
+        ok = _commit(_fileno(fp)) == 0;
+#else
+        ok = fsync(fileno(fp)) == 0;
+#endif
+    }
+
+    if (fclose(fp) != 0)
+        ok = false;
+
+    std::error_code ec;
+
+    if (ok)
+    {
+#if OS_WIN
+        // MoveFileExW rather than std::filesystem::rename for
+        // MOVEFILE_WRITE_THROUGH, which holds the call until the rename itself
+        // is on disk. Both replace an existing target.
+        ok = MoveFileExW(temp.c_str(), target.c_str(),
+                         MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+        std::filesystem::rename(temp, target, ec);
+        ok = !ec;
+#endif
+    }
+
+    // On success the temp no longer exists under that name; on failure it is
+    // ours to clean up. Best-effort -- an orphan is untidy, not harmful.
+    if (!ok)
+        std::filesystem::remove(temp, ec);
+
+    return ok;
 }
 
 std::vector<path> file::read_dir(const path &dir)

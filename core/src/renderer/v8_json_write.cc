@@ -18,45 +18,12 @@
 // This matters because `window.__pwj` is a plain global reachable by every
 // script in the renderer — including remote code a plugin imported. Taking a
 // URL here would hand all of them a write-anywhere-inside-plugins primitive,
-// and since `file::write_file` truncates any file and renderer.cc loads every
-// `<plugin>/index.js` at launch, that is persistent code execution rather
-// than mere config tampering.
+// and since the write replaces a file's whole content and renderer.cc loads
+// every `<plugin>/index.js` at launch, that is persistent code execution
+// rather than mere config tampering.
 // =============================================================================
 
 static constexpr size_t URL_PREFIX_LEN = 15;  // "https://plugins"
-
-/// Temp-file + atomic rename. Crash mid-write leaves the .tmp orphaned but
-/// the canonical file intact. The temp lives in the same directory as the
-/// target so the rename stays on one volume (POSIX requirement for atomicity).
-static bool atomic_write(const path &target, const std::string &body)
-{
-    path tmp_path(target);
-#if OS_WIN
-    tmp_path += L".tmp";
-#else
-    tmp_path += ".tmp";
-#endif
-
-    if (!file::write_file(tmp_path, body.data(), body.size()))
-        return false;
-
-#if OS_WIN
-    if (!MoveFileExW(tmp_path.c_str(), target.c_str(),
-                     MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
-    {
-        DeleteFileW(tmp_path.c_str());  // best-effort cleanup
-        return false;
-    }
-#else
-    if (std::rename(tmp_path.c_str(), target.c_str()) != 0)
-    {
-        std::remove(tmp_path.c_str());
-        return false;
-    }
-#endif
-
-    return true;
-}
 
 /// Resolve the plugins-relative path of the script that called us, or return
 /// false if that script isn't a JSON module served off `https://plugins/`.
@@ -159,7 +126,7 @@ static V8Value *v8_write_json(V8Value *const args[], int argc)
     cef_string_utf8_clear(&utf8);
 
     task->execute([task, target, body = std::move(body)] {
-        if (atomic_write(target, body))
+        if (file::atomic_write(target, body.data(), body.size()))
             task->resolve();
         else
             task->reject("WriteJson: write failed");

@@ -68,7 +68,6 @@ namespace
     std::mutex g_write_mutex;
     std::unordered_map<std::string, Capability> g_capabilities;
     std::atomic<uint64_t> g_token_counter{ 1 };
-    std::atomic<uint64_t> g_temp_counter{ 1 };
 
     static std::string to_utf8(V8Value *value)
     {
@@ -438,39 +437,9 @@ namespace
             return stream.good();
         }
 
-        // Replacement writes go through a uniquely-named temp in the same
-        // directory, so a crash mid-write leaves the original intact and two
-        // concurrent writers can't collide on one temp name.
-        auto temp = target.value();
-        temp += ".pengu-tmp.";
-        temp += std::to_string(g_temp_counter.fetch_add(1));
-
-        std::ofstream stream(temp, std::ios::binary | std::ios::trunc);
-        if (!stream.good())
-            return false;
-
-        stream.write(content.data(), static_cast<std::streamsize>(content.size()));
-        stream.close();
-
-        if (!stream.good())
-        {
-            std::error_code ec;
-            std::filesystem::remove(temp, ec);
-            return false;
-        }
-
-#if OS_WIN
-        return MoveFileExW(temp.wstring().c_str(), target->wstring().c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
-#else
-        std::error_code ec;
-        std::filesystem::rename(temp, target.value(), ec);
-        if (ec)
-        {
-            std::filesystem::remove(temp, ec);
-            return false;
-        }
-        return true;
-#endif
+        // Replacement writes go through a temp beside the target, so a crash
+        // mid-write leaves the original intact.
+        return file::atomic_write(target.value(), content.data(), content.size());
     }
 
     static bool make_dir(const std::string &token, const std::string &relative_path)

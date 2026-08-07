@@ -421,6 +421,24 @@ namespace file
     bool write_file(const path &path, const void *buffer, size_t length);
 
     ///
+    /// Replace a file's content atomically.
+    ///
+    /// The bytes go to a uniquely-named temp file beside the target, are
+    /// flushed through to disk, then renamed over it. A crash part-way leaves
+    /// the original untouched and at worst orphans the temp; a reader never
+    /// observes a half-written file. Prefer this over `write_file` for
+    /// anything whose loss would matter.
+    ///
+    /// The parent directory must already exist -- this does not create it.
+    ///
+    /// @param path Path to file.
+    /// @param buffer Source buffer.
+    /// @param length Source buffer length.
+    /// @returns true if the target now holds exactly these bytes.
+    ///
+    bool atomic_write(const path &path, const void *buffer, size_t length);
+
+    ///
     /// Get files inside a dir.
     /// @param path Path to dir.
     /// @returns A vector of file paths.
