@@ -152,10 +152,9 @@ static V8Value *v8_save_datastore(V8Value *const args[], int argc)
             // Convert UTF-16 → UTF-8 once on the renderer thread, then hand
             // the bytes off to the writer. Latest-wins coalescing happens in
             // ds_writer::enqueue.
-            cef_string_utf8_t utf8{};
-            cef_string_to_utf8(js.str, js.length, &utf8);
-            ds_writer::enqueue(std::string(utf8.str, utf8.length));
-            cef_string_utf8_clear(&utf8);
+            std::string utf8;
+            js.to_utf8_into(utf8);
+            ds_writer::enqueue(std::move(utf8));
         }
     }
     // Fire-and-forget — undefined to JS.

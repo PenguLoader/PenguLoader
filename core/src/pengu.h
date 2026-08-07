@@ -207,6 +207,15 @@ struct CefStrBase : cef_string_t
     std::string to_utf8() const;
 
     ///
+    /// Convert the string to utf-8, into a caller-owned buffer.
+    ///
+    /// Replaces `to`'s content but reuses its capacity, so a caller converting
+    /// repeatedly can keep one buffer instead of allocating per call.
+    /// `to_utf8()` is this plus a return.
+    ///
+    void to_utf8_into(std::string &to) const;
+
+    ///
     /// Convert the string to utf-16 std string.
     /// 
     std::u16string to_utf16() const;

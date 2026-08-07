@@ -18,6 +18,7 @@ add_executable(pengu-tests
     range_test.cc
     path_test.cc
     config_test.cc
+    utf_test.cc
 )
 
 target_include_directories(pengu-tests PRIVATE

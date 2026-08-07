@@ -1,4 +1,5 @@
 #include "pengu.h"
+#include "utf.h"
 
 // utf16 string helpers
 
@@ -83,12 +84,17 @@ void CefStrBase::copy(std::u16string &to) const
 
 std::string CefStrBase::to_utf8() const
 {
-    cef_string_utf8_t out{};
-    cef_string_to_utf8(str, length, &out);
+    std::string out;
+    to_utf8_into(out);
+    return out;
+}
 
-    std::string ret(out.str, out.length);
-    cef_string_utf8_clear(&out);
-    return ret;
+void CefStrBase::to_utf8_into(std::string &to) const
+{
+    // Not cef_string_to_utf8: it allocates a buffer of its own, which then has
+    // to be copied into `to` and freed. utf::utf16_to_utf8 writes the bytes
+    // straight in.
+    utf::utf16_to_utf8(reinterpret_cast<const char16_t *>(str), length, to);
 }
 
 std::u16string CefStrBase::to_utf16() const

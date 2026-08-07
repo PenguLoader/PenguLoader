@@ -120,10 +120,8 @@ static V8Value *v8_write_json(V8Value *const args[], int argc)
 
     // UTF-16 → UTF-8 for the on-disk bytes. Done here (renderer thread) so
     // the worker only does file I/O.
-    cef_string_utf8_t utf8{};
-    cef_string_to_utf8(content.str, content.length, &utf8);
-    std::string body(utf8.str, utf8.length);
-    cef_string_utf8_clear(&utf8);
+    std::string body;
+    content.to_utf8_into(body);
 
     task->execute([task, target, body = std::move(body)] {
         if (file::atomic_write(target, body.data(), body.size()))
