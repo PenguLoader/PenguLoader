@@ -337,8 +337,17 @@ namespace config
     path loader_dir();
 
     ///
-    /// Get the datastore path.
-    /// @returns Path to datastore file.
+    /// Get the SQLite-backed datastore path.
+    ///
+    /// A sibling of `datastore_path()`, not a replacement: the legacy blob is
+    /// left in place after migration so a downgrade still finds its data.
+    ///
+    /// @returns Path to `datastore.db`.
+    ///
+    path datastore_db_path();
+
+    /// Get the legacy datastore path.
+    /// @returns Path to the XOR'd JSON blob read once, at migration.
     /// 
     path datastore_path();
 

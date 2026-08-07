@@ -14,9 +14,17 @@ interface Native {
 
   // Async DataStore — see core/src/renderer/v8_datastore.cc and
   // packages/preload/src/preload/api/DataStore.ts.
-  LoadDataStore:  () => Promise<string>;
-  SaveDataStore:  (data: string) => void;          // fire-and-forget
-  FlushDataStore: () => Promise<void>;
+  //
+  // One row per key. Load returns a flat [k0, v0, k1, v1, ...] of strings
+  // rather than a JSON document, so assembling JSON never happens natively and
+  // one bad row cannot take the store down with it. Set / Remove are
+  // fire-and-forget; the native writer coalesces per key and commits in
+  // batches.
+  LoadDataStore:       () => Promise<string[]>;
+  LoadLegacyDataStore: () => Promise<string>;      // pre-SQLite blob, migration only
+  SetDataStore:        (key: string, json: string) => void;
+  RemoveDataStore:     (key: string) => void;
+  FlushDataStore:      () => Promise<void>;
 
   // Writable-JSON $write back-end. Captured + rebound as `window.__pwj` by
   // api/json.ts so the SCRIPT_IMPORT_JSON shim can call into it.

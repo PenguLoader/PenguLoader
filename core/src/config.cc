@@ -135,6 +135,14 @@ path config::datastore_path()
     return loader_dir() / "datastore";
 }
 
+path config::datastore_db_path()
+{
+    // Deliberately a sibling of the legacy blob rather than a replacement for
+    // it. The old file stays readable after migration, so a user who downgrades
+    // gets their data back instead of an empty store.
+    return loader_dir() / "datastore.db";
+}
+
 path config::cache_dir()
 {
 #if OS_WIN
