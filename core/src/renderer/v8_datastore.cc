@@ -55,9 +55,16 @@ namespace ds_writer
             // XOR + write outside the lock so disk I/O doesn't block enqueue
             // of newer blobs (which will overwrite `pending` for next loop).
             transform_data(snapshot.data(), snapshot.size());
-            file::write_file(
+
+            // Atomic, not a plain truncating write: this file is the whole
+            // store, and a crash part-way through rewriting it would take
+            // every plugin's settings with it. There is nowhere to report a
+            // failure from this thread -- the JS side already treats Save as
+            // fire-and-forget -- but at least a failed write now leaves the
+            // previous contents readable instead of a truncated file.
+            file::atomic_write(
                 config::datastore_path(),
-                const_cast<char *>(snapshot.data()),
+                snapshot.data(),
                 snapshot.size());
 
             {
