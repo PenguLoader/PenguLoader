@@ -1,0 +1,53 @@
+# Line endings
+#
+# `core.autocrlf` is commonly `true` on Windows checkouts here, which rewrites
+# working-tree files to CRLF and makes every `git add` of an LF source file warn
+# that it will be converted. Pinning the source tree to LF removes the warning
+# and, more importantly, keeps the bytes identical across platforms — `core/`
+# builds on both Windows and macOS, and `boot.dll` verifies a signature over
+# `core.dll`, so gratuitous newline churn is not free.
+
+* text=auto
+
+*.c      text eol=lf
+*.cc     text eol=lf
+*.h      text eol=lf
+*.mm     text eol=lf
+*.cs     text eol=lf
+*.ts     text eol=lf
+*.tsx    text eol=lf
+*.mjs    text eol=lf
+*.js     text eol=lf
+*.json   text eol=lf
+*.md     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.rs     text eol=lf
+CMakeLists.txt  text eol=lf
+Makefile        text eol=lf
+.gitattributes  text eol=lf
+.gitignore      text eol=lf
+.env            text eol=lf
+
+# Scripts that Windows itself executes want CRLF.
+*.ps1    text eol=crlf
+*.cmd    text eol=crlf
+*.bat    text eol=crlf
+
+*.png    binary
+*.ico    binary
+*.dll    binary
+*.lib    binary
+*.dylib  binary
+*.webm   binary
+*.dat    binary
+
+# Vendored third-party source
+#
+# linguist weighs bytes, not files. `core/vendor/sqlite/sqlite3.c` alone is
+# ~9.5 MB against a repo whose own sources are a few hundred KB, so without this
+# GitHub reports Pengu as a C project. `linguist-vendored` also keeps these out
+# of diff review by default, which is right — they are replaced wholesale on a
+# version bump, never edited. See core/vendor/sqlite/README.md.
+
+core/vendor/** linguist-vendored

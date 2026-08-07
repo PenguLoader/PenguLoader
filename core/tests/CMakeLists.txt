@@ -22,7 +22,7 @@ add_executable(pengu-tests
 )
 
 target_include_directories(pengu-tests PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/vendor"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../vendor/doctest"
     "${CMAKE_CURRENT_SOURCE_DIR}/../src"
 )
 
