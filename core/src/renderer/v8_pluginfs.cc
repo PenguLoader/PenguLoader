@@ -7,6 +7,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <random>
@@ -73,6 +74,26 @@ namespace
     {
         CefScopedStr str = value->asString();
         return str.to_utf8();
+    }
+
+    /// Adopt a `cef_string_userfree_t` into a copyable owner, so the UTF-16
+    /// bytes can be handed to a worker instead of transcoded here.
+    ///
+    /// Copyable rather than move-only because `V8PromiseTask::execute` takes a
+    /// `std::function`, whose target must be CopyConstructible -- a lambda
+    /// capturing a move-only handle will not compile. The control block is a
+    /// fixed cost that does not scale with the payload, which is the whole
+    /// point.
+    ///
+    /// Freeing the string from a worker is safe: cef_string_userfree_free just
+    /// runs the string's own dtor and releases the struct. Unlike V8 handles,
+    /// CEF strings carry no thread affinity.
+    static std::shared_ptr<cef_string_t> adopt_string(cef_string_userfree_t str)
+    {
+        return std::shared_ptr<cef_string_t>(str, [](cef_string_t *owned) {
+            if (owned != nullptr)
+                cef_string_userfree_free(owned);
+        });
     }
 
     static bool is_windows_reserved_name(const std::string &component)
@@ -621,16 +642,24 @@ static V8Value *v8_pluginfs_write(V8Value *const args[], int argc)
 
     auto token = to_utf8(args[0]);
     auto relative_path = to_utf8(args[1]);
-    auto content = to_utf8(args[2]);
     bool append = argc > 3 && args[3]->isBool() && args[3]->asBool();
+
+    // The payload stays UTF-16 until a worker picks it up. `args` is only
+    // valid inside this callback so the string has to be taken now, but the
+    // transcode -- the expensive part, over as much as MAX_TEXT_BYTES -- has
+    // no business running on the renderer thread. It used to, which made the
+    // promise misleading: the await returned to JS only after the client had
+    // already stalled for the whole conversion.
+    auto content = adopt_string(args[2]->asString());
 
     auto *task = new V8PromiseTask();
     auto *promise = task->promise();
 
-    // `content` is the caller's whole payload; hand it to the worker rather
-    // than copying it across. It is not touched again on this thread.
-    task->execute([task, token, relative_path, content = std::move(content), append] {
-        bool result = write_text(token, relative_path, content, append);
+    task->execute([task, token, relative_path, content, append] {
+        std::string utf8;
+        CefStr::borrow(content.get()).to_utf8_into(utf8);
+
+        bool result = write_text(token, relative_path, utf8, append);
         task->resolve([result]() -> V8Value * { return V8Value::boolean(result); });
     });
 
