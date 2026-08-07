@@ -19,6 +19,7 @@ add_executable(pengu-tests
     path_test.cc
     config_test.cc
     utf_test.cc
+    sha256_test.cc
     sqlite_test.cc
 )
 
