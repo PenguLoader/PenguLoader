@@ -77,6 +77,52 @@ add_compile_options($<$<CONFIG:Debug>:/FC>)
 set(CMAKE_CXX_FLAGS_RELEASE "/DNDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "/DNDEBUG")
 
+# ── sqlite3 ─────────────────────────────────────────────────────────────────
+# The vendored amalgamation (core/vendor/sqlite), built as its own static
+# library rather than folded into core's source list:
+#
+#   - the SQLITE_* configuration cannot leak into core's own translation units,
+#   - warnings from a quarter-million lines of third-party C stay out of core's
+#     build log without having to lower core's own warning level,
+#   - and it rebuilds only when the vendored source is bumped, which is roughly
+#     never, rather than on every core edit.
+add_library(sqlite3 STATIC vendor/sqlite/sqlite3.c)
+
+target_include_directories(sqlite3 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/vendor/sqlite")
+
+# PUBLIC, not PRIVATE. sqlite3.h itself branches on these — SQLITE_OMIT_DEPRECATED
+# gates a block of prototypes, SQLITE_OMIT_LOAD_EXTENSION another — so a consumer
+# compiling the header without them would see an API the library does not
+# actually contain, and find out at link time or later.
+#
+# Per-flag rationale is in core/vendor/sqlite/README.md. The one that is not
+# about size or speed is SQLITE_OMIT_LOAD_EXTENSION: without it, any path that
+# reached SQL could load a DLL.
+target_compile_definitions(sqlite3 PUBLIC
+    SQLITE_OMIT_LOAD_EXTENSION
+    SQLITE_DQS=0
+    SQLITE_THREADSAFE=1
+    SQLITE_DEFAULT_MEMSTATUS=0
+    SQLITE_DEFAULT_WAL_SYNCHRONOUS=1
+    SQLITE_LIKE_DOESNT_MATCH_BLOBS
+    SQLITE_MAX_EXPR_DEPTH=0
+    SQLITE_OMIT_DECLTYPE
+    SQLITE_OMIT_DEPRECATED
+    SQLITE_OMIT_PROGRESS_CALLBACK
+    SQLITE_OMIT_SHARED_CACHE
+    SQLITE_USE_ALLOCA
+)
+
+# /w rather than core's /W3: this is third-party source we do not edit, so its
+# warnings are noise we cannot act on. No LTO either — one 9.5 MB translation
+# unit gains nothing from cross-module inlining and costs minutes of link time.
+target_compile_options(sqlite3 PRIVATE /w $<$<CONFIG:Release>:/O2>)
+set_property(TARGET sqlite3 PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+
+set_target_properties(sqlite3 PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${PENGU_OUTPUT_DIR}"
+)
+
 # ── core.dll ────────────────────────────────────────────────────────────────
 # Listed explicitly rather than globbed: a glob does not re-run configure when a
 # file is added, so a new source silently goes unbuilt until someone reconfigures.
@@ -98,6 +144,7 @@ add_library(core SHARED
     src/renderer/v8_helper.cc
     src/renderer/v8_json_write.cc
     src/renderer/v8_pluginfs.cc
+    src/renderer/v8_storage.cc
     src/renderer/renderer.cc
     src/utils/cefstr.cc
     src/utils/dylib.cc
@@ -145,6 +192,7 @@ target_compile_options(core PRIVATE
 target_link_libraries(core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/cef/lib/win/libcef.lib"
     delayimp
+    sqlite3
 )
 
 target_link_options(core PRIVATE
@@ -162,8 +210,18 @@ set_source_files_properties(res/resource.rc PROPERTIES
 )
 
 # renderer.cc #includes ../../packages/preload/dist/preload.g.h, produced by
-# `pnpm --filter @pengujs/preload build`. Not modelled as a CMake dependency
-# because the generator lives in the JS workspace; CI builds it before this.
+# `pnpm --filter @pengujs/preload build`. Generating it is not modelled here —
+# the generator lives in the JS workspace, and CI builds it before this.
+#
+# Depending on it is modelled, though. Ninja scans #includes only for paths it
+# can resolve at configure time, and a rebuilt preload otherwise leaves
+# renderer.cc's object untouched: `ninja` reports "no work to do" and you ship a
+# core.dll carrying the previous bundle. That failure is silent and costs a
+# whole deploy cycle to notice.
+set_source_files_properties(src/renderer/renderer.cc PROPERTIES
+    OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../packages/preload/dist/preload.g.h"
+)
+
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../packages/preload/dist/preload.g.h")
     message(WARNING
         "packages/preload/dist/preload.g.h is missing — core will fail to compile. "

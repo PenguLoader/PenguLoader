@@ -14,6 +14,7 @@ extern V8HandlerFunctionEntry v8_DirEntries[];
 extern V8HandlerFunctionEntry v8_PluginFSEntries[];
 extern V8HandlerFunctionEntry v8_HelperEntries[];
 extern V8HandlerFunctionEntry v8_JsonWriteEntries[];
+extern V8HandlerFunctionEntry v8_StorageEntries[];
 
 static std::vector<path> get_plugin_entries()
 {
@@ -132,6 +133,7 @@ static void ExposeNativeFunctions(V8Object *window)
         v8_JsonWriteEntries,
         v8_DirEntries,
         v8_PluginFSEntries,
+        v8_StorageEntries,
     };
 
     for (auto &entries : list) {

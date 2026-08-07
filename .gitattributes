@@ -25,6 +25,7 @@
 *.rs     text eol=lf
 CMakeLists.txt  text eol=lf
 Makefile        text eol=lf
+makefile        text eol=lf
 .gitattributes  text eol=lf
 .gitignore      text eol=lf
 .env            text eol=lf

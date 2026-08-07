@@ -19,7 +19,14 @@ add_executable(pengu-tests
     path_test.cc
     config_test.cc
     utf_test.cc
+    sqlite_test.cc
 )
+
+# The vendored database is not CEF, so it does not break the rule above. It is
+# linked because sqlite_test.cc asserts that the compile definitions actually
+# took effect — something no build log will tell you, and something a version
+# bump could silently undo.
+target_link_libraries(pengu-tests PRIVATE sqlite3)
 
 target_include_directories(pengu-tests PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../vendor/doctest"

@@ -42,4 +42,9 @@ interface Native {
   PluginFSStat:   (token: string, path: string) => Promise<FileStat | undefined>;
   PluginFSLs:     (token: string, path: string) => Promise<string[] | undefined>;
   PluginFSRemove: (token: string, path: string, recursive: boolean) => Promise<number>;
+
+  // Per-plugin key/value store — see core/src/renderer/v8_storage.cc and
+  // docs/plugin-storage.md. Only the backing library's version so far; the
+  // token-addressed surface will follow the PluginFS shape above.
+  StorageVersion: () => string;
 }

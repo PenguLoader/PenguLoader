@@ -31,17 +31,40 @@ replacement rather than a merge.
 
 ## Build flags
 
+Set in **two places that must stay in step** — the `sqlite3` target in
+`core/CMakeLists.txt` and `SQLITE_DEFS` in `core/Makefile`. They are `PUBLIC`
+in CMake and applied to `CXXFLAGS` in the Makefile, deliberately: `sqlite3.h`
+itself branches on `SQLITE_OMIT_DEPRECATED` and `SQLITE_OMIT_LOAD_EXTENSION`,
+so a translation unit that included the header without them would see an API
+the library does not contain.
+
+Everything except the first row is SQLite's own
+[recommended compile-time options](https://sqlite.org/compile.html).
 Rationale in [`docs/plugin-storage.md` §9.3](../../../docs/plugin-storage.md).
 
 | define | why |
 | --- | --- |
-| `SQLITE_OMIT_LOAD_EXTENSION` | **security.** Without it, a path that reaches SQL could load a DLL. Plugins never get SQL, so this is defence in depth for a boundary that should never be tested. |
+| `SQLITE_OMIT_LOAD_EXTENSION` | **security.** Without it, a path that reaches SQL could load a DLL. Plugins never get SQL, so this is defence in depth for a boundary that should never be tested. `core/tests/sqlite_test.cc` asserts it took effect. |
 | `SQLITE_DQS=0` | double-quoted string literals are a misfeature; off means a typo'd identifier errors instead of silently becoming a string |
 | `SQLITE_THREADSAFE=1` | serialized. The store is owned by one dedicated thread, but the renderer is not a single-threaded process and the cost is a mutex we would otherwise hand-roll |
-| `SQLITE_OMIT_DEPRECATED` | dead API surface |
 | `SQLITE_DEFAULT_MEMSTATUS=0` | drops per-allocation bookkeeping we never read |
-| `SQLITE_OMIT_UTF16` | the API takes UTF-8; UTF-16 conversion happens at the V8 boundary via `CefStrBase::to_utf8_into` |
+| `SQLITE_DEFAULT_WAL_SYNCHRONOUS=1` | matches the `synchronous=NORMAL` the store sets anyway |
 | `SQLITE_LIKE_DOESNT_MATCH_BLOBS` | size, and no behaviour we depend on |
+| `SQLITE_MAX_EXPR_DEPTH=0` | removes the recursion limiter; we generate our own SQL, so there is no hostile expression to bound |
+| `SQLITE_OMIT_DECLTYPE` | `sqlite3_column_decltype` is unused |
+| `SQLITE_OMIT_DEPRECATED` | dead API surface |
+| `SQLITE_OMIT_PROGRESS_CALLBACK` | unused |
+| `SQLITE_OMIT_SHARED_CACHE` | unused, and discouraged upstream |
+| `SQLITE_USE_ALLOCA` | stack instead of heap for scratch buffers |
+
+**Not set**, and worth recording so nobody re-adds them casually:
+
+- `SQLITE_OMIT_AUTOINIT` — would require calling `sqlite3_initialize()` by hand
+  before first use. A real footgun for a small size win.
+- `SQLITE_OMIT_UTF16` — the `SQLITE_OMIT_*` family is only fully supported when
+  building from canonical sources, not the amalgamation. This one is not needed
+  (the API is used as UTF-8 throughout) and is not worth the risk of a subtle
+  runtime difference we could not easily detect.
 
 ## Bumping
 
