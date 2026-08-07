@@ -135,6 +135,15 @@ path config::datastore_path()
     return loader_dir() / "datastore";
 }
 
+path config::storage_dir()
+{
+    // Outside the plugins folder on purpose: uninstall deletes a plugin's
+    // directory, and `context.fs` is scoped to it, so a store living there
+    // would be destroyed by a reinstall and reachable by a leaked capability.
+    // See docs/plugin-storage.md section 5.
+    return loader_dir() / "storage";
+}
+
 path config::datastore_db_path()
 {
     // Deliberately a sibling of the legacy blob rather than a replacement for

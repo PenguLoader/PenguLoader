@@ -337,6 +337,15 @@ namespace config
     path loader_dir();
 
     ///
+    /// Get the per-plugin storage directory.
+    ///
+    /// Holds one `<hash>.db` per folder plugin. Deliberately outside the
+    /// plugins folder — see docs/plugin-storage.md section 5.
+    ///
+    /// @returns Path to the storage dir. Not guaranteed to exist.
+    ///
+    path storage_dir();
+
     /// Get the SQLite-backed datastore path.
     ///
     /// A sibling of `datastore_path()`, not a replacement: the legacy blob is

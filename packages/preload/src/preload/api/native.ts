@@ -51,8 +51,22 @@ interface Native {
   PluginFSLs:     (token: string, path: string) => Promise<string[] | undefined>;
   PluginFSRemove: (token: string, path: string, recursive: boolean) => Promise<number>;
 
-  // Per-plugin key/value store — see core/src/renderer/v8_storage.cc and
-  // docs/plugin-storage.md. Only the backing library's version so far; the
-  // token-addressed surface will follow the PluginFS shape above.
+  // Per-plugin key/value store — see core/src/renderer/v8_storage.cc,
+  // api/Storage.ts and docs/plugin-storage.md.
+  //
+  // Token-addressed like PluginFS above, and for the same reason: StorageGrant
+  // mints a capability for one plugin and is deleted from this object as soon
+  // as the loader captures it.
+  //
+  // Values cross as strings. Serialization is the shim's job, so the native
+  // side never parses or builds JSON.
   StorageVersion: () => string;
+  StorageGrant:   (pluginRoot: string) => string | undefined;
+  StorageGet:     (token: string, key: string) => Promise<string | undefined>;
+  StorageSet:     (token: string, key: string, json: string) => Promise<boolean>;
+  StorageHas:     (token: string, key: string) => Promise<boolean>;
+  StorageDelete:  (token: string, key: string) => Promise<boolean>;
+  StorageKeys:    (token: string) => Promise<string[]>;
+  StorageClear:   (token: string) => Promise<number>;
+  StorageSize:    (token: string) => Promise<number>;
 }

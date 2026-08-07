@@ -163,6 +163,10 @@ namespace
         sqlite3_exec(handle, "COMMIT;", nullptr, nullptr, nullptr);
     }
 
+    /// How long the queue must stay empty before folding the write-ahead log
+    /// back into the database.
+    constexpr auto IDLE_CHECKPOINT_AFTER = std::chrono::seconds(2);
+
     void worker_loop()
     {
         for (;;)
@@ -170,7 +174,23 @@ namespace
             Pending batch;
             {
                 std::unique_lock<std::mutex> lock(g_mutex);
-                g_cv.wait(lock, [] { return !g_pending.empty(); });
+
+                // Timed rather than indefinite: going idle is the signal to
+                // checkpoint. wal_autocheckpoint is set high because
+                // checkpointing every transaction costs ~3.4x on writes, and
+                // the price of that is a write-ahead log that grows without
+                // bound. TRUNCATE rather than PASSIVE because passive leaves
+                // the file at its high-water mark, which is the problem.
+                if (!g_cv.wait_for(lock, IDLE_CHECKPOINT_AFTER,
+                                   [] { return !g_pending.empty(); }))
+                {
+                    lock.unlock();
+                    if (g_db != nullptr)
+                        sqlite3_wal_checkpoint_v2(g_db, nullptr, SQLITE_CHECKPOINT_TRUNCATE,
+                                                  nullptr, nullptr);
+                    continue;
+                }
+
                 batch.swap(g_pending);
                 g_writing = true;
             }

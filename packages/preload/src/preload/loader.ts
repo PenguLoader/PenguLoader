@@ -1,6 +1,7 @@
 import { rcp, socket } from './rcp';
 import { initDataStore } from './api/DataStore';
 import { createPluginFS } from './api/PluginFS';
+import { createPluginStorage } from './api/Storage';
 import type { PluginModule } from '@pengujs/types';
 
 const plugins = window.Pengu.plugins
@@ -107,6 +108,10 @@ async function loadPlugin(entry: string) {
         const fs = createPluginFS(pluginRoot);
         if (fs)
           initContext['fs'] = fs;
+
+        const storage = createPluginStorage(pluginRoot);
+        if (storage)
+          initContext['storage'] = storage;
       }
       await plugin.init(initContext);
     }
