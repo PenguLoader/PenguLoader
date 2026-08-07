@@ -413,12 +413,20 @@ namespace file
 
     ///
     /// Read content of a file.
+    ///
+    /// All-or-nothing: a file larger than `max_bytes`, a short read or an
+    /// allocation failure all return false without touching `buffer`. On
+    /// success the buffer holds exactly `length` bytes plus a NUL one past the
+    /// end, so callers treating the content as text can use it directly.
+    ///
     /// @param path Path to file.
     /// @param buffer Output buffer, must be freed when success.
-    /// @param length Output buffer length.
+    /// @param length Output buffer length, excluding the trailing NUL.
+    /// @param max_bytes Refuse files larger than this. Checked here rather
+    ///   than by the caller so the size cannot change between the two.
     /// @returns true if success.
-    /// 
-    bool read_file(const path &path, void **buffer, size_t *length);
+    ///
+    bool read_file(const path &path, void **buffer, size_t *length, size_t max_bytes = SIZE_MAX);
 
     ///
     /// Read content of a file.

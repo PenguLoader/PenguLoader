@@ -394,14 +394,13 @@ namespace
         if (!target.has_value() || !file::is_file(target.value()))
             return std::nullopt;
 
-        std::error_code ec;
-        auto size = std::filesystem::file_size(target.value(), ec);
-        if (ec || size > MAX_TEXT_BYTES)
-            return std::nullopt;
-
         void *buffer = nullptr;
         size_t length = 0;
-        if (!file::read_file(target.value(), &buffer, &length))
+
+        // The cap is the read's own business now. Stating the size separately
+        // first left a window where a file that grew in between was read in
+        // full regardless.
+        if (!file::read_file(target.value(), &buffer, &length, MAX_TEXT_BYTES))
             return std::nullopt;
 
         std::string content(reinterpret_cast<char *>(buffer), length);

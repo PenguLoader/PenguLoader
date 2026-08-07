@@ -61,30 +61,75 @@ bool file::is_file(const path &path)
 #endif
 }
 
-bool file::read_file(const path &path, void **buffer, size_t *length)
+bool file::read_file(const path &path, void **buffer, size_t *length, size_t max_bytes)
 {
 #if OS_WIN
-    FILE* fp = _wfopen(path.c_str(), L"rb");
+    FILE *fp = _wfopen(path.c_str(), L"rb");
 #else
-    FILE* fp = fopen(path.c_str(), "rb");
+    FILE *fp = fopen(path.c_str(), "rb");
 #endif
-    if (fp != nullptr)
+
+    if (fp == nullptr)
+        return false;
+
+    // 64-bit seek/tell throughout. `long` is 32 bits on Win64, so past 2 GB
+    // plain ftell() returned -1 (EOVERFLOW). That made `malloc(size + 1)` a
+    // malloc(0) -- which succeeds -- and then `fread(buf, 1, size, fp)` widened
+    // -1 to SIZE_MAX and wrote off the end of a zero-byte allocation, while
+    // `buf[size]` stored at index -1. Immediate heap corruption, reachable
+    // through the uncapped datastore read.
+#if OS_WIN
+    if (_fseeki64(fp, 0, SEEK_END) != 0) { fclose(fp); return false; }
+    const int64_t size = _ftelli64(fp);
+#else
+    if (fseeko(fp, 0, SEEK_END) != 0) { fclose(fp); return false; }
+    const off_t size = ftello(fp);
+#endif
+
+    // Refuse rather than truncate. Checking here instead of at the call site
+    // closes the window where a caller stats the file first and it grows
+    // before the read.
+    if (size < 0 || static_cast<uint64_t>(size) > max_bytes)
     {
-        fseek(fp, 0, SEEK_END);
-        long size = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-
-        *buffer = malloc(size + 1);
-        if (length) *length = size;
-
-        fread(*buffer, 1, size, fp);
-        reinterpret_cast<uint8_t *>(*buffer)[size] = '\0';
-
         fclose(fp);
-        return true;
+        return false;
     }
 
-    return false;
+#if OS_WIN
+    if (_fseeki64(fp, 0, SEEK_SET) != 0) { fclose(fp); return false; }
+#else
+    if (fseeko(fp, 0, SEEK_SET) != 0) { fclose(fp); return false; }
+#endif
+
+    const size_t want = static_cast<size_t>(size);
+
+    // One byte past `length` is NUL, so callers treating the content as text
+    // can use the buffer directly. `length` never counts it.
+    void *data = malloc(want + 1);
+    if (data == nullptr)
+    {
+        fclose(fp);
+        return false;
+    }
+
+    // fread's return was previously ignored, so a short read -- a file
+    // truncated under us, a directory on POSIX, an I/O error -- handed back a
+    // buffer whose tail was whatever the allocator last left there. That tail
+    // reaches JS through fs.read().
+    const size_t got = fread(data, 1, want, fp);
+    fclose(fp);
+
+    if (got != want)
+    {
+        free(data);
+        return false;
+    }
+
+    reinterpret_cast<uint8_t *>(data)[want] = '\0';
+
+    *buffer = data;
+    if (length) *length = want;
+    return true;
 }
 
 bool file::write_file(const path &path, const void *buffer, size_t length)
