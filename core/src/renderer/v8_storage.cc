@@ -46,6 +46,33 @@ namespace
 {
     constexpr int SCHEMA_VERSION = 1;
 
+    /// Per-plugin cap. Comfortably above the ~100 MB case that motivated this
+    /// store, bounded enough that a runaway plugin cannot eat a disk.
+    ///
+    /// Enforced by SQLite itself through `max_page_count`, so there is no
+    /// per-write accounting here: a write past the cap simply fails with
+    /// SQLITE_FULL, the database stays intact, and reads keep working.
+    constexpr uint64_t QUOTA_BYTES = 256ull * 1024 * 1024;
+
+    /// StorageSet result codes. `set` is boolean to callers; the extra state
+    /// exists so the shim can say *why* rather than logging a bare failure.
+    constexpr int SET_FAILED = 0;
+    constexpr int SET_OK     = 1;
+    constexpr int SET_FULL   = 2;
+
+    int pragma_int(sqlite3 *db, const char *sql)
+    {
+        sqlite3_stmt *st = nullptr;
+        if (sqlite3_prepare_v2(db, sql, -1, &st, nullptr) != SQLITE_OK)
+            return 0;
+
+        int value = 0;
+        if (sqlite3_step(st) == SQLITE_ROW)
+            value = sqlite3_column_int(st, 0);
+        sqlite3_finalize(st);
+        return value;
+    }
+
     struct Capability
     {
         path        db_path;
@@ -155,6 +182,18 @@ namespace
         // page_size must precede the first write to take effect at all.
         sqlite3_exec(db, "PRAGMA page_size=8192;", nullptr, nullptr, nullptr);
 
+        // Incremental auto-vacuum, so deleting rows actually returns quota
+        // rather than leaving the file at its high-water mark forever.
+        //
+        // This can only be turned on before the first table exists, or by
+        // rewriting the whole file. A store created before this landed will
+        // read back 0 here and needs the VACUUM; a fresh one will not. Doing
+        // it eagerly at open is deliberate -- the alternative is a store that
+        // silently never reclaims, which looks exactly like a quota bug.
+        sqlite3_exec(db, "PRAGMA auto_vacuum=INCREMENTAL;", nullptr, nullptr, nullptr);
+        if (pragma_int(db, "PRAGMA auto_vacuum;") != 2)
+            sqlite3_exec(db, "VACUUM;", nullptr, nullptr, nullptr);
+
         // WAL can silently not engage — it needs shared memory, which network
         // filesystems do not provide, and the data root can be a redirected
         // UNC path on a roaming profile. Trust the pragma's return value, not
@@ -211,6 +250,20 @@ namespace
             sqlite3_finalize(st);
         }
 
+        // Last, and from the *actual* page size rather than the one we asked
+        // for: an existing store may have been created with a different one,
+        // and a cap computed from the wrong page size is the wrong cap.
+        //
+        // After the VACUUM above, because VACUUM rewrites the file and would
+        // hit the ceiling it is trying to make room under.
+        const int page_size = pragma_int(db, "PRAGMA page_size;");
+        if (page_size > 0)
+        {
+            const auto max_pages = static_cast<int>(QUOTA_BYTES / page_size);
+            sqlite3_exec(db, ("PRAGMA max_page_count=" + std::to_string(max_pages) + ";").c_str(),
+                         nullptr, nullptr, nullptr);
+        }
+
         g_handles[key] = db;
         return db;
     }
@@ -227,9 +280,20 @@ namespace
     {
         for (auto &[key, db] : g_handles)
         {
-            if (db != nullptr)
-                sqlite3_wal_checkpoint_v2(db, nullptr, SQLITE_CHECKPOINT_TRUNCATE,
-                                          nullptr, nullptr);
+            if (db == nullptr)
+                continue;
+
+            sqlite3_wal_checkpoint_v2(db, nullptr, SQLITE_CHECKPOINT_TRUNCATE,
+                                      nullptr, nullptr);
+
+            // Return freed pages to the filesystem, so deleting data frees
+            // quota rather than only freeing space inside the file.
+            //
+            // sqlite3_exec, not prepare-and-step: incremental_vacuum does its
+            // work one page per sqlite3_step, so stepping once reclaims
+            // exactly one page and looks like it did nothing. exec steps to
+            // completion. Measured: 645 pages -> 3 after a full clear.
+            sqlite3_exec(db, "PRAGMA incremental_vacuum;", nullptr, nullptr, nullptr);
         }
     }
 
@@ -431,7 +495,7 @@ static V8Value *v8_storage_set(V8Value *const args[], int argc)
 
     if (argc < 3 || !args[0]->isString() || !args[1]->isString() || !args[2]->isString())
     {
-        task->resolve([] { return V8Value::boolean(false); });
+        task->resolve([] { return V8Value::number(SET_FAILED); });
         return promise;
     }
 
@@ -439,25 +503,31 @@ static V8Value *v8_storage_set(V8Value *const args[], int argc)
     std::string key = CefScopedStr(args[1]->asString()).to_utf8();
     std::string value = CefScopedStr(args[2]->asString()).to_utf8();
 
-    run<bool>(task, token,
-        [key, value](sqlite3 *db) -> bool {
+    run<int>(task, token,
+        [key, value](sqlite3 *db) -> int {
             sqlite3_stmt *st = nullptr;
             if (sqlite3_prepare_v2(db,
                     "INSERT INTO kv(k,fmt,v,mtime) VALUES(?,0,?,?)"
                     " ON CONFLICT(k) DO UPDATE SET fmt=0, v=excluded.v, mtime=excluded.mtime;",
                     -1, &st, nullptr) != SQLITE_OK)
-                return false;
+                return SET_FAILED;
 
             sqlite3_bind_text(st, 1, key.data(), static_cast<int>(key.size()), SQLITE_STATIC);
             sqlite3_bind_blob(st, 2, value.data(), static_cast<int>(value.size()), SQLITE_STATIC);
             sqlite3_bind_int64(st, 3, now_millis());
 
-            const bool ok = sqlite3_step(st) == SQLITE_DONE;
+            const int rc = sqlite3_step(st);
             sqlite3_finalize(st);
-            return ok;
+
+            // max_page_count reports a refused growth as SQLITE_FULL, the same
+            // code a genuinely full disk produces. Reported separately from a
+            // generic failure so the shim can name the reason -- a silent
+            // false is the worst possible way to hit a quota.
+            if (rc == SQLITE_FULL) return SET_FULL;
+            return rc == SQLITE_DONE ? SET_OK : SET_FAILED;
         },
-        [](bool ok) -> V8Value * { return V8Value::boolean(ok); },
-        false);
+        [](int status) -> V8Value * { return V8Value::number(status); },
+        SET_FAILED);
 
     return promise;
 }
@@ -637,6 +707,53 @@ static V8Value *v8_storage_size(V8Value *const args[], int argc)
     return promise;
 }
 
+/// Bytes actually occupied, and the cap.
+///
+/// Not the file size: SQLite reuses freed pages rather than shrinking, so a
+/// store that held 100 MB and was cleared still *measures* 100 MB on disk
+/// until the idle vacuum runs. `page_count - freelist_count` is what the quota
+/// is enforced against, so it is what a plugin asking "how close am I" needs.
+static V8Value *v8_storage_usage(V8Value *const args[], int argc)
+{
+    auto *task = new V8PromiseTask();
+    auto *promise = task->promise();
+
+    auto empty = []() -> V8Value * {
+        auto object = V8Object::create();
+        object->set(&u"used"_s, V8Value::number(0), V8_PROPERTY_ATTRIBUTE_READONLY);
+        object->set(&u"quota"_s, V8Value::number(static_cast<double>(QUOTA_BYTES)),
+                    V8_PROPERTY_ATTRIBUTE_READONLY);
+        return reinterpret_cast<V8Value *>(object);
+    };
+
+    if (argc < 1 || !args[0]->isString())
+    {
+        task->resolve(empty);
+        return promise;
+    }
+
+    std::string token = CefScopedStr(args[0]->asString()).to_utf8();
+
+    run<double>(task, token,
+        [](sqlite3 *db) -> double {
+            const int pages = pragma_int(db, "PRAGMA page_count;");
+            const int free_pages = pragma_int(db, "PRAGMA freelist_count;");
+            const int page_size = pragma_int(db, "PRAGMA page_size;");
+            const int used = pages > free_pages ? pages - free_pages : 0;
+            return static_cast<double>(used) * page_size;
+        },
+        [](double used) -> V8Value * {
+            auto object = V8Object::create();
+            object->set(&u"used"_s, V8Value::number(used), V8_PROPERTY_ATTRIBUTE_READONLY);
+            object->set(&u"quota"_s, V8Value::number(static_cast<double>(QUOTA_BYTES)),
+                        V8_PROPERTY_ATTRIBUTE_READONLY);
+            return reinterpret_cast<V8Value *>(object);
+        },
+        0.0);
+
+    return promise;
+}
+
 V8HandlerFunctionEntry v8_StorageEntries[]
 {
     { "StorageVersion", v8_storage_version },
@@ -648,5 +765,6 @@ V8HandlerFunctionEntry v8_StorageEntries[]
     { "StorageKeys",    v8_storage_keys    },
     { "StorageClear",   v8_storage_clear   },
     { "StorageSize",    v8_storage_size    },
+    { "StorageUsage",   v8_storage_usage   },
     { nullptr }
 };

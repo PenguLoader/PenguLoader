@@ -63,10 +63,12 @@ interface Native {
   StorageVersion: () => string;
   StorageGrant:   (pluginRoot: string) => string | undefined;
   StorageGet:     (token: string, key: string) => Promise<string | undefined>;
-  StorageSet:     (token: string, key: string, json: string) => Promise<boolean>;
+  /** 0 = failed, 1 = ok, 2 = over quota. See the SET_* codes in v8_storage.cc. */
+  StorageSet:     (token: string, key: string, json: string) => Promise<number>;
   StorageHas:     (token: string, key: string) => Promise<boolean>;
   StorageDelete:  (token: string, key: string) => Promise<boolean>;
   StorageKeys:    (token: string) => Promise<string[]>;
   StorageClear:   (token: string) => Promise<number>;
   StorageSize:    (token: string) => Promise<number>;
+  StorageUsage:   (token: string) => Promise<{ used: number, quota: number }>;
 }

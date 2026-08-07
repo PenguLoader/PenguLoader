@@ -22,6 +22,29 @@ function isBuffer(value: unknown): boolean {
   return value instanceof ArrayBuffer || ArrayBuffer.isView(value);
 }
 
+/** Mirrors the SET_* codes in core/src/renderer/v8_storage.cc. */
+const SET_FAILED = 0;
+const SET_OK = 1;
+const SET_FULL = 2;
+
+function report(pluginRoot: string, key: string, status: number): boolean {
+  if (status === SET_OK)
+    return true;
+
+  // A quota failure that surfaces only as `false` is the worst possible way to
+  // hit a limit — the plugin keeps "working" and loses every write. Name it
+  // where the author will actually see it.
+  if (status === SET_FULL) {
+    console.warn(
+      `%c Pengu `, 'background: #183461; color: #fff',
+      `storage quota exhausted for "${pluginRoot}" — the write of "${key}" was ` +
+      `refused and nothing was stored. Call storage.usage() for the numbers, ` +
+      `and delete keys you no longer need; freed space is returned shortly after.`);
+  }
+
+  return false;
+}
+
 export function createPluginStorage(pluginRoot: string) {
   const token = grantStorage(pluginRoot);
   if (!token)
@@ -58,7 +81,7 @@ export function createPluginStorage(pluginRoot: string) {
      * collapsing it into a bare `false` would make it near-undebuggable —
      * `false` is reserved for the storage layer failing.
      */
-    set(key: string, value: unknown): Promise<boolean> {
+    async set(key: string, value: unknown): Promise<boolean> {
       if (value === undefined)
         return native.StorageDelete(token, String(key));
 
@@ -76,7 +99,8 @@ export function createPluginStorage(pluginRoot: string) {
       if (json === undefined)
         return native.StorageDelete(token, String(key));
 
-      return native.StorageSet(token, String(key), json);
+      const status = await native.StorageSet(token, String(key), json);
+      return report(pluginRoot, String(key), status);
     },
 
     has(key: string): Promise<boolean> {
@@ -100,6 +124,18 @@ export function createPluginStorage(pluginRoot: string) {
     /** Bytes on disk, write-ahead log included. */
     size(): Promise<number> {
       return native.StorageSize(token);
+    },
+
+    /**
+     * Bytes occupied and the cap, both in bytes.
+     *
+     * Not the same question as `size()`. SQLite reuses freed pages rather than
+     * shrinking, so a store that held 100 MB and was cleared still measures
+     * 100 MB on disk until the idle vacuum runs — but its `used` drops
+     * immediately, and `used` is what the quota is enforced against.
+     */
+    usage(): Promise<{ used: number, quota: number }> {
+      return native.StorageUsage(token);
     },
   });
 }
