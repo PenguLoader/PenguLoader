@@ -599,7 +599,11 @@ static V8Value *v8_pluginfs_read(V8Value *const args[], int argc)
 
     task->execute([task, token, relative_path] {
         auto content = read_text(token, relative_path);
-        task->resolve([content]() -> V8Value * {
+        // Moved, not copied: this is the file's whole content, up to
+        // MAX_TEXT_BYTES. The renderer-side resolver below still pays two
+        // more full copies (UTF-8 -> UTF-16, then V8's own), so there is no
+        // reason to add a third here.
+        task->resolve([content = std::move(content)]() -> V8Value * {
             if (!content.has_value())
                 return V8Value::undefined();
 
@@ -624,7 +628,9 @@ static V8Value *v8_pluginfs_write(V8Value *const args[], int argc)
     auto *task = new V8PromiseTask();
     auto *promise = task->promise();
 
-    task->execute([task, token, relative_path, content, append] {
+    // `content` is the caller's whole payload; hand it to the worker rather
+    // than copying it across. It is not touched again on this thread.
+    task->execute([task, token, relative_path, content = std::move(content), append] {
         bool result = write_text(token, relative_path, content, append);
         task->resolve([result]() -> V8Value * { return V8Value::boolean(result); });
     });
@@ -694,7 +700,8 @@ static V8Value *v8_pluginfs_ls(V8Value *const args[], int argc)
 
     task->execute([task, token, relative_path] {
         auto entries = list_dir(token, relative_path);
-        task->resolve([entries]() -> V8Value * {
+        // Unbounded in entry count, and a copy re-allocates every name.
+        task->resolve([entries = std::move(entries)]() -> V8Value * {
             if (!entries.has_value())
                 return V8Value::undefined();
 
