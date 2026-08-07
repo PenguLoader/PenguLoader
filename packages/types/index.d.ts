@@ -176,18 +176,29 @@ export interface DataStore {
   /** Sync read against the in-memory mirror; safe to call from plugin `init`. */
   get: <T = unknown>(key: string, fallback?: T) => T | undefined;
   /**
-   * Mutates the in-memory mirror immediately and schedules a debounced async
-   * commit (latest-wins coalescing on the native side). Returns `false` only
-   * on invalid args; `true` means "accepted and will persist soon."
+   * Mutates the in-memory mirror immediately and queues a single-row upsert
+   * (latest-wins coalescing per key on the native side).
+   *
+   * `false` means the write was rejected: invalid args, a value JSON cannot
+   * represent, or the store being full. This store is shared by every plugin
+   * and capped at 128 MB — for anything that grows, use `context.storage`,
+   * which is per-plugin.
    */
   set: (key: string, value: unknown) => boolean;
   /** Same async-commit semantics as `set`. Returns `true` if the key existed. */
   remove: (key: string) => boolean;
   /**
-   * Force the pending debounced write immediately and resolve once it is
-   * durable on disk. Power-user method — the common path doesn't need it.
+   * Force the pending write immediately and resolve once it is durable on
+   * disk. Power-user method — the common path doesn't need it.
    */
   flush: () => Promise<void>;
+  /**
+   * Bytes occupied and the shared cap.
+   *
+   * `used` is real occupancy, so it drops as soon as keys are removed — the
+   * file itself catches up a moment later.
+   */
+  usage: () => Promise<{ used: number, quota: number }>;
 }
 
 // =============================================================================

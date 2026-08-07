@@ -76,6 +76,8 @@ async function migrateLegacy() {
     `Migrated ${entries.length} DataStore ${entries.length === 1 ? 'entry' : 'entries'} to SQLite.`);
 }
 
+let warnedFull = false;
+
 /** Serialize one value and hand it to the native writer. */
 function write(key: string, value: unknown) {
   let json: string;
@@ -95,7 +97,19 @@ function write(key: string, value: unknown) {
     return true;
   }
 
-  native.SetDataStore(key, json);
+  if (!native.SetDataStore(key, json)) {
+    // Once per session: this fires on every subsequent write, and a plugin
+    // hammering a settings slider would otherwise flood the console.
+    if (!warnedFull) {
+      warnedFull = true;
+      console.warn('%c Pengu ', 'background: #183461; color: #fff',
+        `DataStore is full — "${key}" and later writes are not being saved. ` +
+        `DataStore is shared by every plugin and capped at 128 MB; remove keys ` +
+        `you no longer need, or use context.storage, which is per-plugin.`);
+    }
+    return false;
+  }
+
   return true;
 }
 
@@ -132,5 +146,9 @@ window.DataStore = {
     // Writes are queued the moment `set` is called, so there is no debounce to
     // force any more — just wait for the native writer to drain.
     await native.FlushDataStore();
+  },
+
+  usage() {
+    return native.DataStoreUsage();
   },
 };

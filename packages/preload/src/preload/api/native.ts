@@ -22,9 +22,11 @@ interface Native {
   // batches.
   LoadDataStore:       () => Promise<string[]>;
   LoadLegacyDataStore: () => Promise<string>;      // pre-SQLite blob, migration only
-  SetDataStore:        (key: string, json: string) => void;
+  /** false once the 128 MB shared cap is reached — see v8_datastore.cc. */
+  SetDataStore:        (key: string, json: string) => boolean;
   RemoveDataStore:     (key: string) => void;
   FlushDataStore:      () => Promise<void>;
+  DataStoreUsage:      () => Promise<{ used: number, quota: number }>;
 
   // Writable-JSON $write back-end. Captured + rebound as `window.__pwj` by
   // api/json.ts so the SCRIPT_IMPORT_JSON shim can call into it.

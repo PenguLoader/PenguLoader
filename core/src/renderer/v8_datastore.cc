@@ -1,5 +1,6 @@
 #include "pengu.h"
 #include "v8_wrapper.h"
+#include "sqlite_store.h"
 
 #include "sqlite3.h"
 
@@ -40,6 +41,22 @@ namespace
     //   nullopt       -> delete
     using Pending = std::map<std::string, std::optional<std::string>>;
 
+    /// Shared by every plugin, unlike context.storage's 256 MB each. Half,
+    /// because this one is a common resource: a single plugin filling it takes
+    /// the store away from all the others, and anything wanting real volume
+    /// belongs in context.storage anyway.
+    constexpr uint64_t QUOTA_BYTES = 128ull * 1024 * 1024;
+
+    /// Set when a write is refused for want of space, cleared when maintenance
+    /// frees some. Read from the renderer thread, written from the writer, so
+    /// atomic.
+    ///
+    /// This exists because DataStore.set is fire-and-forget: by the time the
+    /// write reaches disk the caller has long since had its `true` back. The
+    /// flag lets the *next* set report honestly instead of the store silently
+    /// accepting writes that never land.
+    std::atomic<bool> g_over_quota{ false };
+
     std::mutex              g_mutex;
     std::condition_variable g_cv;
     Pending                 g_pending;
@@ -61,38 +78,9 @@ namespace
     /// is no logging facility in core to report into.
     void open_db()
     {
-        auto path = config::datastore_db_path().u8string();
-        std::string utf8(path.begin(), path.end());
-
-        if (sqlite3_open_v2(utf8.c_str(), &g_db,
-                            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) != SQLITE_OK)
-        {
-            if (g_db) { sqlite3_close(g_db); g_db = nullptr; }
+        g_db = sqlite_store::open_tuned(config::datastore_db_path(), QUOTA_BYTES);
+        if (g_db == nullptr)
             return;
-        }
-
-        // WAL can silently fail to engage -- it needs shared memory, which
-        // network filesystems do not provide, and %LOCALAPPDATA% can be a
-        // redirected UNC path on a roaming profile. The pragma's *return
-        // value* is the only reliable signal, so ask for it and fall back
-        // rather than assuming. See docs/plugin-storage.md section 9.2.
-        bool wal = false;
-        sqlite3_stmt *st = nullptr;
-        if (sqlite3_prepare_v2(g_db, "PRAGMA journal_mode=WAL;", -1, &st, nullptr) == SQLITE_OK)
-        {
-            if (sqlite3_step(st) == SQLITE_ROW)
-            {
-                auto *mode = reinterpret_cast<const char *>(sqlite3_column_text(st, 0));
-                wal = mode != nullptr && std::string(mode) == "wal";
-            }
-            sqlite3_finalize(st);
-        }
-        if (!wal)
-            sqlite3_exec(g_db, "PRAGMA journal_mode=TRUNCATE;", nullptr, nullptr, nullptr);
-
-        sqlite3_exec(g_db, "PRAGMA synchronous=NORMAL;", nullptr, nullptr, nullptr);
-        sqlite3_exec(g_db, "PRAGMA busy_timeout=3000;", nullptr, nullptr, nullptr);
-        sqlite3_exec(g_db, "PRAGMA wal_autocheckpoint=20000;", nullptr, nullptr, nullptr);
 
         // WITHOUT ROWID: for a pure key/value table this stores rows directly
         // in the primary-key B-tree, so a lookup is one descent with no index
@@ -147,7 +135,8 @@ namespace
                 sqlite3_bind_text(put, 1, key.data(), static_cast<int>(key.size()), SQLITE_STATIC);
                 sqlite3_bind_text(put, 2, value->data(), static_cast<int>(value->size()), SQLITE_STATIC);
                 sqlite3_bind_int64(put, 3, stamp);
-                sqlite3_step(put);
+                if (sqlite3_step(put) == SQLITE_FULL)
+                    g_over_quota.store(true);
             }
             else
             {
@@ -185,9 +174,16 @@ namespace
                                    [] { return !g_pending.empty(); }))
                 {
                     lock.unlock();
-                    if (g_db != nullptr)
-                        sqlite3_wal_checkpoint_v2(g_db, nullptr, SQLITE_CHECKPOINT_TRUNCATE,
-                                                  nullptr, nullptr);
+                    sqlite_store::maintain(g_db);
+
+                    // Maintenance may have returned pages a delete freed, so
+                    // let the next write try again rather than staying refused
+                    // until the client restarts.
+                    if (g_db != nullptr && g_over_quota.load() &&
+                        sqlite_store::used_bytes(g_db) < static_cast<double>(QUOTA_BYTES))
+                    {
+                        g_over_quota.store(false);
+                    }
                     continue;
                 }
 
@@ -331,11 +327,21 @@ static V8Value *v8_load_legacy_datastore(V8Value *const args[], int argc)
     return promise;
 }
 
-/// Upsert one row. Fire-and-forget, coalesced per key by the writer.
+/// Upsert one row. Coalesced per key by the writer.
+///
+/// Returns false once the store is known to be full. Not fire-and-forget any
+/// more, but only just: the write is still queued, so the *first* write that
+/// crosses the cap is accepted here and refused later on the writer thread.
+/// Every one after that is refused up front. A one-write window is the price
+/// of a queued writer, and it beats a store that keeps saying yes while
+/// nothing reaches disk.
 static V8Value *v8_set_datastore(V8Value *const args[], int argc)
 {
     if (argc < 2 || !args[0]->isString() || !args[1]->isString())
-        return nullptr;
+        return V8Value::boolean(false);
+
+    if (g_over_quota.load())
+        return V8Value::boolean(false);
 
     CefScopedStr key = args[0]->asString();
     CefScopedStr value = args[1]->asString();
@@ -345,7 +351,29 @@ static V8Value *v8_set_datastore(V8Value *const args[], int argc)
     value.to_utf8_into(v);
 
     enqueue(std::move(k), std::move(v));
-    return nullptr;
+    return V8Value::boolean(true);
+}
+
+/// Bytes occupied and the shared cap.
+static V8Value *v8_datastore_usage(V8Value *const args[], int argc)
+{
+    auto *task = new V8PromiseTask();
+    auto *promise = task->promise();
+
+    task->execute([task] {
+        auto *handle = db();
+        const double used = handle != nullptr ? sqlite_store::used_bytes(handle) : 0.0;
+
+        task->resolve([used]() -> V8Value * {
+            auto object = V8Object::create();
+            object->set(&u"used"_s, V8Value::number(used), V8_PROPERTY_ATTRIBUTE_READONLY);
+            object->set(&u"quota"_s, V8Value::number(static_cast<double>(QUOTA_BYTES)),
+                        V8_PROPERTY_ATTRIBUTE_READONLY);
+            return reinterpret_cast<V8Value *>(object);
+        });
+    });
+
+    return promise;
 }
 
 /// Delete one row. Fire-and-forget, coalesced per key by the writer.
@@ -383,5 +411,6 @@ V8HandlerFunctionEntry v8_DataStoreEntries[]
     { "SetDataStore",        v8_set_datastore         },
     { "RemoveDataStore",     v8_remove_datastore      },
     { "FlushDataStore",      v8_flush_datastore       },
+    { "DataStoreUsage",      v8_datastore_usage       },
     { nullptr }
 };
