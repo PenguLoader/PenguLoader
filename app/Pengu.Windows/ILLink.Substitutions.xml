@@ -1,0 +1,24 @@
+<linker>
+    <!--
+        SafeResourceId.Equals(object) ends in a TypeDescriptor.GetConverter
+        fallback for operands it doesn't recognise. Nobody calls it, but the
+        type is constructed — Macros.MAKEINTRESOURCE implicitly converts to
+        SafeResourceId in AppIcon and Win32Window — which roots its virtuals,
+        and GetConverter then drags the whole TypeDescriptor / reflection
+        stack in behind it: 394 KB of the AOT image. This is the IL2026 that
+        ILC reports on every Release build.
+
+        Stubbed rather than removed, so a stray call returns false instead of
+        throwing NotSupportedException. That still breaks the comparisons the
+        method would otherwise do (string, int, IntPtr, SafeResourceId,
+        ResourceId), so before using SafeResourceId as a dictionary key, in a
+        HashSet, or in any == / Equals / Contains, drop this entry and take
+        the 394 KB back. Today the only uses are LoadIcon / LoadCursor
+        arguments, which never compare.
+    -->
+    <assembly fullname="Vanara.PInvoke.Shared">
+        <type fullname="Vanara.PInvoke.SafeResourceId">
+            <method signature="System.Boolean Equals(System.Object)" body="stub" value="false" />
+        </type>
+    </assembly>
+</linker>

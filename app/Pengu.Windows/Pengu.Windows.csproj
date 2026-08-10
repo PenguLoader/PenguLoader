@@ -21,6 +21,26 @@
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <UseSystemResourceKeys>true</UseSystemResourceKeys>
+        <EventSourceSupport>false</EventSourceSupport>
+        <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+        <OptimizationPreference>Size</OptimizationPreference>
+        <StackTraceSupport>false</StackTraceSupport>
+	</PropertyGroup>
+
+	<!-- ILC takes substitutions only as a raw argument, and the response file is
+       written by WriteIlcRspFileForCompilation — hooking IlcCompile is too
+       late, the argument would land after the file is already on disk. Verify
+       with: findstr substitution obj\Release\native\Pengu.ilc.rsp.
+       See ILLink.Substitutions.xml for what is being substituted and why. -->
+	<Target Name="AddIlcSubstitutions" BeforeTargets="WriteIlcRspFileForCompilation">
+		<ItemGroup>
+			<IlcArg Include="--substitution:$(MSBuildProjectDirectory)\ILLink.Substitutions.xml" />
+		</ItemGroup>
+	</Target>
+
 	<ItemGroup>
 		<ProjectReference Include="..\Pengu\Pengu.csproj" />
 		<ProjectReference Include="..\Pengu.Gen\Pengu.Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
