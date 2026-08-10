@@ -8,7 +8,7 @@
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<RootNamespace>Pengu.Windows</RootNamespace>
 		<AssemblyName>Pengu</AssemblyName>
-		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationManifest>Properties\app.manifest</ApplicationManifest>
 		<ApplicationIcon>app-icon.ico</ApplicationIcon>
 		<!-- The head is an exe, not a NuGet package. PackageId would otherwise
          default to AssemblyName ("Pengu") and collide with the core lib's
@@ -85,7 +85,7 @@
        See ILLink.Substitutions.xml for what is being substituted and why. -->
 	<Target Name="AddIlcSubstitutions" BeforeTargets="WriteIlcRspFileForCompilation">
 		<ItemGroup>
-			<IlcArg Include="--substitution:$(MSBuildProjectDirectory)\ILLink.Substitutions.xml" />
+			<IlcArg Include="--substitution:$(MSBuildProjectDirectory)\Properties\ILLink.Substitutions.xml" />
 		</ItemGroup>
 	</Target>
 
