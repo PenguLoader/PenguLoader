@@ -23,8 +23,9 @@
 ; which the user asks for explicitly — installing Pengu should not silently
 ; insert it into another program's startup.
 ;
-; Expects the payload directory to hold Pengu.exe, WebView2Loader.dll, core.dll
-; and boot.dll. The core carries its Pengu signature inside its own .pengu
+; Expects the payload directory to hold Pengu.exe, core.dll and boot.dll.
+; WebView2Loader is statically linked into Pengu.exe, so no loader DLL ships.
+; The core carries its Pengu signature inside its own .pengu
 ; section, so there is no manifest to ship beside it and nothing here has to
 ; care whether the build was signed — a release boot refuses an unsigned core
 ; on its own, and CI fails a release run that would produce one.
@@ -118,7 +119,6 @@ Name: "{#MyBootDir}"
 
 [Files]
 Source: "{#PayloadDir}\{#MyAppExeName}";     DestDir: "{app}"; Flags: ignoreversion
-Source: "{#PayloadDir}\WebView2Loader.dll";  DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PayloadDir}\core.dll";            DestDir: "{app}"; Flags: ignoreversion
 ; Shipped in {app} as well as installed to ProgramData, so a portable copy of
 ; the install folder can re-install or repair the boot on its own — that is

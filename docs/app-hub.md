@@ -138,7 +138,11 @@ macOS has no broadcast-message equivalent. Use `CFNotificationCenterPostNotifica
 
 ### 5.1 Windows: Diga.WebView2.Interop.AOT
 
-We use the full COM-source-generated WebView2 binding (`Diga.WebView2.Interop.AOT`) plus a raw `[LibraryImport]` of `WebView2Loader.dll`. **Not** the official `Microsoft.Web.WebView2` package — its public surface assumes WPF/WinForms host and isn't AOT-clean.
+We use the full COM-source-generated WebView2 binding (`Diga.WebView2.Interop.AOT`) plus a raw `[LibraryImport]` of `WebView2Loader.dll`. We do **not** use the managed side of the official `Microsoft.Web.WebView2` package — its public surface assumes a WPF/WinForms host and isn't AOT-clean.
+
+We do reference that package with `ExcludeAssets="all"`, purely to reach one file inside it: `build\native\x64\WebView2LoaderStatic.lib`. A published build links it via `<DirectPInvoke>` + `<NativeLibrary>`, so the loader ends up inside `Pengu.exe` and **no `WebView2Loader.dll` ships** — the portable payload is `Pengu.exe`, `core.dll`, `boot.dll` and nothing else. Costs ~18 KB in the exe against a 159 KB DLL removed. See the head csproj for why the MS-documented `WebView2LoaderPreference=Static` property doesn't apply here (it's vcxproj-only).
+
+Debug is the exception: `dotnet build` is not AOT, so the P/Invoke resolves `WebView2Loader.dll` by name at runtime and the csproj stages it next to the exe for that configuration only.
 
 `WebView2Environment` is a process-wide singleton initialized once at startup, before any window opens. It registers the custom `app://` scheme via `ICoreWebView2CustomSchemeRegistration` (must happen at env-init time; later registrations are silently ignored). Additional CLI feature: `--enable-features=msWebView2EnableDraggableRegions` so the hub's HTML titlebar can use `app-region: drag` CSS for window dragging — no explicit `host.startDragging()` call needed for the common case.
 

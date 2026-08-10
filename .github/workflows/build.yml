@@ -149,7 +149,8 @@ jobs:
 
       # Clean portable payload: extract the artifact archive anywhere, run Pengu.exe.
       # app.dat is embedded inside Pengu.exe via <EmbeddedResource> — no
-      # separate file ships alongside the exe.
+      # separate file ships alongside the exe. WebView2Loader is statically
+      # linked into Pengu.exe (see the head csproj), so it isn't here either.
       #
       # The native pair comes from the C++ output directory rather than from
       # app-publish, since SkipNativeBuild means the publish never staged them.
@@ -158,7 +159,6 @@ jobs:
         run: |
           mkdir -p out/
           cp app-publish/Pengu.exe            out/
-          cp app-publish/WebView2Loader.dll   out/
           cp core/bin/x64/Release/core.dll    out/
           cp core/bin/x64/Release/boot.dll    out/
 

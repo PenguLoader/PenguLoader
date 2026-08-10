@@ -30,6 +30,54 @@
         <StackTraceSupport>false</StackTraceSupport>
 	</PropertyGroup>
 
+	<!-- Statically link the WebView2 loader so nothing ships beside Pengu.exe.
+       See https://learn.microsoft.com/microsoft-edge/webview2/how-to/static —
+       that page documents the C++ WebView2LoaderPreference=Static property,
+       which lives in Microsoft.Web.WebView2.targets and only applies to a
+       vcxproj. The NativeAOT equivalent is these two items:
+
+       DirectPInvoke tells ILC to emit a direct call to the entrypoint instead
+       of the lazy LoadLibrary("WebView2Loader.dll") + GetProcAddress cell it
+       generates by default, which is what makes the symbol a link-time
+       reference. NativeLibrary then puts the static archive on the link line
+       to satisfy it. Both are required — DirectPInvoke alone gives an
+       unresolved external, NativeLibrary alone leaves the P/Invoke looking
+       for a DLL at runtime.
+
+       WebView2LoaderStatic.lib asks for uuid.lib (for the CLSIDs it resolves)
+       on top of the ole32.lib ILC already links; it declares no CRT of its
+       own, so it inherits NativeAOT's without conflict.
+
+       The x64 here tracks $(RuntimeIdentifier): the package lays its natives
+       out as build\native\{x64,x86,arm64}, which is exactly the RID minus the
+       "win-" prefix, so this follows automatically if the head ever targets
+       another architecture.
+
+       Trade-off: the loader can no longer be serviced independently of the
+       exe. It is a ~160 KB shim whose whole job is locating the installed
+       Evergreen runtime, and that lookup is what gets serviced, so this
+       mostly costs us a rebuild if Microsoft ships a loader fix. -->
+	<ItemGroup>
+		<DirectPInvoke Include="WebView2Loader" />
+		<NativeLibrary Include="$(PkgMicrosoft_Web_WebView2)\build\native\$(RuntimeIdentifier.Substring(4))\WebView2LoaderStatic.lib" />
+		<NativeLibrary Include="uuid.lib" />
+	</ItemGroup>
+
+	<!-- ...but only a published build is AOT. `dotnet build -c Debug` produces a
+       managed exe on CoreCLR, where DirectPInvoke and NativeLibrary do nothing
+       and the [LibraryImport] above resolves WebView2Loader.dll the ordinary
+       way — by name, from the exe directory, on first call. ExcludeAssets
+       stopped the package staging it, so put it back for Debug.
+
+       A copy rather than a conditional ExcludeAssets because PackageReference
+       metadata is baked into project.assets.json at restore time, and restore
+       runs once for all configurations: conditioning it would let a restore
+       done in one configuration decide what a build in the other gets. -->
+	<Target Name="StageWebView2Loader" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+		<Copy SourceFiles="$(PkgMicrosoft_Web_WebView2)\runtimes\$(RuntimeIdentifier)\native\WebView2Loader.dll"
+		      DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+	</Target>
+
 	<!-- ILC takes substitutions only as a raw argument, and the response file is
        written by WriteIlcRspFileForCompilation — hooking IlcCompile is too
        late, the argument would land after the file is already on disk. Verify
@@ -47,7 +95,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="WebView2.NativeAssets.Win32" Version="1.0.1518.46" />
+		<!-- Loader only. ExcludeAssets=all keeps every managed asset out (the
+         WPF / WinForms / Core assemblies assume a UI framework we don't use —
+         Diga.WebView2.Interop.AOT supplies the COM types instead) and, more to
+         the point, stops the native runtimes\win-x64\WebView2Loader.dll from
+         being copied next to the exe. We take one file out of the package by
+         hand: WebView2LoaderStatic.lib, linked in below.
+         GeneratePathProperty gives us $(PkgMicrosoft_Web_WebView2) to find it,
+         which is the only reason the reference exists at all. -->
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2592.51"
+		                  ExcludeAssets="all" GeneratePathProperty="true" />
 		<PackageReference Include="Diga.WebView2.Interop.AOT" Version="1.0.4-preview" />
 		<PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.0" />
 		<PackageReference Include="Vanara.PInvoke.User32" Version="5.0.0" />
