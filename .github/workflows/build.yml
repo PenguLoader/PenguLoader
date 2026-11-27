@@ -49,25 +49,35 @@ jobs:
           echo "APP_VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
 
       # ─── Toolchains ─────────────────────────────────────────────────────
-      # Xcode first: Microsoft.macOS.Sdk.net10.0_26.4 requires Xcode 26.x, and
-      # selecting it before the SDK step keeps that ordering guarantee now that
-      # the workload is installed as part of setup-dotnet.
-      - name: Select latest Xcode
+      # Keep Xcode in sync with the workload set in app/Pengu.MacOS/global.json.
+      - name: Select Xcode (macOS)
         if: runner.os == 'macOS'
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: '26.6.0'
 
-      # .NET 10 for both Pengu.Windows (AOT) and Pengu.MacOS. The macos
-      # workload comes from the `workloads` input rather than a separate
-      # `dotnet workload install` step — it needs v5, v4 has no such input, and
-      # it installs into the SDK setup-dotnet just laid down so there is no
-      # sudo involved.
-      - name: Setup .NET SDK
+      - name: Setup .NET SDK (Windows)
+        if: runner.os == 'Windows'
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
-          workloads: ${{ runner.os == 'macOS' && 'macos' || '' }}
+
+      - name: Setup .NET SDK (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: app/Pengu.MacOS/global.json
+
+      # Run from the directory with global.json so the CLI uses the pinned
+      # SDK and workload set even when the runner has a newer .NET installed.
+      - name: Install .NET macOS workload
+        if: runner.os == 'macOS'
+        working-directory: app/Pengu.MacOS
+        run: |
+          xcodebuild -version
+          dotnet --version
+          dotnet workload install macos
+          dotnet workload list
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -176,10 +186,11 @@ jobs:
       # AOT compilation + per-RID lipo on a CI runner.
       - name: Publish app/Pengu.MacOS (AOT, universal)
         if: runner.os == 'macOS'
+        working-directory: app/Pengu.MacOS
         run: |
-          dotnet publish app/Pengu.MacOS \
+          dotnet publish \
             -c Release \
-            --output app-publish
+            --output ../../app-publish
 
       # Stage two deliverables for the macOS artifact:
       #  - Pengu-<ver>.pkg  — installer with the universal AOT app inside
